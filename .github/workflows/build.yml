@@ -1,0 +1,78 @@
+name: Cross-Platform Build
+
+on:
+  push:
+    branches: [ main, master ]  # Trigger on push to main or master branch
+  pull_request:
+    branches: [ main, master ]  # Trigger on PR to main or master branch
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: windows-latest
+            output_name: SIDwinder.exe
+            artifact_name: sidwinder-windows
+          - os: ubuntu-latest
+            output_name: SIDwinder
+            artifact_name: sidwinder-linux
+          - os: macos-latest
+            output_name: SIDwinder
+            artifact_name: sidwinder-macos
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake --formula
+
+    - name: Configure CMake
+      run: cmake -B build
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Test
+      run: |
+        cd build
+        ctest --output-on-failure
+
+    - name: Create artifact directory
+      run: mkdir -p artifacts
+
+    - name: Copy executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cp build/Release/${{ matrix.output_name }} artifacts/
+
+    - name: Copy executable (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      run: cp build/${{ matrix.output_name }} artifacts/
+
+    # Optional: Copy any necessary resources
+    - name: Copy resources
+      run: |
+        mkdir -p artifacts/SIDPlayers
+        cp -r SIDPlayers/* artifacts/SIDPlayers/ || echo "No SIDPlayers directory found, skipping"
+
+    # Upload the built artifacts
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: artifacts/
+        retention-days: 90
