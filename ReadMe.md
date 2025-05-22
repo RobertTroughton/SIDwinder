@@ -2,7 +2,7 @@
 
 *SIDwinder 0.1.0 - C64 SID Music File Processor*
 
-<p align="center"><img src="SIDwinder.png" alt="SIDwinder Logo" width="1600" height="900"/></p>
+<p align="center"><img src="SIDwinder.png" alt="SIDwinder Logo" width="1600"/></p>
 
 Developed by Robert Troughton (Raistlin of Genesis Project)
 
