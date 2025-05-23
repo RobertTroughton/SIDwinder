@@ -86,6 +86,9 @@
 .const frequencyToBarHi = frequencyTables + (0 * 256)
 .const frequencyToBarLo = frequencyTables + (1 * 256)
 
+.const barHeights = $42
+.const smoothedHeights = $72
+
 //; =============================================================================
 //; EXTERNAL RESOURCES
 //; =============================================================================
@@ -128,6 +131,15 @@ Initialize: {
 	//; Initialize display
 	jsr InitializeVIC
 	jsr ClearScreens
+
+	ldy #$00
+	lda #$00
+!loop:
+	sta barHeights - 2, y
+	sta smoothedHeights - 2, y
+	iny
+	cpy #NUM_FREQUENCY_BARS + 4
+	bne !loop-
 
 	//; Wait for stable raster before enabling display
 	bit $d011
@@ -296,7 +308,7 @@ SpectrometerDisplayIRQ: {
 	tya
 	pha
 
-	ldx #3
+	ldx #4
 !loop:
 	dex
 	bpl !loop-
@@ -343,6 +355,8 @@ SpectrometerDisplayIRQ: {
 
 PlayMusicWithAnalysis: {
 
+	jsr SwapZPMemory
+
 	//; First playback - normal music playing with state preservation
 	jsr BackupSIDMemory
 	jsr SIDPlay
@@ -364,6 +378,8 @@ PlayMusicWithAnalysis: {
 
 	pla
 	sta $01
+
+	jsr SwapZPMemory
 
 	//; Analyze captured registers
 	jmp AnalyzeSIDRegisters
@@ -476,13 +492,16 @@ ApplySmoothing: {
 	//; Apply gaussian-like smoothing for natural movement
 	ldx #0
 !loop:
-	lda barHeights - 1, x				//; Left neighbor
-	clc
-	adc barHeights + 1, x				//; Right neighbor
-	lsr									//; Average neighbors
-	clc
-	adc barHeights, x					//; Add current
-	lsr									//; Final average
+	lda barHeights, x
+	lsr
+	ldy barHeights - 2, x
+	adc div16, y
+	ldy barHeights - 1, x
+	adc div16mul3, y
+	ldy barHeights + 1, x
+	adc div16mul3, y
+	ldy barHeights + 2, x
+	adc div16, y
 	sta smoothedHeights, x
 
 	inx
@@ -837,12 +856,7 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 //; DATA SECTION - Bar State
 //; =============================================================================
 
-	.byte $00							//; Padding for smoothing
-barHeights:					.fill NUM_FREQUENCY_BARS, 0
-	.byte $00							//; Padding for smoothing
-
 barHeightsLo:				.fill NUM_FREQUENCY_BARS, 0
-smoothedHeights:			.fill NUM_FREQUENCY_BARS, 0
 barVoiceMap:				.fill NUM_FREQUENCY_BARS, 0
 
 previousHeightsScreen0:		.fill NUM_FREQUENCY_BARS, 255
@@ -864,41 +878,45 @@ sidRegisterMirror:			.fill 32, 0
 //; Envelope conversions
 sustainToHeight:			.fill 16, (i * MAX_BAR_HEIGHT) / 15
 
-releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 32)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 32)
+releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
 
-releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 32)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 32)
+releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
 
 multiply64Table:			.fill 4, i * 64
+
+.align 128
+div16:						.fill 128, i / 16.0
+div16mul3:					.fill 128, (3 * i) / 16.0
 
 //; Color tables
 darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08

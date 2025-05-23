@@ -28,6 +28,27 @@
 //; Buffer to store the original values of modified memory locations
 SIDMemoryBackup:
     .fill SIDModifiedMemoryCount, $00
+ZPBackup:
+    .fill 20, $00
+
+//; -----------------------------------------------------------------------------
+//; SwapZPMemory
+//; Swaps the current state of all ZP locations that are used by the SID with
+//; those used by the player (if any)
+//; 
+//; Registers: Corrupts A
+//; -----------------------------------------------------------------------------
+SwapZPMemory:
+    .for (var i = 0; i < SIDModifiedMemoryCount; i++) {
+        .if (SIDModifiedMemory.get(i) < $100)
+        {
+            lda SIDModifiedMemory.get(i)
+            ldx ZPBackup
+            sta ZPBackup
+            stx SIDModifiedMemory.get(i)
+        }
+    }
+    rts
 
 //; -----------------------------------------------------------------------------
 //; BackupSIDMemory
