@@ -14,7 +14,7 @@
 //; water reflection effects and dynamic color cycling.
 //;
 //; KEY FEATURES:
-//; - 40 frequency bars with 127-pixel resolution
+//; - 40 frequency bars with 80-pixel resolution
 //; - Real-time SID register analysis without affecting playback
 //; - Water reflection effects using hardware sprites
 //; - Dynamic color cycling with multiple palettes
@@ -245,9 +245,6 @@ MainIRQ: {
 	lda #$3b
 	sta $d011
 
-	//; Signal visualization update
-	inc visualizationUpdateFlag
-
 	//; Play music and analyze
 	jsr PlayMusicWithAnalysis
 
@@ -300,8 +297,8 @@ SpectrometerDisplayIRQ: {
 	lda #$1b
 	sta $d011
 
-	//; Play music and analyze
-//;	jsr PlayMusicWithAnalysis
+	//; Signal visualization update
+	inc visualizationUpdateFlag
 
 	lda #251
 	sta $d012
@@ -513,7 +510,7 @@ RenderBars: {
 
 	//; Render to appropriate screen buffer
 	lda currentScreenBuffer
-	bne !renderScreen1+
+	beq !renderScreen1+
 
 	//; Render to screen 0
 	jmp RenderToScreen0
@@ -579,7 +576,6 @@ RenderToScreen1: {
 
 	//; Draw reflection
 	txa
-	lsr
 	lsr
 	tax
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {

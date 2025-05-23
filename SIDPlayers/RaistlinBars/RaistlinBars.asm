@@ -533,7 +533,7 @@ RenderBars: {
 
 	//; Render to appropriate screen buffer
 	lda currentScreenBuffer
-	bne !renderScreen1+
+	beq !renderScreen1+
 
 	//; Render to screen 0
 	jmp RenderToScreen0
