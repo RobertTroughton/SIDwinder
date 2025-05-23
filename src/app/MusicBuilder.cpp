@@ -193,6 +193,69 @@ namespace sidwinder {
         return true;
     }
 
+    void MusicBuilder::addUserDefinitions(std::ofstream& file, const BuildOptions& options)
+    {
+        // Add user definitions if any
+        if (!options.userDefinitions.empty()) {
+            file << "// User Definitions\n";
+            for (const auto& [key, value] : options.userDefinitions) {
+                // Determine if it's a number or string
+                bool isNumber = true;
+                bool isHex = false;
+
+                // Check for hex prefix
+                if (value.length() > 1 && value[0] == '$') {
+                    isHex = true;
+                    // Validate hex
+                    for (size_t i = 1; i < value.length(); i++) {
+                        if (!std::isxdigit(value[i])) {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+                else if (value.length() > 2 && value.substr(0, 2) == "0x") {
+                    isHex = true;
+                    // Validate hex
+                    for (size_t i = 2; i < value.length(); i++) {
+                        if (!std::isxdigit(value[i])) {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    // Check if it's a decimal number
+                    for (char c : value) {
+                        if (!std::isdigit(c) && c != '-' && c != '+') {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+
+                // Output a #define so we can check whether or not this var exists!
+                file << "#define USERDEFINES_" << key << "\n";
+
+                // Output the definition
+                if (isNumber) {
+                    file << ".var " << key << " = " << value << "\n";
+                }
+                else {
+                    // It's a string - escape any quotes
+                    std::string escaped = value;
+                    size_t pos = 0;
+                    while ((pos = escaped.find('"', pos)) != std::string::npos) {
+                        escaped.insert(pos, "\\");
+                        pos += 2;
+                    }
+                    file << ".var " << key << " = \"" << escaped << "\"\n";
+                }
+            }
+            file << "\n";
+        }
+    }
+
     bool MusicBuilder::createLinkerFile(
         const fs::path& linkerFile,
         const fs::path& musicFile,
@@ -290,6 +353,8 @@ namespace sidwinder {
             file << ".var SIDCopyright = \"" << cleanString(std::string(header.copyright)) << "\"\n\n";
             file << "\n";
         }
+
+        addUserDefinitions(file, options);
 
         // Add player code
         file << "* = PlayerADDR\n";

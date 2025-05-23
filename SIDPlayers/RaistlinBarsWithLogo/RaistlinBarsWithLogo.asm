@@ -93,7 +93,12 @@
 .var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
-.var file_logo = LoadBinary("FacetLogo-MCH.kla", BF_KOALA)
+
+#if USERDEFINES_LogoKoala
+.var file_logo = LoadBinary(LogoKoala, BF_KOALA)
+#else
+.var file_logo = LoadBinary("../../logos/default.kla", BF_KOALA)
+#endif
 
 .var logo_BGColor = file_logo.getBackgroundColor()
 
@@ -131,9 +136,10 @@ Initialize: {
 	bmi *-3
 
 	//; Enable display
-//;	lda #$1b
-	lda #$3b
+	lda #$7b
 	sta $d011
+	lda #logo_BGColor
+	sta $d021
 
 	//; Setup interrupts
 	jsr SetupInterrupts
@@ -215,8 +221,7 @@ SetupInterrupts: {
 	//; Setup raster interrupt
 	lda #251
 	sta $d012
-	lda $d011
-	and #$7f
+	lda #$7b
 	sta $d011
 
 	//; Enable raster interrupts
@@ -244,6 +249,8 @@ MainIRQ: {
 	sta $d016
 	lda #$3b
 	sta $d011
+	lda #logo_BGColor
+	sta $d021
 
 	//; Play music and analyze
 	jsr PlayMusicWithAnalysis
@@ -289,13 +296,21 @@ SpectrometerDisplayIRQ: {
 	tya
 	pha
 
+	ldx #3
+!loop:
+	dex
+	bpl !loop-
+	nop
+
+	lda #$1b
+	sta $d011
+	lda #$00
+	sta $d021
 	ldy currentScreenBuffer
 	lda D018Values, y
 	sta $d018
 	lda #$08
 	sta $d016
-	lda #$1b
-	sta $d011
 
 	//; Signal visualization update
 	inc visualizationUpdateFlag

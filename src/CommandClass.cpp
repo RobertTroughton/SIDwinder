@@ -25,6 +25,45 @@ namespace sidwinder {
         params_[key] = value;
     }
 
+    /**
+     * @brief Add a user definition
+     * @param key Definition key
+     * @param value Definition value
+     */
+    void CommandClass::addDefinition(const std::string& key, const std::string& value) {
+        if (!params_.count("definitions")) {
+            params_["definitions"] = "";
+        }
+        if (!params_["definitions"].empty()) {
+            params_["definitions"] += "|";  // Use | as separator
+        }
+        params_["definitions"] += key + "=" + value;
+    }
+
+    /**
+     * @brief Get all user definitions
+     * @return Map of key-value pairs
+     */
+    std::map<std::string, std::string> CommandClass::getDefinitions() const {
+        std::map<std::string, std::string> defs;
+        auto defsStr = getParameter("definitions", "");
+        if (!defsStr.empty()) {
+            size_t pos = 0;
+            while (pos < defsStr.length()) {
+                size_t pipePos = defsStr.find('|', pos);
+                if (pipePos == std::string::npos) pipePos = defsStr.length();
+
+                std::string def = defsStr.substr(pos, pipePos - pos);
+                size_t eqPos = def.find('=');
+                if (eqPos != std::string::npos) {
+                    defs[def.substr(0, eqPos)] = def.substr(eqPos + 1);
+                }
+                pos = pipePos + 1;
+            }
+        }
+        return defs;
+    }
+
     bool CommandClass::hasFlag(const std::string& flag) const {
         return std::find(flags_.begin(), flags_.end(), flag) != flags_.end();
     }

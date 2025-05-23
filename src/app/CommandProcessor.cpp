@@ -375,6 +375,7 @@ namespace sidwinder {
             buildOptions.kickAssPath = options.kickAssPath;
             buildOptions.tempDir = tempDir;
             buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+            buildOptions.userDefinitions = options.userDefinitions;
 
             // These aren't used for SID input - KickAss will get them from the SID file
             buildOptions.sidLoadAddr = sid_->getLoadAddress();
@@ -429,6 +430,7 @@ namespace sidwinder {
             buildOptions.sidInitAddr = newSidInit;
             buildOptions.sidPlayAddr = newSidPlay;
             buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+            buildOptions.userDefinitions = options.userDefinitions;
 
             return builder.buildMusic(basename, tempAsmFile, options.outputFile, buildOptions);
         }
@@ -446,6 +448,7 @@ namespace sidwinder {
             buildOptions.kickAssPath = options.kickAssPath;
             buildOptions.tempDir = tempDir;
             buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+            buildOptions.userDefinitions = options.userDefinitions;
 
             return builder.buildMusic(basename, options.inputFile, options.outputFile, buildOptions);
         }
@@ -462,6 +465,7 @@ namespace sidwinder {
             buildOptions.kickAssPath = options.kickAssPath;
             buildOptions.tempDir = tempDir;
             buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+            buildOptions.userDefinitions = options.userDefinitions;
 
             // Use the original file directly - either ASM or the extracted PRG
             fs::path inputToUse = bIsASM ? options.inputFile : tempExtractedPrg;

@@ -52,14 +52,13 @@ namespace sidwinder {
         std::string defaultPlayerName = util::ConfigManager::getPlayerName();
 
         // General options
-        cmdParser_.addOptionDefinition("log", "file", "Log file path", "General",
-            util::ConfigManager::getString("logFile", "SIDwinder.log"));
+        cmdParser_.addOptionDefinition("log", "file", "Log file path", "General", util::ConfigManager::getString("logFile", "SIDwinder.log"));
 
-        cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General",
-            util::ConfigManager::getKickAssPath());
+        cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General", util::ConfigManager::getKickAssPath());
 
-        cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General",
-            util::ConfigManager::getExomizerPath());
+        cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General", util::ConfigManager::getExomizerPath());
+
+        cmdParser_.addOptionDefinition("define", "key=value", "Add user definition (can be used multiple times)", "Assembly");
 
         // Flags
         cmdParser_.addFlagDefinition("verbose", "Enable verbose logging", "General");
@@ -92,6 +91,14 @@ namespace sidwinder {
         cmdParser_.addExample(
             "SIDwinder -trace=music.log music.sid",
             "Traces SID register writes to music.log in text format");
+
+        cmdParser_.addExample(
+            "SIDwinder -player -define BackgroundColor=$02 -define PlayerName=Dave music.sid game.prg",
+            "Creates player with custom definitions accessible in the player code");
+
+        cmdParser_.addExample(
+            "SIDwinder -player=RaistlinBarsWithLogo -define LogoFile=\"Logos/MCH.kla\" music.sid game.prg",
+            "Example with different logo for the player");
     }
 
     void SIDwinderApp::initializeLogging() {
@@ -151,6 +158,9 @@ namespace sidwinder {
         catch (const std::exception& e) {
             util::Logger::error(std::string("Failed to create temp directory: ") + e.what());
         }
+
+        // Get user definitions
+        options.userDefinitions = command_.getDefinitions();
 
         // Player options for Player command (formerly LinkPlayer)
         if (command_.getType() == CommandClass::Type::Player) {

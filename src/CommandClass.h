@@ -96,6 +96,19 @@ namespace sidwinder {
         void setParameter(const std::string& key, const std::string& value);
 
         /**
+         * @brief Add a user definition
+         * @param key Definition key
+         * @param value Definition value
+         */
+        void addDefinition(const std::string& key, const std::string& value);
+
+        /**
+         * @brief Get all user definitions
+         * @return Map of key-value pairs
+         */
+        std::map<std::string, std::string> getDefinitions() const;
+
+        /**
          * @brief Check if a flag is set
          * @param flag Flag to check
          * @return True if flag is set

@@ -48,6 +48,9 @@ namespace sidwinder {
             u16 sidInitAddr = 0x1000;      ///< SID init address
             u16 sidPlayAddr = 0x1003;      ///< SID play address
 
+            // User definitions
+            std::map<std::string, std::string> userDefinitions;  ///< User-defined constants
+            
             // File options
             fs::path tempDir = "temp";     ///< Temporary directory
         };
@@ -98,6 +101,8 @@ namespace sidwinder {
             ASM,  ///< Assembly file
             BIN   ///< Binary file
         };
+
+        void addUserDefinitions(std::ofstream& file, const BuildOptions& options);
 
         /**
          * @brief Create a linker file for KickAss assembler
