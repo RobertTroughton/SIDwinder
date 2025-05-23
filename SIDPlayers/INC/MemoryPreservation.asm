@@ -43,8 +43,8 @@ SwapZPMemory:
         .if (SIDModifiedMemory.get(i) < $100)
         {
             lda SIDModifiedMemory.get(i)
-            ldx ZPBackup
-            sta ZPBackup
+            ldx ZPBackup + i
+            sta ZPBackup + i
             stx SIDModifiedMemory.get(i)
         }
     }
