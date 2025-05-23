@@ -462,10 +462,36 @@ MUSICPLAYER_IRQ0:
         sta $d018
 
     !skip:
+
+        jsr MUSICPLAYER_PlayMusic     //; Play music
+
+        jsr DoAllTheVisualizerThings  //; Do all the visualizer things
+
+        //; Set up next IRQ
+        jsr MUSICPLAYER_NextIRQ
+
+        //; Acknowledge the interrupt
+        lda #$01
+        sta $d01a
+        sta $d019
+
+        //; Restore registers and return
+        pla
+        tay
+        pla
+        tax
+        pla
+        rti
+
+//; =============================================================================
+//; DoAllTheVisualizerThings() - Subroutine that does all the visualizer things
+//; =============================================================================
+DoAllTheVisualizerThings:
+
+
         inc UpdateVisualizerSignal
         jsr MUSICPLAYER_UpdateBarHeights  //; Apply decay to bar heights
 
-        jsr MUSICPLAYER_PlayMusic     //; Play music
 
         //; Frame counter logic
         inc FrameCounter
@@ -560,22 +586,7 @@ MUSICPLAYER_IRQ0:
 
         //; Update sine wave position for next frame
         stx UpdateSpritePositions + 1
-
-        //; Set up next IRQ
-        jsr MUSICPLAYER_NextIRQ
-
-        //; Acknowledge the interrupt
-        lda #$01
-        sta $d01a
-        sta $d019
-
-        //; Restore registers and return
-        pla
-        tay
-        pla
-        tax
-        pla
-        rti
+        rts
 
 //; =============================================================================
 //; MUSICPLAYER_IRQ_MusicOnly() - Secondary IRQ handler (music only)
