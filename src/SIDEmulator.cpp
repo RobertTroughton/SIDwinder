@@ -227,7 +227,7 @@ namespace sidwinder {
 
         // Generate the KickAss list syntax
         file << "// Addresses changed during SID execution\n";
-        file << ".var AddressesThatChange = List()";
+        file << ".var SIDModifiedMemory = List()";
 
         // Add addresses to the list - limit to 8 per line for readability
         int numItems = 0;
@@ -239,7 +239,7 @@ namespace sidwinder {
             }
         }
 
-        file << "\n.var AddressesThatChangeCount = AddressesThatChange.size()  // " << std::to_string(numItems) << "\n\n";
+        file << "\n.var SIDModifiedMemoryCount = SIDModifiedMemory.size()  // " << std::to_string(numItems) << "\n\n";
 
         // Part 2: SID Register order information
         if (writeTracker_.hasConsistentPattern()) {

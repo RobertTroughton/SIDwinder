@@ -38,35 +38,40 @@
 
 .const SCREEN_WIDTH = 40
 .const NUM_FREQUENCY_BARS = 40
-.const MAX_BAR_HEIGHT = 127
+.const MAX_BAR_HEIGHT = 80
 .const WATER_REFLECTION_HEIGHT = 24
 
 //; Display layout
-.const SONG_TITLE_LINE = 0
-.const ARTIST_NAME_LINE = 3
-.const SPECTRUM_START_LINE = 6
-.const TOP_SPECTRUM_HEIGHT = 16		//; In character rows
+.const LOGO_HEIGHT = 11
+.const SPECTRUM_START_LINE = 12
+.const TOP_SPECTRUM_HEIGHT = 10			//; In character rows
 .const BOTTOM_SPECTRUM_HEIGHT = 3		//; Reflection in character rows
 
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
 .const VIC_BANK_ADDRESS = VIC_BANK * $4000
-.const SCREEN_0_OFFSET = 12				//; $F000
-.const SCREEN_1_OFFSET = 13				//; $F400
-.const CHARSET_OFFSET = 7				//; $F800
-.const SPRITE_BASE_INDEX = $80
+.const SCREEN_0_OFFSET = 0				//; $C000-C3E7
+.const SCREEN_1_OFFSET = 1				//; $C400-C7E7
+.const CHARSET_OFFSET = 1				//; $C800-CFFF
+.const BITMAP_OFFSET = 1				//; $E000-FF3F
+.const SPRITE_BASE_INDEX = $40			//; $D000-?
 
 //; Calculated addresses
 .const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
 .const SCREEN_1_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_1_OFFSET * $400)
 .const CHARSET_ADDRESS = VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
+.const BITMAP_ADDRESS = VIC_BANK_ADDRESS + (BITMAP_OFFSET * $2000)
 .const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
 .const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
 .const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
 
+.const COLOR_COPY_ADDRESS = $B800
+.const SCREEN_COPY_ADDRESS = $BC00
+
 //; VIC register values
 .const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
 .const D018_VALUE_1 = (SCREEN_1_OFFSET * 16) + (CHARSET_OFFSET * 2)
+.const D018_VALUE_BITMAP = (SCREEN_1_OFFSET * 16) + (BITMAP_OFFSET * 8)
 
 //; Special constants used in data tables
 .const SKIP_REGISTER = $e1
@@ -88,10 +93,9 @@
 .var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
+.var file_logo = LoadBinary("FacetLogo-MCH.kla", BF_KOALA)
 
-//; Song metadata
-.var SONG_TITLE_LENGTH = min(SIDName.size(), 40)
-.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
+.var logo_BGColor = file_logo.getBackgroundColor()
 
 //; =============================================================================
 //; INITIALIZATION
@@ -119,7 +123,6 @@ Initialize: {
 	//; Initialize display
 	jsr InitializeVIC
 	jsr ClearScreens
-	jsr DisplaySongInfo
 
 	//; Wait for stable raster before enabling display
 	bit $d011
@@ -128,7 +131,8 @@ Initialize: {
 	bmi *-3
 
 	//; Enable display
-	lda #$1b
+//;	lda #$1b
+	lda #$3b
 	sta $d011
 
 	//; Setup interrupts
@@ -209,21 +213,16 @@ SetupInterrupts: {
 	sta $ffff
 
 	//; Setup raster interrupt
-	lda D012_Values
+	lda #251
 	sta $d012
 	lda $d011
 	and #$7f
-	ora D011_Values
 	sta $d011
 
 	//; Enable raster interrupts
 	lda #$01
 	sta $d01a
 	sta $d019
-
-	//; Initialize IRQ counter
-	lda #$00
-	sta NextIRQ + 1
 
 	rts
 }
@@ -239,24 +238,23 @@ MainIRQ: {
 	tya
 	pha
 
-	//; Update display if needed
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
+	lda #D018_VALUE_BITMAP
 	sta $d018
-!skip:
+	lda #$18
+	sta $d016
+	lda #$3b
+	sta $d011
 
 	//; Signal visualization update
 	inc visualizationUpdateFlag
+
+	//; Play music and analyze
+	jsr PlayMusicWithAnalysis
 
 	//; Update bar animations
 	jsr UpdateBarDecay
 	jsr UpdateColors
 	jsr UpdateSprites
-
-	//; Play music and analyze
-	jsr PlayMusicWithAnalysis
 
 	//; Frame counter
 	inc frameCounter
@@ -264,8 +262,15 @@ MainIRQ: {
 	inc frame256Counter
 !skip:
 
-	//; Setup next interrupt
-	jsr NextIRQ
+	lda #50 + (LOGO_HEIGHT * 8)
+	sta $d012
+	lda #$3b
+	sta $d011
+	
+	lda #<SpectrometerDisplayIRQ
+	sta $fffe
+	lda #>SpectrometerDisplayIRQ
+	sta $ffff
 
 	//; Acknowledge interrupt
 	lda #$01
@@ -280,20 +285,33 @@ MainIRQ: {
 	rti
 }
 
-//; =============================================================================
-//; MUSIC-ONLY INTERRUPT HANDLER
-//; =============================================================================
-
-MusicOnlyIRQ: {
+SpectrometerDisplayIRQ: {
 	pha
 	txa
 	pha
 	tya
 	pha
 
-	jsr PlayMusicWithAnalysis
-	jsr NextIRQ
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
+	lda #$08
+	sta $d016
+	lda #$1b
+	sta $d011
 
+	//; Play music and analyze
+//;	jsr PlayMusicWithAnalysis
+
+	lda #251
+	sta $d012
+
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+
+	//; Acknowledge interrupt
 	lda #$01
 	sta $d01a
 	sta $d019
@@ -305,45 +323,7 @@ MusicOnlyIRQ: {
 	pla
 	rti
 }
-
-//; =============================================================================
-//; INTERRUPT CHAINING
-//; =============================================================================
-
-NextIRQ: {
-	ldx #$00						//; Self-modified
-	inx
-	cpx #NumCallsPerFrame
-	bne !notLast+
-	ldx #$00
-!notLast:
-	stx NextIRQ + 1
-
-	//; Set next raster position
-	lda D012_Values, x
-	sta $d012
-	lda $d011
-	and #$7f
-	ora D011_Values, x
-	sta $d011
-
-	//; Set appropriate IRQ vector
-	cpx #$00
-	bne !musicOnly+
-
-	lda #<MainIRQ
-	sta $fffe
-	lda #>MainIRQ
-	sta $ffff
-	rts
-
-!musicOnly:
-	lda #<MusicOnlyIRQ
-	sta $fffe
-	lda #>MusicOnlyIRQ
-	sta $ffff
-	rts
-}
+	
 
 //; =============================================================================
 //; MUSIC PLAYBACK WITH ANALYSIS
@@ -567,7 +547,6 @@ RenderToScreen0: {
 	//; Draw reflection
 	txa
 	lsr
-	lsr
 	tax
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
@@ -679,7 +658,6 @@ UpdateSprites: {
 			adc #$30					//; 48 pixels between sprites
 		}
 	}
-
 	ldy #$c0
 	lda $d000 + (5 * 2)
 	bmi !skip+
@@ -712,66 +690,54 @@ UpdateSprites: {
 //; =============================================================================
 
 ClearScreens: {
+
+	lda #$20
 	ldx #$00
-	lda #$20							//; Space character
 !loop:
-	sta SCREEN_0_ADDRESS + $000, x
-	sta SCREEN_0_ADDRESS + $100, x
-	sta SCREEN_0_ADDRESS + $200, x
-	sta SCREEN_0_ADDRESS + $300, x
-	sta SCREEN_1_ADDRESS + $000, x
-	sta SCREEN_1_ADDRESS + $100, x
-	sta SCREEN_1_ADDRESS + $200, x
-	sta SCREEN_1_ADDRESS + $300, x
-	sta $d800 + $000, x
-	sta $d800 + $100, x
-	sta $d800 + $200, x
-	sta $d800 + $300, x
+	.for (var i = 0; i < 4; i++)
+	{
+		sta $d800 + (i * $100), x
+		sta SCREEN_0_ADDRESS + (i * $100), x
+		sta SCREEN_1_ADDRESS + (i * $100), x
+	}
 	inx
 	bne !loop-
-	rts
-}
 
-DisplaySongInfo: {
-	//; Setup title colors
-	ldx #79
-!loop:
-	lda #$01							//; White for title
-	sta $d800 + (SONG_TITLE_LINE * 40), x
-	lda #$0f							//; Light gray for artist
-	sta $d800 + (ARTIST_NAME_LINE * 40), x
-	dex
-	bpl !loop-
+	//; Calculate how many bytes to copy
+	.const LOGO_BYTES = LOGO_HEIGHT * 40
+	.const FULL_PAGES = floor(LOGO_BYTES / 256)
+	.const REMAINING_BYTES = mod(LOGO_BYTES, 256)
 
-	//; Display song title
-	ldy #0
-!titleLoop:
-	lda songTitle, y
-	beq !titleDone+
-	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	ora #$80							//; Reversed for second line
-	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	iny
-	cpy #40
-	bne !titleLoop-
-!titleDone:
+	//; Copy the logo data
+	ldx #0
 
-	//; Display artist name
-	ldy #0
-!artistLoop:
-	lda artistName, y
-	beq !artistDone+
-	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	ora #$80							//; Reversed for second line
-	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	iny
-	cpy #40
-	bne !artistLoop-
-!artistDone:
+	//; Copy full pages
+	.if (FULL_PAGES > 0) {
+		!loop:
+		.for (var page = 0; page < FULL_PAGES; page++) {
+			lda COLOR_COPY_ADDRESS + (page * $100), x
+			sta $d800 + (page * $100), x
+			lda SCREEN_COPY_ADDRESS + (page * $100), x
+			sta SCREEN_0_ADDRESS + (page * $100), x
+			sta SCREEN_1_ADDRESS + (page * $100), x
+			inx
+			bne !loop-
+		}
+	}
+
+	//; Copy remaining bytes
+	.if (REMAINING_BYTES > 0) {
+		!loop:
+			lda COLOR_COPY_ADDRESS + (FULL_PAGES * $100), x
+			sta $d800 + (FULL_PAGES * $100), x
+			lda SCREEN_COPY_ADDRESS + (FULL_PAGES * $100), x
+			sta SCREEN_0_ADDRESS + (FULL_PAGES * $100), x
+			sta SCREEN_1_ADDRESS + (FULL_PAGES * $100), x
+			inx
+			cpx #REMAINING_BYTES
+			bne !loop-
+	}
+
 	rts
 }
 
@@ -818,15 +784,15 @@ VICConfigStart:
 	.byte $00, $e5						//; Sprite 5 X,Y
 	.byte $00, $e5						//; Sprite 6 X,Y
 	.byte $00, $e5						//; Sprite 7 X,Y
-	.byte $60							//; Sprite X MSB
+	.byte $00							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
 	.byte SKIP_REGISTER					//; D014
 	.byte $ff							//; Sprite enable
-	.byte $08							//; D016
+	.byte $18							//; D016
 	.byte $00							//; Sprite Y expand
-	.byte D018_VALUE_0					//; Memory setup
+	.byte D018_VALUE_BITMAP				//; Memory setup
 	.byte SKIP_REGISTER					//; D019
 	.byte SKIP_REGISTER					//; D01A
 	.byte $00							//; Sprite priority
@@ -962,21 +928,11 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
 
 //; =============================================================================
-//; DATA SECTION - Song Information
-//; =============================================================================
-
-songTitle:					.text SIDName.substring(0, SONG_TITLE_LENGTH)
-							.byte 0
-artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
-							.byte 0
-
-//; =============================================================================
 //; INCLUDES
 //; =============================================================================
 
 .import source "../INC/MemoryPreservation.asm"
 .import source "../INC/NMIFix.asm"
-.import source "../INC/RasterLineTiming.asm"
 .import source "../INC/StableRasterSetup.asm"
 
 //; =============================================================================
@@ -988,6 +944,15 @@ artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
 
 * = CHARSET_ADDRESS "Bar Characters"
 	.fill file_charsetData.getSize(), file_charsetData.get(i)
+
+* = BITMAP_ADDRESS "Bitmap"
+	.fill file_logo.getBitmapSize(), file_logo.getBitmap(i)
+
+* = SCREEN_COPY_ADDRESS "Screen Copy"
+	.fill file_logo.getScreenRamSize(), file_logo.getScreenRam(i)
+
+* = COLOR_COPY_ADDRESS "Color Copy"
+	.fill file_logo.getColorRamSize(), file_logo.getColorRam(i)
 
 //; =============================================================================
 //; END OF FILE

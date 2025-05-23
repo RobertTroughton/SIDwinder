@@ -257,8 +257,8 @@ namespace sidwinder {
         }
         else {
             file << "// No helpful data available\n";
-            file << ".var AddressesThatChangeCount = 0\n";
-            file << ".var AddressesThatChange = List()\n";
+            file << ".var SIDModifiedMemoryCount = 0\n";
+            file << ".var SIDModifiedMemory = List()\n";
             file << ".var SIDRegisterCount = 0\n";
             file << ".var SIDRegisterOrder = List()\n";
         }
