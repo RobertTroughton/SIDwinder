@@ -11,12 +11,11 @@
 //; RaistlinBars creates a real-time spectrum analyzer that visualizes C64 SID
 //; music. It captures the frequency and envelope data from the SID chip and
 //; transforms it into animated bars that dance to the music, complete with
-//; water reflection effects and dynamic color cycling.
+//; dynamic color cycling.
 //;
 //; KEY FEATURES:
 //; - 40 frequency bars with 80-pixel resolution
 //; - Real-time SID register analysis without affecting playback
-//; - Water reflection effects using hardware sprites
 //; - Dynamic color cycling with multiple palettes
 //; - Double-buffered display for flicker-free animation
 //;
@@ -40,13 +39,11 @@
 .const NUM_FREQUENCY_BARS = 40
 
 .const LOGO_HEIGHT = 10
-.const TOP_SPECTRUM_HEIGHT = 9
-.const BOTTOM_SPECTRUM_HEIGHT = 3
+.const TOP_SPECTRUM_HEIGHT = 6			//; In character rows
 
 .const SONG_TITLE_LINE = 23
 //.const ARTIST_NAME_LINE = 
 .const SPECTRUM_START_LINE = 11
-.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
@@ -55,16 +52,12 @@
 .const SCREEN_1_OFFSET = 1				//; $C400-C7E7
 .const CHARSET_OFFSET = 1				//; $C800-CFFF
 .const BITMAP_OFFSET = 1				//; $E000-FF3F
-.const SPRITE_BASE_INDEX = $40			//; $D000-?
 
 //; Calculated addresses
 .const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
 .const SCREEN_1_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_1_OFFSET * $400)
 .const CHARSET_ADDRESS = VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
 .const BITMAP_ADDRESS = VIC_BANK_ADDRESS + (BITMAP_OFFSET * $2000)
-.const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
-.const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
-.const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
 
 //; VIC register values
 .const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
@@ -73,9 +66,7 @@
 
 //; Calculated bar values
 .const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
-.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
 .const MAIN_BAR_OFFSET = MAX_BAR_HEIGHT - 8
-.const REFLECTION_OFFSET = WATER_REFLECTION_HEIGHT - 7
 
 //; Color palette configuration
 .const NUM_COLOR_PALETTES = 3
@@ -94,7 +85,6 @@
 
 .var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
-.var file_waterSpritesData = LoadBinary("WaterSprites.map")
 
 #if USERDEFINES_LogoKoala
 .var file_logo = LoadBinary(LogoKoala, BF_KOALA)
@@ -283,7 +273,6 @@ MainIRQ: {
 	//; Update bar animations
 	jsr UpdateBarDecay
 	jsr UpdateColors
-	jsr UpdateSprites
 
 	//; Frame counter
 	inc frameCounter
@@ -336,9 +325,6 @@ SpectrometerD018:
 	sta $d018
 	lda #$08
 	sta $d016
-
-	//; Signal visualization update
-	inc visualizationUpdateFlag
 
 	lda #251
 	sta $d012
@@ -539,15 +525,8 @@ RenderBars: {
 	sta previousColors, y
 
 	//; Update main bars
-	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT * 2; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Update reflection with darker color
-	tax
-	lda darkerColorMap, x
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !colorLoop-
 
@@ -580,21 +559,14 @@ RenderToScreen0: {
 	sta previousHeightsScreen0, y
 	tax
 
-	//; Draw main bar
+	clc
+
+	//; Draw both halves of the bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
 		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Draw reflection
-	txa
-	lsr
-	tax
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
 		adc #10
-		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + (TOP_SPECTRUM_HEIGHT * 2 - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -613,21 +585,14 @@ RenderToScreen1: {
 	sta previousHeightsScreen1, y
 	tax
 
-	//; Draw main bar
+	clc
+
+	//; Draw both halves of the bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
 		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Draw reflection
-	txa
-	lsr
-	tax
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
-		adc #20
-		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		adc #10
+		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + (TOP_SPECTRUM_HEIGHT * 2 - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -680,49 +645,6 @@ UpdateColors: {
 	lda #$ff
 	sta colorUpdateIndex
 !exit:
-	rts
-}
-
-//; =============================================================================
-//; SPRITE ANIMATION
-//; =============================================================================
-
-UpdateSprites: {
-	ldx spriteAnimationIndex
-
-	//; Update X positions from sine table
-	lda spriteSineTable, x
-	.for (var i = 0; i < 8; i++) {
-		sta $d000 + (i * 2)
-		.if (i != 7) {
-			clc
-			adc #$30					//; 48 pixels between sprites
-		}
-	}
-	ldy #$c0
-	lda $d000 + (5 * 2)
-	bmi !skip+
-	ldy #$e0
-!skip:
-	sty $d010
-
-	//; Update sprite pointers
-	lda frameCounter
-	lsr
-	lsr
-	and #$07
-	ora #SPRITE_BASE_INDEX
-	.for (var i = 0; i < 8; i++) {
-		sta SPRITE_POINTERS_0 + i
-		sta SPRITE_POINTERS_1 + i
-	}
-
-	clc
-	lda spriteAnimationIndex
-	adc #$01
-	and #$7f
-	sta spriteAnimationIndex
-
 	rts
 }
 
@@ -861,20 +783,20 @@ SetupMusic: {
 //; =============================================================================
 
 VICConfigStart:
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 0 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 1 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 2 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 3 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 4 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
+	.byte $00, $00						//; Sprite 0 X,Y
+	.byte $00, $00						//; Sprite 1 X,Y
+	.byte $00, $00						//; Sprite 2 X,Y
+	.byte $00, $00						//; Sprite 3 X,Y
+	.byte $00, $00						//; Sprite 4 X,Y
+	.byte $00, $00						//; Sprite 5 X,Y
+	.byte $00, $00						//; Sprite 6 X,Y
+	.byte $00, $00						//; Sprite 7 X,Y
 	.byte $00							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
 	.byte SKIP_REGISTER					//; D014
-	.byte $ff							//; Sprite enable
+	.byte $00							//; Sprite enable
 	.byte $18							//; D016
 	.byte $00							//; Sprite Y expand
 	.byte D018_VALUE_BITMAP				//; Memory setup
@@ -882,7 +804,7 @@ VICConfigStart:
 	.byte SKIP_REGISTER					//; D01A
 	.byte $00							//; Sprite priority
 	.byte $00							//; Sprite multicolor
-	.byte $ff							//; Sprite X expand
+	.byte $00							//; Sprite X expand
 	.byte $00							//; Sprite-sprite collision
 	.byte $00							//; Sprite-background collision
 	.byte $00							//; Border color
@@ -901,7 +823,6 @@ visualizationUpdateFlag:	.byte $00
 frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
-spriteAnimationIndex:		.byte $00
 colorUpdateIndex:			.byte $00
 currentPalette:				.byte $00
 
@@ -1008,7 +929,6 @@ barCharacterMap:
 //; DATA SECTION - Animation Data
 //; =============================================================================
 
-spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
 
 //; =============================================================================
@@ -1035,59 +955,34 @@ COLOR_COPY_DATA:
 .import source "../INC/StableRasterSetup.asm"
 
 //; =============================================================================
-//; SPRITE DATA
-//; =============================================================================
-
-* = SPRITES_ADDRESS "Water Sprites"
-	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
-
-//; =============================================================================
-//; CHARSET DATA
+//; CHARSET AND BITMAP DATA
 //; =============================================================================
 
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; First, the chars for the main bar
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $7C
 	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
 	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
+	.byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
+	.byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
+	.byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
+	.byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
 
-//; reflection chars - frame 1 is &55 (for flicker)
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-
-//; reflection chars - frame 2 is &AA (for flicker)
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-
-//; =============================================================================
-//; BITMAP DATA
-//; =============================================================================
+	.byte $7C, $00, $00, $00, $00, $00, $00, $00
+	.byte $BE, $7C, $00, $00, $00, $00, $00, $00
+	.byte $BE, $BE, $7C, $00, $00, $00, $00, $00
+	.byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
+	.byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
 
 * = BITMAP_ADDRESS "Bitmap"
 	.fill LOGO_HEIGHT * (40 * 8), file_logo.getBitmap(i)

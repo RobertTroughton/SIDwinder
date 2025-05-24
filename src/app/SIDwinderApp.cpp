@@ -250,6 +250,15 @@ namespace sidwinder {
         CommandProcessor processor;
         bool success = processor.processFile(options);
 
+        if (success)
+        {
+            std::cout << "Success: " << outputFile << " successfully generated" << std::endl;
+        }
+        else
+        {
+            std::cout << "Error: " << outputFile << " couldn't be generated" << std::endl;
+        }
+
         return success ? 0 : 1;
     }
 
@@ -327,10 +336,6 @@ namespace sidwinder {
                 util::Logger::error(std::string("Failed to create temp directory: ") + e.what());
                 return 1;
             }
-
-            // Let the user know we're relocating with verification
-            std::cout << "Relocating " << inputFile.string() << " to $" << util::wordToHex(relocAddress)
-                << " with verification..." << std::endl;
 
             // Perform relocation with verification
             util::RelocationVerificationResult result = util::relocateAndVerifySID(

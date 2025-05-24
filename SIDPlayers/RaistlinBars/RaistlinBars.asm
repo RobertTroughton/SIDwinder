@@ -36,17 +36,16 @@
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
 
-.const SCREEN_WIDTH = 40
 .const NUM_FREQUENCY_BARS = 40
-.const MAX_BAR_HEIGHT = 127
-.const WATER_REFLECTION_HEIGHT = 24
 
 //; Display layout
+.const TOP_SPECTRUM_HEIGHT = 16
+.const BOTTOM_SPECTRUM_HEIGHT = 3
+
 .const SONG_TITLE_LINE = 0
-.const ARTIST_NAME_LINE = 3
-.const SPECTRUM_START_LINE = 6
-.const TOP_SPECTRUM_HEIGHT = ceil(MAX_BAR_HEIGHT / 8.0)		//; In character rows
-.const BOTTOM_SPECTRUM_HEIGHT = 3		//; Reflection in character rows
+.const ARTIST_NAME_LINE = 23
+.const SPECTRUM_START_LINE = 3
+.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
@@ -68,8 +67,9 @@
 .const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
 .const D018_VALUE_1 = (SCREEN_1_OFFSET * 16) + (CHARSET_OFFSET * 2)
 
-//; Special constants used in data tables
-.const SKIP_REGISTER = $e1
+//; Calculated bar values
+.const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
+.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
 .const MAIN_BAR_OFFSET = MAX_BAR_HEIGHT - 8
 .const REFLECTION_OFFSET = WATER_REFLECTION_HEIGHT - 7
 
@@ -190,6 +190,8 @@ SetupSystem: {
 //; =============================================================================
 //; VIC INITIALIZATION
 //; =============================================================================
+
+.const SKIP_REGISTER = $e1
 
 InitializeVIC: {
 	//; Apply VIC register configuration
@@ -590,9 +592,9 @@ RenderToScreen0: {
 	lsr
 	lsr
 	tax
+	clc
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
 		adc #10
 		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
@@ -625,9 +627,9 @@ RenderToScreen1: {
 	lsr
 	lsr
 	tax
+	clc
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
 		adc #20
 		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
@@ -833,14 +835,14 @@ SetupMusic: {
 //; =============================================================================
 
 VICConfigStart:
-	.byte $00, $e5						//; Sprite 0 X,Y
-	.byte $00, $e5						//; Sprite 1 X,Y
-	.byte $00, $e5						//; Sprite 2 X,Y
-	.byte $00, $e5						//; Sprite 3 X,Y
-	.byte $00, $e5						//; Sprite 4 X,Y
-	.byte $00, $e5						//; Sprite 5 X,Y
-	.byte $00, $e5						//; Sprite 6 X,Y
-	.byte $00, $e5						//; Sprite 7 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 0 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 1 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 2 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 3 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 4 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
 	.byte $60							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
@@ -1007,14 +1009,56 @@ artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
 .import source "../INC/StableRasterSetup.asm"
 
 //; =============================================================================
-//; CHARSET AND SPRITE DATA
+//; SPRITE DATA
 //; =============================================================================
 
 * = SPRITES_ADDRESS "Water Sprites"
 	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
 
-* = CHARSET_ADDRESS "Bar Characters"
-	.fill file_charsetData.getSize(), file_charsetData.get(i)
+//; =============================================================================
+//; CHARSET DATA
+//; =============================================================================
+
+* = CHARSET_ADDRESS "Font"
+	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
+
+* = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
+
+//; First, the chars for the main bar
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $00, $00, $00, $00, $00, $00, $00, $7C
+	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
+	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
+	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
+	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
+	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+
+//; reflection chars - frame 1 is &55 (for flicker)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $00, $00, $00, $00, $00, $00, $00
+	.byte $aa, $54, $00, $00, $00, $00, $00, $00
+	.byte $54, $aa, $54, $00, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+
+//; reflection chars - frame 2 is &AA (for flicker)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $aa, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $aa, $00, $00, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
 
 //; =============================================================================
 //; END OF FILE
