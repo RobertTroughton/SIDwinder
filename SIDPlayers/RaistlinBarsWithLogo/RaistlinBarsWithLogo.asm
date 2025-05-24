@@ -40,12 +40,12 @@
 .const NUM_FREQUENCY_BARS = 40
 
 .const LOGO_HEIGHT = 10
-.const TOP_SPECTRUM_HEIGHT = 10			//; In character rows
+.const TOP_SPECTRUM_HEIGHT = 9			//; In character rows
 .const BOTTOM_SPECTRUM_HEIGHT = 3		//; Reflection in character rows
 
-.const SONG_TITLE_LINE = 10
+.const SONG_TITLE_LINE = 11
 //.const ARTIST_NAME_LINE = 
-.const SPECTRUM_START_LINE = 12
+.const SPECTRUM_START_LINE = 13
 .const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 .const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
@@ -284,7 +284,7 @@ MainIRQ: {
 	inc frame256Counter
 !skip:
 
-	lda #49 + (LOGO_HEIGHT * 8)
+	lda #50 + (LOGO_HEIGHT * 8)
 	sta $d012
 	lda #$3b
 	sta $d011
