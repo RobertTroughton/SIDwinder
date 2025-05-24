@@ -15,6 +15,25 @@ SIDwinder is a versatile tool for processing C64 SID music files. It provides se
 - **Disassemble**: Convert SID files to human-readable assembly language
 - **Trace**: Analyze SID register access patterns for debugging and verification
 
+## Screenshots
+
+<p align="center">
+<img src="Screens/ScreensAnim.gif" alt="SIDwinder Visualizers in Action" width="800"/>
+</p>
+
+### Available Player Types
+
+<table>
+<tr>
+<td><img src="Screens/RaistlinBars.png" alt="RaistlinBars" width="400"/><br/><center>RaistlinBars</center></td>
+<td><img src="Screens/RaistlinBarsWithDefaultLogo.png" alt="RaistlinBarsWithLogo (Default)" width="400"/><br/><center>RaistlinBarsWithLogo (Default)</center></td>
+</tr>
+<tr>
+<td><img src="Screens/RaistlinBarsWithLogo.png" alt="RaistlinBarsWithLogo (Custom)" width="400"/><br/><center>RaistlinBarsWithLogo (Custom)</center></td>
+<td><img src="Screens/RaistlinMirrorBarsWithLogo.png" alt="RaistlinMirrorBarsWithLogo" width="400"/><br/><center>RaistlinMirrorBarsWithLogo</center></td>
+</tr>
+</table>
+
 ## Basic Usage
 
 ```
@@ -36,6 +55,7 @@ Options:
 - Use `-player` for the default player (SimpleRaster)
 - Use `-player=<type>` to specify a different player (e.g., `-player=SimpleBitmap` or `-player=RaistlinBars`)
 - `-playeraddr=<address>`: Player load address (default: $4000)
+- `-define <key>=<value>`: Pass custom definitions to the player (can be used multiple times)
 
 ### `-relocate=<address>`
 Relocates a SID file to a different memory address. By default, performs verification to ensure the relocated file behaves identically to the original.
@@ -124,7 +144,7 @@ Here are some common settings you might want to customize:
 - `compressorType`: Preferred compression tool (`exomizer` or `pucrunch`)
 
 #### Player Settings
-- `playerName`: Default player routine to use (e.g., `SimpleRaster`, `SimpleBitmap`)
+- `playerName`: Default player routine to use (e.g., `SimpleRaster`, `SimpleBitmap`, `RaistlinBars`)
 - `playerAddress`: Default memory address for player code (e.g., `$4000`)
 - `playerDirectory`: Directory containing player code files
 
@@ -156,8 +176,21 @@ SIDwinder includes several player routines:
 
 - **SimpleRaster**: Basic raster-based player (default)
 - **SimpleBitmap**: Player with bitmap display capabilities
+- **RaistlinBars**: Advanced spectrum analyzer visualization
+- **RaistlinBarsWithLogo**: RaistlinBars with custom logo support
+- **RaistlinMirrorBarsWithLogo**: Mirrored bars effect with logo
 
 Additional player types may be available in the SIDPlayers directory.
+
+### Using Custom Logos with Players
+
+Some players (like `RaistlinBarsWithLogo`) support custom logos. You can specify a custom logo using the `-define` option:
+
+```
+SIDwinder -player=RaistlinBarsWithLogo -define LogoKoala="Logos/MyLogo.kla" music.sid music.prg
+```
+
+The logo should be in Koala format (.kla) and placed in a location accessible from the player directory.
 
 ## Examples
 
@@ -171,6 +204,24 @@ SIDwinder -player music.sid music.prg
 
 ```
 SIDwinder -player=SimpleBitmap music.sid player.prg
+```
+
+### Convert SID with RaistlinBars visualizer:
+
+```
+SIDwinder -player=RaistlinBars music.sid visualizer.prg
+```
+
+### Convert SID with custom logo:
+
+```
+SIDwinder -player=RaistlinBarsWithLogo -define LogoKoala="../../Logos/custom.kla" music.sid player.prg
+```
+
+### Define custom colors for a player:
+
+```
+SIDwinder -player=RaistlinBars -define BorderColor=$06 -define BackgroundColor=$00 music.sid player.prg
 ```
 
 ### Relocate SID to address $2000:
@@ -229,8 +280,34 @@ SIDwinder includes a complete 6510 CPU emulator to analyze SID files and ensure 
 
 The relocation verification process traces SID register writes from both the original and relocated files to ensure they behave identically, guaranteeing that the relocation preserves all musical features.
 
+## Advanced Features
+
+### Player Development
+
+SIDwinder analyzes SID files to generate helpful data for player development, including:
+- Memory locations modified during playback
+- SID register write patterns
+- Optimal double-buffering strategies
+
+This data is automatically included when building players, enabling advanced visualization techniques like those used in the RaistlinBars players.
+
+### Custom Definitions
+
+The `-define` option allows you to pass custom values to player code. These definitions become available as KickAss variables in the player assembly code:
+
+```
+SIDwinder -player=MyPlayer -define PlayerSpeed=2 -define ColorScheme=rainbow music.sid output.prg
+```
+
+In the player code, these would be accessible as:
+```asm
+.if (USERDEFINES_PlayerSpeed)
+    .var speed = PlayerSpeed  // Will be 2
+.endif
+```
+
 ## Acknowledgements
 
 - Zagon for Exomizer
 - Mads Nielsen for KickAss assembler
-- Adam Dunkels (Trident) and Magnar Harestad for help
+- Adam Dunkels (Trident), Andy Zeigler (Shine) and Magnar Harestad for help
