@@ -36,16 +36,20 @@
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
 
-.const SCREEN_WIDTH = 40
-.const NUM_FREQUENCY_BARS = 40
-.const MAX_BAR_HEIGHT = 80
-.const WATER_REFLECTION_HEIGHT = 24
-
 //; Display layout
-.const LOGO_HEIGHT = 11
-.const SPECTRUM_START_LINE = 12
+.const NUM_FREQUENCY_BARS = 40
+
+.const LOGO_HEIGHT = 10
 .const TOP_SPECTRUM_HEIGHT = 10			//; In character rows
 .const BOTTOM_SPECTRUM_HEIGHT = 3		//; Reflection in character rows
+
+.const SONG_TITLE_LINE = 10
+//.const ARTIST_NAME_LINE = 
+.const SPECTRUM_START_LINE = 12
+.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
+
+.const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
+.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
 
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
@@ -64,9 +68,6 @@
 .const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
 .const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
 .const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
-
-.const COLOR_COPY_ADDRESS = $B800
-.const SCREEN_COPY_ADDRESS = $BC00
 
 //; VIC register values
 .const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
@@ -105,6 +106,10 @@
 
 .var logo_BGColor = file_logo.getBackgroundColor()
 
+//; Song metadata
+.var SONG_TITLE_LENGTH = min(SIDName.size(), 40)
+//.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
+
 //; =============================================================================
 //; INITIALIZATION
 //; =============================================================================
@@ -131,6 +136,7 @@ Initialize: {
 	//; Initialize display
 	jsr InitializeVIC
 	jsr ClearScreens
+	jsr DisplaySongInfo
 
 	ldy #$00
 	lda #$00
@@ -278,7 +284,7 @@ MainIRQ: {
 	inc frame256Counter
 !skip:
 
-	lda #50 + (LOGO_HEIGHT * 8)
+	lda #49 + (LOGO_HEIGHT * 8)
 	sta $d012
 	lda #$3b
 	sta $d011
@@ -745,9 +751,9 @@ ClearScreens: {
 	.if (FULL_PAGES > 0) {
 		!loop:
 		.for (var page = 0; page < FULL_PAGES; page++) {
-			lda COLOR_COPY_ADDRESS + (page * $100), x
+			lda COLOR_COPY_DATA + (page * $100), x
 			sta $d800 + (page * $100), x
-			lda SCREEN_COPY_ADDRESS + (page * $100), x
+			lda SCREEN_COPY_DATA + (page * $100), x
 			sta SCREEN_0_ADDRESS + (page * $100), x
 			sta SCREEN_1_ADDRESS + (page * $100), x
 			inx
@@ -758,15 +764,59 @@ ClearScreens: {
 	//; Copy remaining bytes
 	.if (REMAINING_BYTES > 0) {
 		!loop:
-			lda COLOR_COPY_ADDRESS + (FULL_PAGES * $100), x
+			lda COLOR_COPY_DATA + (FULL_PAGES * $100), x
 			sta $d800 + (FULL_PAGES * $100), x
-			lda SCREEN_COPY_ADDRESS + (FULL_PAGES * $100), x
+			lda SCREEN_COPY_DATA + (FULL_PAGES * $100), x
 			sta SCREEN_0_ADDRESS + (FULL_PAGES * $100), x
 			sta SCREEN_1_ADDRESS + (FULL_PAGES * $100), x
 			inx
 			cpx #REMAINING_BYTES
 			bne !loop-
 	}
+
+	rts
+}
+
+DisplaySongInfo: {
+	//; Setup title colors
+	ldx #79
+!loop:
+	lda #$01							//; White for title
+	sta $d800 + (SONG_TITLE_LINE * 40), x
+//	lda #$0f							//; Light gray for artist
+//	sta $d800 + (ARTIST_NAME_LINE * 40), x
+	dex
+	bpl !loop-
+
+	//; Display song title
+	ldy #0
+!titleLoop:
+	lda songTitle, y
+	beq !titleDone+
+	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	ora #$80							//; Reversed for second line
+	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	iny
+	cpy #40
+	bne !titleLoop-
+!titleDone:
+
+	//; Display artist name
+//	ldy #0
+//!artistLoop:
+//	lda artistName, y
+//	beq !artistDone+
+//	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+//	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+//	ora #$80							//; Reversed for second line
+//	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+//	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+//	iny
+//	cpy #40
+//	bne !artistLoop-
+//!artistDone:
 
 	rts
 }
@@ -806,14 +856,14 @@ SetupMusic: {
 //; =============================================================================
 
 VICConfigStart:
-	.byte $00, $e5						//; Sprite 0 X,Y
-	.byte $00, $e5						//; Sprite 1 X,Y
-	.byte $00, $e5						//; Sprite 2 X,Y
-	.byte $00, $e5						//; Sprite 3 X,Y
-	.byte $00, $e5						//; Sprite 4 X,Y
-	.byte $00, $e5						//; Sprite 5 X,Y
-	.byte $00, $e5						//; Sprite 6 X,Y
-	.byte $00, $e5						//; Sprite 7 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 0 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 1 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 2 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 3 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 4 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
 	.byte $00							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
@@ -957,6 +1007,21 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
 
 //; =============================================================================
+//; DATA SECTION - Song Information
+//; =============================================================================
+
+songTitle:					.text SIDName.substring(0, SONG_TITLE_LENGTH)
+							.byte 0
+//artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
+//							.byte 0
+
+SCREEN_COPY_DATA:
+	.fill LOGO_HEIGHT * 40, file_logo.getScreenRam(i)
+
+COLOR_COPY_DATA:
+	.fill LOGO_HEIGHT * 40, file_logo.getColorRam(i)
+
+//; =============================================================================
 //; INCLUDES
 //; =============================================================================
 
@@ -975,13 +1040,7 @@ frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.ge
 	.fill file_charsetData.getSize(), file_charsetData.get(i)
 
 * = BITMAP_ADDRESS "Bitmap"
-	.fill file_logo.getBitmapSize(), file_logo.getBitmap(i)
-
-* = SCREEN_COPY_ADDRESS "Screen Copy"
-	.fill file_logo.getScreenRamSize(), file_logo.getScreenRam(i)
-
-* = COLOR_COPY_ADDRESS "Color Copy"
-	.fill file_logo.getColorRamSize(), file_logo.getColorRam(i)
+	.fill LOGO_HEIGHT * (40 * 8), file_logo.getBitmap(i)
 
 //; =============================================================================
 //; END OF FILE

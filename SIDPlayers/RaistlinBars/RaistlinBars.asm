@@ -38,7 +38,7 @@
 
 .const SCREEN_WIDTH = 40
 .const NUM_FREQUENCY_BARS = 40
-.const MAX_BAR_HEIGHT = 128
+.const MAX_BAR_HEIGHT = 127
 .const WATER_REFLECTION_HEIGHT = 24
 
 //; Display layout
@@ -824,7 +824,8 @@ SetupMusic: {
 
 	//; Initialize player
 	lda #$00
-	jmp SIDInit
+	jsr SIDInit
+ 	jmp SwapZPMemory
 }
 
 //; =============================================================================
