@@ -1,6 +1,6 @@
 # SIDwinder
 
-*SIDwinder 0.1.0 - C64 SID Music File Processor*
+*SIDwinder 0.2.3 - C64 SID Music File Processor*
 
 <p align="center"><img src="SIDwinder.png" alt="SIDwinder Logo" width="1600"/></p>
 
@@ -30,7 +30,14 @@ SIDwinder is a versatile tool for processing C64 SID music files. It provides se
 </tr>
 <tr>
 <td><img src="Screens/RaistlinBarsWithLogo.png" alt="RaistlinBarsWithLogo (Custom)" width="400"/><br/><center>RaistlinBarsWithLogo (Custom)</center></td>
+<td><img src="Screens/RaistlinMirrorBars.png" alt="RaistlinMirrorBars" width="400"/><br/><center>RaistlinMirrorBars</center></td>
+</tr>
+<tr>
 <td><img src="Screens/RaistlinMirrorBarsWithLogo.png" alt="RaistlinMirrorBarsWithLogo" width="400"/><br/><center>RaistlinMirrorBarsWithLogo</center></td>
+<td><img src="Screens/SimpleRaster.png" alt="SimpleRaster" width="400"/><br/><center>SimpleRaster</center></td>
+</tr>
+<tr>
+<td><img src="Screens/SimpleBitmap.png" alt="SimpleBitmap" width="400"/><br/><center>SimpleBitmap</center></td>
 </tr>
 </table>
 

@@ -70,9 +70,6 @@
 .const NUM_COLOR_PALETTES = 3
 .const COLORS_PER_PALETTE = 8
 
-.const barHeights = $42
-.const smoothedHeights = $72
-
 //; =============================================================================
 //; EXTERNAL RESOURCES
 //; =============================================================================
@@ -351,8 +348,6 @@ NextIRQ: {
 
 PlayMusicWithAnalysis: {
 
-	jsr SwapZPMemory
-
 	//; First playback - normal music playing with state preservation
 	jsr BackupSIDMemory
 	jsr SIDPlay
@@ -374,8 +369,6 @@ PlayMusicWithAnalysis: {
 
 	pla
 	sta $01
-
-	jsr SwapZPMemory
 
 	//; Analyze captured registers
 	jmp AnalyzeSIDRegisters
@@ -742,8 +735,7 @@ SetupMusic: {
 
 	//; Initialize player
 	lda #$00
-	jsr SIDInit
- 	jmp SwapZPMemory
+	jmp SIDInit
 }
 
 //; =============================================================================
@@ -806,6 +798,12 @@ barVoiceMap:				.fill NUM_FREQUENCY_BARS, 0
 previousHeightsScreen0:		.fill NUM_FREQUENCY_BARS, 255
 previousHeightsScreen1:		.fill NUM_FREQUENCY_BARS, 255
 previousColors:				.fill NUM_FREQUENCY_BARS, 255
+
+.byte $00, $00
+barHeights:					.fill NUM_FREQUENCY_BARS, 0
+.byte $00, $00
+
+smoothedHeights:			.fill NUM_FREQUENCY_BARS, 0
 
 //; =============================================================================
 //; DATA SECTION - Voice State

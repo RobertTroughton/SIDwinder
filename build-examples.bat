@@ -26,7 +26,6 @@ SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/zscs-knightr
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/razorback-riders.kla" SID/proton-knightrider.sid examples/proton-knightrider.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/jonegg-crow.kla" SID/zardax-eldorado.sid examples/zardax-eldorado.prg
 
-
 REM Simple Raster
 SIDwinder.exe -player=SimpleRaster SID/jammer-mm.sid examples/jammer-mm.prg
 SIDwinder.exe -player=SimpleRaster SID/magnar-airwolf.sid examples/magnar-airwolf.prg
