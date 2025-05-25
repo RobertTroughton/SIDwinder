@@ -6,7 +6,7 @@ mkdir Examples
 @echo Relocating SIDs that need it
 @echo ----------------------------
 SIDwinder.exe -relocate -relocateaddr=$1000 SID/celticdesign-7-3.sid temp/celticdesign-7-3-rel1000.sid
-SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshoff-blades-rel2000.sid      REM this SID wasn't relocating earlier
+SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshoff-blades-rel2000.sid
 
 @echo.
 
@@ -14,16 +14,18 @@ SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshof
 @echo Building example native C64 PRGs
 @echo --------------------------------
 
-REM doesn't work?? -- SIDwinder.exe -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/facet-mrmouse.kla" SID/mrmouse-downhill.sid examples/mrmouse-downhill.prg
+SIDwinder.exe -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/facet-mrmouse.kla" SID/mrmouse-downhill.sid examples/mrmouse-downhill.prg
 
 REM Simple Bitmap With Default Bitmap
 SIDwinder.exe -player=SimpleBitmap SID/phat_frog_2sid.sid examples/phat_frog_2sid.prg
 
 REM Simple Bitmap With Provided Bitmaps
-SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/redcrab-zebra.kla" temp/larshoff-blades-rel2000.sid examples/larshoff-blades.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/rjl-hawkeye.kla" SID/flex-hawkeye.sid examples/flex-hawkeye.prg
+SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/redcrab-zebra.kla" temp/larshoff-blades-rel2000.sid examples/larshoff-blades.prg
+SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/zscs-knightrider.kla" SID/magnar-firestarter.sid examples/magnar-firestarter.prg
+SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/razorback-riders.kla" SID/proton-knightrider.sid examples/proton-knightrider.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/jonegg-crow.kla" SID/zardax-eldorado.sid examples/zardax-eldorado.prg
-SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/razorback-riders.kla" SID/magnar-firestarter.sid examples/magnar-firestarter.prg
+
 
 REM Simple Raster
 SIDwinder.exe -player=SimpleRaster SID/jammer-mm.sid examples/jammer-mm.prg
@@ -31,6 +33,7 @@ SIDwinder.exe -player=SimpleRaster SID/magnar-airwolf.sid examples/magnar-airwol
 SIDwinder.exe -player=SimpleRaster SID/toggle-fireflies.sid examples/toggle-fireflies.prg
 
 REM Raistlin Bars
+SIDwinder.exe -player=RaistlinBars SID/6r6-selfiesfromtheex.sid examples/6r6-selfiesfromtheex.prg
 SIDwinder.exe -player=RaistlinBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
 SIDwinder.exe -player=RaistlinBars SID/drax-twine.sid examples/drax-twine.prg
 SIDwinder.exe -player=RaistlinBars SID/flex-eurogubbe.sid examples/flex-eurogubbe.prg
@@ -39,7 +42,6 @@ SIDwinder.exe -player=RaistlinBars SID/magnar-lastnight.sid examples/magnar-last
 SIDwinder.exe -player=RaistlinBars SID/magnar-magnumpi.sid examples/magnar-magnumpi.prg
 SIDwinder.exe -player=RaistlinBars SID/mibri-gettinginthevan.sid examples/mibri-gettinginthevan.prg
 SIDwinder.exe -player=RaistlinBars SID/nordischsound-crockettstheme.sid examples/nordischsound-crockettstheme.prg
-SIDwinder.exe -player=RaistlinBars SID/proton-knightrider.sid examples/proton-knightrider.prg
 SIDwinder.exe -player=RaistlinBars SID/trident-sptest07.sid examples/trident-sptest07.prg
 
 REM Raistlin Bars With Musician's Provided Logo
@@ -59,6 +61,7 @@ SIDwinder.exe -player=RaistlinBarsWithLogo SID/jch-allaroundtheworld.sid example
 SIDwinder.exe -player=RaistlinBarsWithLogo SID/xiny-allstars.sid examples/xiny-allstars.prg
 
 REM Raistlin Mirror Bars
+SIDwinder.exe -player=RaistlinMirrorBars SID/6r6-axelf.sid examples/6r6-axelf.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/dane-slowmotionsong.sid examples/dane-slowmotionsong.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/stinsenleaf-pushthrough.sid examples/stinsenleaf-pushthrough.prg

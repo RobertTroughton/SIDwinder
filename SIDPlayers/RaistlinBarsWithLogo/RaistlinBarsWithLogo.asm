@@ -81,10 +81,6 @@
 .const NUM_COLOR_PALETTES = 3
 .const COLORS_PER_PALETTE = 8
 
-//; Frequency mapping tables - define these constants after loading the data
-.const frequencyToBarHi = frequencyTables + (0 * 256)
-.const frequencyToBarLo = frequencyTables + (1 * 256)
-
 .const barHeights = $42
 .const smoothedHeights = $72
 
@@ -92,7 +88,6 @@
 //; EXTERNAL RESOURCES
 //; =============================================================================
 
-.var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 
@@ -1009,7 +1004,6 @@ barCharacterMap:
 //; =============================================================================
 
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
-frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
 
 //; =============================================================================
 //; DATA SECTION - Song Information
@@ -1033,6 +1027,9 @@ COLOR_COPY_DATA:
 .import source "../INC/MemoryPreservation.asm"
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
+
+.align 256
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; SPRITE DATA

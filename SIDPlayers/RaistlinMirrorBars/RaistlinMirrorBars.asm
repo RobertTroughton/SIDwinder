@@ -70,10 +70,6 @@
 .const NUM_COLOR_PALETTES = 3
 .const COLORS_PER_PALETTE = 8
 
-//; Frequency mapping tables - define these constants after loading the data
-.const frequencyToBarHi = frequencyTables + (0 * 256)
-.const frequencyToBarLo = frequencyTables + (1 * 256)
-
 .const barHeights = $42
 .const smoothedHeights = $72
 
@@ -81,7 +77,6 @@
 //; EXTERNAL RESOURCES
 //; =============================================================================
 
-.var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
 
 //; Song metadata
@@ -445,7 +440,7 @@ AnalyzeSIDRegisters: {
 		bcc !skipVoice+
 
 		sta barHeights, x
-		lda #0
+		lda #$00
 		sta barHeightsLo, x
 		lda #voice
 		sta barVoiceMap, x
@@ -895,12 +890,6 @@ barCharacterMap:
 	.fill MAX_BAR_HEIGHT, 233
 
 //; =============================================================================
-//; DATA SECTION - Animation Data
-//; =============================================================================
-
-frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
-
-//; =============================================================================
 //; DATA SECTION - Song Information
 //; =============================================================================
 
@@ -924,6 +913,9 @@ D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsP
 .import source "../INC/MemoryPreservation.asm"
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
+
+.align 256
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; CHARSET DATA

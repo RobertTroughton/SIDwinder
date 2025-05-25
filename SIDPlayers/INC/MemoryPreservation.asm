@@ -29,7 +29,7 @@
 SIDMemoryBackup:
     .fill SIDModifiedMemoryCount, $00
 ZPBackup:
-    .fill 32, $00
+    .fill 256, $00
 
 //; -----------------------------------------------------------------------------
 //; SwapZPMemory
