@@ -56,7 +56,8 @@ namespace sidwinder {
         labelGenerator_ = std::make_unique<LabelGenerator>(
             *analyzer_,
             sid_.getLoadAddress(),
-            sid_.getLoadAddress() + sid_.getDataSize()
+            sid_.getLoadAddress() + sid_.getDataSize(),
+            cpu_.getMemory()
         );
 
         // Create code formatter

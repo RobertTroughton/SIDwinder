@@ -6,11 +6,12 @@ mkdir Examples
 @echo Relocating SIDs that need it
 @echo ----------------------------
 SIDwinder.exe -relocate -relocateaddr=$1000 SID/celticdesign-7-3.sid temp/celticdesign-7-3-rel1000.sid
+SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshoff-blades-rel2000.sid      REM this SID wasn't relocating earlier
 
 @echo.
 
 @echo --------------------------------
-@echo Building example native C64 PRGS
+@echo Building example native C64 PRGs
 @echo --------------------------------
 
 REM doesn't work?? -- SIDwinder.exe -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/facet-mrmouse.kla" SID/mrmouse-downhill.sid examples/mrmouse-downhill.prg
@@ -19,6 +20,7 @@ REM Simple Bitmap With Default Bitmap
 SIDwinder.exe -player=SimpleBitmap SID/phat_frog_2sid.sid examples/phat_frog_2sid.prg
 
 REM Simple Bitmap With Provided Bitmaps
+SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/redcrab-zebra.kla" temp/larshoff-blades-rel2000.sid examples/larshoff-blades.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/rjl-hawkeye.kla" SID/flex-hawkeye.sid examples/flex-hawkeye.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/jonegg-crow.kla" SID/zardax-eldorado.sid examples/zardax-eldorado.prg
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/razorback-riders.kla" SID/magnar-firestarter.sid examples/magnar-firestarter.prg
