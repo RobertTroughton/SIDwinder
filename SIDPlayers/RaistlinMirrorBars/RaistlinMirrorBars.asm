@@ -910,12 +910,19 @@ artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
 							.byte 0
 
 //; =============================================================================
+//; DATA SECTION - Raster Line Timing
+//; =============================================================================
+
+.var FrameHeight = 312 // TODO: NTSC!
+D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
+D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
+
+//; =============================================================================
 //; INCLUDES
 //; =============================================================================
 
 .import source "../INC/MemoryPreservation.asm"
 .import source "../INC/NMIFix.asm"
-.import source "../INC/RasterLineTiming.asm"
 .import source "../INC/StableRasterSetup.asm"
 
 //; =============================================================================

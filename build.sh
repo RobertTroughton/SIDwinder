@@ -9,6 +9,6 @@ cd build
 cmake ..
 
 # Build the project
-cmake --build .
+cmake --build . -j
 
 echo "Build complete. Executable is in the build directory."

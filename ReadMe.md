@@ -187,7 +187,7 @@ Additional player types may be available in the SIDPlayers directory.
 Some players (like `RaistlinBarsWithLogo`) support custom logos. You can specify a custom logo using the `-define` option:
 
 ```
-SIDwinder -player=RaistlinBarsWithLogo -define LogoKoala="Logos/MyLogo.kla" music.sid music.prg
+SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="Logos/MyLogo.kla" music.sid music.prg
 ```
 
 The logo should be in Koala format (.kla) and placed in a location accessible from the player directory.
@@ -215,7 +215,7 @@ SIDwinder -player=RaistlinBars music.sid visualizer.prg
 ### Convert SID with custom logo:
 
 ```
-SIDwinder -player=RaistlinBarsWithLogo -define LogoKoala="../../Logos/custom.kla" music.sid player.prg
+SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/custom.kla" music.sid player.prg
 ```
 
 ### Define custom colors for a player:
@@ -310,4 +310,4 @@ In the player code, these would be accessible as:
 
 - Zagon for Exomizer
 - Mads Nielsen for KickAss assembler
-- Adam Dunkels (Trident), Andy Zeigler (Shine) and Magnar Harestad for help
+- Adam Dunkels (Trident), Andy Zeidler (Shine), Burglar and Magnar Harestad for help

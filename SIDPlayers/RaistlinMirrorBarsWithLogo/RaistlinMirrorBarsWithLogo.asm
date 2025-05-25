@@ -86,8 +86,8 @@
 .var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
 
-#if USERDEFINES_LogoKoala
-.var file_logo = LoadBinary(LogoKoala, BF_KOALA)
+ #if USERDEFINES_KoalaFile
+.var file_logo = LoadBinary(KoalaFile, BF_KOALA)
 #else
 .var file_logo = LoadBinary("../../logos/default.kla", BF_KOALA)
 #endif
