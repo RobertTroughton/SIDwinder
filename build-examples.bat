@@ -7,6 +7,7 @@ mkdir Examples
 @echo ----------------------------
 SIDwinder.exe -relocate -relocateaddr=$1000 SID/celticdesign-7-3.sid temp/celticdesign-7-3-rel1000.sid
 SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshoff-blades-rel2000.sid
+SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-recovery.sid temp/larshoff-recovery-rel2000.sid
 
 @echo.
 
@@ -60,9 +61,10 @@ REM Raistlin Mirror Bars
 SIDwinder.exe -player=RaistlinMirrorBars SID/6r6-axelf.sid examples/6r6-axelf.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/dane-slowmotionsong.sid examples/dane-slowmotionsong.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/flex-hawkeye.sid examples/flex-hawkeye.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/lukhash-codeveronica.sid examples/lukhash-codeveronica.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/stinsenleaf-pushthrough.sid examples/stinsenleaf-pushthrough.prg
 SIDwinder.exe -player=RaistlinMirrorBars SID/xiny-splashes.sid examples/xiny-splashes.prg
-SIDwinder.exe -player=RaistlinMirrorBars SID/flex-hawkeye.sid examples/flex-hawkeye.prg
 
 REM Raistlin Mirror Bars With Musician's Provided Logo
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo -define KoalaFile="../../Logos/facet-acrouzet.kla" SID/acrouzet-soulspace.sid examples/acrouzet-soulspace.prg
@@ -74,8 +76,8 @@ SIDwinder.exe -player=RaistlinMirrorBarsWithLogo -define KoalaFile="../../Logos/
 REM Raistlin Mirror Bars With Default Logo
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/drax-expand.sid examples/drax-expand.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/jch-crystalline.sid examples/jch-crystalline.prg
+SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-firestarter.sid examples/magnar-firestarter.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-wonderland12.sid examples/magnar-wonderland12.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-wecomeinpeace.sid examples/magnar-wecomeinpeace.prg
-SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-firestarter.sid examples/magnar-firestarter.prg
 
 @pause
