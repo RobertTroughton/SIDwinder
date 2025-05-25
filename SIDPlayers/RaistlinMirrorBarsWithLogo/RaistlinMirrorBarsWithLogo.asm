@@ -380,8 +380,8 @@ AnalyzeSIDRegisters: {
 		//; Check if voice is active
 		lda sidRegisterMirror + (voice * 7) + 4		//; Control register
 		bmi !skipVoice+									//; Skip if noise
-		and #$01										//; Check gate
-		beq !skipVoice+
+//;		and #$01										//; Check gate
+//;		beq !skipVoice+
 
 		//; Get frequency and map to bar position
 		ldy sidRegisterMirror + (voice * 7) + 1		//; Frequency high
@@ -394,8 +394,7 @@ AnalyzeSIDRegisters: {
 
 	!lowFreq:
 		//; Low frequency lookup
-		ldx sidRegisterMirror + (voice * 7) + 0		//; Frequency low
-		txa
+		lda sidRegisterMirror + (voice * 7) + 0		//; Frequency low
 		lsr
 		lsr
 		ora multiply64Table, y
@@ -842,51 +841,13 @@ voiceReleaseLo:				.fill 3, 0
 sidRegisterMirror:			.fill 32, 0
 
 //; =============================================================================
-//; DATA SECTION - Lookup Tables
+//; DATA SECTION - Calculations
 //; =============================================================================
-
-//; Envelope conversions
-sustainToHeight:			.fill 16, (i * MAX_BAR_HEIGHT) / 15
-
-releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-
-releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-
-multiply64Table:			.fill 4, i * 64
 
 .align 128
 div16:						.fill 128, i / 16.0
 div16mul3:					.fill 128, (3 * i) / 16.0
+multiply64Table:			.fill 4, i * 64
 
 //; Color tables
 darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08

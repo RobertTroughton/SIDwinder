@@ -26,10 +26,10 @@ SIDwinder is a versatile tool for processing C64 SID music files. It provides se
 <table>
 <tr>
 <td><img src="Screens/RaistlinBars.png" alt="RaistlinBars" width="400"/><br/><center>RaistlinBars</center></td>
-<td><img src="Screens/RaistlinBarsWithDefaultLogo.png" alt="RaistlinBarsWithLogo (Default)" width="400"/><br/><center>RaistlinBarsWithLogo (Default)</center></td>
+<td><img src="Screens/RaistlinBarsWithDefaultLogo.png" alt="RaistlinBarsWithLogo (Default)" width="400"/><br/><center>RaistlinBarsWithLogo (Default Logo)</center></td>
 </tr>
 <tr>
-<td><img src="Screens/RaistlinBarsWithLogo.png" alt="RaistlinBarsWithLogo (Custom)" width="400"/><br/><center>RaistlinBarsWithLogo (Custom)</center></td>
+<td><img src="Screens/RaistlinBarsWithLogo.png" alt="RaistlinBarsWithLogo (Custom)" width="400"/><br/><center>RaistlinBarsWithLogo (Custom Logo)</center></td>
 <td><img src="Screens/RaistlinMirrorBars.png" alt="RaistlinMirrorBars" width="400"/><br/><center>RaistlinMirrorBars</center></td>
 </tr>
 <tr>
