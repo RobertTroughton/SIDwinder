@@ -249,14 +249,9 @@ namespace sidwinder {
         // Create and run command processor
         CommandProcessor processor;
         bool success = processor.processFile(options);
-
         if (success)
         {
-            std::cout << "Success: " << outputFile << " successfully generated" << std::endl;
-        }
-        else
-        {
-            std::cout << "Error: " << outputFile << " couldn't be generated" << std::endl;
+            std::cout << "SUCCESS: " << outputFile << " successfully generated" << std::endl;
         }
 
         return success ? 0 : 1;
@@ -346,30 +341,19 @@ namespace sidwinder {
             if (result.success) {
                 if (result.verified) {
                     if (result.outputsMatch) {
-                        std::cout << "Success: Relocation successful and verified!" << std::endl;
-
-                        // Additional info if verbose
-                        if (command_.hasFlag("verbose")) {
-                            std::cout << "  Trace logs match - relocated SID file behaves identically to original." << std::endl;
-                            std::cout << "  Original trace: " << result.originalTrace << std::endl;
-                            std::cout << "  Relocated trace: " << result.relocatedTrace << std::endl;
-                        }
+                        std::cout << "SUCCESS: " << inputFile << " successfully relocated and verified" << std::endl;
                     }
                     else {
-                        std::cout << "Warning: Relocation completed but verification failed!" << std::endl;
-                        std::cout << "  The relocated SID file may not behave identically to the original." << std::endl;
-                        std::cout << "  Difference report saved to: " << result.diffReport << std::endl;
+                        std::cout << "FAILURE: " << inputFile << " relocation verification failed. Difference report saved to: " << result.diffReport << std::endl;
                     }
                 }
                 else {
-                    std::cout << "Success: Relocation completed (verification not completed)" << std::endl;
-                    std::cout << "  " << result.message << std::endl;
+                    std::cout << "SUCCESS: " << inputFile << " relocation completed (but verification not completed) - " << result.message << std::endl;
                 }
-                return result.outputsMatch ? 0 : 1;  // Return error code if verification fails
+                return result.outputsMatch ? 0 : 1;
             }
             else {
-                std::cout << "Error: Relocation failed!" << std::endl;
-                std::cout << "  " << result.message << std::endl;
+                std::cout << "FAILURE: " << inputFile << " relocation failed - " << result.message << std::endl;
                 return 1;
             }
         }

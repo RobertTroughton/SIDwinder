@@ -2,9 +2,35 @@
 
 mkdir Examples
 
+@echo ----------------------------
+@echo Relocating SIDs that need it
+@echo ----------------------------
 SIDwinder.exe -relocate -relocateaddr=$1000 SID/celticdesign-7-3.sid temp/celticdesign-7-3-rel1000.sid
 
-REM VISUALISER doesn't work?? -- SIDwinder.exe -player=RaistlinBarsWithLogo -define LogoKoala="../../Logos/facet-mrmouse.kla" SID/mrmouse-downhill.sid examples/mrmouse-downhill.prg
+@echo.
+
+@echo --------------------------------
+@echo Building example native C64 PRGS
+@echo --------------------------------
+
+REM doesn't work?? -- SIDwinder.exe -player=RaistlinBarsWithLogo -define LogoKoala="../../Logos/facet-mrmouse.kla" SID/mrmouse-downhill.sid examples/mrmouse-downhill.prg
+
+REM Simple Raster
+SIDwinder.exe -player=SimpleRaster SID/jammer-mm.sid examples/jammer-mm.prg
+SIDwinder.exe -player=SimpleRaster SID/magnar-airwolf.sid examples/magnar-airwolf.prg
+SIDwinder.exe -player=SimpleRaster SID/toggle-fireflies.sid examples/toggle-fireflies.prg
+
+REM Raistlin Bars
+SIDwinder.exe -player=RaistlinBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
+SIDwinder.exe -player=RaistlinBars SID/drax-twine.sid examples/drax-twine.prg
+SIDwinder.exe -player=RaistlinBars SID/flex-eurogubbe.sid examples/flex-eurogubbe.prg
+SIDwinder.exe -player=RaistlinBars SID/flex-lundia.sid examples/flex-lundia.prg
+SIDwinder.exe -player=RaistlinBars SID/magnar-lastnight.sid examples/magnar-lastnight.prg
+SIDwinder.exe -player=RaistlinBars SID/magnar-magnumpi.sid examples/magnar-magnumpi.prg
+SIDwinder.exe -player=RaistlinBars SID/mibri-gettinginthevan.sid examples/mibri-gettinginthevan.prg
+SIDwinder.exe -player=RaistlinBars SID/nordischsound-crockettstheme.sid examples/nordischsound-crockettstheme.prg
+SIDwinder.exe -player=RaistlinBars SID/proton-knightrider.sid examples/proton-knightrider.prg
+SIDwinder.exe -player=RaistlinBars SID/trident-sptest07.sid examples/trident-sptest07.prg
 
 REM Raistlin Bars With Musician's Provided Logo
 SIDwinder.exe -player=RaistlinBarsWithLogo -define LogoKoala="../../Logos/facet-acrouzet.kla" SID/acrouzet-raistlin50.sid examples/acrouzet-raistlin50.prg
@@ -23,6 +49,15 @@ SIDwinder.exe -player=RaistlinBarsWithLogo SID/jch-allaroundtheworld.sid example
 SIDwinder.exe -player=RaistlinBarsWithLogo SID/magnar-firestarter.sid examples/magnar-firestarter.prg
 SIDwinder.exe -player=RaistlinBarsWithLogo SID/xiny-allstars.sid examples/xiny-allstars.prg
 
+REM Raistlin Mirror Bars
+SIDwinder.exe -player=RaistlinMirrorBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/dane-slowmotionsong.sid examples/dane-slowmotionsong.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/flex-hawkeye.sid examples/flex-hawkeye.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/phat_frog_2sid.sid examples/phat_frog_2sid.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/stinsenleaf-pushthrough.sid examples/stinsenleaf-pushthrough.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/xiny-splashes.sid examples/xiny-splashes.prg
+SIDwinder.exe -player=RaistlinMirrorBars SID/zardax-eldorado.sid examples/zardax-eldorado.prg
+
 REM Raistlin Mirror Bars With Musician's Provided Logo
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo -define LogoKoala="../../Logos/facet-acrouzet.kla" SID/acrouzet-soulspace.sid examples/acrouzet-soulspace.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo -define LogoKoala="../../Logos/redcrab-celticdesign2.kla" SID/celticdesign-blueearth.sid examples/celticdesign-blueearth.prg
@@ -34,29 +69,6 @@ REM Raistlin Mirror Bars With Default Logo
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/drax-expand.sid examples/drax-expand.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/jch-crystalline.sid examples/jch-crystalline.prg
 SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-wonderland12.sid examples/magnar-wonderland12.prg
-
-REM Simple Raster
-SIDwinder.exe -player=SimpleRaster SID/jammer-mm.sid examples/jammer-mm.prg
-SIDwinder.exe -player=SimpleRaster SID/magnar-airwolf.sid examples/magnar-airwolf.prg
-SIDwinder.exe -player=SimpleRaster SID/toggle-fireflies.sid examples/toggle-fireflies.prg
-
-REM Raistlin Bars
-SIDwinder.exe -player=RaistlinBars SID/dane-elderscrollers.sid examples/dane-elderscrollers.prg
-SIDwinder.exe -player=RaistlinBars SID/dane-slowmotionsong.sid examples/dane-slowmotionsong.prg
-SIDwinder.exe -player=RaistlinBars SID/drax-twine.sid examples/drax-twine.prg
-SIDwinder.exe -player=RaistlinBars SID/flex-eurogubbe.sid examples/flex-eurogubbe.prg
-SIDwinder.exe -player=RaistlinBars SID/flex-hawkeye.sid examples/flex-hawkeye.prg
-SIDwinder.exe -player=RaistlinBars SID/flex-lundia.sid examples/flex-lundia.prg
-SIDwinder.exe -player=RaistlinBars SID/magnar-lastnight.sid examples/magnar-lastnight.prg
-SIDwinder.exe -player=RaistlinBars SID/magnar-magnumpi.sid examples/magnar-magnumpi.prg
-SIDwinder.exe -player=RaistlinBars SID/magnar-wecomeinpeace.sid examples/magnar-wecomeinpeace.prg
-SIDwinder.exe -player=RaistlinBars SID/mibri-gettinginthevan.sid examples/mibri-gettinginthevan.prg
-SIDwinder.exe -player=RaistlinBars SID/nordischsound-crockettstheme.sid examples/nordischsound-crockettstheme.prg
-SIDwinder.exe -player=RaistlinBars SID/phat_frog_2sid.sid examples/phat_frog_2sid.prg
-SIDwinder.exe -player=RaistlinBars SID/proton-knightrider.sid examples/proton-knightrider.prg
-SIDwinder.exe -player=RaistlinBars SID/stinsenleaf-pushthrough.sid examples/stinsenleaf-pushthrough.prg
-SIDwinder.exe -player=RaistlinBars SID/trident-sptest07.sid examples/trident-sptest07.prg
-SIDwinder.exe -player=RaistlinBars SID/xiny-splashes.sid examples/xiny-splashes.prg
-SIDwinder.exe -player=RaistlinBars SID/zardax-eldorado.sid examples/zardax-eldorado.prg
+SIDwinder.exe -player=RaistlinMirrorBarsWithLogo SID/magnar-wecomeinpeace.sid examples/magnar-wecomeinpeace.prg
 
 @pause

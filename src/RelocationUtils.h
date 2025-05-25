@@ -92,7 +92,8 @@ namespace sidwinder {
         bool assembleAsmToPrg(
             const fs::path& asmFile,
             const fs::path& prgFile,
-            const std::string& kickAssPath);
+            const std::string& kickAssPath,
+            const fs::path& tempDir);
 
         /**
          * @brief Create a SID file from a PRG file

@@ -8,15 +8,15 @@
 //;
 //; DESCRIPTION:
 //; ------------
-//; RaistlinBars creates a real-time spectrum analyzer that visualizes C64 SID
-//; music. It captures the frequency and envelope data from the SID chip and
-//; transforms it into animated bars that dance to the music, complete with
-//; water reflection effects and dynamic color cycling.
+//; RaistlinMirrorBars creates a real-time spectrum analyzer that visualizes C64 
+//; SID music with a mirrored effect. It captures frequency and envelope data 
+//; from the SID chip and transforms it into animated bars that dance to the 
+//; music, with bars reflected vertically for a symmetrical display.
 //;
 //; KEY FEATURES:
-//; - 40 frequency bars with 80-pixel resolution
+//; - 40 frequency bars with 96-pixel resolution (48 pixels per half)
 //; - Real-time SID register analysis without affecting playback
-//; - Water reflection effects using hardware sprites
+//; - Mirrored bar display for symmetrical visualization
 //; - Dynamic color cycling with multiple palettes
 //; - Double-buffered display for flicker-free animation
 //;
@@ -39,43 +39,32 @@
 //; Display layout
 .const NUM_FREQUENCY_BARS = 40
 
-.const LOGO_HEIGHT = 10
-.const TOP_SPECTRUM_HEIGHT = 9
-.const BOTTOM_SPECTRUM_HEIGHT = 3
+.const TOP_SPECTRUM_HEIGHT = 9			//; In character rows
+.const TOTAL_SPECTRUM_HEIGHT = TOP_SPECTRUM_HEIGHT * 2  //; Mirrored display
 
-.const SONG_TITLE_LINE = 23
-//.const ARTIST_NAME_LINE = 
-.const SPECTRUM_START_LINE = 11
-.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
+.const SONG_TITLE_LINE = 0
+.const ARTIST_NAME_LINE = 23
+.const SPECTRUM_START_LINE = 3
 
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
 .const VIC_BANK_ADDRESS = VIC_BANK * $4000
-.const SCREEN_0_OFFSET = 0				//; $C000-C3E7
-.const SCREEN_1_OFFSET = 1				//; $C400-C7E7
-.const CHARSET_OFFSET = 1				//; $C800-CFFF
-.const BITMAP_OFFSET = 1				//; $E000-FF3F
-.const SPRITE_BASE_INDEX = $40			//; $D000-?
+.const SCREEN_0_OFFSET = 12				//; $F000
+.const SCREEN_1_OFFSET = 13				//; $F400
+.const CHARSET_OFFSET = 7				//; $F800
 
 //; Calculated addresses
 .const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
 .const SCREEN_1_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_1_OFFSET * $400)
 .const CHARSET_ADDRESS = VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
-.const BITMAP_ADDRESS = VIC_BANK_ADDRESS + (BITMAP_OFFSET * $2000)
-.const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
-.const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
-.const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
 
 //; VIC register values
 .const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
 .const D018_VALUE_1 = (SCREEN_1_OFFSET * 16) + (CHARSET_OFFSET * 2)
-.const D018_VALUE_BITMAP = (SCREEN_1_OFFSET * 16) + (BITMAP_OFFSET * 8)
 
 //; Calculated bar values
 .const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
-.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
 .const MAIN_BAR_OFFSET = MAX_BAR_HEIGHT - 8
-.const REFLECTION_OFFSET = WATER_REFLECTION_HEIGHT - 7
 
 //; Color palette configuration
 .const NUM_COLOR_PALETTES = 3
@@ -94,19 +83,10 @@
 
 .var file_frequencyTables = LoadBinary("FreqTable.bin")
 .var file_charsetData = LoadBinary("CharSet.map")
-.var file_waterSpritesData = LoadBinary("WaterSprites.map")
-
-#if USERDEFINES_LogoKoala
-.var file_logo = LoadBinary(LogoKoala, BF_KOALA)
-#else
-.var file_logo = LoadBinary("../../logos/default.kla", BF_KOALA)
-#endif
-
-.var logo_BGColor = file_logo.getBackgroundColor()
 
 //; Song metadata
 .var SONG_TITLE_LENGTH = min(SIDName.size(), 40)
-//.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
+.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
 
 //; =============================================================================
 //; INITIALIZATION
@@ -152,10 +132,8 @@ Initialize: {
 	bmi *-3
 
 	//; Enable display
-	lda #$7b
+	lda #$1b
 	sta $d011
-	lda #logo_BGColor
-	sta $d021
 
 	//; Setup interrupts
 	jsr SetupInterrupts
@@ -237,15 +215,21 @@ SetupInterrupts: {
 	sta $ffff
 
 	//; Setup raster interrupt
-	lda #251
+	lda D012_Values
 	sta $d012
-	lda #$7b
+	lda $d011
+	and #$7f
+	ora D011_Values
 	sta $d011
 
 	//; Enable raster interrupts
 	lda #$01
 	sta $d01a
 	sta $d019
+
+	//; Initialize IRQ counter
+	lda #$00
+	sta NextIRQ + 1
 
 	rts
 }
@@ -261,29 +245,23 @@ MainIRQ: {
 	tya
 	pha
 
-	lda #D018_VALUE_BITMAP
-	sta $d018
-	lda #$18
-	sta $d016
-	lda #$3b
-	sta $d011
-	lda #logo_BGColor
-	sta $d021
-
+	//; Update display if needed
 	ldy currentScreenBuffer
 	lda D018Values, y
-	sta SpectrometerD018 + 1
+	cmp $d018
+	beq !skip+
+	sta $d018
+!skip:
 
 	//; Signal visualization update
 	inc visualizationUpdateFlag
 
-	//; Play music and analyze
-	jsr PlayMusicWithAnalysis
-
 	//; Update bar animations
 	jsr UpdateBarDecay
 	jsr UpdateColors
-	jsr UpdateSprites
+
+	//; Play music and analyze
+	jsr PlayMusicWithAnalysis
 
 	//; Frame counter
 	inc frameCounter
@@ -291,15 +269,8 @@ MainIRQ: {
 	inc frame256Counter
 !skip:
 
-	lda #50 + (LOGO_HEIGHT * 8)
-	sta $d012
-	lda #$3b
-	sta $d011
-	
-	lda #<SpectrometerDisplayIRQ
-	sta $fffe
-	lda #>SpectrometerDisplayIRQ
-	sta $ffff
+	//; Setup next interrupt
+	jsr NextIRQ
 
 	//; Acknowledge interrupt
 	lda #$01
@@ -314,41 +285,20 @@ MainIRQ: {
 	rti
 }
 
-SpectrometerDisplayIRQ:
+//; =============================================================================
+//; MUSIC-ONLY INTERRUPT HANDLER
+//; =============================================================================
+
+MusicOnlyIRQ: {
 	pha
 	txa
 	pha
 	tya
 	pha
 
-	ldx #4
-!loop:
-	dex
-	bpl !loop-
-	nop
+	jsr PlayMusicWithAnalysis
+	jsr NextIRQ
 
-	lda #$1b
-	sta $d011
-	lda #$00
-	sta $d021
-SpectrometerD018:
-	lda #$00
-	sta $d018
-	lda #$08
-	sta $d016
-
-	//; Signal visualization update
-	inc visualizationUpdateFlag
-
-	lda #251
-	sta $d012
-
-	lda #<MainIRQ
-	sta $fffe
-	lda #>MainIRQ
-	sta $ffff
-
-	//; Acknowledge interrupt
 	lda #$01
 	sta $d01a
 	sta $d019
@@ -359,6 +309,46 @@ SpectrometerD018:
 	tax
 	pla
 	rti
+}
+
+//; =============================================================================
+//; INTERRUPT CHAINING
+//; =============================================================================
+
+NextIRQ: {
+	ldx #$00						//; Self-modified
+	inx
+	cpx #NumCallsPerFrame
+	bne !notLast+
+	ldx #$00
+!notLast:
+	stx NextIRQ + 1
+
+	//; Set next raster position
+	lda D012_Values, x
+	sta $d012
+	lda $d011
+	and #$7f
+	ora D011_Values, x
+	sta $d011
+
+	//; Set appropriate IRQ vector
+	cpx #$00
+	bne !musicOnly+
+
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+	rts
+
+!musicOnly:
+	lda #<MusicOnlyIRQ
+	sta $fffe
+	lda #>MusicOnlyIRQ
+	sta $ffff
+	rts
+}
 
 //; =============================================================================
 //; MUSIC PLAYBACK WITH ANALYSIS
@@ -538,16 +528,9 @@ RenderBars: {
 	beq !colorLoop-
 	sta previousColors, y
 
-	//; Update main bars
-	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+	//; Update main bars - both halves
+	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Update reflection with darker color
-	tax
-	lda darkerColorMap, x
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !colorLoop-
 
@@ -580,21 +563,14 @@ RenderToScreen0: {
 	sta previousHeightsScreen0, y
 	tax
 
-	//; Draw main bar
+	clc
+
+	//; Draw both halves of the bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
 		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Draw reflection
-	txa
-	lsr
-	tax
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
 		adc #10
-		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + (TOTAL_SPECTRUM_HEIGHT - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -613,21 +589,14 @@ RenderToScreen1: {
 	sta previousHeightsScreen1, y
 	tax
 
-	//; Draw main bar
+	clc
+
+	//; Draw both halves of the bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
 		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-	}
-
-	//; Draw reflection
-	txa
-	lsr
-	tax
-	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
-		clc
-		adc #20
-		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		adc #10
+		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + (TOTAL_SPECTRUM_HEIGHT - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -684,101 +653,27 @@ UpdateColors: {
 }
 
 //; =============================================================================
-//; SPRITE ANIMATION
-//; =============================================================================
-
-UpdateSprites: {
-	ldx spriteAnimationIndex
-
-	//; Update X positions from sine table
-	lda spriteSineTable, x
-	.for (var i = 0; i < 8; i++) {
-		sta $d000 + (i * 2)
-		.if (i != 7) {
-			clc
-			adc #$30					//; 48 pixels between sprites
-		}
-	}
-	ldy #$c0
-	lda $d000 + (5 * 2)
-	bmi !skip+
-	ldy #$e0
-!skip:
-	sty $d010
-
-	//; Update sprite pointers
-	lda frameCounter
-	lsr
-	lsr
-	and #$07
-	ora #SPRITE_BASE_INDEX
-	.for (var i = 0; i < 8; i++) {
-		sta SPRITE_POINTERS_0 + i
-		sta SPRITE_POINTERS_1 + i
-	}
-
-	clc
-	lda spriteAnimationIndex
-	adc #$01
-	and #$7f
-	sta spriteAnimationIndex
-
-	rts
-}
-
-//; =============================================================================
 //; UTILITY FUNCTIONS
 //; =============================================================================
 
 ClearScreens: {
-
-	lda #$20
 	ldx #$00
+	lda #$20							//; Space character
 !loop:
-	.for (var i = 0; i < 4; i++)
-	{
-		sta $d800 + (i * $100), x
-		sta SCREEN_0_ADDRESS + (i * $100), x
-		sta SCREEN_1_ADDRESS + (i * $100), x
-	}
+	sta SCREEN_0_ADDRESS + $000, x
+	sta SCREEN_0_ADDRESS + $100, x
+	sta SCREEN_0_ADDRESS + $200, x
+	sta SCREEN_0_ADDRESS + $300, x
+	sta SCREEN_1_ADDRESS + $000, x
+	sta SCREEN_1_ADDRESS + $100, x
+	sta SCREEN_1_ADDRESS + $200, x
+	sta SCREEN_1_ADDRESS + $300, x
+	sta $d800 + $000, x
+	sta $d800 + $100, x
+	sta $d800 + $200, x
+	sta $d800 + $300, x
 	inx
 	bne !loop-
-
-	//; Calculate how many bytes to copy
-	.const LOGO_BYTES = LOGO_HEIGHT * 40
-	.const FULL_PAGES = floor(LOGO_BYTES / 256)
-	.const REMAINING_BYTES = mod(LOGO_BYTES, 256)
-
-	//; Copy the logo data
-	ldx #0
-
-	//; Copy full pages
-	.if (FULL_PAGES > 0) {
-		!loop:
-		.for (var page = 0; page < FULL_PAGES; page++) {
-			lda COLOR_COPY_DATA + (page * $100), x
-			sta $d800 + (page * $100), x
-			lda SCREEN_COPY_DATA + (page * $100), x
-			sta SCREEN_0_ADDRESS + (page * $100), x
-			sta SCREEN_1_ADDRESS + (page * $100), x
-			inx
-			bne !loop-
-		}
-	}
-
-	//; Copy remaining bytes
-	.if (REMAINING_BYTES > 0) {
-		!loop:
-			lda COLOR_COPY_DATA + (FULL_PAGES * $100), x
-			sta $d800 + (FULL_PAGES * $100), x
-			lda SCREEN_COPY_DATA + (FULL_PAGES * $100), x
-			sta SCREEN_0_ADDRESS + (FULL_PAGES * $100), x
-			sta SCREEN_1_ADDRESS + (FULL_PAGES * $100), x
-			inx
-			cpx #REMAINING_BYTES
-			bne !loop-
-	}
-
 	rts
 }
 
@@ -788,8 +683,8 @@ DisplaySongInfo: {
 !loop:
 	lda #$01							//; White for title
 	sta $d800 + (SONG_TITLE_LINE * 40), x
-//	lda #$0f							//; Light gray for artist
-//	sta $d800 + (ARTIST_NAME_LINE * 40), x
+	lda #$0f							//; Light gray for artist
+	sta $d800 + (ARTIST_NAME_LINE * 40), x
 	dex
 	bpl !loop-
 
@@ -809,20 +704,19 @@ DisplaySongInfo: {
 !titleDone:
 
 	//; Display artist name
-//	ldy #0
-//!artistLoop:
-//	lda artistName, y
-//	beq !artistDone+
-//	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-//	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-//	ora #$80							//; Reversed for second line
-//	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-//	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-//	iny
-//	cpy #40
-//	bne !artistLoop-
-//!artistDone:
-
+	ldy #0
+!artistLoop:
+	lda artistName, y
+	beq !artistDone+
+	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	ora #$80							//; Reversed for second line
+	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	iny
+	cpy #40
+	bne !artistLoop-
+!artistDone:
 	rts
 }
 
@@ -853,7 +747,8 @@ SetupMusic: {
 
 	//; Initialize player
 	lda #$00
-	jmp SIDInit
+	jsr SIDInit
+ 	jmp SwapZPMemory
 }
 
 //; =============================================================================
@@ -861,28 +756,28 @@ SetupMusic: {
 //; =============================================================================
 
 VICConfigStart:
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 0 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 1 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 2 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 3 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 4 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
-	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
+	.byte $00, $00						//; Sprite 0 X,Y
+	.byte $00, $00						//; Sprite 1 X,Y
+	.byte $00, $00						//; Sprite 2 X,Y
+	.byte $00, $00						//; Sprite 3 X,Y
+	.byte $00, $00						//; Sprite 4 X,Y
+	.byte $00, $00						//; Sprite 5 X,Y
+	.byte $00, $00						//; Sprite 6 X,Y
+	.byte $00, $00						//; Sprite 7 X,Y
 	.byte $00							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
 	.byte SKIP_REGISTER					//; D014
-	.byte $ff							//; Sprite enable
-	.byte $18							//; D016
+	.byte $00							//; Sprite enable
+	.byte $08							//; D016
 	.byte $00							//; Sprite Y expand
-	.byte D018_VALUE_BITMAP				//; Memory setup
+	.byte D018_VALUE_0					//; Memory setup
 	.byte SKIP_REGISTER					//; D019
 	.byte SKIP_REGISTER					//; D01A
 	.byte $00							//; Sprite priority
 	.byte $00							//; Sprite multicolor
-	.byte $ff							//; Sprite X expand
+	.byte $00							//; Sprite X expand
 	.byte $00							//; Sprite-sprite collision
 	.byte $00							//; Sprite-background collision
 	.byte $00							//; Border color
@@ -901,7 +796,6 @@ visualizationUpdateFlag:	.byte $00
 frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
-spriteAnimationIndex:		.byte $00
 colorUpdateIndex:			.byte $00
 currentPalette:				.byte $00
 
@@ -973,10 +867,6 @@ multiply64Table:			.fill 4, i * 64
 div16:						.fill 128, i / 16.0
 div16mul3:					.fill 128, (3 * i) / 16.0
 
-//; Color tables
-darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
-							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
-
 //; =============================================================================
 //; DATA SECTION - Color Palettes
 //; =============================================================================
@@ -1008,7 +898,6 @@ barCharacterMap:
 //; DATA SECTION - Animation Data
 //; =============================================================================
 
-spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.get(i)
 
 //; =============================================================================
@@ -1017,14 +906,8 @@ frequencyTables:			.fill file_frequencyTables.getSize(), file_frequencyTables.ge
 
 songTitle:					.text SIDName.substring(0, SONG_TITLE_LENGTH)
 							.byte 0
-//artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
-//							.byte 0
-
-SCREEN_COPY_DATA:
-	.fill LOGO_HEIGHT * 40, file_logo.getScreenRam(i)
-
-COLOR_COPY_DATA:
-	.fill LOGO_HEIGHT * 40, file_logo.getColorRam(i)
+artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
+							.byte 0
 
 //; =============================================================================
 //; INCLUDES
@@ -1032,14 +915,8 @@ COLOR_COPY_DATA:
 
 .import source "../INC/MemoryPreservation.asm"
 .import source "../INC/NMIFix.asm"
+.import source "../INC/RasterLineTiming.asm"
 .import source "../INC/StableRasterSetup.asm"
-
-//; =============================================================================
-//; SPRITE DATA
-//; =============================================================================
-
-* = SPRITES_ADDRESS "Water Sprites"
-	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
 
 //; =============================================================================
 //; CHARSET DATA
@@ -1049,48 +926,27 @@ COLOR_COPY_DATA:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; First, the chars for the main bar
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $7C
 	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
 	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
+	.byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
+	.byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
+	.byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
+	.byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
 
-//; reflection chars - frame 1 is &55 (for flicker)
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-
-//; reflection chars - frame 2 is &AA (for flicker)
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-
-//; =============================================================================
-//; BITMAP DATA
-//; =============================================================================
-
-* = BITMAP_ADDRESS "Bitmap"
-	.fill LOGO_HEIGHT * (40 * 8), file_logo.getBitmap(i)
+	.byte $7C, $00, $00, $00, $00, $00, $00, $00
+	.byte $BE, $7C, $00, $00, $00, $00, $00, $00
+	.byte $BE, $BE, $7C, $00, $00, $00, $00, $00
+	.byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
+	.byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
+	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
 
 //; =============================================================================
 //; END OF FILE

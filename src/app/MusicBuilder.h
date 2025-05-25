@@ -129,7 +129,8 @@ namespace sidwinder {
         bool runAssembler(
             const fs::path& sourceFile,
             const fs::path& outputFile,
-            const std::string& kickAssPath);
+            const std::string& kickAssPath,
+            const fs::path& tempDir);
 
         /**
          * @brief Compress a PRG file

@@ -98,7 +98,7 @@ namespace sidwinder {
             }
 
             // Run assembler to build player+music
-            if (!runAssembler(tempLinkerFile, tempPlayerPrgFile, options.kickAssPath)) {
+            if (!runAssembler(tempLinkerFile, tempPlayerPrgFile, options.kickAssPath, options.tempDir)) {
                 return false;
             }
 
@@ -138,7 +138,7 @@ namespace sidwinder {
             // If input is ASM, just assemble it
             if (bIsASM) {
                 // Run assembler to build pure music
-                if (!runAssembler(inputFile, outputFile, options.kickAssPath)) {
+                if (!runAssembler(inputFile, outputFile, options.kickAssPath, options.tempDir)) {
                     return false;
                 }
                 return true;
@@ -399,22 +399,27 @@ namespace sidwinder {
     bool MusicBuilder::runAssembler(
         const fs::path& sourceFile,
         const fs::path& outputFile,
-        const std::string& kickAssPath) {
+        const std::string& kickAssPath,
+        const fs::path& tempDir) {
 
-        // Build the command line
+        // Create log file path in temp directory
+        fs::path logFile = tempDir / (sourceFile.stem().string() + "_kickass.log");
+
+        // Build the command line with output redirection
+        // Using 2>&1 to redirect both stdout and stderr to the same file
         const std::string kickCommand = kickAssPath + " " +
-            sourceFile.string() + " -o " +
-            outputFile.string();
+            "\"" + sourceFile.string() + "\" -o \"" +
+            outputFile.string() + "\" > \"" +
+            logFile.string() + "\" 2>&1";
 
-        util::Logger::debug("Assembling: " + kickCommand);
         const int result = std::system(kickCommand.c_str());
 
         if (result != 0) {
-            util::Logger::error("Failed to assemble: " + sourceFile.string());
+            util::Logger::error("FAILURE: " + sourceFile.string() + " - please see output log for details: " + logFile.string());
+
             return false;
         }
 
-        util::Logger::info("Assembly successful: " + outputFile.string());
         return true;
     }
 

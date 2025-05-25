@@ -108,7 +108,7 @@ namespace sidwinder {
                 result.newPlay);
 
             // Assemble to PRG
-            if (!assembleAsmToPrg(tempAsmFile, tempPrgFile, params.kickAssPath)) {
+            if (!assembleAsmToPrg(tempAsmFile, tempPrgFile, params.kickAssPath, params.tempDir)) {
                 result.message = "Failed to assemble relocated code: " + tempAsmFile.string();
                 Logger::error(result.message);
                 return result;
@@ -254,19 +254,26 @@ namespace sidwinder {
         }
 
         bool assembleAsmToPrg(
-            const fs::path& asmFile,
-            const fs::path& prgFile,
-            const std::string& kickAssPath) {
+            const fs::path& sourceFile,
+            const fs::path& outputFile,
+            const std::string& kickAssPath,
+            const fs::path& tempDir) {
 
-            // Prepare the command line
-            std::string kickCommand = kickAssPath + " \"" + asmFile.string() + "\" -o \"" +
-                prgFile.string() + "\"";
+            // Create log file path in temp directory
+            fs::path logFile = tempDir / (sourceFile.stem().string() + "_kickass.log");
 
-            Logger::debug("Assembling: " + kickCommand);
+            // Build the command line with output redirection
+            // Using 2>&1 to redirect both stdout and stderr to the same file
+            const std::string kickCommand = kickAssPath + " " +
+                "\"" + sourceFile.string() + "\" -o \"" +
+                outputFile.string() + "\" > \"" +
+                logFile.string() + "\" 2>&1";
+
             const int result = std::system(kickCommand.c_str());
 
             if (result != 0) {
-                Logger::error("Assembly failed with error code: " + std::to_string(result));
+                util::Logger::error("FAILURE: " + sourceFile.string() + " - please see output log for details: " + logFile.string());
+
                 return false;
             }
 

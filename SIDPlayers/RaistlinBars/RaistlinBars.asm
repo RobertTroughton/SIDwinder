@@ -2,7 +2,7 @@
 //;                              RAISTLINBARS v2.0
 //;                   Advanced SID Music Spectrum Visualizer
 //; =============================================================================
-//; Original code by Raistlin of Genesis*Project (c) 2018
+//; Original code by Raistlin of Genesis*Project
 //; Enhanced with SIDwinder integration and advanced analysis features
 //; =============================================================================
 //;
