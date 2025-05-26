@@ -191,6 +191,28 @@ SetupSystem: {
 }
 
 //; =============================================================================
+//; Macros
+//; =============================================================================
+.macro CallSubroutinesButAvoidCallingThemOnTopOfThemselves(list_of_subroutines_to_call) {
+are_the_subroutines_still_running_lda: lda #0
+    bne !+
+    // Protect against us being invoked again on top of our own invocation
+    lda #1
+    sta are_the_subroutines_still_running_lda + 1
+
+    // Allow interrupts to occur on top of the subroutines we now call
+    cli
+    .for (var i = 0; i < list_of_subroutines_to_call.size(); i++) {
+        jsr list_of_subroutines_to_call.get(i)
+    }
+
+    lda #0
+    sta are_the_subroutines_still_running_lda + 1
+!:
+}
+
+//; =============================================================================
+//; CODE SEGMENT
 //; VIC INITIALIZATION
 //; =============================================================================
 
@@ -255,6 +277,10 @@ MainIRQ: {
 	pha
 	tya
 	pha
+	lda $01
+	pha
+	lda #$35
+	sta $01
 
 	//; Update display if needed
 	ldy currentScreenBuffer
@@ -267,14 +293,6 @@ MainIRQ: {
 	//; Signal visualization update
 	inc visualizationUpdateFlag
 
-	//; Update bar animations
-	jsr UpdateBarDecay
-	jsr UpdateColors
-	jsr UpdateSprites
-
-	//; Play music and analyze
-	jsr PlayMusicWithAnalysis
-
 	//; Frame counter
 	inc frameCounter
 	bne !skip+
@@ -286,9 +304,15 @@ MainIRQ: {
 
 	//; Acknowledge interrupt
 	lda #$01
-	sta $d01a
 	sta $d019
 
+	//; Update bar animations and play music and analyze
+	//; And do it with interrupts acknowledged, so another interrupt can happen while we do so
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites))
+
+	pla
+	sta $01
 	pla
 	tay
 	pla
@@ -307,14 +331,20 @@ MusicOnlyIRQ: {
 	pha
 	tya
 	pha
-
-	jsr PlayMusicWithAnalysis
+	lda $01
+	pha
+	lda #$35
+	sta $01
 	jsr NextIRQ
 
 	lda #$01
-	sta $d01a
 	sta $d019
 
+    // Call the subroutines after acknowledging the VIC interrupt, so that subsequent interrupts can happen on top of the call. The CallSubroutinesButAvoidCallingThemOnTopOfThemselves() macro will ensure that we do not call the subroutines on top of themselves.
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
+
+    pla
+    sta $01
 	pla
 	tay
 	pla
@@ -328,13 +358,14 @@ MusicOnlyIRQ: {
 //; =============================================================================
 
 NextIRQ: {
-	ldx #$00						//; Self-modified
+
+NextIRQLdx: ldx #$00						//; Self-modified
 	inx
 	cpx #NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:
-	stx NextIRQ + 1
+	stx NextIRQLdx + 1
 
 	//; Set next raster position
 	lda D012_Values, x
