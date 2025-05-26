@@ -307,8 +307,8 @@ MainIRQ: {
 
 	//; Update bar animations and play music and analyze
 	//; And do it with interrupts acknowledged, so another interrupt can happen while we do so
-
-	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites, PlayMusicWithAnalysis))
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites))
 
 	pla
 	sta $01
