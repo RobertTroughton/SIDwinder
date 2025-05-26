@@ -486,9 +486,6 @@ MUSICPLAYER_IRQ0:
 
     !skip:
 
-        jsr MUSICPLAYER_PlayMusic     //; Play music
-
-        jsr DoAllTheVisualizerThings  //; Do all the visualizer things
 
         //; Set up next IRQ
         jsr MUSICPLAYER_NextIRQ
@@ -497,6 +494,9 @@ MUSICPLAYER_IRQ0:
         lda #$01
         sta $d01a
         sta $d019
+
+        //; Do all the visualizer things after acknowledging the interrupt, so that the music can be called on top of it
+        CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(MUSICPLAYER_PlayMusic, MUSICPLAYER_AnalyzeSIDRegisters, DoAllTheVisualizerThings))
 
         //; Restore registers and return
         pla
@@ -627,7 +627,6 @@ MUSICPLAYER_IRQ_MusicOnly:
         lda #$35
         sta $01
 
-        jsr MUSICPLAYER_PlayMusic     //; Play music
 
         jsr MUSICPLAYER_NextIRQ       //; Set up next IRQ
 
@@ -635,6 +634,8 @@ MUSICPLAYER_IRQ_MusicOnly:
         lda #$01
         sta $d01a
         sta $d019
+
+        CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(MUSICPLAYER_PlayMusic, MUSICPLAYER_AnalyzeSIDRegisters))
 
         //; Restore registers and return
         pla
@@ -865,9 +866,7 @@ MUSICPLAYER_PlayMusic:
                 sta $d400 + i
             }
         #endif*/
-
-        //; Analyze SID registers and update visualizer
-        jmp MUSICPLAYER_AnalyzeSIDRegisters
+        rts
 
 //; =============================================================================
 //; MUSICPLAYER_AnalyzeSIDRegisters() - Analyze SID registers for visualization
