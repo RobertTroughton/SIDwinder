@@ -200,6 +200,8 @@ are_the_subroutines_still_running_lda: lda #0
     lda #1
     sta are_the_subroutines_still_running_lda + 1
 
+    // Allow interrupts to occur on top of the subroutines we now call
+    cli
     .for (var i = 0; i < list_of_subroutines_to_call.size(); i++) {
         jsr list_of_subroutines_to_call.get(i)
     }
