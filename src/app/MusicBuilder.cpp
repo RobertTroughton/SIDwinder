@@ -81,6 +81,7 @@ namespace sidwinder {
                 options.frames = 100; // Just need a short run to identify key patterns
                 options.registerTrackingEnabled = true; // Track register write order
                 options.patternDetectionEnabled = true;
+                options.shadowRegisterDetectionEnabled = true; // Enable shadow register detection
 
                 // Run the emulation
                 if (emulator_->runEmulation(options)) {

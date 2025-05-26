@@ -56,6 +56,11 @@ namespace sidwinder {
                 if (options.patternDetectionEnabled) {
                     patternFinder_.recordWrite(addr, value);
                 }
+
+                // Record for shadow register detection if enabled
+                if (options.shadowRegisterDetectionEnabled) {
+                    shadowRegisterFinder_.recordSIDWrite(addr, value);
+                }
                 });
             };
 
@@ -84,19 +89,20 @@ namespace sidwinder {
                 if (!cpu_->executeFunction(playAddr)) {
                     return false;
                 }
-            }
+                if (options.shadowRegisterDetectionEnabled) {
+                    shadowRegisterFinder_.checkMemoryForShadowRegisters(cpu_->getMemory());
+                }
+                if (options.traceEnabled && traceLogger_) {
+                    traceLogger_->logFrameMarker();
+                }
 
-            // Mark end of frame in trace log, write tracker, and pattern finder
-            if (options.traceEnabled && traceLogger_) {
-                traceLogger_->logFrameMarker();
-            }
+                if (options.registerTrackingEnabled) {
+                    writeTracker_.endFrame();
+                }
 
-            if (options.registerTrackingEnabled) {
-                writeTracker_.endFrame();
-            }
-
-            if (options.patternDetectionEnabled) {
-                patternFinder_.endFrame();
+                if (options.patternDetectionEnabled) {
+                    patternFinder_.endFrame();
+                }
             }
         }
 
@@ -108,6 +114,11 @@ namespace sidwinder {
         // Mark end of initialization in trace log
         if (options.traceEnabled && traceLogger_) {
             traceLogger_->logFrameMarker();
+        }
+
+        if (options.shadowRegisterDetectionEnabled) {
+            shadowRegisterFinder_.analyzeResults();
+            util::Logger::info("Shadow register detection: " + shadowRegisterFinder_.getSummary());
         }
 
         // Reset counters
@@ -232,8 +243,7 @@ namespace sidwinder {
         // Add addresses to the list - limit to 8 per line for readability
         int numItems = 0;
         for (u16 addr : writtenAddresses) {
-            if ((addr < 0xD400) || (addr >= 0xD800))
-            {
+            if ((addr < 0xD400) || (addr >= 0xD800)) {
                 file << ".add($" << util::wordToHex(addr) << ")";
                 numItems++;
             }
@@ -266,8 +276,12 @@ namespace sidwinder {
             file << ".var SIDPatternPeriod = 0\n\n";
         }
 
+        // Part 4: Shadow Register information
+        file << shadowRegisterFinder_.generateHelpfulDataSection();
+
         util::Logger::info("Generated helpful data file: " + filename +
-            " (" + std::to_string(writtenAddresses.size()) + " addresses)");
+            " (" + std::to_string(writtenAddresses.size()) + " addresses, " +
+            std::to_string(shadowRegisterFinder_.getShadowRegisterCount()) + " shadow registers)");
         return true;
     }
 
