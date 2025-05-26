@@ -302,7 +302,6 @@ MainIRQ: {
 
 	//; Acknowledge interrupt
 	lda #$01
-	sta $d01a
 	sta $d019
 
 	//; Update bar animations and play music and analyze
@@ -337,7 +336,6 @@ MusicOnlyIRQ: {
 	jsr NextIRQ
 
 	lda #$01
-	sta $d01a
 	sta $d019
 
     // Call the subroutines after acknowledging the VIC interrupt, so that subsequent interrupts can happen on top of the call. The CallSubroutinesButAvoidCallingThemOnTopOfThemselves() macro will ensure that we do not call the subroutines on top of themselves.
