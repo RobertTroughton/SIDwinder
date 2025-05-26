@@ -275,6 +275,10 @@ MainIRQ: {
 	pha
 	tya
 	pha
+	lda $01
+	pha
+	lda #$35
+	sta $01
 
 	//; Update display if needed
 	ldy currentScreenBuffer
@@ -306,7 +310,8 @@ MainIRQ: {
 
 	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites, PlayMusicWithAnalysis))
 
-
+	pla
+	sta $01
 	pla
 	tay
 	pla
