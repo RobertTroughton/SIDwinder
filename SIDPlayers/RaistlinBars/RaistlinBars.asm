@@ -473,6 +473,10 @@ MUSICPLAYER_IRQ0:
         pha
         tya
         pha
+        lda $01
+        pha
+        lda #$35
+        sta $01
 
         ldy CurrentDB
         lda D018Values, y
@@ -495,6 +499,8 @@ MUSICPLAYER_IRQ0:
         sta $d019
 
         //; Restore registers and return
+        pla
+        sta $01
         pla
         tay
         pla
@@ -616,6 +622,10 @@ MUSICPLAYER_IRQ_MusicOnly:
         pha
         tya
         pha
+        lda $01
+        pha
+        lda #$35
+        sta $01
 
         jsr MUSICPLAYER_PlayMusic     //; Play music
 
@@ -627,6 +637,8 @@ MUSICPLAYER_IRQ_MusicOnly:
         sta $d019
 
         //; Restore registers and return
+        pla
+        sta $01
         pla
         tay
         pla
