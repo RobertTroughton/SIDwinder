@@ -287,14 +287,6 @@ MainIRQ: {
 	//; Signal visualization update
 	inc visualizationUpdateFlag
 
-	//; Update bar animations
-	jsr UpdateBarDecay
-	jsr UpdateColors
-	jsr UpdateSprites
-
-	//; Play music and analyze
-	jsr PlayMusicWithAnalysis
-
 	//; Frame counter
 	inc frameCounter
 	bne !skip+
@@ -308,6 +300,12 @@ MainIRQ: {
 	lda #$01
 	sta $d01a
 	sta $d019
+
+	//; Update bar animations and play music and analyze
+	//; And do it with interrupts acknowledged, so another interrupt can happen while we do so
+
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites, PlayMusicWithAnalysis))
+
 
 	pla
 	tay
