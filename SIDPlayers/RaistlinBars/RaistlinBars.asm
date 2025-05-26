@@ -355,13 +355,14 @@ MusicOnlyIRQ: {
 //; =============================================================================
 
 NextIRQ: {
-	ldx #$00						//; Self-modified
+
+NextIRQLdx: ldx #$00						//; Self-modified
 	inx
 	cpx #NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:
-	stx NextIRQ + 1
+	stx NextIRQLdx + 1
 
 	//; Set next raster position
 	lda D012_Values, x
