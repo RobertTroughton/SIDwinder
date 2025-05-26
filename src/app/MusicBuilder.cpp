@@ -81,6 +81,7 @@ namespace sidwinder {
                 options.frames = 100; // Just need a short run to identify key patterns
                 options.registerTrackingEnabled = true; // Track register write order
                 options.patternDetectionEnabled = true;
+                options.shadowRegisterDetectionEnabled = true; // Enable shadow register detection
 
                 // Run the emulation
                 if (emulator_->runEmulation(options)) {
@@ -98,7 +99,7 @@ namespace sidwinder {
             }
 
             // Run assembler to build player+music
-            if (!runAssembler(tempLinkerFile, tempPlayerPrgFile, options.kickAssPath)) {
+            if (!runAssembler(tempLinkerFile, tempPlayerPrgFile, options.kickAssPath, options.tempDir)) {
                 return false;
             }
 
@@ -138,7 +139,7 @@ namespace sidwinder {
             // If input is ASM, just assemble it
             if (bIsASM) {
                 // Run assembler to build pure music
-                if (!runAssembler(inputFile, outputFile, options.kickAssPath)) {
+                if (!runAssembler(inputFile, outputFile, options.kickAssPath, options.tempDir)) {
                     return false;
                 }
                 return true;
@@ -191,6 +192,69 @@ namespace sidwinder {
         }
 
         return true;
+    }
+
+    void MusicBuilder::addUserDefinitions(std::ofstream& file, const BuildOptions& options)
+    {
+        // Add user definitions if any
+        if (!options.userDefinitions.empty()) {
+            file << "// User Definitions\n";
+            for (const auto& [key, value] : options.userDefinitions) {
+                // Determine if it's a number or string
+                bool isNumber = true;
+                bool isHex = false;
+
+                // Check for hex prefix
+                if (value.length() > 1 && value[0] == '$') {
+                    isHex = true;
+                    // Validate hex
+                    for (size_t i = 1; i < value.length(); i++) {
+                        if (!std::isxdigit(value[i])) {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+                else if (value.length() > 2 && value.substr(0, 2) == "0x") {
+                    isHex = true;
+                    // Validate hex
+                    for (size_t i = 2; i < value.length(); i++) {
+                        if (!std::isxdigit(value[i])) {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    // Check if it's a decimal number
+                    for (char c : value) {
+                        if (!std::isdigit(c) && c != '-' && c != '+') {
+                            isNumber = false;
+                            break;
+                        }
+                    }
+                }
+
+                // Output a #define so we can check whether or not this var exists!
+                file << "#define USERDEFINES_" << key << "\n";
+
+                // Output the definition
+                if (isNumber) {
+                    file << ".var " << key << " = " << value << "\n";
+                }
+                else {
+                    // It's a string - escape any quotes
+                    std::string escaped = value;
+                    size_t pos = 0;
+                    while ((pos = escaped.find('"', pos)) != std::string::npos) {
+                        escaped.insert(pos, "\\");
+                        pos += 2;
+                    }
+                    file << ".var " << key << " = \"" << escaped << "\"\n";
+                }
+            }
+            file << "\n";
+        }
     }
 
     bool MusicBuilder::createLinkerFile(
@@ -257,8 +321,8 @@ namespace sidwinder {
         }
         else {
             file << "// No helpful data available\n";
-            file << ".var AddressesThatChangeCount = 0\n";
-            file << ".var AddressesThatChange = List()\n";
+            file << ".var SIDModifiedMemoryCount = 0\n";
+            file << ".var SIDModifiedMemory = List()\n";
             file << ".var SIDRegisterCount = 0\n";
             file << ".var SIDRegisterOrder = List()\n";
         }
@@ -290,6 +354,8 @@ namespace sidwinder {
             file << ".var SIDCopyright = \"" << cleanString(std::string(header.copyright)) << "\"\n\n";
             file << "\n";
         }
+
+        addUserDefinitions(file, options);
 
         // Add player code
         file << "* = PlayerADDR\n";
@@ -334,22 +400,27 @@ namespace sidwinder {
     bool MusicBuilder::runAssembler(
         const fs::path& sourceFile,
         const fs::path& outputFile,
-        const std::string& kickAssPath) {
+        const std::string& kickAssPath,
+        const fs::path& tempDir) {
 
-        // Build the command line
+        // Create log file path in temp directory
+        fs::path logFile = tempDir / (sourceFile.stem().string() + "_kickass.log");
+
+        // Build the command line with output redirection
+        // Using 2>&1 to redirect both stdout and stderr to the same file
         const std::string kickCommand = kickAssPath + " " +
-            sourceFile.string() + " -o " +
-            outputFile.string();
+            "\"" + sourceFile.string() + "\" -o \"" +
+            outputFile.string() + "\" > \"" +
+            logFile.string() + "\" 2>&1";
 
-        util::Logger::debug("Assembling: " + kickCommand);
         const int result = std::system(kickCommand.c_str());
 
         if (result != 0) {
-            util::Logger::error("Failed to assemble: " + sourceFile.string());
+            util::Logger::error("FAILURE: " + sourceFile.string() + " - please see output log for details: " + logFile.string());
+
             return false;
         }
 
-        util::Logger::info("Assembly successful: " + outputFile.string());
         return true;
     }
 

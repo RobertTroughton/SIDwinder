@@ -52,14 +52,13 @@ namespace sidwinder {
         std::string defaultPlayerName = util::ConfigManager::getPlayerName();
 
         // General options
-        cmdParser_.addOptionDefinition("log", "file", "Log file path", "General",
-            util::ConfigManager::getString("logFile", "SIDwinder.log"));
+        cmdParser_.addOptionDefinition("log", "file", "Log file path", "General", util::ConfigManager::getString("logFile", "SIDwinder.log"));
 
-        cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General",
-            util::ConfigManager::getKickAssPath());
+        cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General", util::ConfigManager::getKickAssPath());
 
-        cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General",
-            util::ConfigManager::getExomizerPath());
+        cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General", util::ConfigManager::getExomizerPath());
+
+        cmdParser_.addOptionDefinition("define", "key=value", "Add user definition (can be used multiple times)", "Assembly");
 
         // Flags
         cmdParser_.addFlagDefinition("verbose", "Enable verbose logging", "General");
@@ -92,6 +91,14 @@ namespace sidwinder {
         cmdParser_.addExample(
             "SIDwinder -trace=music.log music.sid",
             "Traces SID register writes to music.log in text format");
+
+        cmdParser_.addExample(
+            "SIDwinder -player -define BackgroundColor=$02 -define PlayerName=Dave music.sid game.prg",
+            "Creates player with custom definitions accessible in the player code");
+
+        cmdParser_.addExample(
+            "SIDwinder -player=RaistlinBarsWithLogo -define LogoFile=\"Logos/MCH.kla\" music.sid game.prg",
+            "Example with different logo for the player");
     }
 
     void SIDwinderApp::initializeLogging() {
@@ -151,6 +158,9 @@ namespace sidwinder {
         catch (const std::exception& e) {
             util::Logger::error(std::string("Failed to create temp directory: ") + e.what());
         }
+
+        // Get user definitions
+        options.userDefinitions = command_.getDefinitions();
 
         // Player options for Player command (formerly LinkPlayer)
         if (command_.getType() == CommandClass::Type::Player) {
@@ -239,6 +249,10 @@ namespace sidwinder {
         // Create and run command processor
         CommandProcessor processor;
         bool success = processor.processFile(options);
+        if (success)
+        {
+            std::cout << "SUCCESS: " << outputFile << " successfully generated" << std::endl;
+        }
 
         return success ? 0 : 1;
     }
@@ -318,10 +332,6 @@ namespace sidwinder {
                 return 1;
             }
 
-            // Let the user know we're relocating with verification
-            std::cout << "Relocating " << inputFile.string() << " to $" << util::wordToHex(relocAddress)
-                << " with verification..." << std::endl;
-
             // Perform relocation with verification
             util::RelocationVerificationResult result = util::relocateAndVerifySID(
                 cpu.get(), sid.get(), inputFile, outputFile, relocAddress, tempDir,
@@ -331,30 +341,19 @@ namespace sidwinder {
             if (result.success) {
                 if (result.verified) {
                     if (result.outputsMatch) {
-                        std::cout << "Success: Relocation successful and verified!" << std::endl;
-
-                        // Additional info if verbose
-                        if (command_.hasFlag("verbose")) {
-                            std::cout << "  Trace logs match - relocated SID file behaves identically to original." << std::endl;
-                            std::cout << "  Original trace: " << result.originalTrace << std::endl;
-                            std::cout << "  Relocated trace: " << result.relocatedTrace << std::endl;
-                        }
+                        std::cout << "SUCCESS: " << inputFile << " successfully relocated and verified" << std::endl;
                     }
                     else {
-                        std::cout << "Warning: Relocation completed but verification failed!" << std::endl;
-                        std::cout << "  The relocated SID file may not behave identically to the original." << std::endl;
-                        std::cout << "  Difference report saved to: " << result.diffReport << std::endl;
+                        std::cout << "FAILURE: " << inputFile << " relocation verification failed. Difference report saved to: " << result.diffReport << std::endl;
                     }
                 }
                 else {
-                    std::cout << "Success: Relocation completed (verification not completed)" << std::endl;
-                    std::cout << "  " << result.message << std::endl;
+                    std::cout << "SUCCESS: " << inputFile << " relocation completed (but verification not completed) - " << result.message << std::endl;
                 }
-                return result.outputsMatch ? 0 : 1;  // Return error code if verification fails
+                return result.outputsMatch ? 0 : 1;
             }
             else {
-                std::cout << "Error: Relocation failed!" << std::endl;
-                std::cout << "  " << result.message << std::endl;
+                std::cout << "FAILURE: " << inputFile << " relocation failed - " << result.message << std::endl;
                 return 1;
             }
         }

@@ -1,265 +1,194 @@
 //; =============================================================================
-//; RaistlinBars - SID Music Visualizer with Spectrum Analyzer Effect
-//; (c) 2018, Raistlin of Genesis*Project
-//; Revised and optimized version with improved smoothing algorithm
+//;                              RAISTLINBARS v2.0
+//;                   Advanced SID Music Spectrum Visualizer
 //; =============================================================================
+//; Original code by Raistlin of Genesis*Project
+//; Enhanced with SIDwinder integration and advanced analysis features
+//; =============================================================================
+//;
+//; DESCRIPTION:
+//; ------------
+//; RaistlinBars creates a real-time spectrum analyzer that visualizes C64 SID
+//; music. It captures the frequency and envelope data from the SID chip and
+//; transforms it into animated bars that dance to the music, complete with
+//; water reflection effects and dynamic color cycling.
+//;
+//; KEY FEATURES:
+//; - 40 frequency bars with 112-pixel resolution
+//; - Real-time SID register analysis without affecting playback
+//; - Water reflection effects using hardware sprites
+//; - Dynamic color cycling with multiple palettes
+//; - Double-buffered display for flicker-free animation
+//;
+//; TECHNICAL APPROACH:
+//; The visualizer uses a dual-playback technique to safely read SID registers:
+//; 1. First playback with memory preservation (normal music playback)
+//; 2. Second playback with $01=$30 to capture SID states
+//; This allows real-time analysis without corrupting the music player's state.
+//;
+//; =============================================================================
+
+#if D400_SHADOW && D401_SHADOW && D404_SHADOW && D406_SHADOW && D407_SHADOW && D408_SHADOW && D40B_SHADOW && D40D_SHADOW && D40E_SHADOW && D40F_SHADOW && D412_SHADOW && D414_SHADOW
+ {
+	#define USE_INBUILT_SID_REGISTER_MIRRORING
+	.print "Using inbuilt SID register mirrors!"
+ }
+#else
+ {
+	#define USE_MANUAL_SID_REGISTER_MIRRORING
+ }
+#endif
 
 * = PlayerADDR
 
-    jmp MUSICPLAYER_Initialize   //; Entry point for the player
+	jmp Initialize					//; Entry point for the player
 
 //; =============================================================================
-//; RESOURCE FILES
+//; CONFIGURATION CONSTANTS
 //; =============================================================================
-.var spritesine_bin = LoadBinary("SpriteSine.bin")       //; Sine wave data for sprite movement
-.var freqtable_bin = LoadBinary("FreqTable.bin")         //; Lookup tables for frequency mapping
-.var charset_map = LoadBinary("CharSet.map")             //; Character set for visualization
-.var watersprites_map = LoadBinary("WaterSprites.map")   //; Sprites for water reflection effect
 
-//; =============================================================================
-//; DISPLAY CONFIGURATION
-//; =============================================================================
-.var NUM_FREQS_ON_SCREEN = 40                //; Number of frequency bars shown
-.var FREQ_BARS_PADDING = 1                   //; Extra padding bytes on each side for smoothing
+.const NUM_FREQUENCY_BARS = 40
 
-//; Song information display settings
-.var SONG_TITLE_COLOR = $01                  //; Color for song title
-.var SONG_TITLE_SCREEN_LINE = 0              //; Screen line for song title
-.var SONG_TITLE_LENGTH = min(SIDName.size(), 40) //; Truncate to screen width
-.var SONG_TITLE_PADDING = (40 - SONG_TITLE_LENGTH) / 2 //; Centering padding
+//; Display layout
+.const TOP_SPECTRUM_HEIGHT = 16
+.const BOTTOM_SPECTRUM_HEIGHT = 3
 
-//; Artist information display settings
-.var ARTIST_NAME_COLOR = $0f                 //; Color for artist name
-.var ARTIST_NAME_SCREEN_LINE = 3             //; Screen line for artist name
-.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40) //; Truncate to screen width
-.var ARTIST_NAME_PADDING = (40 - ARTIST_NAME_LENGTH) / 2 //; Centering padding
+.const SONG_TITLE_LINE = 0
+.const ARTIST_NAME_LINE = 23
+.const SPECTRUM_START_LINE = 3
+.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
-//; Visualization layout
-.var TOP_SPECTROMETER_PIXELHEIGHT = 127
-.var TOP_SPECTROMETER_HEIGHT = ceil(TOP_SPECTROMETER_PIXELHEIGHT / 8)
-.var BOTTOM_SPECTROMETER_PIXELHEIGHT = 24
-.var BOTTOM_SPECTROMETER_HEIGHT = ceil(BOTTOM_SPECTROMETER_PIXELHEIGHT / 8)
-.var SPECTROMETER_START_LINE = 25 - (TOP_SPECTROMETER_HEIGHT + BOTTOM_SPECTROMETER_HEIGHT)
+//; Memory configuration
+.const VIC_BANK = 3						//; $C000-$FFFF
+.const VIC_BANK_ADDRESS = VIC_BANK * $4000
+.const SCREEN_0_OFFSET = 12				//; $F000
+.const SCREEN_1_OFFSET = 13				//; $F400
+.const CHARSET_OFFSET = 7				//; $F800
+.const SPRITE_BASE_INDEX = $80
 
-//; =============================================================================
-//; MEMORY CONFIGURATION
-//; =============================================================================
-.var BASE_BANK = 3                                                              //; VIC bank (3=c000-ffff)
-.var BASE_BANK_ADDRESS = (BASE_BANK * $4000)                                    //; Start address of the bank
-.var SCREEN_BANK0 = 12                                                          //; Screen memory location (Bank+[3800,3bff])
-.var SCREEN_BANK1 = 13                                                          //; Screen memory location (Bank+[3800,3bff])
-.var CHAR_BANK_FONT = 7                                                         //; Character set location (Bank+[3800,3fff])
-.var SCREEN_ADDRESS0 = (BASE_BANK_ADDRESS + (SCREEN_BANK0 * $400))
-.var SCREEN_ADDRESS1 = (BASE_BANK_ADDRESS + (SCREEN_BANK1 * $400))
-.var SPRITE_POINTERS0 = (SCREEN_ADDRESS0 + $3F8)
-.var SPRITE_POINTERS1 = (SCREEN_ADDRESS1 + $3F8)
-.var D018Value0 = ((SCREEN_BANK0 * 16) + (CHAR_BANK_FONT * 2))
-.var D018Value1 = ((SCREEN_BANK1 * 16) + (CHAR_BANK_FONT * 2))
-.var CHARSET_ADDRESS = (BASE_BANK_ADDRESS + (CHAR_BANK_FONT * $800))
-.var SPRITE_INDEX_START = $80
-.var WATERSPRITES_ADDRESS = (BASE_BANK_ADDRESS + (SPRITE_INDEX_START * $40))
+//; Calculated addresses
+.const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
+.const SCREEN_1_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_1_OFFSET * $400)
+.const CHARSET_ADDRESS = VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
+.const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
+.const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
+.const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
+
+//; VIC register values
+.const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
+.const D018_VALUE_1 = (SCREEN_1_OFFSET * 16) + (CHARSET_OFFSET * 2)
+
+//; Calculated bar values
+.const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
+.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
+.const MAIN_BAR_OFFSET = MAX_BAR_HEIGHT - 8
+.const REFLECTION_OFFSET = WATER_REFLECTION_HEIGHT - 7
+
+//; Color palette configuration
+.const NUM_COLOR_PALETTES = 3
+.const COLORS_PER_PALETTE = 8
 
 //; =============================================================================
-//; LOCAL DATA SECTION
+//; EXTERNAL RESOURCES
 //; =============================================================================
-StartLocalData:
 
-    //; Constant for VIC register initialization skipping
-    .var SKIP_VALUE = $e1
+.var file_charsetData = LoadBinary("CharSet.map")
+.var file_waterSpritesData = LoadBinary("WaterSprites.map")
 
-    //; VIC-II register initialization values
-    .var NUM_VIC_INIT_VALUES = EndVICInitValues - StartVICInitValues
+//; Song metadata
+.var SONG_TITLE_LENGTH = min(SIDName.size(), 40)
+.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
 
-    StartVICInitValues:
-        .byte $10                                        //; D000: Sprite0X
-        .byte $e5                                        //; D001: Sprite0Y
-        .byte $40                                        //; D002: Sprite1X
-        .byte $e5                                        //; D003: Sprite1Y
-        .byte $70                                        //; D004: Sprite2X
-        .byte $e5                                        //; D005: Sprite2Y
-        .byte $a0                                        //; D006: Sprite3X
-        .byte $e5                                        //; D007: Sprite3Y
-        .byte $d0                                        //; D008: Sprite4X
-        .byte $e5                                        //; D009: Sprite4Y
-        .byte $00                                        //; D00A: Sprite5X
-        .byte $e5                                        //; D00B: Sprite5Y
-        .byte $30                                        //; D00C: Sprite6X
-        .byte $e5                                        //; D00D: Sprite6Y
-        .byte $00                                        //; D00E: Sprite7X
-        .byte $00                                        //; D00F: Sprite7Y
-        .byte $60                                        //; D010: SpriteXMSB
-        .byte SKIP_VALUE                                 //; D011: Screen control register 1
-        .byte SKIP_VALUE                                 //; D012: Raster line
-        .byte SKIP_VALUE                                 //; D013: LightPenX
-        .byte SKIP_VALUE                                 //; D014: LightPenY
-        .byte $7f                                        //; D015: SpriteEnable (all enabled)
-        .byte $08                                        //; D016: Screen control register 2
-        .byte $00                                        //; D017: SpriteDoubleHeight
-        .byte D018Value0                                 //; D018: Memory setup
-        .byte SKIP_VALUE                                 //; D019: Interrupt status
-        .byte SKIP_VALUE                                 //; D01A: Interrupt control
-        .byte $00                                        //; D01B: SpriteDrawPriority
-        .byte $00                                        //; D01C: SpriteMulticolourMode
-        .byte $7f                                        //; D01D: SpriteDoubleWidth (all enabled)
-        .byte $00                                        //; D01E: SpriteSpriteCollision
-        .byte $00                                        //; D01F: SpriteBackgroundCollision
-        .byte $00                                        //; D020: BorderColour
-        .byte $00                                        //; D021: ScreenColour
-        .byte $00                                        //; D022: MultiColour0
-        .byte $00                                        //; D023: MultiColour1
-        .byte $00                                        //; D024: ExtraBackgroundColour2
-        .byte $00                                        //; D025: SpriteExtraColour0
-        .byte $00                                        //; D026: SpriteExtraColour1
-        .byte $00                                        //; D027: Sprite0Colour
-        .byte $00                                        //; D028: Sprite1Colour
-        .byte $00                                        //; D029: Sprite2Colour
-        .byte $00                                        //; D02A: Sprite3Colour
-        .byte $00                                        //; D02B: Sprite4Colour
-        .byte $00                                        //; D02C: Sprite5Colour
-        .byte $00                                        //; D02D: Sprite6Colour
-        .byte $00                                        //; D02E: Sprite7Colour
-    EndVICInitValues:
+//; =============================================================================
+//; INITIALIZATION
+//; =============================================================================
 
-    //; Song metadata
-    SongData_Title:           .text SIDName.substring(0, min(SIDName.size(), 40))
-    SongData_Artist:          .text SIDAuthor.substring(0, min(SIDAuthor.size(), 40))
+Initialize: {
+	sei
 
-    //; Visualization variables
-    UpdateVisualizerSignal:   .byte $00      //; Flag to trigger visualization update
-    FrameCounter:             .byte $00      //; Counter for current frame (0-255)
-    Frame_256Counter:         .byte $00      //; Counter for 256-frame cycles
+	//; Wait for stable raster before setup
+	bit $d011
+	bpl *-3
+	bit $d011
+	bmi *-3
 
-    //; Cache for previous frame data to optimize rendering
-    PrevFrame_BarHeights_Frame0:     .fill NUM_FREQS_ON_SCREEN, 255  //; Previous bar heights
-    PrevFrame_BarHeights_Frame1:     .fill NUM_FREQS_ON_SCREEN, 255  //; Previous bar heights
-    PrevFrame_BarColors:      .fill NUM_FREQS_ON_SCREEN, 255  //; Previous bar colors
+	//; Turn off display during initialization
+	lda #$00
+	sta $d011
+	sta $d020
 
-//;  -------------------------------------------------------------------------
-//; ADSR Conversion Tables
-//; These tables convert the SID's ADSR values to visual representations
-//; 
-//; Sustain: Converts sustain value (0-15) to visible bar height (35-125)
-//;  - Formula: (sustain / 16) * 6 + 35
-//;  - Higher sustain values in SID = taller bars in visualization
-//;
-//; Release: Converts release value (0-15) to bar decay rate
-//;  - Formula: mod(release, 16) * 96 + 768
-//;  - Stored as 16-bit value (hi/lo bytes)
-//;  - Higher release values = faster visual decay of bars
+	//; System setup
+	jsr SetupStableRaster
+	jsr SetupSystem
+	jsr NMIFix
 
-    SustainConversion:        .fill 16, (i * (TOP_SPECTROMETER_PIXELHEIGHT - 1)) / 15
+	//; Initialize display
+	jsr InitializeVIC
+	jsr ClearScreens
+	jsr DisplaySongInfo
 
-    ReleaseConversionLo:      .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 1   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 2   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 3   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 4   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 6   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 9   ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 11  ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 12  ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 15  ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 38  ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 75  ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 120 ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 150 ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 450 ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 750 ) + 32)
-                              .byte <(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 1200) + 32)
+	ldy #$00
+	lda #$00
+!loop:
+	sta barHeights - 2, y
+	sta smoothedHeights - 2, y
+	iny
+	cpy #NUM_FREQUENCY_BARS + 4
+	bne !loop-
 
-    ReleaseConversionHi:      .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 1   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 2   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 3   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 4   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 6   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 9   ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 11  ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 12  ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 15  ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 38  ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 75  ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 120 ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 150 ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 450 ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 750 ) + 32)
-                              .byte >(((TOP_SPECTROMETER_PIXELHEIGHT * 256.0) / 1200) + 32)
+	//; Wait for stable raster before enabling display
+	bit $d011
+	bpl *-3
+	bit $d011
+	bmi *-3
 
-//;  -------------------------------------------------------------------------
+	//; Enable display
+	lda #$1b
+	sta $d011
 
-    Mul64:                    .fill 4, i * 64
+	//; Setup interrupts
+	jsr SetupInterrupts
 
-    //; Sine wave data for sprite movement
-    SpriteSine:               .fill spritesine_bin.getSize(), spritesine_bin.get(i)
-    
-    //; Frequency lookup tables
-    FreqTable:                .fill freqtable_bin.getSize(), freqtable_bin.get(i)
+	//; Initialize music
+	jsr SetupMusic
 
-    //; Analyzer data buffers with padding bytes for smoothing
-    ChannelToFreqMap:               .fill NUM_FREQS_ON_SCREEN, 0                        //; Maps screen positions to SID channels
+	cli
 
-    .byte $00
-    FrequencyBarHeights:                .fill NUM_FREQS_ON_SCREEN, 0                        //; High bytes of raw bar heights - includes pad-byte before and after for simpler smoothing code
-    .byte $00
+	//; Main loop - wait for visualization updates
+MainLoop:
+	lda visualizationUpdateFlag
+	beq MainLoop
 
-    FrequencyBarHeightsLo:                .fill NUM_FREQS_ON_SCREEN, 0                        //; Low bytes of raw bar heights
+	jsr ApplySmoothing
+	jsr RenderBars
 
-    //; Channel-specific release rates
-    ChannelReleaseHi:               .fill 3, 0                                          //; High bytes of release rates per channel
-    ChannelReleaseLo:               .fill 3, 0                                          //; Low bytes of release rates per channel
+	lda #$00
+	sta visualizationUpdateFlag
 
-    //; New buffer for smoothed bar heights
-    SmoothedBarHeights:             .fill NUM_FREQS_ON_SCREEN, 0                        //; Smoothed bar heights
-    
-    //; SID register ghost copy for analysis
-    SIDRegisterCopy:            .fill 32, 0    //; Copy of SID registers 
+	//; Toggle double buffer
+	lda currentScreenBuffer
+	eor #$01
+	sta currentScreenBuffer
 
-    //; Color lookup tables
-    DarkColorLookup:            .byte $00, $0c, $09, $0e, $06, $09, $0b, $08
-                                .byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
+	jmp MainLoop
+}
 
-    TuneBackupData:              .fill AddressesThatChange.size(), $00
+//; =============================================================================
+//; SYSTEM SETUP
+//; =============================================================================
 
-    //; Color palettes for the visualization
-    .var NUM_COLOR_PALETTES = 3
-    .var NUM_COLORS_PER_PALETTE = 8
-    ColorPalettes:
-                                  .byte $09, $04, $05, $05, $0d, $0d, $0f, $01
-                                  .byte $09, $06, $0e, $0e, $03, $03, $0f, $01
-                                  .byte $09, $02, $0a, $0a, $07, $07, $0f, $01
+SetupSystem: {
+	lda #$35
+	sta $01
 
-    //; Pointers to color palettes
-    ColorPalettePtr_Lo:         .fill NUM_COLOR_PALETTES, <(ColorPalettes + i * NUM_COLORS_PER_PALETTE)
-    ColorPalettePtr_Hi:         .fill NUM_COLOR_PALETTES, >(ColorPalettes + i * NUM_COLORS_PER_PALETTE)
+	//; Set VIC bank
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
 
-    .byte $12, $01, $09, $13, $14, $0c, $09, $0e
-    //; Color mapping table based on bar height
-    BarHeightToColorIndex:      .byte $ff
-                                .fill TOP_SPECTROMETER_PIXELHEIGHT + 4, max(0, min(floor(((i * NUM_COLORS_PER_PALETTE) + (random() * (TOP_SPECTROMETER_PIXELHEIGHT * 0.8) - (TOP_SPECTROMETER_PIXELHEIGHT * 0.4))) / TOP_SPECTROMETER_PIXELHEIGHT), NUM_COLORS_PER_PALETTE - 1))
-
-    //; Color tables for the visualization
-    BarColors:                  .fill TOP_SPECTROMETER_PIXELHEIGHT, $0b  //; Main colors for bars
-
-    //; Calculate which IRQ should update the analyzer
-    .var VISUALIZER_UPDATE_IRQ = 0
-
-    //; Character mapping for meter visualization
-    .align 256
-        .fill TOP_SPECTROMETER_PIXELHEIGHT, 224
-    MeterToCharValues:
-        .fill 8, 225 + i
-        .fill TOP_SPECTROMETER_PIXELHEIGHT, 233
-
-    D018Values:                     .byte D018Value0, D018Value1
-    CurrentDB:                      .byte 0
-
-    //; Offsets into this table. Normally we should offset both by -7 .. but we use -8 for the mainbars so that we get that nice divider-line for free
-    .var MAINBARS_OFFSET = TOP_SPECTROMETER_PIXELHEIGHT - 8
-    .var REFLECTION_OFFSET = BOTTOM_SPECTROMETER_PIXELHEIGHT - 7
-
-EndLocalData:
-
-//; Pre-calculate addresses for frequency tables
-.var FreqHiTable = FreqTable + (0 * 256)
-.var FreqLoTable = FreqTable + (1 * 256)
+	rts
+}
 
 //; =============================================================================
 //; Macros
@@ -282,795 +211,888 @@ are_the_subroutines_still_running_lda: lda #0
 
 //; =============================================================================
 //; CODE SEGMENT
+//; VIC INITIALIZATION
 //; =============================================================================
-StartCodeSegment:
 
-//; =============================================================================
-//; MUSICPLAYER_Initialize() - Entry point for the music visualizer
-//; =============================================================================
-MUSICPLAYER_Initialize:
-        sei                           //; Disable interrupts
+.const SKIP_REGISTER = $e1
 
-        //; Wait for stable raster line
-        bit $d011
-        bpl *-3
-        bit $d011
-        bmi *-3
+InitializeVIC: {
+	//; Apply VIC register configuration
+	ldx #VICConfigEnd - VICConfigStart - 1
+!loop:
+	lda VICConfigStart, x
+	cmp #SKIP_REGISTER
+	beq !skip+
+	sta $d000, x
+!skip:
+	dex
+	bpl !loop-
 
-        //; Turn off screen temporarily during setup
-        lda #$00
-        sta $d011
-        sta $d020
+	//; Initialize color palette
+	jsr InitializeColors
 
-        //; Wait for another stable raster to ensure VIC is ready
-        bit $d011
-        bpl *-3
-        bit $d011
-        bmi *-3
-
-        //; Set up the system
-        jsr PreDemoSetup             //; Initialize system
-        jsr NMIFix                   //; Fix NMI to prevent crashes
-
-        //; Initialize VIC-II registers
-        ldx #(NUM_VIC_INIT_VALUES - 1)
-    InitVICRegisters:
-        lda StartVICInitValues, x
-        cmp #SKIP_VALUE
-        beq SkipThisRegister
-        sta $d000, x                 //; Set VIC register 
-    SkipThisRegister:
-        dex
-        bpl InitVICRegisters
-
-        //; Set up VIC memory banks
-        lda #(63-BASE_BANK)          //; Calculate CIA value for bank
-        sta $dd00
-        lda #BASE_BANK
-        sta $dd02
-
-        //; Initialize the bar color values
-        ldx #0
-    InitBarColorsLoop:
-        lda #$0b                     //; Default color
-        ldy BarHeightToColorIndex, x
-        bmi UseDefaultColor
-        lda ColorPalettes, y         //; Get color from palette
-    UseDefaultColor:
-        sta BarColors, x             //; Set main color
-        inx
-        cpx #TOP_SPECTROMETER_PIXELHEIGHT + 2
-        bne InitBarColorsLoop
-
-        //; Clear screen and color memory
-        ldx #$00
-        lda #$20                     //; Space character
-    ClearScreenLoop:
-        sta $d800 + (0 * 256), x
-        sta $d800 + (1 * 256), x
-        sta $d800 + (2 * 256), x
-        sta $d800 + (3 * 256), x
-        sta SCREEN_ADDRESS0 + (0 * 256), x
-        sta SCREEN_ADDRESS0 + (1 * 256), x
-        sta SCREEN_ADDRESS0 + (2 * 256), x
-        sta SCREEN_ADDRESS0 + (3 * 256), x
-        sta SCREEN_ADDRESS1 + (0 * 256), x
-        sta SCREEN_ADDRESS1 + (1 * 256), x
-        sta SCREEN_ADDRESS1 + (2 * 256), x
-        sta SCREEN_ADDRESS1 + (3 * 256), x
-        inx
-        bne ClearScreenLoop
-
-        //; Set up song and artist name colors
-        ldx #79
-    SetupTitleColorsLoop:
-        lda #SONG_TITLE_COLOR
-        sta $d800 + ((SONG_TITLE_SCREEN_LINE + 0) * 40), x
-        lda #ARTIST_NAME_COLOR
-        sta $d800 + ((ARTIST_NAME_SCREEN_LINE + 0) * 40), x
-        dex
-        bpl SetupTitleColorsLoop
-
-        //; Wait for stable raster before turning screen back on
-        bit $d011
-        bpl *-3
-        bit $d011
-        bmi *-3
-
-        //; Turn on the screen
-        lda #$1b
-        sta $d011
-
-        //; Set up IRQ system
-        lda #<MUSICPLAYER_IRQ0       //; Set IRQ vector
-        sta $fffe
-        lda #>MUSICPLAYER_IRQ0
-        sta $ffff
-        lda D012_Values              //; Set raster line
-        sta $d012
-        lda $d011
-        and #$3f
-        ora D011_Values
-        sta $d011
-
-        //; Enable raster IRQs
-        lda #$01
-        sta $d01a
-        sta $d019
-
-        //; Set final memory configuration
-        lda #$35
-        sta $01
-
-        cli                           //; Enable interrupts
-    
-        //; Initialize music and visualizer
-        jsr MUSICPLAYER_SetupSong
-
-        //; Main program loop - waits for visualization updates
-    MainLoop:
-        lda UpdateVisualizerSignal    //; Check if update is needed
-        beq MainLoop                  //; If not, keep waiting
-
-        jsr MUSICPLAYER_SmoothBars    //; Apply smoothing to the bars
-        jsr MUSICPLAYER_DrawBars      //; Draw the visualization
-        
-        lda #$00
-        sta UpdateVisualizerSignal    //; Clear update flag
-
-        lda CurrentDB
-        eor #$01
-        sta CurrentDB
-
-        jmp MainLoop                  //; Continue looping
+	rts
+}
 
 //; =============================================================================
-//; MUSICPLAYER_NextIRQ() - Set up the next IRQ in the chain
+//; INTERRUPT SETUP
 //; =============================================================================
-MUSICPLAYER_NextIRQ:
-        ldx #$00                      //; IRQ counter (self-modified)
-        inx
-        cpx #NumCallsPerFrame
-        bne NotLastIRQ
 
-        ldx #$00                      //; Reset to first IRQ if at end
-    NotLastIRQ:
-        stx MUSICPLAYER_NextIRQ + 1  //; Store for next time
+SetupInterrupts: {
+	//; Set IRQ vectors
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
 
-        //; Set up for next IRQ
-        lda D012_Values, x            //; Get raster line
-        sta $d012
-        lda $d011
-        and #$3f
-        ora D011_Values, x            //; Set high bit of raster line
-        sta $d011
+	//; Setup raster interrupt
+	lda D012_Values
+	sta $d012
+	lda $d011
+	and #$7f
+	ora D011_Values
+	sta $d011
 
-        //; Set appropriate vector based on which IRQ
-        cpx #$00
-        bne SetMusicOnlyIRQ
+	//; Enable raster interrupts
+	lda #$01
+	sta $d01a
+	sta $d019
 
-        //; Set vector for main IRQ
-        lda #<MUSICPLAYER_IRQ0
-        sta $fffe
-        lda #>MUSICPLAYER_IRQ0
-        sta $ffff
-        rts
+	//; Initialize IRQ counter
+	lda #$00
+	sta NextIRQ + 1
 
-    SetMusicOnlyIRQ:
-        //; Set vector for music-only IRQ
-        lda #<MUSICPLAYER_IRQ_MusicOnly
-        sta $fffe
-        lda #>MUSICPLAYER_IRQ_MusicOnly
-        sta $ffff
-        rts
+	rts
+}
 
 //; =============================================================================
-//; MUSICPLAYER_IRQ0() - Main IRQ handler for music and visualization
+//; MAIN INTERRUPT HANDLER
 //; =============================================================================
-MUSICPLAYER_IRQ0:
-        pha                           //; Save registers
-        txa
-        pha
-        tya
-        pha
-        lda $01
-        pha
-        lda #$35
-        sta $01
 
-        ldy CurrentDB
-        lda D018Values, y
-        cmp $d018
-        beq !skip+
-        sta $d018
+MainIRQ: {
+	pha
+	txa
+	pha
+	tya
+	pha
 
-    !skip:
+	//; Update display if needed
+	ldy currentScreenBuffer
+	lda D018Values, y
+	cmp $d018
+	beq !skip+
+	sta $d018
+!skip:
 
+	//; Signal visualization update
+	inc visualizationUpdateFlag
 
-        //; Set up next IRQ
-        jsr MUSICPLAYER_NextIRQ
+	//; Update bar animations
+	jsr UpdateBarDecay
+	jsr UpdateColors
+	jsr UpdateSprites
 
-        //; Acknowledge the interrupt
-        lda #$01
-        sta $d01a
-        sta $d019
+	//; Play music and analyze
+	jsr PlayMusicWithAnalysis
 
-        //; Do all the visualizer things after acknowledging the interrupt, so that the music can be called on top of it
-        CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(MUSICPLAYER_PlayMusic, MUSICPLAYER_AnalyzeSIDRegisters, DoAllTheVisualizerThings))
+	//; Frame counter
+	inc frameCounter
+	bne !skip+
+	inc frame256Counter
+!skip:
 
-        //; Restore registers and return
-        pla
-        sta $01
-        pla
-        tay
-        pla
-        tax
-        pla
-        rti
+	//; Setup next interrupt
+	jsr NextIRQ
 
-//; =============================================================================
-//; DoAllTheVisualizerThings() - Subroutine that does all the visualizer things
-//; =============================================================================
-DoAllTheVisualizerThings:
+	//; Acknowledge interrupt
+	lda #$01
+	sta $d01a
+	sta $d019
 
-
-        inc UpdateVisualizerSignal
-        jsr MUSICPLAYER_UpdateBarHeights  //; Apply decay to bar heights
-
-
-        //; Frame counter logic
-        inc FrameCounter
-        bne NotNewColorCycle
-
-        //; Every 256 frames, update the color cycle counter
-        inc Frame_256Counter
-
-        //; Reset color update pointer
-        lda #$00
-        sta UpdateNextColorEntry + 1
-
-    UpdateColorPalette:
-        //; Update color palette every 256 frames
-        ldx #$00
-        inx
-        cpx #NUM_COLOR_PALETTES
-        bne NotLastPalette
-        ldx #$00                      //; Loop back to first palette
-    NotLastPalette:
-        stx UpdateColorPalette + 1
-
-        //; Update the active color palette pointers
-        lda ColorPalettePtr_Lo, x
-        sta ReadColorPaletteValue + 1
-        lda ColorPalettePtr_Hi, x
-        sta ReadColorPaletteValue + 2
-    NotNewColorCycle:
-
-    UpdateNextColorEntry:
-        //; Gradually update colors over time
-        lda #$00
-        bmi DontUpdateColors
-        tax
-
-        //; Set up the color based on the palette and height
-        lda #$0b                      //; Default color
-        ldy BarHeightToColorIndex, x
-        bmi UseBaseColor
-    ReadColorPaletteValue:
-        lda ColorPalettes, y          //; Get color from current palette
-    UseBaseColor:
-        sta BarColors, x
-
-        //; Move to next color entry
-        lda UpdateNextColorEntry + 1
-        clc
-        adc #$01
-        cmp #TOP_SPECTROMETER_PIXELHEIGHT + 4 + 1
-        bne NotFinishedColorUpdate
-        lda #$ff                      //; Mark as done when all colors updated
-    NotFinishedColorUpdate:
-        sta UpdateNextColorEntry + 1
-    DontUpdateColors:
-
-    //; Update sprite positions based on sine wave
-    UpdateSpritePositions:
-        ldx #$00                      //; Self-modified index
-
-        //; Read position from sine table
-        lda SpriteSine, x
-        
-        //; Set X positions for all sprites, incrementing by 48 pixels each time
-        .for (var i = 0; i < 7; i++) {
-            sta $d000 + (i * 2)
-            .if (i != 6) {
-                clc
-                adc #$30              //; 48 pixels between each sprite
-            }
-        }
-
-        //; Set high bit of X position (for positions > 255)
-        lda SpriteSine + 128, x
-        sta $d010
-
-    //; Animate sprites
-    AnimateSprites:
-        ldy #$00                      //; Self-modified animation frame
-
-        //; Calculate sprite frame based on frame counter
-        lda FrameCounter
-        lsr                           //; Divide by 4 to slow animation
-        lsr
-        and #$07                      //; 8 animation frames
-        ora #SPRITE_INDEX_START       //; Add base sprite index
-        
-        //; Set sprite pointers for all sprites
-        .for (var i = 0; i < 7; i++) {
-            sta SPRITE_POINTERS0 + i
-            sta SPRITE_POINTERS1 + i
-        }
-
-        //; Update sine wave position for next frame
-        stx UpdateSpritePositions + 1
-        rts
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+}
 
 //; =============================================================================
-//; MUSICPLAYER_IRQ_MusicOnly() - Secondary IRQ handler (music only)
+//; MUSIC-ONLY INTERRUPT HANDLER
 //; =============================================================================
-MUSICPLAYER_IRQ_MusicOnly:
-        pha                           //; Save registers
-        txa
-        pha
-        tya
-        pha
-        lda $01
-        pha
-        lda #$35
-        sta $01
 
+MusicOnlyIRQ: {
+	pha
+	txa
+	pha
+	tya
+	pha
+    lda $01
+    pha
+    lda #$35
+    sta $01
+	jsr NextIRQ
 
-        jsr MUSICPLAYER_NextIRQ       //; Set up next IRQ
+	lda #$01
+	sta $d01a
+	sta $d019
 
-        //; Acknowledge the interrupt
-        lda #$01
-        sta $d01a
-        sta $d019
+    CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
 
-        CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(MUSICPLAYER_PlayMusic, MUSICPLAYER_AnalyzeSIDRegisters))
-
-        //; Restore registers and return
-        pla
-        sta $01
-        pla
-        tay
-        pla
-        tax
-        pla
-        rti
+    pla
+    sta $01
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+}
 
 //; =============================================================================
-//; MUSICPLAYER_UpdateBarHeights() - Apply decay to all bar heights (per frame)
+//; INTERRUPT CHAINING
 //; =============================================================================
-MUSICPLAYER_UpdateBarHeights:
 
-        //; Apply decay to each frequency bar based on its release rate
-        ldx #NUM_FREQS_ON_SCREEN - 1
-    DecayBarsLoop:
-        //; Get the channel associated with this bar
-        ldy ChannelToFreqMap, x
+NextIRQ: {
+	ldx #$00						//; Self-modified
+	inx
+	cpx #NumCallsPerFrame
+	bne !notLast+
+	ldx #$00
+!notLast:
+	stx NextIRQ + 1
 
-        //; Subtract release value from the bar height (16-bit)
-        sec
-        lda FrequencyBarHeightsLo, x
-        sbc ChannelReleaseLo, y
-        sta FrequencyBarHeightsLo, x
-        lda FrequencyBarHeights, x
-        sbc ChannelReleaseHi, y
-        bpl BarHeightNotNegative
+	//; Set next raster position
+	lda D012_Values, x
+	sta $d012
+	lda $d011
+	and #$7f
+	ora D011_Values, x
+	sta $d011
 
-        //; If height went negative, clamp to zero
-        lda #$00
-        sta FrequencyBarHeightsLo, x
-    BarHeightNotNegative:
-        sta FrequencyBarHeights, x
+	//; Set appropriate IRQ vector
+	cpx #$00
+	bne !musicOnly+
 
-        dex
-        bpl DecayBarsLoop
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+	rts
 
-        rts
-
-//; =============================================================================
-//; MUSICPLAYER_SmoothBars() - Apply smoothing to create more natural visualization
-//; =============================================================================
-MUSICPLAYER_SmoothBars:
-
-        ldx #0
-    SmoothingLoop:
-
-        lda FrequencyBarHeights - 1, x  //; Left neighbor
-        clc
-        adc FrequencyBarHeights + 1, x  //; Right neighbor
-        lsr
-        clc
-        adc FrequencyBarHeights, x      //; Current bar
-        lsr
-        sta SmoothedBarHeights, x
-
-        inx
-        cpx #NUM_FREQS_ON_SCREEN
-        bne SmoothingLoop
-        
-        rts
+!musicOnly:
+	lda #<MusicOnlyIRQ
+	sta $fffe
+	lda #>MusicOnlyIRQ
+	sta $ffff
+	rts
+}
 
 //; =============================================================================
-//; MUSICPLAYER_DrawBars() - Draw the spectrometer bars on screen
+//; MUSIC PLAYBACK WITH ANALYSIS
 //; =============================================================================
-MUSICPLAYER_DrawBars:
 
-    //; Update $d800 colour screen first!
-        ldy #NUM_FREQS_ON_SCREEN
-    !loop:
-        dey
-        bpl !continue+
-        jmp !FinishedColourUpdates+
+PlayMusicWithAnalysis: {
 
-    !continue:
-        ldx SmoothedBarHeights, y
-        lda BarColors, x
-        cmp PrevFrame_BarColors, y
-        beq !loop-
-        sta PrevFrame_BarColors, y
-        .for (var line = 0; line < TOP_SPECTROMETER_HEIGHT; line++) {
-            sta $d800 + ((SPECTROMETER_START_LINE + line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        tax
-        lda DarkColorLookup, x
-        .for (var line = 0; line < BOTTOM_SPECTROMETER_HEIGHT; line++) {
-            sta $d800 + ((SPECTROMETER_START_LINE + TOP_SPECTROMETER_HEIGHT + BOTTOM_SPECTROMETER_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        jmp !loop-
+	#if USE_MANUAL_SID_REGISTER_MIRRORING
+		//; First playback - normal music playing with state preservation
+		jsr BackupSIDMemory
+		jsr SIDPlay
+		jsr RestoreSIDMemory
 
-    !FinishedColourUpdates:
+		//; Second playback - capture SID registers
+		lda $01
+		pha
+		lda #$30
+		sta $01
+		jsr SIDPlay
 
-        lda CurrentDB
-        bne UpdateFrame0
-        jmp UpdateFrame1
+		ldy #24
+	!loop:
+		lda $d400, y
+		sta sidRegisterMirror, y
+		dey
+		bpl !loop-
 
-    UpdateFrame0:
+		pla
+		sta $01
+	#endif // USE_MANUAL_SID_REGISTER_MIRRORING
 
-    //; Update screen with bars...
-        ldy #NUM_FREQS_ON_SCREEN
+	#if USE_INBUILT_SID_REGISTER_MIRRORING
+		jsr SIDPlay
 
-    !loop:
-        dey
-        bpl !continue+
+		//; todo: we should change all this so that we don't need to do any copying at all
+		lda D400_SHADOW_REGISTER
+		sta sidRegisterMirror + 0 + (0 * 7)
+		lda D401_SHADOW_REGISTER
+		sta sidRegisterMirror + 1 + (0 * 7)
+		lda D404_SHADOW_REGISTER
+		sta sidRegisterMirror + 4 + (0 * 7)
+		lda D406_SHADOW_REGISTER
+		sta sidRegisterMirror + 6 + (0 * 7)
 
-        rts
+		lda D407_SHADOW_REGISTER
+		sta sidRegisterMirror + 0 + (1 * 7)
+		lda D408_SHADOW_REGISTER
+		sta sidRegisterMirror + 1 + (1 * 7)
+		lda D40B_SHADOW_REGISTER
+		sta sidRegisterMirror + 4 + (1 * 7)
+		lda D40D_SHADOW_REGISTER
+		sta sidRegisterMirror + 6 + (1 * 7)
 
-    !continue:
-        lda SmoothedBarHeights, y
-        cmp PrevFrame_BarHeights_Frame0, y
-        beq !loop-
+		lda D40E_SHADOW_REGISTER
+		sta sidRegisterMirror + 0 + (2 * 7)
+		lda D40F_SHADOW_REGISTER
+		sta sidRegisterMirror + 1 + (2 * 7)
+		lda D412_SHADOW_REGISTER
+		sta sidRegisterMirror + 4 + (2 * 7)
+		lda D414_SHADOW_REGISTER
+		sta sidRegisterMirror + 6 + (2 * 7)
+	#endif // USE_INBUILT_SID_REGISTER_MIRRORING
 
-    !updateBar:
-        //; Store new height for next comparison
-        sta PrevFrame_BarHeights_Frame0, y
-        tax
-
-        .for (var line = 0; line < TOP_SPECTROMETER_HEIGHT; line++) {
-            lda MeterToCharValues - MAINBARS_OFFSET + (line * 8), x
-            sta SCREEN_ADDRESS0 + ((SPECTROMETER_START_LINE + line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        txa
-        lsr
-        lsr
-        tax
-        .for (var line = 0; line < BOTTOM_SPECTROMETER_HEIGHT; line++) {
-            lda MeterToCharValues - REFLECTION_OFFSET + (line * 8), x
-            clc
-            adc #10
-            sta SCREEN_ADDRESS0 + ((SPECTROMETER_START_LINE + TOP_SPECTROMETER_HEIGHT + BOTTOM_SPECTROMETER_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        jmp !loop-
-
-    UpdateFrame1:
-
-    //; Update screen with bars...
-        ldy #NUM_FREQS_ON_SCREEN
-
-    !loop:
-        dey
-        bpl !continue+
-
-        rts
-
-    !continue:
-        lda SmoothedBarHeights, y
-        cmp PrevFrame_BarHeights_Frame1, y
-        beq !loop-
-
-    !updateBar:
-        //; Store new height for next comparison
-        sta PrevFrame_BarHeights_Frame1, y
-        tax
-
-        .for (var line = 0; line < TOP_SPECTROMETER_HEIGHT; line++) {
-            lda MeterToCharValues - MAINBARS_OFFSET + (line * 8), x
-            sta SCREEN_ADDRESS1 + ((SPECTROMETER_START_LINE + line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        txa
-        lsr
-        lsr
-        tax
-        .for (var line = 0; line < BOTTOM_SPECTROMETER_HEIGHT; line++) {
-            lda MeterToCharValues - REFLECTION_OFFSET + (line * 8), x
-            clc
-            adc #20
-            sta SCREEN_ADDRESS1 + ((SPECTROMETER_START_LINE + TOP_SPECTROMETER_HEIGHT + BOTTOM_SPECTROMETER_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQS_ON_SCREEN) / 2), y
-        }
-        jmp !loop-
-
-BackupAddresses:
-        .for (var i = 0; i < AddressesThatChange.size(); i++)
-        {
-            lda AddressesThatChange.get(i)
-            sta TuneBackupData + i
-        }
-        rts
-        
-RestoreAddresses:
-        .for (var i = 0; i < AddressesThatChange.size(); i++)
-        {
-            lda TuneBackupData + i
-            sta AddressesThatChange.get(i)
-        }
-        rts
-       
-
+	//; Analyze captured registers
+	jmp AnalyzeSIDRegisters
+}
 
 //; =============================================================================
-//; MUSICPLAYER_PlayMusic() - Handle SID music playback and register capture
+//; SID REGISTER ANALYSIS
 //; =============================================================================
-MUSICPLAYER_PlayMusic:
 
-        //; Save current memory configuration
-        lda $01
-        pha
-        
-        //; first call is our "clean" call which will actually play the music
-        //; we backup and restore everything so that the 2nd call can be made safely
-        jsr BackupAddresses
-        jsr SIDPlay
-        jsr RestoreAddresses
+AnalyzeSIDRegisters: {
+	//; Process each voice
+	.for (var voice = 0; voice < 3; voice++) {
+		//; Check if voice is active
+		lda sidRegisterMirror + (voice * 7) + 4		//; Control register
+		bmi !skipVoice+									//; Skip if noise
+		and #$01										//; Check gate
+		beq !skipVoice+
 
-        lda #$30
-        sta $01
-        jsr SIDPlay
-        .for (var i=24; i >= 0; i--) {
-            lda $d400 + i
-            sta SIDRegisterCopy + i
-        }
-        pla
-        sta $01
+		//; Get frequency and map to bar position
+		ldy sidRegisterMirror + (voice * 7) + 1		//; Frequency high
+		cpy #4
+		bcc !lowFreq+
 
-        //; Write registers back to SID
-/*        #if SID_REGISTER_REORDER_AVAILABLE
-            //; Use custom register write order if available
-            .for (var i = 0; i < SIDRegisterCount; i++) {
-                lda SIDRegisterCopy + SIDRegisterOrder.get(i)
-                sta $d400 + SIDRegisterOrder.get(i)
-            }
-        #else
-            //; Standard register write order
-            .for (var i = 0; i <= 24; i++) {
-                lda SIDRegisterCopy + i
-                sta $d400 + i
-            }
-        #endif*/
-        rts
+		//; High frequency lookup
+		ldx frequencyToBarHi, y
+		jmp !gotBar+
 
-//; =============================================================================
-//; MUSICPLAYER_AnalyzeSIDRegisters() - Analyze SID registers for visualization
-//; =============================================================================
-MUSICPLAYER_AnalyzeSIDRegisters:
-        //; Process each of the three SID channels
-        .for (var channel = 0; channel < 3; channel++) {
-            //; Check if voice is active (gate bit set and not in noise mode)
-            lda SIDRegisterCopy + (channel * 7) + 4  //; Control register
-            bmi !skipChannel+                //; Skip if in noise mode
-            and #1                                  //; Check gate bit
-            bne !processChannel+            //; Process if gate is on
-            jmp !skipChannel+               //; Skip if gate is off
+	!lowFreq:
+		//; Low frequency lookup
+		ldx sidRegisterMirror + (voice * 7) + 0		//; Frequency low
+		txa
+		lsr
+		lsr
+		ora multiply64Table, y
+		tay
+		ldx frequencyToBarLo, y
 
-        !processChannel:
-            //; Get the frequency and map it to a bar position
-            ldy SIDRegisterCopy + (channel * 7) + 1  //; hi-freq
+	!gotBar:
+		//; Process envelope
+		lda sidRegisterMirror + (voice * 7) + 6		//; SR register
+		pha
 
-            cpy #4
-            bcc !useLoFreqTable+            //; Use lo-freq table if hi-freq < 4
+		//; Set release rate for this voice
+		and #$0f
+		tay
+		lda releaseRateHi, y
+		sta voiceReleaseHi + voice
+		lda releaseRateLo, y
+		sta voiceReleaseLo + voice
 
-        !useHiFreqTable:
-            //; For higher frequencies, use the hi-freq table
-            ldx FreqHiTable, y
-            jmp !gotBarPosition+
+		//; Check sustain level
+		pla
+		lsr
+		lsr
+		lsr
+		lsr
+		tay
+		lda sustainToHeight, y
 
-        !useLoFreqTable:
-            //; For lower frequencies, combine lo and hi values
-            ldx SIDRegisterCopy + (channel * 7) + 0  //; lo-freq
-            txa
-            lsr
-            lsr
-            ora Mul64, y
-            tay
-            ldx FreqLoTable, y
-            
-        !gotBarPosition:
-            //; Get the sustain/release values
-            lda SIDRegisterCopy + (channel * 7) + 6  //; sustain(hi)/release(lo)
-            pha
-            and #$0f
-            tay
-            //; Set up release rate for this channel
-            lda ReleaseConversionHi, y
-            sta ChannelReleaseHi + channel
-            lda ReleaseConversionLo, y
-            sta ChannelReleaseLo + channel
+		//; Update bar if higher than current
+		cmp barHeights, x
+		bcc !skipVoice+
 
-            pla
-            lsr
-            lsr
-            lsr
-            lsr
-            tay
+		sta barHeights, x
+		lda #0
+		sta barHeightsLo, x
+		lda #voice
+		sta barVoiceMap, x
 
-            //; Check if we should update the bar height
-            lda SustainConversion, y                //; Get sustain height 
-            cmp FrequencyBarHeights + 0, x              //; Compare to current height
-            bcc !skipChannel+              //; Skip if current is higher
-
-        !updateBarHeight:
-            //; Set new bar height
-            sta FrequencyBarHeights + 0, x
-            lda #0
-            sta FrequencyBarHeightsLo + 0, x
-            
-            //; Record which channel controls this frequency bar
-            lda #channel
-            sta ChannelToFreqMap + 0, x
-
-        !skipChannel:
-        }
-        rts
+	!skipVoice:
+	}
+	rts
+}
 
 //; =============================================================================
-//; MUSICPLAYER_SetupSong() - Initialize music and display information
+//; BAR ANIMATION
 //; =============================================================================
-MUSICPLAYER_SetupSong:
 
-        //; Clear SID registers
-        ldy #24
-        lda #$00
-    ClearSIDRegisters:
-        sta $d400, y
-        dey
-        bpl ClearSIDRegisters
+UpdateBarDecay: {
+	//; Apply decay to each bar based on its voice's release rate
+	ldx #NUM_FREQUENCY_BARS - 1
+!loop:
+	ldy barVoiceMap, x
 
-        //; Display song title
-        ldy #SONG_TITLE_LENGTH - 1
-    DisplaySongTitle:
-        lda SongData_Title, y
-        sta SCREEN_ADDRESS0 + ((SONG_TITLE_SCREEN_LINE + 0) * 40) + SONG_TITLE_PADDING, y
-        sta SCREEN_ADDRESS1 + ((SONG_TITLE_SCREEN_LINE + 0) * 40) + SONG_TITLE_PADDING, y
-        ora #$80                      //; Reverse character for bottom row
-        sta SCREEN_ADDRESS0 + ((SONG_TITLE_SCREEN_LINE + 1) * 40) + SONG_TITLE_PADDING, y
-        sta SCREEN_ADDRESS1 + ((SONG_TITLE_SCREEN_LINE + 1) * 40) + SONG_TITLE_PADDING, y
-        dey
-        bpl DisplaySongTitle
+	//; 16-bit subtraction for smooth decay
+	sec
+	lda barHeightsLo, x
+	sbc voiceReleaseLo, y
+	sta barHeightsLo, x
+	lda barHeights, x
+	sbc voiceReleaseHi, y
+	bpl !positive+
 
-        //; Display artist name
-        ldy #ARTIST_NAME_LENGTH - 1
-    DisplayArtistName:
-        lda SongData_Artist, y
-        sta SCREEN_ADDRESS0 + ((ARTIST_NAME_SCREEN_LINE + 0) * 40) + ARTIST_NAME_PADDING, y
-        sta SCREEN_ADDRESS1 + ((ARTIST_NAME_SCREEN_LINE + 0) * 40) + ARTIST_NAME_PADDING, y
-        ora #$80                      //; Reverse character for bottom row
-        sta SCREEN_ADDRESS0 + ((ARTIST_NAME_SCREEN_LINE + 1) * 40) + ARTIST_NAME_PADDING, y
-        sta SCREEN_ADDRESS1 + ((ARTIST_NAME_SCREEN_LINE + 1) * 40) + ARTIST_NAME_PADDING, y
-        dey
-        bpl DisplayArtistName
+	//; Clamp to zero
+	lda #$00
+	sta barHeightsLo, x
+!positive:
+	sta barHeights, x
 
-        //; Initialize the SID player
-        lda #$00                      //; Start with song #0
-        jmp SIDInit
+	dex
+	bpl !loop-
+	rts
+}
 
 //; =============================================================================
-//; PreDemoSetup() - Initialize system for stable raster IRQs
+//; SMOOTHING ALGORITHM
 //; =============================================================================
-.align 256
-PreDemoSetup:
-        //; From Spindle by lft, www.linusakesson.net/software/spindle/
-        //; Prepare CIA #1 timer B to compensate for interrupt jitter.
-        //; Also initialize d01a and dc02.
 
-        //; Wait for stable raster
-        bit $d011
-        bmi *-3
+ApplySmoothing: {
+	//; Apply gaussian-like smoothing for natural movement
+	ldx #0
+!loop:
+	lda barHeights, x
+	lsr
+	ldy barHeights - 2, x
+	adc div16, y
+	ldy barHeights - 1, x
+	adc div16mul3, y
+	ldy barHeights + 1, x
+	adc div16mul3, y
+	ldy barHeights + 2, x
+	adc div16, y
+	sta smoothedHeights, x
 
-        bit $d011
-        bpl *-3
-
-        ldx $d012
-        inx
-    ResyncRaster:
-        cpx $d012
-        bne *-3
-
-        ldy #0
-        sty $dc07
-        lda #62
-        sta $dc06
-        iny
-        sty $d01a
-        dey
-        dey
-        sty $dc02
-        cmp (0,x)
-        cmp (0,x)
-        cmp (0,x)
-        lda #$11
-        sta $dc0f
-        txa
-        inx
-        inx
-        cmp $d012
-        bne ResyncRaster
-
-        //; Set up IRQ system
-        lda #$7f
-        sta $dc0d
-        sta $dd0d
-        lda $dc0d
-        lda $dd0d
-
-        //; Wait for stable raster
-        bit $d011
-        bpl *-3
-        bit $d011
-        bmi *-3
-
-        //; Enable raster IRQs
-        lda #$01
-        sta $d01a
-
-        rts
+	inx
+	cpx #NUM_FREQUENCY_BARS
+	bne !loop-
+	rts
+}
 
 //; =============================================================================
-//; Include necessary system files
+//; RENDERING
 //; =============================================================================
+
+RenderBars: {
+
+	//; Update colors first
+	ldy #NUM_FREQUENCY_BARS
+!colorLoop:
+	dey
+	bmi !colorsDone+
+
+	ldx smoothedHeights, y
+	lda heightToColor, x
+	cmp previousColors, y
+	beq !colorLoop-
+	sta previousColors, y
+
+	//; Update main bars
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+
+	//; Update reflection with darker color
+	tax
+	lda darkerColorMap, x
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+	jmp !colorLoop-
+
+!colorsDone:
+
+	//; Render to appropriate screen buffer
+	lda currentScreenBuffer
+	beq !renderScreen1+
+
+	//; Render to screen 0
+	jmp RenderToScreen0
+
+!renderScreen1:
+	//; Render to screen 1
+	jmp RenderToScreen1
+}
+
+//; Screen-specific rendering routines
+RenderToScreen0: {
+	ldy #NUM_FREQUENCY_BARS
+!loop:
+	dey
+	bpl !continue+
+
+	rts
+!continue:
+
+	lda smoothedHeights, y
+	cmp previousHeightsScreen0, y
+	beq !loop-
+	sta previousHeightsScreen0, y
+	tax
+
+	//; Draw main bar
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
+		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+
+	//; Draw reflection
+	txa
+	lsr
+	lsr
+	tax
+	clc
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
+		adc #10
+		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+	jmp !loop-
+}
+
+RenderToScreen1: {
+	ldy #NUM_FREQUENCY_BARS
+!loop:
+	dey
+	bpl !continue+
+
+	rts
+!continue:
+
+	lda smoothedHeights, y
+	cmp previousHeightsScreen1, y
+	beq !loop-
+	sta previousHeightsScreen1, y
+	tax
+
+	//; Draw main bar
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
+		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+
+	//; Draw reflection
+	txa
+	lsr
+	lsr
+	tax
+	clc
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
+		adc #20
+		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+	}
+	jmp !loop-
+}
+
+//; =============================================================================
+//; COLOR MANAGEMENT
+//; =============================================================================
+
+UpdateColors: {
+	//; Update color cycling on 256-frame boundaries
+	lda frameCounter
+	bne !done+
+
+	inc frame256Counter
+	lda #$00
+	sta colorUpdateIndex
+
+	//; Cycle to next palette
+	ldx currentPalette
+	inx
+	cpx #NUM_COLOR_PALETTES
+	bne !setPalette+
+	ldx #$00
+!setPalette:
+	stx currentPalette
+
+	//; Update palette pointers
+	lda colorPalettesLo, x
+	sta !readColor+ + 1
+	lda colorPalettesHi, x
+	sta !readColor+ + 2
+
+!done:
+	//; Gradual color update
+	ldx colorUpdateIndex
+	bmi !exit+
+
+	lda #$0b							//; Default color
+	ldy heightToColorIndex, x
+	bmi !useDefault+
+!readColor:
+	lda colorPalettes, y
+!useDefault:
+	sta heightToColor, x
+
+	inc colorUpdateIndex
+	lda colorUpdateIndex
+	cmp #MAX_BAR_HEIGHT + 5
+	bne !exit+
+	lda #$ff
+	sta colorUpdateIndex
+!exit:
+	rts
+}
+
+//; =============================================================================
+//; SPRITE ANIMATION
+//; =============================================================================
+
+UpdateSprites: {
+	ldx spriteAnimationIndex
+
+	//; Update X positions from sine table
+	lda spriteSineTable, x
+	.for (var i = 0; i < 8; i++) {
+		sta $d000 + (i * 2)
+		.if (i != 7) {
+			clc
+			adc #$30					//; 48 pixels between sprites
+		}
+	}
+
+	ldy #$c0
+	lda $d000 + (5 * 2)
+	bmi !skip+
+	ldy #$e0
+!skip:
+	sty $d010
+
+	//; Update sprite pointers
+	lda frameCounter
+	lsr
+	lsr
+	and #$07
+	ora #SPRITE_BASE_INDEX
+	.for (var i = 0; i < 8; i++) {
+		sta SPRITE_POINTERS_0 + i
+		sta SPRITE_POINTERS_1 + i
+	}
+
+	clc
+	lda spriteAnimationIndex
+	adc #$01
+	and #$7f
+	sta spriteAnimationIndex
+
+	rts
+}
+
+//; =============================================================================
+//; UTILITY FUNCTIONS
+//; =============================================================================
+
+ClearScreens: {
+	ldx #$00
+	lda #$20							//; Space character
+!loop:
+	sta SCREEN_0_ADDRESS + $000, x
+	sta SCREEN_0_ADDRESS + $100, x
+	sta SCREEN_0_ADDRESS + $200, x
+	sta SCREEN_0_ADDRESS + $300, x
+	sta SCREEN_1_ADDRESS + $000, x
+	sta SCREEN_1_ADDRESS + $100, x
+	sta SCREEN_1_ADDRESS + $200, x
+	sta SCREEN_1_ADDRESS + $300, x
+	sta $d800 + $000, x
+	sta $d800 + $100, x
+	sta $d800 + $200, x
+	sta $d800 + $300, x
+	inx
+	bne !loop-
+	rts
+}
+
+DisplaySongInfo: {
+	//; Setup title colors
+	ldx #79
+!loop:
+	lda #$01							//; White for title
+	sta $d800 + (SONG_TITLE_LINE * 40), x
+	lda #$0f							//; Light gray for artist
+	sta $d800 + (ARTIST_NAME_LINE * 40), x
+	dex
+	bpl !loop-
+
+	//; Display song title
+	ldy #0
+!titleLoop:
+	lda songTitle, y
+	beq !titleDone+
+	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	ora #$80							//; Reversed for second line
+	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
+	iny
+	cpy #40
+	bne !titleLoop-
+!titleDone:
+
+	//; Display artist name
+	ldy #0
+!artistLoop:
+	lda artistName, y
+	beq !artistDone+
+	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	ora #$80							//; Reversed for second line
+	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
+	iny
+	cpy #40
+	bne !artistLoop-
+!artistDone:
+	rts
+}
+
+InitializeColors: {
+	//; Initialize bar colors
+	ldx #0
+!loop:
+	lda #$0b							//; Default cyan
+	ldy heightToColorIndex, x
+	bmi !useDefault+
+	lda colorPalettes, y
+!useDefault:
+	sta heightToColor, x
+	inx
+	cpx #MAX_BAR_HEIGHT + 5
+	bne !loop-
+	rts
+}
+
+SetupMusic: {
+	//; Clear SID
+	ldy #24
+	lda #$00
+!loop:
+	sta $d400, y
+	dey
+	bpl !loop-
+
+	//; Initialize player
+	lda #$00
+	jmp SIDInit
+}
+
+//; =============================================================================
+//; DATA SECTION - VIC Configuration
+//; =============================================================================
+
+VICConfigStart:
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 0 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 1 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 2 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 3 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 4 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
+	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
+	.byte $60							//; Sprite X MSB
+	.byte SKIP_REGISTER					//; D011
+	.byte SKIP_REGISTER					//; D012
+	.byte SKIP_REGISTER					//; D013
+	.byte SKIP_REGISTER					//; D014
+	.byte $ff							//; Sprite enable
+	.byte $08							//; D016
+	.byte $00							//; Sprite Y expand
+	.byte D018_VALUE_0					//; Memory setup
+	.byte SKIP_REGISTER					//; D019
+	.byte SKIP_REGISTER					//; D01A
+	.byte $00							//; Sprite priority
+	.byte $00							//; Sprite multicolor
+	.byte $ff							//; Sprite X expand
+	.byte $00							//; Sprite-sprite collision
+	.byte $00							//; Sprite-background collision
+	.byte $00							//; Border color
+	.byte $00							//; Background color
+	.byte $00, $00						//; Extra colors
+	.byte $00, $00, $00					//; Sprite extra colors
+	.byte $00, $00, $00, $00			//; Sprite colors 0-3
+	.byte $00, $00, $00, $00			//; Sprite colors 4-7
+VICConfigEnd:
+
+//; =============================================================================
+//; DATA SECTION - Animation State
+//; =============================================================================
+
+visualizationUpdateFlag:	.byte $00
+frameCounter:				.byte $00
+frame256Counter:			.byte $00
+currentScreenBuffer:		.byte $00
+spriteAnimationIndex:		.byte $00
+colorUpdateIndex:			.byte $00
+currentPalette:				.byte $00
+
+D018Values:					.byte D018_VALUE_0, D018_VALUE_1
+
+//; =============================================================================
+//; DATA SECTION - Bar State
+//; =============================================================================
+
+barHeightsLo:				.fill NUM_FREQUENCY_BARS, 0
+barVoiceMap:				.fill NUM_FREQUENCY_BARS, 0
+
+previousHeightsScreen0:		.fill NUM_FREQUENCY_BARS, 255
+previousHeightsScreen1:		.fill NUM_FREQUENCY_BARS, 255
+previousColors:				.fill NUM_FREQUENCY_BARS, 255
+
+.byte $00, $00
+barHeights:					.fill NUM_FREQUENCY_BARS, 0
+.byte $00, $00
+
+smoothedHeights:			.fill NUM_FREQUENCY_BARS, 0
+
+//; =============================================================================
+//; DATA SECTION - Voice State
+//; =============================================================================
+
+voiceReleaseHi:				.fill 3, 0
+voiceReleaseLo:				.fill 3, 0
+sidRegisterMirror:			.fill 32, 0
+
+//; =============================================================================
+//; DATA SECTION - Calculations
+//; =============================================================================
+
+.align 128
+div16:						.fill 128, i / 16.0
+div16mul3:					.fill 128, (3 * i) / 16.0
+multiply64Table:			.fill 4, i * 64
+
+//; Color tables
+darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
+							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
+
+//; =============================================================================
+//; DATA SECTION - Color Palettes
+//; =============================================================================
+
+colorPalettes:
+	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01		//; Purple/pink
+	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01		//; Blue/cyan
+	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01		//; Red/orange
+
+colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
+colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
+
+heightToColorIndex:			.byte $ff
+							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
+
+heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
+
+//; =============================================================================
+//; DATA SECTION - Display Mapping
+//; =============================================================================
+
+	.align 256
+	.fill MAX_BAR_HEIGHT, 224
+barCharacterMap:
+	.fill 8, 225 + i
+	.fill MAX_BAR_HEIGHT, 233
+
+//; =============================================================================
+//; DATA SECTION - Animation Data
+//; =============================================================================
+
+spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
+
+//; =============================================================================
+//; DATA SECTION - Song Information
+//; =============================================================================
+
+songTitle:					.text SIDName.substring(0, SONG_TITLE_LENGTH)
+							.byte 0
+artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
+							.byte 0
+
+//; =============================================================================
+//; DATA SECTION - Raster Line Timing
+//; =============================================================================
+
+.var FrameHeight = 312 // TODO: NTSC!
+D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
+D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
+
+//; =============================================================================
+//; INCLUDES
+//; =============================================================================
+
+#if USE_MANUAL_SID_REGISTER_MIRRORING
+.import source "../INC/MemoryPreservation.asm"
+#endif // USE_MANUAL_SID_REGISTER_MIRRORING
+
 .import source "../INC/NMIFix.asm"
-.import source "../INC/RasterLineTiming.asm"
+.import source "../INC/StableRasterSetup.asm"
 
-EndCodeSegment:
-
-//; =============================================================================
-//; DATA SEGMENTS - Character and sprite data
-//; =============================================================================
-
-//; Water reflection sprites
-* = WATERSPRITES_ADDRESS
-StartWaterSprites:
-    .fill watersprites_map.getSize(), watersprites_map.get(i)
-EndWaterSprites:
-
-//; Character set for bars
-* = CHARSET_ADDRESS
-StartCharSet:
-    .fill charset_map.getSize(), charset_map.get(i)
-EndCharSet:
+.align 256
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
-//; Memory usage summary
+//; SPRITE DATA
 //; =============================================================================
-    .print "* $" + toHexString(StartCodeSegment) + "-$" + toHexString(EndCodeSegment - 1) + " Code Segment"
-    .print "* $" + toHexString(StartLocalData) + "-$" + toHexString(EndLocalData - 1) + " Local Data"
-    .print "* $" + toHexString(StartCharSet) + "-$" + toHexString(EndCharSet - 1) + " Character Set"
-    .print "* $" + toHexString(StartWaterSprites) + "-$" + toHexString(EndWaterSprites - 1) + " Water Sprites"
+
+* = SPRITES_ADDRESS "Water Sprites"
+	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
+
+//; =============================================================================
+//; CHARSET DATA
+//; =============================================================================
+
+* = CHARSET_ADDRESS "Font"
+	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
+
+* = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
+
+//; First, the chars for the main bar
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $00, $00, $00, $00, $00, $00, $00, $7C
+	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
+	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
+	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
+	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
+	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
+	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+
+//; reflection chars - frame 1 is &55 (for flicker)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $00, $00, $00, $00, $00, $00, $00
+	.byte $aa, $54, $00, $00, $00, $00, $00, $00
+	.byte $54, $aa, $54, $00, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+
+//; reflection chars - frame 2 is &AA (for flicker)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $aa, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $aa, $00, $00, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
+	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+
+//; =============================================================================
+//; END OF FILE
+//; =============================================================================

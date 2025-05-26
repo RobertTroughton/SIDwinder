@@ -11,6 +11,31 @@
 
 namespace sidwinder {
 
+    // 6502 instruction size lookup table
+    namespace {
+        constexpr int INSTRUCTION_SIZES[256] = {
+            1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // 00-0F
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // 10-1F
+            3, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // 20-2F
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // 30-3F
+            1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // 40-4F
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // 50-5F
+            1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // 60-6F
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // 70-7F
+            2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // 80-8F
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // 90-9F
+            2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // A0-AF
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // B0-BF
+            2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // C0-CF
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3, // D0-DF
+            2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3, // E0-EF
+            2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3  // F0-FF
+        };
+
+        // Memory access flags from MemoryAnalyzer.cpp
+        constexpr u8 MemoryAccess_OpCode = 1 << 4;
+    }
+
     /**
      * @brief Constructor for LabelGenerator
      *
@@ -20,30 +45,77 @@ namespace sidwinder {
      * @param analyzer Memory analyzer to use for code/data analysis
      * @param loadAddress Load address of the SID file
      * @param endAddress End address of the SID file
+     * @param memory Span of memory data for instruction analysis
      */
     LabelGenerator::LabelGenerator(
         const MemoryAnalyzer& analyzer,
         u16 loadAddress,
-        u16 endAddress)
+        u16 endAddress,
+        std::span<const u8> memory)
         : analyzer_(analyzer),
         loadAddress_(loadAddress),
-        endAddress_(endAddress) {
+        endAddress_(endAddress),
+        memory_(memory) {
     }
 
     /**
      * @brief Generate labels for code and data regions
      *
      * Creates labels for jump targets, subroutines, and data blocks
-     * based on the memory analysis results.
+     * based on the memory analysis results. Also handles hidden code
+     * (mid-instruction jump targets).
      */
     void LabelGenerator::generateLabels() {
         util::Logger::debug("Generating labels...");
 
-        // First, generate labels for all jump targets
+        // First pass: identify all label targets and check if they're mid-instruction
         std::vector<u16> labelTargets = analyzer_.findLabelTargets();
-        for (u16 addr : labelTargets) {
-            if (addr >= loadAddress_ && addr < endAddress_) {
-                labelMap_[addr] = "Label_" + std::to_string(codeLabelCounter_++);
+
+        for (u16 targetAddr : labelTargets) {
+            if (targetAddr >= loadAddress_ && targetAddr < endAddress_) {
+                // Check if this target is in the middle of an instruction
+                if (analyzer_.getMemoryType(targetAddr) & MemoryType::Code) {
+                    bool foundMidInstruction = false;
+
+                    // Look back up to 2 bytes (since max offset into a 3-byte instruction is 2)
+                    for (int lookback = 1; lookback <= 2; ++lookback) {
+                        if (targetAddr >= lookback) {
+                            u16 possibleStart = targetAddr - lookback;
+
+                            // Check if there's an instruction starting here
+                            if ((analyzer_.getMemoryType(possibleStart) & MemoryType::Code) &&
+                                isProbableOpcode(possibleStart)) {
+
+                                u8 opcode = memory_[possibleStart];
+                                int instrSize = getInstructionSize(opcode);
+
+                                // Does this instruction cover our target?
+                                if (possibleStart + instrSize > targetAddr) {
+                                    // Yes! This is a mid-instruction label
+                                    u16 offset = targetAddr - possibleStart;
+                                    midInstructionLabels_[targetAddr] = { possibleStart, offset };
+
+                                    // Create label at the instruction start
+                                    if (labelMap_.find(possibleStart) == labelMap_.end()) {
+                                        labelMap_[possibleStart] = "Label_" + std::to_string(codeLabelCounter_++);
+                                    }
+
+                                    util::Logger::debug("Mid-instruction label detected: $" +
+                                        util::wordToHex(targetAddr) + " is at " +
+                                        labelMap_[possibleStart] + " + " + std::to_string(offset));
+
+                                    foundMidInstruction = true;
+                                    break; // Found it, no need to look further back
+                                }
+                            }
+                        }
+                    }
+
+                    // If we didn't find it as mid-instruction, create normal label
+                    if (!foundMidInstruction) {
+                        labelMap_[targetAddr] = "Label_" + std::to_string(codeLabelCounter_++);
+                    }
+                }
             }
         }
 
@@ -102,7 +174,7 @@ namespace sidwinder {
      *
      * Converts a numeric address to a symbolic representation, using
      * labels and offsets as appropriate. Special handling is applied
-     * for hardware registers.
+     * for hardware registers and hidden code (mid-instruction labels).
      *
      * @param addr Address to format
      * @return Formatted string
@@ -132,10 +204,18 @@ namespace sidwinder {
             return "SID0+" + std::to_string(addr - sidBaseAddr);
         }
 
-        // Future hardware components can be added here:
-        // VIC-II check (0xD000-0xD3FF)
-        // CIA check (0xDC00-0xDCFF for CIA1, 0xDD00-0xDDFF for CIA2)
-        // etc.
+        // Check if this is a mid-instruction label (hidden code)
+        auto midIt = midInstructionLabels_.find(addr);
+        if (midIt != midInstructionLabels_.end()) {
+            u16 instrStart = midIt->second.first;
+            u16 offset = midIt->second.second;
+
+            // Get the label for the instruction start
+            auto labelIt = labelMap_.find(instrStart);
+            if (labelIt != labelMap_.end()) {
+                return labelIt->second + " + " + std::to_string(offset);
+            }
+        }
 
         // Check for exact label match
         auto it = labelMap_.find(addr);
@@ -455,6 +535,37 @@ namespace sidwinder {
      */
     const std::vector<HardwareBase>& LabelGenerator::getHardwareBases() const {
         return usedHardwareBases_;
+    }
+
+    /**
+     * @brief Get the size of an instruction given its opcode
+     *
+     * @param opcode The instruction opcode
+     * @return Size in bytes (1-3)
+     */
+    int LabelGenerator::getInstructionSize(u8 opcode) const {
+        return INSTRUCTION_SIZES[opcode];
+    }
+
+    /**
+     * @brief Check if an address is likely the start of an instruction
+     *
+     * @param addr Address to check
+     * @return True if this appears to be an opcode
+     */
+     /**
+      * @brief Check if an address is likely the start of an instruction
+      *
+      * @param addr Address to check
+      * @return True if this appears to be an opcode
+      */
+    bool LabelGenerator::isProbableOpcode(u16 addr) const {
+        // Use the memory access tracking from the analyzer to check if this was marked as an opcode
+        u8 accessFlags = analyzer_.getMemoryAccess(addr);
+
+        // Check for the OpCode flag (bit 4)
+        constexpr u8 MemoryAccess_OpCode = 1 << 4;
+        return (accessFlags & MemoryAccess_OpCode) != 0;
     }
 
 } // namespace sidwinder

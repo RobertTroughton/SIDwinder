@@ -49,6 +49,9 @@ namespace sidwinder {
             std::string overrideAuthor;       ///< Override SID author
             std::string overrideCopyright;    ///< Override SID copyright
 
+            // User definitions
+            std::map<std::string, std::string> userDefinitions;  ///< User-defined constants
+
             // Player options
             bool includePlayer = true;               ///< Whether to include player code
             std::string playerName = "SimpleRaster"; ///< Player name

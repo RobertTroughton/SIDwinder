@@ -137,6 +137,18 @@ namespace sidwinder {
          */
         std::vector<u16> findLabelTargets() const;
 
+        /**
+         * @brief Get the memory access flags for a specific address
+         * @param addr Address to check
+         * @return Memory access flags for that address
+         */
+        u8 getMemoryAccess(u16 addr) const {
+            if (addr < memoryAccess_.size()) {
+                return memoryAccess_[addr];
+            }
+            return 0;
+        }
+
     private:
         std::span<const u8> memory_;        // Reference to CPU memory
         std::span<const u8> memoryAccess_;  // Reference to access pattern data

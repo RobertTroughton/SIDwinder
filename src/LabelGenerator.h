@@ -81,11 +81,13 @@ namespace sidwinder {
          * @param analyzer Memory analyzer to use for code/data analysis
          * @param loadAddress Load address of the SID file
          * @param endAddress End address of the SID file
+         * @param memory Span of memory data for instruction analysis
          */
         LabelGenerator(
             const MemoryAnalyzer& analyzer,
             u16 loadAddress,
-            u16 endAddress);
+            u16 endAddress,
+            std::span<const u8> memory);
 
         /**
          * @brief Generate labels for code and data regions
@@ -196,6 +198,7 @@ namespace sidwinder {
         const MemoryAnalyzer& analyzer_;  // Reference to memory analyzer
         u16 loadAddress_;                 // Start of the memory region
         u16 endAddress_;                  // End of the memory region
+        std::span<const u8> memory_;      // Memory data for instruction analysis
 
         int codeLabelCounter_ = 0;        // Counter for generating unique code labels
         int dataLabelCounter_ = 0;        // Counter for generating unique data labels
@@ -204,6 +207,9 @@ namespace sidwinder {
         std::vector<DataBlock> dataBlocks_;            // List of data blocks
         std::map<u8, std::string> zeroPageVars_;       // Zero page variable names
         std::vector<HardwareBase> usedHardwareBases_;  // Hardware component bases
+
+        // Hidden code handling
+        std::map<u16, std::pair<u16, u16>> midInstructionLabels_; // target addr -> (instruction start, offset)
 
         // Data block subdivision structures
         struct AccessInfo {
@@ -217,6 +223,20 @@ namespace sidwinder {
         std::unordered_map<std::string, std::vector<AccessInfo>> dataBlockAccessMap_;
         std::unordered_map<std::string, std::vector<std::pair<u16, u16>>> dataBlockSubdivisions_;
         std::set<u16> pendingSubdivisionAddresses_;  // Addresses pending subdivision
+
+        /**
+         * @brief Get the size of an instruction given its opcode
+         * @param opcode The instruction opcode
+         * @return Size in bytes (1-3)
+         */
+        int getInstructionSize(u8 opcode) const;
+
+        /**
+         * @brief Check if an address is likely the start of an instruction
+         * @param addr Address to check
+         * @return True if this appears to be an opcode
+         */
+        bool isProbableOpcode(u16 addr) const;
     };
 
 } // namespace sidwinder

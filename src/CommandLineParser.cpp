@@ -102,6 +102,8 @@ namespace sidwinder {
                         // Handle -log filename (old style)
                         cmd.setParameter("logfile", args_[i++]);
                     }
+                    // In CommandLineParser::parse()
+                    // Find this section and replace/enhance it:
                     else {
                         // Other flag or option with value in next arg
                         // Check if this option expects a value (not a flag)
@@ -110,11 +112,36 @@ namespace sidwinder {
                             static const std::set<std::string> valueOptions = {
                                 "kickass", "input", "title", "author", "copyright",
                                 "sidloadaddr", "sidinitaddr", "sidplayaddr", "playeraddr",
-                                "exomizer"
+                                "exomizer", "define"  // Add "define" here
                             };
 
                             if (valueOptions.find(option) != valueOptions.end()) {
-                                cmd.setParameter(option, args_[i++]);
+                                if (option == "define") {
+                                    // Special handling for define option
+                                    std::string defValue = args_[i++];
+                                    size_t eqPos = defValue.find('=');
+                                    if (eqPos != std::string::npos) {
+                                        std::string key = defValue.substr(0, eqPos);
+                                        std::string value = defValue.substr(eqPos + 1);
+
+                                        // Remove quotes if present
+                                        if (value.length() >= 2) {
+                                            if ((value.front() == '"' && value.back() == '"') ||
+                                                (value.front() == '\'' && value.back() == '\'')) {
+                                                value = value.substr(1, value.length() - 2);
+                                            }
+                                        }
+
+                                        cmd.addDefinition(key, value);
+                                    }
+                                    else {
+                                        // Just a flag definition (true/false)
+                                        cmd.addDefinition(defValue, "true");
+                                    }
+                                }
+                                else {
+                                    cmd.setParameter(option, args_[i++]);
+                                }
                             }
                             else {
                                 // Flag without value
