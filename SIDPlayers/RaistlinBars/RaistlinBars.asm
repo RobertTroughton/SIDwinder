@@ -262,6 +262,25 @@ EndLocalData:
 .var FreqLoTable = FreqTable + (1 * 256)
 
 //; =============================================================================
+//; Macros
+//; =============================================================================
+.macro CallSubroutinesButAvoidCallingThemOnTopOfThemselves(list_of_subroutines_to_call) {
+are_the_subroutines_still_running_lda: lda #0
+    bne !+
+    // Protect against us being invoked again on top of our own invocation
+    lda #1
+    sta are_the_subroutines_still_running_lda + 1
+
+    .for (var i = 0; i < list_of_subroutines_to_call.size(); i++) {
+        jsr list_of_subroutines_to_call.get(i)
+    }
+
+    lda #0
+    sta are_the_subroutines_still_running_lda + 1
+!:
+}
+
+//; =============================================================================
 //; CODE SEGMENT
 //; =============================================================================
 StartCodeSegment:
