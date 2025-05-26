@@ -327,10 +327,10 @@ MusicOnlyIRQ: {
 	pha
 	tya
 	pha
-    lda $01
-    pha
-    lda #$35
-    sta $01
+	lda $01
+	pha
+	lda #$35
+	sta $01
 	jsr NextIRQ
 
 	lda #$01
