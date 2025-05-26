@@ -337,7 +337,8 @@ MusicOnlyIRQ: {
 	sta $d01a
 	sta $d019
 
-    CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
+    // Call the subroutines after acknowledging the VIC interrupt, so that subsequent interrupts can happen on top of the call. The CallSubroutinesButAvoidCallingThemOnTopOfThemselves() macro will ensure that we do not call the subroutines on top of themselves.
+	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
 
     pla
     sta $01
