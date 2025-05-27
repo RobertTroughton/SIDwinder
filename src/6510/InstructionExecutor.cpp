@@ -1,6 +1,5 @@
 #include "InstructionExecutor.h"
 #include "CPU6510Impl.h"
-#include "SIDWinderUtils.h"
 #include <iostream>
 
 /**
