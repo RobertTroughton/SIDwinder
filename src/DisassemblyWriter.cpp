@@ -166,7 +166,7 @@ namespace sidwinder {
      * and pointer tables. Updated to use the new RelocationTable approach.
      */
     void DisassemblyWriter::processIndirectAccesses() {
-        if (indirectAccesses_.empty()) {
+        if (indirectAccesses_.empty() && selfModifyingPatterns_.empty()) {
             return;
         }
 
@@ -176,37 +176,72 @@ namespace sidwinder {
         // Clear any existing entries in relocTable_
         relocTable_.clear();
 
-        // Process each indirect access - now tracking multiple targets
+        // Process indirect accesses (existing code)
         for (const auto& access : indirectAccesses_) {
-            // Use ONLY THE FIRST target address - this should be the original one we want
-            // This is the key change to fix the issue
             if (!access.targetAddresses.empty()) {
-                u16 targetAddr = access.targetAddresses[0]; // Use the FIRST target address
+                u16 targetAddr = access.targetAddresses[0];
 
-                // Process the source address for LOW byte
                 if (access.sourceLowAddress != 0) {
-                    // Add entry to relocation table with the FIRST target address
                     relocTable_.addEntry(access.sourceLowAddress, targetAddr, RelocationEntry::Type::Low);
-
-                    // Mark for potential subdivision
                     const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(access.sourceLowAddress);
-
-                    // Follow data flow chain
                     processRelocationChain(dataFlow, relocTable_, access.sourceLowAddress, targetAddr, RelocationEntry::Type::Low);
                 }
 
-                // Process the source address for HIGH byte
                 if (access.sourceHighAddress != 0) {
-                    // Add entry to relocation table with the FIRST target address
                     relocTable_.addEntry(access.sourceHighAddress, targetAddr, RelocationEntry::Type::High);
-
-                    // Mark for potential subdivision
                     const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(access.sourceHighAddress);
-
-                    // Follow data flow chain
                     processRelocationChain(dataFlow, relocTable_, access.sourceHighAddress, targetAddr, RelocationEntry::Type::High);
                 }
             }
+        }
+
+        // Process self-modifying code patterns
+        for (const auto& [instrAddr, pattern] : selfModifyingPatterns_) {
+            if (pattern.hasLowByte && pattern.hasHighByte) {
+                // We have a complete address
+                u16 targetAddr = pattern.lowByte | (pattern.highByte << 8);
+
+                // Add relocation entries
+                if (pattern.lowByteSource != 0) {
+                    relocTable_.addEntry(pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.lowByteSource);
+                    processRelocationChain(dataFlow, relocTable_, pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
+                }
+
+                if (pattern.highByteSource != 0) {
+                    relocTable_.addEntry(pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.highByteSource);
+                    processRelocationChain(dataFlow, relocTable_, pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
+                }
+
+                util::Logger::debug("Self-modifying code pattern detected at $" +
+                    util::wordToHex(instrAddr) + " -> $" + util::wordToHex(targetAddr));
+            }
+        }
+    }
+
+    void DisassemblyWriter::onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed) {
+
+        if (!this) {
+            util::Logger::error("onMemoryFlow called on null DisassemblyWriter!");
+            return;
+        }
+
+        // Store the source information for this register
+        registerSources_[reg] = { sourceAddr, value, isIndexed };
+
+        // If this is an indexed read from what looks like a table, mark for potential relocation
+        if (isIndexed) {
+            // Check if nearby addresses also look like they might contain address data
+            // This is a heuristic - addresses often come in pairs (low/high bytes)
+            u8 prevValue = cpu_.getMemory()[sourceAddr - 1];
+            u8 nextValue = cpu_.getMemory()[sourceAddr + 1];
+
+            // Simple heuristic: if the values could form valid C64 addresses
+            u16 prevAddr = value | (prevValue << 8);
+            u16 nextAddr = nextValue | (value << 8);
+
+            const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(sourceAddr);
         }
     }
 
@@ -376,6 +411,85 @@ namespace sidwinder {
         }
 
         return unusedByteCount;
+    }
+
+    void DisassemblyWriter::analyzeWritesForSelfModification() {
+        util::Logger::info("=== Analyzing " + std::to_string(allWrites_.size()) +
+            " writes for self-modification ===");
+
+        int selfModifyingCount = 0;
+
+        for (const auto& write : allWrites_) {
+            // NOW we can check if it's code because analyzer is initialized
+            if (analyzer_.getMemoryType(write.addr) & MemoryType::Code) {
+                u16 instrStart = analyzer_.findInstructionStartCovering(write.addr);
+                if (instrStart != write.addr) {
+                    int offset = write.addr - instrStart;
+
+                    // Log first few self-modifying writes
+                    if (selfModifyingCount < 10) {
+                        util::Logger::info("Self-modifying write found: $" +
+                            util::wordToHex(write.addr) + " (instr $" +
+                            util::wordToHex(instrStart) + " +" + std::to_string(offset) +
+                            ") = $" + util::byteToHex(write.value));
+
+                        if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                            util::Logger::info("  Source: Memory $" +
+                                util::wordToHex(write.sourceInfo.address));
+                        }
+                    }
+                    selfModifyingCount++;
+
+                    // Check register sources for more info
+                    bool foundInRegister = false;
+                    for (const auto& [reg, flow] : registerSources_) {
+                        if (flow.value == write.value) {
+                            util::Logger::debug("  Value matches register " +
+                                std::string(1, reg) + " from $" +
+                                util::wordToHex(flow.sourceAddr));
+
+                            // Use the register source if we have it
+                            if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory ||
+                                flow.isIndexed) {
+                                auto& pattern = selfModifyingPatterns_[instrStart];
+                                if (offset == 1) {
+                                    pattern.lowByteSource = flow.sourceAddr;
+                                    pattern.lowByte = write.value;
+                                    pattern.hasLowByte = true;
+                                }
+                                else if (offset == 2) {
+                                    pattern.highByteSource = flow.sourceAddr;
+                                    pattern.highByte = write.value;
+                                    pattern.hasHighByte = true;
+                                }
+                                foundInRegister = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Fallback to original source info if not found in registers
+                    if (!foundInRegister && write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                        auto& pattern = selfModifyingPatterns_[instrStart];
+                        if (offset == 1) {
+                            pattern.lowByteSource = write.sourceInfo.address;
+                            pattern.lowByte = write.value;
+                            pattern.hasLowByte = true;
+                        }
+                        else if (offset == 2) {
+                            pattern.highByteSource = write.sourceInfo.address;
+                            pattern.highByte = write.value;
+                            pattern.hasHighByte = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        util::Logger::info("Found " + std::to_string(selfModifyingCount) +
+            " self-modifying writes");
+        util::Logger::info("Created " + std::to_string(selfModifyingPatterns_.size()) +
+            " self-modifying patterns");
     }
 
 } // namespace sidwinder

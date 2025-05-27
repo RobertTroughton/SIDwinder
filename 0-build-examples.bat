@@ -7,7 +7,6 @@ mkdir Examples
 @echo ----------------------------
 SIDwinder.exe -relocate -relocateaddr=$1000 SID/celticdesign-7-3.sid temp/celticdesign-7-3-rel1000.sid
 SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshoff-blades-rel2000.sid
-SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-recovery.sid temp/larshoff-recovery-rel2000.sid
 
 @echo.
 

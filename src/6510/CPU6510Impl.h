@@ -81,12 +81,14 @@ public:
     // Callbacks
     using IndirectReadCallback = CPU6510::IndirectReadCallback;
     using MemoryWriteCallback = CPU6510::MemoryWriteCallback;
+    using MemoryFlowCallback = CPU6510::MemoryFlowCallback;
 
     void setOnIndirectReadCallback(IndirectReadCallback callback);
     void setOnWriteMemoryCallback(MemoryWriteCallback callback);
     void setOnCIAWriteCallback(MemoryWriteCallback callback);
     void setOnSIDWriteCallback(MemoryWriteCallback callback);
     void setOnVICWriteCallback(MemoryWriteCallback callback);
+    void setOnMemoryFlowCallback(MemoryFlowCallback callback);
 
 private:
     // CPU state components
@@ -113,6 +115,7 @@ private:
     MemoryWriteCallback onCIAWriteCallback_;
     MemoryWriteCallback onSIDWriteCallback_;
     MemoryWriteCallback onVICWriteCallback_;
+    MemoryFlowCallback onMemoryFlowCallback_;
 
     // Record the index offset used for a memory access
     void recordIndexOffset(u16 pc, u8 offset);

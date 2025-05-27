@@ -101,6 +101,24 @@ namespace sidwinder {
          */
         void processIndirectAccesses();
 
+        void onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed);
+
+        void updateSelfModifyingPattern(u16 instrAddr, int offset, u16 sourceAddr, u8 value) {
+            auto& pattern = selfModifyingPatterns_[instrAddr];
+            if (offset == 1) {
+                pattern.lowByteSource = sourceAddr;
+                pattern.lowByte = value;
+                pattern.hasLowByte = true;
+            }
+            else if (offset == 2) {
+                pattern.highByteSource = sourceAddr;
+                pattern.highByte = value;
+                pattern.hasHighByte = true;
+            }
+        }
+
+        void analyzeWritesForSelfModification();
+
     private:
         const CPU6510& cpu_;                      // Reference to CPU
         const SIDLoader& sid_;                    // Reference to SID loader
@@ -126,6 +144,27 @@ namespace sidwinder {
             std::vector<u16> targetAddresses; // ALL target addresses for this ZP pointer
         };
         std::vector<IndirectAccessInfo> indirectAccesses_;  // List of indirect accesses
+
+        // Track data flow from memory reads
+        struct MemoryFlowInfo {
+            u16 sourceAddr;
+            u8 value;
+            bool isIndexed;
+        };
+
+        // Current register states (what memory location each register was loaded from)
+        std::map<char, MemoryFlowInfo> registerSources_;
+
+        // Track self-modifying code patterns
+        struct SelfModifyingPattern {
+            u16 lowByteSource = 0;
+            u16 highByteSource = 0;
+            u8 lowByte = 0;
+            u8 highByte = 0;
+            bool hasLowByte = false;
+            bool hasHighByte = false;
+        };
+        std::map<u16, SelfModifyingPattern> selfModifyingPatterns_;
 
         /**
          * @brief Output hardware constants to the assembly file
@@ -154,6 +193,14 @@ namespace sidwinder {
 
         void processRelocationChain(const MemoryDataFlow& dataFlow, RelocationTable& relocTable, u16 addr, u16 targetAddr, RelocationEntry::Type relocType);
 
+        struct WriteRecord {
+            u16 addr;
+            u8 value;
+            RegisterSourceInfo sourceInfo;
+        };
+        std::vector<WriteRecord> allWrites_;
+
+        friend class Disassembler;
     };
 
 } // namespace sidwinder

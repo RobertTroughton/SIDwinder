@@ -1,0 +1,148 @@
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+FAILURE: "SID/larshoff-recovery.sid" relocation verification failed. Difference report saved to: temp\larshoff-recovery-diff.txt
+SUCCESS: "SID/celticdesign-7-3.sid" successfully relocated and verified
+SUCCESS: "SID/larshoff-blades.sid" successfully relocated and verified
+SUCCESS: "SID/dane-copperbooze.sid" successfully relocated and verified
+FAILURE: "SID/dane-elderscrollers.sid" relocation verification failed. Difference report saved to: temp\dane-elderscrollers-diff.txt
+FAILURE: "SID/dane-slowmotionsong.sid" relocation verification failed. Difference report saved to: temp\dane-slowmotionsong-diff.txt
+FAILURE: "SID/drax-expand.sid" relocation verification failed. Difference report saved to: temp\drax-expand-diff.txt
+SUCCESS: "SID/drax-twine.sid" successfully relocated and verified
+FAILURE: "SID/flex-eurogubbe.sid" relocation verification failed. Difference report saved to: temp\flex-eurogubbe-diff.txt
+[2025-05-27 13:30:07] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+SUCCESS: "SID/flex-hawkeye.sid" relocation completed (but verification not completed) - Relocation succeeded but failed to emulate relocated SID file
+FAILURE: "SID/Flex-lundia.sid" relocation verification failed. Difference report saved to: temp\Flex-lundia-diff.txt
+SUCCESS: "SID/jammer-mm.sid" successfully relocated and verified
+SUCCESS: "SID/jammer-soccer.sid" successfully relocated and verified
+SUCCESS: "SID/jch-allaroundtheworld.sid" successfully relocated and verified
+SUCCESS: "SID/jch-crystalline.sid" successfully relocated and verified
+SUCCESS: "SID/leaf-takeitorleafit.sid" successfully relocated and verified
+[2025-05-27 13:30:51] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+SUCCESS: "SID/lukhash-codeveronica.sid" relocation completed (but verification not completed) - Relocation succeeded but failed to emulate relocated SID file
+SUCCESS: "SID/magnar-airwolf.sid" successfully relocated and verified
+SUCCESS: "SID/magnar-firestarter.sid" successfully relocated and verified
+SUCCESS: "SID/magnar-lastnight.sid" successfully relocated and verified
+SUCCESS: "SID/magnar-magnumpi.sid" successfully relocated and verified
+FAILURE: "SID/magnar-wecomeinpeace.sid" relocation verification failed. Difference report saved to: temp\magnar-wecomeinpeace-diff.txt
+FAILURE: "SID/magnar-wonderland12.sid" relocation verification failed. Difference report saved to: temp\magnar-wonderland12-diff.txt
+SUCCESS: "SID/mch-chordexplorer.sid" successfully relocated and verified
+SUCCESS: "SID/mch-montyontherundnbedit-2sid.sid" successfully relocated and verified
+SUCCESS: "SID/mibri-gettinginthevan.sid" successfully relocated and verified
+SUCCESS: "SID/mrmouse-downhill.sid" successfully relocated and verified
+SUCCESS: "SID/nordischsound-crockettstheme.sid" successfully relocated and verified
+SUCCESS: "SID/phat_frog_2sid.sid" successfully relocated and verified
+[2025-05-27 13:32:27] [ERROR] CRITICAL: Execution at $0001 detected - illegal jump target
+SUCCESS: "SID/proton-knightrider.sid" relocation completed (but verification not completed) - Relocation succeeded but failed to emulate relocated SID file
+SUCCESS: "SID/psycho-nobounds.sid" successfully relocated and verified
+SUCCESS: "SID/steel-92littleshortyrockers.sid" successfully relocated and verified
+SUCCESS: "SID/steel-lastnightdrunk.sid" successfully relocated and verified
+SUCCESS: "SID/steelstinsen-dangerdawg.sid" successfully relocated and verified
+SUCCESS: "SID/stinsen-diagonality.sid" successfully relocated and verified
+SUCCESS: "SID/stinsenleaf-pushthrough.sid" successfully relocated and verified
+SUCCESS: "SID/stinsen-onborrowedwings.sid" successfully relocated and verified
+SUCCESS: "SID/toggle-fireflies.sid" successfully relocated and verified
+SUCCESS: "SID/trident-cheap.sid" successfully relocated and verified
+SUCCESS: "SID/trident-elysoun.sid" successfully relocated and verified
+SUCCESS: "SID/trident-sptest07.sid" successfully relocated and verified
+SUCCESS: "SID/xiny-allstars.sid" successfully relocated and verified
+SUCCESS: "SID/xiny-splashes.sid" successfully relocated and verified
+FAILURE: "SID/zardax-eldorado.sid" relocation verification failed. Difference report saved to: temp\zardax-eldorado-diff.txt
+FAILURE: "SID/6r6-axelf.sid" relocation verification failed. Difference report saved to: temp\6r6-axelf-diff.txt
+FAILURE: "SID/6r6-selfiesfromtheex.sid" relocation verification failed. Difference report saved to: temp\6r6-selfiesfromtheex-diff.txt
+SUCCESS: "SID/acrouzet-raistlin50.sid" successfully relocated and verified
+SUCCESS: "SID/acrouzet-soulspace.sid" successfully relocated and verified
+SUCCESS: "SID/celticdesign-blueearth.sid" successfully relocated and verified
+ 
+======================================== 
+RELOCATION RESULTS 
+======================================== 
+ 
+35/49 relocations succeeded 
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+FAILURE: "SID/larshoff-recovery.sid" successfully relocated and verified
+SUCCESS: "SID/celticdesign-7-3.sid" successfully relocated and verified
+SUCCESS: "SID/larshoff-blades.sid" successfully relocated and verified
+SUCCESS: "SID/dane-copperbooze.sid" successfully relocated and verified
+FAILURE: "SID/dane-elderscrollers.sid" successfully relocated and verified
+FAILURE: "SID/dane-slowmotionsong.sid" successfully relocated and verified
+FAILURE: "SID/drax-expand.sid" successfully relocated and verified
+SUCCESS: "SID/drax-twine.sid" successfully relocated and verified
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+FAILURE: "SID/larshoff-recovery.sid" successfully relocated and verified
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+FAILURE: "SID/larshoff-recovery.sid" Relocation verification failed - outputs differ
+SUCCESS: "SID/celticdesign-7-3.sid" Relocation and verification successful
+SUCCESS: "SID/larshoff-blades.sid" Relocation and verification successful
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+FAILURE: "SID/larshoff-recovery.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/celticdesign-7-3.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/larshoff-blades.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/dane-copperbooze.sid" SID file relocated OK with matching before/after trace outputs
+FAILURE: "SID/dane-elderscrollers.sid" SID relocation verification failed - before/after trace outputs differ
+FAILURE: "SID/dane-slowmotionsong.sid" SID relocation verification failed - before/after trace outputs differ
+FAILURE: "SID/drax-expand.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/drax-twine.sid" SID file relocated OK with matching before/after trace outputs
+FAILURE: "SID/flex-eurogubbe.sid" SID relocation verification failed - before/after trace outputs differ
+[2025-05-27 14:22:26] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+FAILURE: "SID/flex-hawkeye.sid" Emulation of relocated SID file failed
+FAILURE: "SID/Flex-lundia.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/jammer-mm.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/jammer-soccer.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/jch-allaroundtheworld.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/jch-crystalline.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/leaf-takeitorleafit.sid" SID file relocated OK with matching before/after trace outputs
+[2025-05-27 14:23:10] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+FAILURE: "SID/lukhash-codeveronica.sid" Emulation of relocated SID file failed
+SUCCESS: "SID/magnar-airwolf.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/magnar-firestarter.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/magnar-lastnight.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/magnar-magnumpi.sid" SID file relocated OK with matching before/after trace outputs
+FAILURE: "SID/magnar-wecomeinpeace.sid" SID relocation verification failed - before/after trace outputs differ
+FAILURE: "SID/magnar-wonderland12.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/mch-chordexplorer.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/mch-montyontherundnbedit-2sid.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/mibri-gettinginthevan.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/mrmouse-downhill.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/nordischsound-crockettstheme.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/phat_frog_2sid.sid" SID file relocated OK with matching before/after trace outputs
+[2025-05-27 14:24:46] [ERROR] CRITICAL: Execution at $0001 detected - illegal jump target
+FAILURE: "SID/proton-knightrider.sid" Emulation of relocated SID file failed
+SUCCESS: "SID/psycho-nobounds.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/steel-92littleshortyrockers.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/steel-lastnightdrunk.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/steelstinsen-dangerdawg.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/stinsen-diagonality.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/stinsenleaf-pushthrough.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/stinsen-onborrowedwings.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/toggle-fireflies.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/trident-cheap.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/trident-elysoun.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/trident-sptest07.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/xiny-allstars.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/xiny-splashes.sid" SID file relocated OK with matching before/after trace outputs
+FAILURE: "SID/zardax-eldorado.sid" SID relocation verification failed - before/after trace outputs differ
+FAILURE: "SID/6r6-axelf.sid" SID relocation verification failed - before/after trace outputs differ
+FAILURE: "SID/6r6-selfiesfromtheex.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/acrouzet-raistlin50.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/acrouzet-soulspace.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/celticdesign-blueearth.sid" SID file relocated OK with matching before/after trace outputs
+ 
+======================================== 
+RELOCATION RESULTS 
+======================================== 
+ 
+35/49 relocations succeeded 

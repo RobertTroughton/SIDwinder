@@ -81,7 +81,7 @@ namespace sidwinder {
                     if (foundInPage) {
                         // Detailed scan of this page
                         for (int i = 0; i < 256 && (addr + i) < 0x10000; i++) {
-                            u16 checkAddr = addr + i;
+                            u32 checkAddr = addr + i;
 
                             // Skip excluded addresses and already tracked addresses
                             if (isExcludedAddress(checkAddr) ||

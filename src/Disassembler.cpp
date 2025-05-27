@@ -33,7 +33,14 @@ namespace sidwinder {
      *
      * Default destructor - unique_ptr members will be automatically cleaned up.
      */
-    Disassembler::~Disassembler() = default;
+    Disassembler::~Disassembler() {
+        // Clear all callbacks before destroying members
+        if (&cpu_) {  // Check if cpu_ reference is still valid
+            const_cast<CPU6510&>(cpu_).setOnMemoryFlowCallback(nullptr);
+            const_cast<CPU6510&>(cpu_).setOnWriteMemoryCallback(nullptr);
+            const_cast<CPU6510&>(cpu_).setOnIndirectReadCallback(nullptr);
+        }
+    }
 
     /**
      * @brief Initialize the disassembler components
@@ -42,7 +49,6 @@ namespace sidwinder {
      * Also configures the indirect read callback to track memory access patterns.
      */
     void Disassembler::initialize() {
-        util::Logger::debug("Initializing disassembler...");
 
         // Create memory analyzer but don't analyze yet
         analyzer_ = std::make_unique<MemoryAnalyzer>(
@@ -76,14 +82,37 @@ namespace sidwinder {
             *formatter_
         );
 
-        // Set up indirect read callback
+        // Set up indirect read callback (existing)
         const_cast<CPU6510&>(cpu_).setOnIndirectReadCallback([this](u16 pc, u8 zpAddr, u16 targetAddr) {
             if (writer_) {
                 writer_->addIndirectAccess(pc, zpAddr, targetAddr);
             }
             });
 
-        util::Logger::debug("Disassembler initialization complete");
+        const_cast<CPU6510&>(cpu_).setOnMemoryFlowCallback(
+            [this](u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed) {
+                if (writer_) {
+                    writer_->onMemoryFlow(pc, reg, sourceAddr, value, isIndexed);
+                }
+            }
+        );
+
+        // Set up memory write callback to detect self-modifying code
+        const_cast<CPU6510&>(cpu_).setOnWriteMemoryCallback([this](u16 addr, u8 value) {
+            if (writer_) {
+                // Just record the write for later analysis
+                RegisterSourceInfo sourceInfo = cpu_.getWriteSourceInfo(addr);
+                DisassemblyWriter::WriteRecord record = { addr, value, sourceInfo };
+                writer_->allWrites_.push_back(record);
+
+                // Log writes in our target range
+/*
+                if (addr >= 0xF6F0 && addr <= 0xF700) {
+                    util::Logger::debug("Write recorded: $" + util::wordToHex(addr) +
+                        " = $" + util::byteToHex(value));
+                }*/
+            }
+            });
     }
 
     /**
@@ -109,14 +138,18 @@ namespace sidwinder {
             return -1;
         }
 
-        // NOW perform the analysis AFTER all CPU execution is complete
+        // Perform memory analysis
         util::Logger::debug("Performing memory analysis...");
         analyzer_->analyzeExecution();
         analyzer_->analyzeAccesses();
         analyzer_->analyzeData();
 
-        // Process any detected indirect accesses to identify relocation entries
-        util::Logger::debug("Processing indirect memory accesses...");
+        // Analyze recorded writes for self-modification
+        util::Logger::debug("Analyzing writes for self-modification...");
+        writer_->analyzeWritesForSelfModification();
+
+        // Process indirect accesses and self-modifying code patterns
+        util::Logger::debug("Processing indirect memory accesses and self-modifying code...");
         writer_->processIndirectAccesses();
 
         // Generate labels based on the analysis

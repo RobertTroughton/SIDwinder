@@ -363,7 +363,6 @@ namespace sidwinder {
     void LabelGenerator::addPendingSubdivisionAddress(u16 addr) {
         if (addr >= loadAddress_ && addr < endAddress_) {
             pendingSubdivisionAddresses_.insert(addr);
-            util::Logger::debug("Added pending subdivision address: $" + util::wordToHex(addr));
         }
     }
 
@@ -379,10 +378,6 @@ namespace sidwinder {
         // Step 1: Deduplicate and sort addresses
         std::vector<u16> sorted(pendingSubdivisionAddresses_.begin(), pendingSubdivisionAddresses_.end());
         std::sort(sorted.begin(), sorted.end());
-
-        if (!sorted.empty()) {
-            util::Logger::debug("Processing " + std::to_string(sorted.size()) + " pending subdivision addresses");
-        }
 
         // Step 2: Group by DataBlock
         std::map<std::string, std::vector<std::pair<u16, u16>>> blockRanges;
@@ -408,9 +403,6 @@ namespace sidwinder {
                 const u16 offsetEnd = std::min<u16>(end, block.end) - block.start;
 
                 blockRanges[label].emplace_back(offsetStart, offsetEnd);
-                util::Logger::debug("Found subdivision in " + label +
-                    " from offset $" + util::wordToHex(offsetStart) +
-                    " to $" + util::wordToHex(offsetEnd));
                 break;
             }
 
@@ -431,9 +423,6 @@ namespace sidwinder {
 
                 if (!overlap) {
                     existing.emplace_back(start, end);
-                    util::Logger::debug("Added subdivision to " + label +
-                        " from offset $" + util::wordToHex(start) +
-                        " to $" + util::wordToHex(end));
                 }
             }
         }
@@ -466,10 +455,6 @@ namespace sidwinder {
                 // Add to label map and new blocks list
                 labelMap_[realStart] = subLabel;
                 newBlocks.push_back({ subLabel, realStart, realEnd });
-
-                util::Logger::debug("Created subdivision " + subLabel +
-                    " from $" + util::wordToHex(realStart) +
-                    " to $" + util::wordToHex(realEnd));
             }
 
             // Rename original to _0

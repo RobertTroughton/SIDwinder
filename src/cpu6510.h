@@ -232,12 +232,14 @@ public:
     // Callbacks
     using IndirectReadCallback = std::function<void(u16 pc, u8 zpAddr, u16 targetAddr)>;
     using MemoryWriteCallback = std::function<void(u16 addr, u8 value)>;
+    using MemoryFlowCallback = std::function<void(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed)>;
 
     void setOnIndirectReadCallback(IndirectReadCallback callback);
     void setOnWriteMemoryCallback(MemoryWriteCallback callback);
     void setOnCIAWriteCallback(MemoryWriteCallback callback);
     void setOnSIDWriteCallback(MemoryWriteCallback callback);
     void setOnVICWriteCallback(MemoryWriteCallback callback);
+    void setOnMemoryFlowCallback(MemoryFlowCallback callback);
 
 private:
     // Implementation pointer

@@ -108,8 +108,6 @@ bool CPU6510Impl::executeFunction(u16 address) {
     cpuState_.setPC(address);
 
     const u8 targetSP = cpuState_.getSP(); // After pushing return address (so after manual JSR)
-    sidwinder::util::Logger::debug("Executing function at $" + sidwinder::util::wordToHex(address) +
-        ", initial SP: $" + sidwinder::util::byteToHex(cpuState_.getSP()));
 
     while (stepCount < MAX_STEPS) {
         const u16 currentPC = cpuState_.getPC();
@@ -186,13 +184,6 @@ bool CPU6510Impl::executeFunction(u16 address) {
                         sidwinder::util::wordToHex(returnAddr) +
                         ", SP: $" + sidwinder::util::byteToHex(cpuState_.getSP()));
                 }
-
-                // Check if this is our function's return
-                if (cpuState_.getSP() == targetSP) {
-                    sidwinder::util::Logger::debug("Function returning to $" +
-                        sidwinder::util::wordToHex(returnAddr + 1) +
-                        " after " + std::to_string(stepCount) + " steps");
-                }
             }
         }
 
@@ -203,7 +194,6 @@ bool CPU6510Impl::executeFunction(u16 address) {
         // Check if we've returned from the function
         if (opcode == 0x60) { // RTS
             if (cpuState_.getSP() == targetSP + 2) { // Stack unwound
-                sidwinder::util::Logger::debug("Function returned after " + std::to_string(stepCount) + " steps");
                 break;
             }
         }
@@ -725,6 +715,10 @@ void CPU6510Impl::setOnSIDWriteCallback(MemoryWriteCallback callback) {
  */
 void CPU6510Impl::setOnVICWriteCallback(MemoryWriteCallback callback) {
     onVICWriteCallback_ = std::move(callback);
+}
+
+void CPU6510Impl::setOnMemoryFlowCallback(MemoryFlowCallback callback) {
+    onMemoryFlowCallback_ = std::move(callback);
 }
 
 const MemoryDataFlow& CPU6510Impl::getMemoryDataFlow() const {

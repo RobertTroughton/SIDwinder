@@ -206,6 +206,7 @@ namespace sidwinder {
                     result.message = "Failed to load original SID file";
                     return result;
                 }
+
                 SIDEmulator originalEmulator(cpu, sid);
                 SIDEmulator::EmulationOptions options;
                 options.frames = DEFAULT_SID_EMULATION_FRAMES;
@@ -226,7 +227,7 @@ namespace sidwinder {
                 options.traceLogPath = relocatedTrace.string();
                 cpu->reset();
                 if (!relocatedEmulator.runEmulation(options)) {
-                    result.message = "Relocation succeeded but failed to emulate relocated SID file";
+                    result.message = "Emulation of relocated SID file failed";
                     return result;
                 }
 
@@ -239,10 +240,10 @@ namespace sidwinder {
                     diffReport.string());
 
                 if (result.outputsMatch) {
-                    result.message = "Relocation and verification successful";
+                    result.message = "SID file relocated OK with matching before/after trace outputs";
                 }
                 else {
-                    result.message = "Relocation succeeded but verification failed - outputs differ";
+                    result.message = "SID relocation verification failed - before/after trace outputs differ";
                 }
 
                 return result;

@@ -1,5 +1,6 @@
 #include "InstructionExecutor.h"
 #include "CPU6510Impl.h"
+#include "SIDWinderUtils.h"
 #include <iostream>
 
 /**
@@ -185,11 +186,15 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
 
     // Get index register value if applicable
     u8 index = 0;
+    bool isIndexed = false;  // Track if this is indexed addressing
+
     if (mode == AddressingMode::AbsoluteY || mode == AddressingMode::ZeroPageY || mode == AddressingMode::IndirectY) {
         index = cpu_.cpuState_.getY();
+        isIndexed = true;
     }
     else if (mode == AddressingMode::AbsoluteX || mode == AddressingMode::ZeroPageX || mode == AddressingMode::IndirectX) {
         index = cpu_.cpuState_.getX();
+        isIndexed = true;
     }
 
     // Create register source info
@@ -200,21 +205,27 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
         index
     };
 
+    // Determine which register we're loading into for the callback
+    char targetReg = 'A';  // Default to A
+
     // Update appropriate register based on instruction
     switch (instr) {
     case Instruction::LDA:
         cpu_.cpuState_.setA(value);
         cpu_.cpuState_.setRegSourceA(sourceInfo);
+        targetReg = 'A';
         break;
 
     case Instruction::LDX:
         cpu_.cpuState_.setX(value);
         cpu_.cpuState_.setRegSourceX(sourceInfo);
+        targetReg = 'X';
         break;
 
     case Instruction::LDY:
         cpu_.cpuState_.setY(value);
         cpu_.cpuState_.setRegSourceY(sourceInfo);
+        targetReg = 'Y';
         break;
 
     case Instruction::LAX:
@@ -223,10 +234,16 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
         cpu_.cpuState_.setX(value);
         cpu_.cpuState_.setRegSourceA(sourceInfo);
         cpu_.cpuState_.setRegSourceX(sourceInfo);
+        targetReg = 'A';  // Just use A for the callback
         break;
 
     default:
         break;
+    }
+
+    // Trigger memory flow callback if it's a memory load (not immediate mode)
+    if (mode != AddressingMode::Immediate && cpu_.onMemoryFlowCallback_) {
+        cpu_.onMemoryFlowCallback_(cpu_.originalPc_, targetReg, addr, value, isIndexed);
     }
 
     // Set processor status flags

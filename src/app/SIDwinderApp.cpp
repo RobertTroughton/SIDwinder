@@ -31,11 +31,11 @@ namespace sidwinder {
         // Initialize configuration system
         util::ConfigManager::initialize(configFile);
 
-        // Initialize logging
-        initializeLogging();
-
         // Parse command line into command object
         command_ = cmdParser_.parse();
+
+        // Initialize logging
+        initializeLogging();
 
         // Execute the command
         return executeCommand();
@@ -333,29 +333,12 @@ namespace sidwinder {
             }
 
             // Perform relocation with verification
-            util::RelocationVerificationResult result = util::relocateAndVerifySID(
-                cpu.get(), sid.get(), inputFile, outputFile, relocAddress, tempDir,
-                command_.getParameter("kickass", util::ConfigManager::getKickAssPath()));
+            util::RelocationVerificationResult result = util::relocateAndVerifySID(cpu.get(), sid.get(), inputFile, outputFile, relocAddress, tempDir, command_.getParameter("kickass", util::ConfigManager::getKickAssPath()));
 
             // Display results to user
-            if (result.success) {
-                if (result.verified) {
-                    if (result.outputsMatch) {
-                        std::cout << "SUCCESS: " << inputFile << " successfully relocated and verified" << std::endl;
-                    }
-                    else {
-                        std::cout << "FAILURE: " << inputFile << " relocation verification failed. Difference report saved to: " << result.diffReport << std::endl;
-                    }
-                }
-                else {
-                    std::cout << "SUCCESS: " << inputFile << " relocation completed (but verification not completed) - " << result.message << std::endl;
-                }
-                return result.outputsMatch ? 0 : 1;
-            }
-            else {
-                std::cout << "FAILURE: " << inputFile << " relocation failed - " << result.message << std::endl;
-                return 1;
-            }
+            bool bTotalSuccess = result.success && result.verified && result.outputsMatch;
+            std::cout << (bTotalSuccess ? "SUCCESS" : "FAILURE") << ": " << inputFile << " " << result.message << std::endl;
+            return bTotalSuccess ? 0 : 1;
         }
     }
 
