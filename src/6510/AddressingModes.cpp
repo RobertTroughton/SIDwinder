@@ -20,7 +20,7 @@ AddressingModes::AddressingModes(CPU6510Impl& cpu) : cpu_(cpu) {
  * @param mode The addressing mode to use
  * @return The calculated target address
  */
-u16 AddressingModes::getAddress(AddressingMode mode) {
+u32 AddressingModes::getAddress(AddressingMode mode) {
     // Get CPU state reference to access registers
     CPUState& cpuState = cpu_.cpuState_;
 
@@ -44,13 +44,13 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
 
     switch (mode) {
     case AddressingMode::Immediate: {
-        u16 addr = cpuState.getPC();
+        u32 addr = cpuState.getPC();
         cpuState.incrementPC();
         return addr;
     }
 
     case AddressingMode::ZeroPage: {
-        u16 addr = cpu_.fetchOperand(cpuState.getPC());
+        u32 addr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
         return addr;
     }
@@ -68,7 +68,7 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
     }
 
     case AddressingMode::Absolute: {
-        u16 addr = cpu_.fetchOperand(cpuState.getPC());
+        u32 addr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
         addr |= (cpu_.fetchOperand(cpuState.getPC()) << 8);
         cpuState.incrementPC();
@@ -76,12 +76,12 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
     }
 
     case AddressingMode::AbsoluteX: {
-        const u16 base = cpu_.fetchOperand(cpuState.getPC());
+        const u32 base = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 highByte = cpu_.fetchOperand(cpuState.getPC());
+        const u32 highByte = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 baseAddr = base | (highByte << 8);
-        const u16 addr = baseAddr + cpuState.getX();
+        const u32 baseAddr = base | (highByte << 8);
+        const u32 addr = baseAddr + cpuState.getX();
 
         // Page boundary crossing adds a cycle
         if ((baseAddr & 0xFF00) != (addr & 0xFF00)) {
@@ -91,12 +91,12 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
     }
 
     case AddressingMode::AbsoluteY: {
-        const u16 base = cpu_.fetchOperand(cpuState.getPC());
+        const u32 base = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 highByte = cpu_.fetchOperand(cpuState.getPC());
+        const u32 highByte = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 baseAddr = base | (highByte << 8);
-        const u16 addr = baseAddr + cpuState.getY();
+        const u32 baseAddr = base | (highByte << 8);
+        const u32 addr = baseAddr + cpuState.getY();
 
         // Page boundary crossing adds a cycle
         if ((baseAddr & 0xFF00) != (addr & 0xFF00)) {
@@ -106,23 +106,23 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
     }
 
     case AddressingMode::Indirect: {
-        const u16 ptr = cpu_.fetchOperand(cpuState.getPC());
+        const u32 ptr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 highByte = cpu_.fetchOperand(cpuState.getPC());
+        const u32 highByte = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 indirectAddr = ptr | (highByte << 8);
+        const u32 indirectAddr = ptr | (highByte << 8);
 
         // 6502 bug: JMP indirect does not handle page boundaries correctly
         const u8 low = memory.readMemory(indirectAddr);
         const u8 high = memory.readMemory((indirectAddr & 0xFF00) | ((indirectAddr + 1) & 0x00FF));
 
-        return static_cast<u16>(low) | (static_cast<u16>(high) << 8);
+        return static_cast<u32>(low) | (static_cast<u32>(high) << 8);
     }
 
     case AddressingMode::IndirectX: {
         const u8 zp = (cpu_.fetchOperand(cpuState.getPC()) + cpuState.getX()) & 0xFF;
         cpuState.incrementPC();
-        const u16 targetAddr = cpu_.readWordZeroPage(zp);
+        const u32 targetAddr = cpu_.readWordZeroPage(zp);
 
         // Notify callback if registered
         if (cpu_.onIndirectReadCallback_) {
@@ -135,8 +135,8 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
     case AddressingMode::IndirectY: {
         const u8 zpAddr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-        const u16 base = cpu_.readWordZeroPage(zpAddr);
-        const u16 addr = base + cpuState.getY();
+        const u32 base = cpu_.readWordZeroPage(zpAddr);
+        const u32 addr = base + cpuState.getY();
 
         // Notify callback if registered
         if (cpu_.onIndirectReadCallback_) {
@@ -164,6 +164,6 @@ u16 AddressingModes::getAddress(AddressingMode mode) {
  * @param pc Program counter of the instruction
  * @param offset Index offset value (X or Y register)
  */
-void AddressingModes::recordIndexOffset(u16 pc, u8 offset) {
+void AddressingModes::recordIndexOffset(u32 pc, u8 offset) {
     cpu_.recordIndexOffset(pc, offset);
 }

@@ -34,7 +34,7 @@ public:
      * @param addr Memory address to read from
      * @return The byte at the specified address
      */
-    u8 readMemory(u16 addr);
+    u8 readMemory(u32 addr);
 
     /**
      * @brief Write a byte to memory without tracking
@@ -42,7 +42,7 @@ public:
      * @param addr Memory address to write to
      * @param value Byte value to write
      */
-    void writeByte(u16 addr, u8 value);
+    void writeByte(u32 addr, u8 value);
 
     /**
      * @brief Write a byte to memory with tracking
@@ -51,7 +51,7 @@ public:
      * @param value Byte value to write
      * @param sourcePC Program counter of the instruction doing the write
      */
-    void writeMemory(u16 addr, u8 value, u16 sourcePC);
+    void writeMemory(u32 addr, u8 value, u32 sourcePC);
 
     /**
      * @brief Copy multiple bytes to memory
@@ -59,7 +59,7 @@ public:
      * @param start Starting memory address
      * @param data Span of bytes to copy
      */
-    void copyMemoryBlock(u16 start, std::span<const u8> data);
+    void copyMemoryBlock(u32 start, std::span<const u8> data);
 
     /**
      * @brief Mark a memory access type
@@ -67,7 +67,7 @@ public:
      * @param addr Memory address
      * @param flag Type of access
      */
-    void markMemoryAccess(u16 addr, MemoryAccessFlag flag);
+    void markMemoryAccess(u32 addr, MemoryAccessFlag flag);
 
     /**
      * @brief Get direct access to a memory byte
@@ -75,7 +75,7 @@ public:
      * @param addr Memory address
      * @return The byte at the specified address
      */
-    u8 getMemoryAt(u16 addr) const;
+    u8 getMemoryAt(u32 addr) const;
 
     /**
      * @brief Dump memory access information to a file
@@ -104,14 +104,14 @@ public:
      * @param addr Memory address to check
      * @return Program counter of the last instruction that wrote to the address
      */
-    u16 getLastWriteTo(u16 addr) const;
+    u32 getLastWriteTo(u32 addr) const;
 
     /**
      * @brief Get the full last-write-to-address tracking vector
      *
      * @return Reference to the vector containing PC values of last write to each memory address
      */
-    const std::vector<u16>& getLastWriteToAddr() const;
+    const std::vector<u32>& getLastWriteToAddr() const;
 
     /**
      * @brief Get the source information for a memory write
@@ -119,7 +119,7 @@ public:
      * @param addr Memory address to check
      * @return Register source information for the last write to the address
      */
-    RegisterSourceInfo getWriteSourceInfo(u16 addr) const;
+    RegisterSourceInfo getWriteSourceInfo(u32  addr) const;
 
     /**
      * @brief Set write source info
@@ -127,7 +127,7 @@ public:
      * @param addr Memory address
      * @param info Register source info
      */
-    void setWriteSourceInfo(u16 addr, const RegisterSourceInfo& info);
+    void setWriteSourceInfo(u32 addr, const RegisterSourceInfo& info);
 
     /**
      * @brief Get the memory data flow tracking information
@@ -146,7 +146,7 @@ private:
     std::array<u8, 65536> memoryAccess_;
 
     // Track the source of writes to memory
-    std::vector<u16> lastWriteToAddr_;
+    std::vector<u32> lastWriteToAddr_;
     std::vector<RegisterSourceInfo> writeSourceInfo_;
 
     MemoryDataFlow dataFlow_;  // Memory data flow tracking

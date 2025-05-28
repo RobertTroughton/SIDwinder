@@ -309,7 +309,7 @@ namespace sidwinder {
             // Clean up strings for embedding in the linker file
             auto cleanString = [](const std::string& str) {
                 std::string result;
-                for (char c : str) {
+                for (unsigned char c : str) {
                     // Keep alphanumeric and basic punctuation, replace others with _
                     if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '!') {
                         result.push_back(c);

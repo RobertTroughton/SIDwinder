@@ -18,7 +18,6 @@ namespace sidwinder {
         }
 
         // Temporarily disable register tracking for init
-        bool originalTrackingEnabled = options.registerTrackingEnabled;
         bool temporaryTrackingEnabled = false;
 
         // Clear the write tracker if tracking is enabled

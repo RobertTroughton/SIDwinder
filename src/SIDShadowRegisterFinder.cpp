@@ -115,21 +115,23 @@ namespace sidwinder {
     }
 
     void SIDShadowRegisterFinder::analyzeResults(float reliabilityThreshold) {
-        // Reset the map
         shadowRegisterMap_.fill(0xFFFF);
 
         for (const auto& [reg, candidates] : potentialShadowRegisters_) {
-            // Find the best candidate for this register
             u16 bestAddress = 0xFFFF;
             float bestReliability = 0.0f;
 
             for (const auto& [addr, info] : candidates) {
-                // Need sufficient samples and high reliability
                 if (info.totalChecks >= 50) {
                     float reliability = info.getReliability();
-                    if (reliability >= reliabilityThreshold && reliability > bestReliability) {
-                        bestReliability = reliability;
-                        bestAddress = addr;
+                    if (reliability >= reliabilityThreshold) {
+                        // Deterministic tie-breaking: prefer higher reliability first,
+                        // then lower address for consistency
+                        if (reliability > bestReliability ||
+                            (reliability == bestReliability && addr < bestAddress)) {
+                            bestReliability = reliability;
+                            bestAddress = addr;
+                        }
                     }
                 }
             }

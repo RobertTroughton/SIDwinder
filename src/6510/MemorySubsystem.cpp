@@ -34,7 +34,7 @@ void MemorySubsystem::reset() {
  * @param addr Memory address to read from
  * @return The byte at the specified address
  */
-u8 MemorySubsystem::readMemory(u16 addr) {
+u8 MemorySubsystem::readMemory(u32 addr) {
     markMemoryAccess(addr, MemoryAccessFlag::Read);
     return memory_[addr];
 }
@@ -45,7 +45,7 @@ u8 MemorySubsystem::readMemory(u16 addr) {
  * @param addr Memory address to write to
  * @param value Byte value to write
  */
-void MemorySubsystem::writeByte(u16 addr, u8 value) {
+void MemorySubsystem::writeByte(u32 addr, u8 value) {
     memory_[addr] = value;
 }
 
@@ -56,7 +56,7 @@ void MemorySubsystem::writeByte(u16 addr, u8 value) {
  * @param value Byte value to write
  * @param sourcePC Program counter of the instruction doing the write
  */
-void MemorySubsystem::writeMemory(u16 addr, u8 value, u16 sourcePC) {
+void MemorySubsystem::writeMemory(u32 addr, u8 value, u32 sourcePC) {
     markMemoryAccess(addr, MemoryAccessFlag::Write);
     memory_[addr] = value;
     lastWriteToAddr_[addr] = sourcePC;
@@ -68,9 +68,9 @@ void MemorySubsystem::writeMemory(u16 addr, u8 value, u16 sourcePC) {
  * @param start Starting memory address
  * @param data Span of bytes to copy
  */
-void MemorySubsystem::copyMemoryBlock(u16 start, std::span<const u8> data) {
+void MemorySubsystem::copyMemoryBlock(u32 start, std::span<const u8> data) {
     for (size_t i = 0; i < data.size(); ++i) {
-        const auto idx = static_cast<u16>(i);
+        const auto idx = static_cast<u32>(i);
         if (start + idx < memory_.size()) {
             memory_[start + idx] = data[i];
         }
@@ -83,7 +83,7 @@ void MemorySubsystem::copyMemoryBlock(u16 start, std::span<const u8> data) {
  * @param addr Memory address
  * @param flag Type of access
  */
-void MemorySubsystem::markMemoryAccess(u16 addr, MemoryAccessFlag flag) {
+void MemorySubsystem::markMemoryAccess(u32 addr, MemoryAccessFlag flag) {
     memoryAccess_[addr] |= static_cast<u8>(flag);
 }
 
@@ -93,7 +93,7 @@ void MemorySubsystem::markMemoryAccess(u16 addr, MemoryAccessFlag flag) {
  * @param addr Memory address
  * @return The byte at the specified address
  */
-u8 MemorySubsystem::getMemoryAt(u16 addr) const {
+u8 MemorySubsystem::getMemoryAt(u32 addr) const {
     return memory_[addr];
 }
 
@@ -147,7 +147,7 @@ std::span<const u8> MemorySubsystem::getMemoryAccess() const {
  * @param addr Memory address to check
  * @return Program counter of the last instruction that wrote to the address
  */
-u16 MemorySubsystem::getLastWriteTo(u16 addr) const {
+u32 MemorySubsystem::getLastWriteTo(u32 addr) const {
     return lastWriteToAddr_[addr];
 }
 
@@ -156,7 +156,7 @@ u16 MemorySubsystem::getLastWriteTo(u16 addr) const {
  *
  * @return Reference to the vector containing PC values of last write to each memory address
  */
-const std::vector<u16>& MemorySubsystem::getLastWriteToAddr() const {
+const std::vector<u32>& MemorySubsystem::getLastWriteToAddr() const {
     return lastWriteToAddr_;
 }
 
@@ -166,7 +166,7 @@ const std::vector<u16>& MemorySubsystem::getLastWriteToAddr() const {
  * @param addr Memory address to check
  * @return Register source information for the last write to the address
  */
-RegisterSourceInfo MemorySubsystem::getWriteSourceInfo(u16 addr) const {
+RegisterSourceInfo MemorySubsystem::getWriteSourceInfo(u32 addr) const {
     return writeSourceInfo_[addr];
 }
 
@@ -176,12 +176,12 @@ RegisterSourceInfo MemorySubsystem::getWriteSourceInfo(u16 addr) const {
  * @param addr Memory address
  * @param info Register source info
  */
-void MemorySubsystem::setWriteSourceInfo(u16 addr, const RegisterSourceInfo& info) {
+void MemorySubsystem::setWriteSourceInfo(u32 addr, const RegisterSourceInfo& info) {
     writeSourceInfo_[addr] = info;
 
     // Update data flow if this is a memory-to-memory copy and not a self-reference
     if (info.type == RegisterSourceInfo::SourceType::Memory && info.address != addr) {
-        u16 sourceAddr = info.address;
+        u32 sourceAddr = info.address;
 
         // Check if this source is already recorded
         auto& sources = dataFlow_.memoryWriteSources[addr];

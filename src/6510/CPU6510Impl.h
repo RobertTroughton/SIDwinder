@@ -25,21 +25,21 @@ public:
     void step();
 
     // Execution control
-    bool executeFunction(u16 address);
-    void jumpTo(u16 address);
+    bool executeFunction(u32 address);
+    void jumpTo(u32 address);
 
     // Memory operations
-    u8 readMemory(u16 addr);
-    void writeByte(u16 addr, u8 value);
-    void writeMemory(u16 addr, u8 value);
-    void copyMemoryBlock(u16 start, std::span<const u8> data);
+    u8 readMemory(u32 addr);
+    void writeByte(u32 addr, u8 value);
+    void writeMemory(u32 addr, u8 value);
+    void copyMemoryBlock(u32 start, std::span<const u8> data);
 
     // Data loading
-    void loadData(const std::string& filename, u16 loadAddress);
+    void loadData(const std::string& filename, u32 loadAddress);
 
     // Program counter management
-    void setPC(u16 address);
-    u16 getPC() const;
+    void setPC(u32 address);
+    u32 getPC() const;
 
     // Stack pointer management
     void setSP(u8 sp);
@@ -58,19 +58,19 @@ public:
 
     // Memory access tracking
     void dumpMemoryAccess(const std::string& filename);
-    std::pair<u8, u8> getIndexRange(u16 pc) const;
+    std::pair<u8, u8> getIndexRange(u32 pc) const;
 
     // Memory access
     std::span<const u8> getMemory() const;
     std::span<const u8> getMemoryAccess() const;
 
     // Accessors
-    u16 getLastWriteTo(u16 addr) const;
-    const std::vector<u16>& getLastWriteToAddr() const;
+    u32 getLastWriteTo(u32 addr) const;
+    const std::vector<u32>& getLastWriteToAddr() const;
     RegisterSourceInfo getRegSourceA() const;
     RegisterSourceInfo getRegSourceX() const;
     RegisterSourceInfo getRegSourceY() const;
-    RegisterSourceInfo getWriteSourceInfo(u16 addr) const;
+    RegisterSourceInfo getWriteSourceInfo(u32 addr) const;
 
     /**
      * @brief Get the memory data flow tracking information
@@ -104,10 +104,10 @@ private:
     AddressingModes addressingModes_;
 
     // Original PC tracking for current instruction
-    u16 originalPc_ = 0;
+    u32 originalPc_ = 0;
 
     // Index range tracking
-    std::unordered_map<u16, IndexRange> pcIndexRanges_;
+    std::unordered_map<u32, IndexRange> pcIndexRanges_;
 
     // Callbacks
     IndirectReadCallback onIndirectReadCallback_;
@@ -118,18 +118,18 @@ private:
     MemoryFlowCallback onMemoryFlowCallback_;
 
     // Record the index offset used for a memory access
-    void recordIndexOffset(u16 pc, u8 offset);
+    void recordIndexOffset(u32 pc, u8 offset);
 
     // Stack operations
     void push(u8 value);
     u8 pop();
-    u16 readWord(u16 addr);
+    u16 readWord(u32 addr);
     u16 readWordZeroPage(u8 addr);
 
     // Fetch operations
-    u8 fetchOpcode(u16 addr);
-    u8 fetchOperand(u16 addr);
-    u8 readByAddressingMode(u16 addr, AddressingMode mode);
+    u8 fetchOpcode(u32 addr);
+    u8 fetchOperand(u32 addr);
+    u8 readByAddressingMode(u32 addr, AddressingMode mode);
 
     // Make the opcodeTable accessible to all components
     static const std::array<OpcodeInfo, 256> opcodeTable_;

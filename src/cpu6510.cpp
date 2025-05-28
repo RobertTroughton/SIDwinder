@@ -45,7 +45,7 @@ void CPU6510::step() {
  *
  * @param address The memory address to execute from
  */
-bool CPU6510::executeFunction(u16 address) {
+bool CPU6510::executeFunction(u32 address) {
     return pImpl_->executeFunction(address);
 }
 
@@ -56,7 +56,7 @@ bool CPU6510::executeFunction(u16 address) {
  *
  * @param address The target memory address to jump to
  */
-void CPU6510::jumpTo(u16 address) {
+void CPU6510::jumpTo(u32 address) {
     pImpl_->jumpTo(address);
 }
 
@@ -68,7 +68,7 @@ void CPU6510::jumpTo(u16 address) {
  * @param addr Memory address to read from
  * @return The byte at the specified address
  */
-u8 CPU6510::readMemory(u16 addr) {
+u8 CPU6510::readMemory(u32 addr) {
     return pImpl_->readMemory(addr);
 }
 
@@ -80,7 +80,7 @@ u8 CPU6510::readMemory(u16 addr) {
  * @param addr Memory address to write to
  * @param value Byte value to write
  */
-void CPU6510::writeByte(u16 addr, u8 value) {
+void CPU6510::writeByte(u32 addr, u8 value) {
     pImpl_->writeByte(addr, value);
 }
 
@@ -92,7 +92,7 @@ void CPU6510::writeByte(u16 addr, u8 value) {
  * @param addr Memory address to write to
  * @param value Byte value to write
  */
-void CPU6510::writeMemory(u16 addr, u8 value) {
+void CPU6510::writeMemory(u32 addr, u8 value) {
     pImpl_->writeMemory(addr, value);
 }
 
@@ -104,7 +104,7 @@ void CPU6510::writeMemory(u16 addr, u8 value) {
  * @param start Starting memory address
  * @param data Span of bytes to copy to memory
  */
-void CPU6510::copyMemoryBlock(u16 start, std::span<const u8> data) {
+void CPU6510::copyMemoryBlock(u32 start, std::span<const u8> data) {
     pImpl_->copyMemoryBlock(start, data);
 }
 
@@ -116,7 +116,7 @@ void CPU6510::copyMemoryBlock(u16 start, std::span<const u8> data) {
  * @param filename Path to the binary file to load
  * @param loadAddress Starting memory address to load the data
  */
-void CPU6510::loadData(const std::string& filename, u16 loadAddress) {
+void CPU6510::loadData(const std::string& filename, u32 loadAddress) {
     pImpl_->loadData(filename, loadAddress);
 }
 
@@ -127,7 +127,7 @@ void CPU6510::loadData(const std::string& filename, u16 loadAddress) {
  *
  * @param address The new program counter value
  */
-void CPU6510::setPC(u16 address) {
+void CPU6510::setPC(u32 address) {
     pImpl_->setPC(address);
 }
 
@@ -138,7 +138,7 @@ void CPU6510::setPC(u16 address) {
  *
  * @return The current program counter value
  */
-u16 CPU6510::getPC() const {
+u32 CPU6510::getPC() const {
     return pImpl_->getPC();
 }
 
@@ -262,7 +262,7 @@ void CPU6510::dumpMemoryAccess(const std::string& filename) {
  * @param pc Program counter of the instruction
  * @return A pair containing the minimum and maximum index offsets used
  */
-std::pair<u8, u8> CPU6510::getIndexRange(u16 pc) const {
+std::pair<u8, u8> CPU6510::getIndexRange(u32 pc) const {
     return pImpl_->getIndexRange(pc);
 }
 
@@ -296,7 +296,7 @@ std::span<const u8> CPU6510::getMemoryAccess() const {
  * @param addr Memory address to check
  * @return Program counter of the last instruction that wrote to the address
  */
-u16 CPU6510::getLastWriteTo(u16 addr) const {
+u32 CPU6510::getLastWriteTo(u32 addr) const {
     return pImpl_->getLastWriteTo(addr);
 }
 
@@ -307,7 +307,7 @@ u16 CPU6510::getLastWriteTo(u16 addr) const {
  *
  * @return Reference to the vector containing PC values of last write to each memory address
  */
-const std::vector<u16>& CPU6510::getLastWriteToAddr() const {
+const std::vector<u32>& CPU6510::getLastWriteToAddr() const {
     return pImpl_->getLastWriteToAddr();
 }
 
@@ -352,7 +352,7 @@ RegisterSourceInfo CPU6510::getRegSourceY() const {
  * @param addr Memory address to check
  * @return Register source information for the last write to the address
  */
-RegisterSourceInfo CPU6510::getWriteSourceInfo(u16 addr) const {
+RegisterSourceInfo CPU6510::getWriteSourceInfo(u32 addr) const {
     return pImpl_->getWriteSourceInfo(addr);
 }
 

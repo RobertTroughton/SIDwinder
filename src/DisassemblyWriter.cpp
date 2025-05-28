@@ -222,11 +222,6 @@ namespace sidwinder {
 
     void DisassemblyWriter::onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed) {
 
-        if (!this) {
-            util::Logger::error("onMemoryFlow called on null DisassemblyWriter!");
-            return;
-        }
-
         // Store the source information for this register
         registerSources_[reg] = { sourceAddr, value, isIndexed };
 

@@ -118,7 +118,7 @@ struct RegisterSourceInfo {
     enum class SourceType { Unknown, Immediate, Memory };
 
     SourceType type = SourceType::Unknown;
-    u16 address = 0;
+    u32 address = 0;
     u8 value = 0;
     u8 index = 0;
 };
@@ -156,7 +156,7 @@ struct OpcodeInfo {
  * pointer chains used in indirect addressing.
  */
 struct MemoryDataFlow {
-    std::map<u16, std::vector<u16>> memoryWriteSources;
+    std::map<u32, std::vector<u32>> memoryWriteSources;
 };
 
 class CPU6510 {
@@ -176,21 +176,21 @@ public:
     void step();
 
     // Execution control
-    bool executeFunction(u16 address);
-    void jumpTo(u16 address);
+    bool executeFunction(u32 address);
+    void jumpTo(u32 address);
 
     // Memory operations
-    u8 readMemory(u16 addr);
-    void writeByte(u16 addr, u8 value);
-    void writeMemory(u16 addr, u8 value);
-    void copyMemoryBlock(u16 start, std::span<const u8> data);
+    u8 readMemory(u32 addr);
+    void writeByte(u32 addr, u8 value);
+    void writeMemory(u32 addr, u8 value);
+    void copyMemoryBlock(u32 start, std::span<const u8> data);
 
     // Data loading
-    void loadData(const std::string& filename, u16 loadAddress);
+    void loadData(const std::string& filename, u32 loadAddress);
 
     // Program counter management
-    void setPC(u16 address);
-    u16 getPC() const;
+    void setPC(u32 address);
+    u32 getPC() const;
 
     // Stack pointer management
     void setSP(u8 sp);
@@ -209,19 +209,19 @@ public:
 
     // Memory access tracking
     void dumpMemoryAccess(const std::string& filename);
-    std::pair<u8, u8> getIndexRange(u16 pc) const;
+    std::pair<u8, u8> getIndexRange(u32 pc) const;
 
     // Memory access
     std::span<const u8> getMemory() const;
     std::span<const u8> getMemoryAccess() const;
 
     // Accessors
-    u16 getLastWriteTo(u16 addr) const;
-    const std::vector<u16>& getLastWriteToAddr() const;
+    u32 getLastWriteTo(u32 addr) const;
+    const std::vector<u32>& getLastWriteToAddr() const;
     RegisterSourceInfo getRegSourceA() const;
     RegisterSourceInfo getRegSourceX() const;
     RegisterSourceInfo getRegSourceY() const;
-    RegisterSourceInfo getWriteSourceInfo(u16 addr) const;
+    RegisterSourceInfo getWriteSourceInfo(u32 addr) const;
 
     /**
    * @brief Get the memory data flow tracking information
@@ -230,9 +230,9 @@ public:
     const MemoryDataFlow& getMemoryDataFlow() const;
     
     // Callbacks
-    using IndirectReadCallback = std::function<void(u16 pc, u8 zpAddr, u16 targetAddr)>;
-    using MemoryWriteCallback = std::function<void(u16 addr, u8 value)>;
-    using MemoryFlowCallback = std::function<void(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed)>;
+    using IndirectReadCallback = std::function<void(u32 pc, u8 zpAddr, u32 targetAddr)>;
+    using MemoryWriteCallback = std::function<void(u32 addr, u8 value)>;
+    using MemoryFlowCallback = std::function<void(u32 pc, char reg, u32 sourceAddr, u8 value, bool isIndexed)>;
 
     void setOnIndirectReadCallback(IndirectReadCallback callback);
     void setOnWriteMemoryCallback(MemoryWriteCallback callback);

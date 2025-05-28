@@ -85,22 +85,22 @@ void CPU6510Impl::step() {
  *
  * @param address The memory address to execute from
  */
-bool CPU6510Impl::executeFunction(u16 address) {
+bool CPU6510Impl::executeFunction(u32 address) {
     // Maximum number of steps to prevent infinite loops
     const int MAX_STEPS = DEFAULT_SID_EMULATION_FRAMES;
     int stepCount = 0;
 
     // Track the last few PCs to detect tight loops
     const int HISTORY_SIZE = 8;
-    u16 pcHistory[HISTORY_SIZE] = { 0 };
+    u32 pcHistory[HISTORY_SIZE] = { 0 };
     int historyIndex = 0;
 
     // Track potentially dangerous jump targets
     bool jumpToZeroPageTracked = false;
-    std::set<u16> reportedProblematicJumps;
+    std::set<u32> reportedProblematicJumps;
 
     // Simulate JSR manually
-    const u16 returnAddress = cpuState_.getPC() - 1; // What JSR would have pushed (the address of the last byte of JSR instruction)
+    const u32 returnAddress = cpuState_.getPC() - 1; // What JSR would have pushed (the address of the last byte of JSR instruction)
 
     push((returnAddress >> 8) & 0xFF); // Push high byte
     push(returnAddress & 0xFF);         // Push low byte
@@ -110,7 +110,7 @@ bool CPU6510Impl::executeFunction(u16 address) {
     const u8 targetSP = cpuState_.getSP(); // After pushing return address (so after manual JSR)
 
     while (stepCount < MAX_STEPS) {
-        const u16 currentPC = cpuState_.getPC();
+        const u32 currentPC = cpuState_.getPC();
 
         // Track PC history for loop detection
         pcHistory[historyIndex] = currentPC;
@@ -146,7 +146,7 @@ bool CPU6510Impl::executeFunction(u16 address) {
 
         // Track JMP and JSR instructions to potentially problematic addresses
         if (size == 3 && (opcode == 0x4C || opcode == 0x20)) { // JMP or JSR
-            const u16 operand = memory_.getMemoryAt(currentPC + 1) |
+            const u32 operand = memory_.getMemoryAt(currentPC + 1) |
                 (memory_.getMemoryAt(currentPC + 2) << 8);
 
             // Check for jumps to very low addresses
@@ -176,7 +176,7 @@ bool CPU6510Impl::executeFunction(u16 address) {
             if (cpuState_.getSP() < 0xFC) { // Make sure we can safely read from stack
                 const u8 lo = memory_.getMemoryAt(0x0100 + cpuState_.getSP() + 1);
                 const u8 hi = memory_.getMemoryAt(0x0100 + cpuState_.getSP() + 2);
-                const u16 returnAddr = (hi << 8) | lo;
+                const u32 returnAddr = (hi << 8) | lo;
 
                 // Log suspicious return addresses
                 if (returnAddr < 0x0100) {
@@ -226,7 +226,7 @@ bool CPU6510Impl::executeFunction(u16 address) {
  *
  * @param address The target memory address to jump to
  */
-void CPU6510Impl::jumpTo(u16 address) {
+void CPU6510Impl::jumpTo(u32 address) {
     cpuState_.setPC(address);
 }
 
@@ -238,7 +238,7 @@ void CPU6510Impl::jumpTo(u16 address) {
  * @param addr Memory address to read from
  * @return The byte at the specified address
  */
-u8 CPU6510Impl::readMemory(u16 addr) {
+u8 CPU6510Impl::readMemory(u32 addr) {
     return memory_.readMemory(addr);
 }
 
@@ -250,7 +250,7 @@ u8 CPU6510Impl::readMemory(u16 addr) {
  * @param addr Memory address to write to
  * @param value Byte value to write
  */
-void CPU6510Impl::writeByte(u16 addr, u8 value) {
+void CPU6510Impl::writeByte(u32 addr, u8 value) {
     memory_.writeByte(addr, value);
 }
 
@@ -262,7 +262,7 @@ void CPU6510Impl::writeByte(u16 addr, u8 value) {
  * @param addr Memory address to write to
  * @param value Byte value to write
  */
-void CPU6510Impl::writeMemory(u16 addr, u8 value) {
+void CPU6510Impl::writeMemory(u32 addr, u8 value) {
     memory_.writeMemory(addr, value, originalPc_);
 
     // Call the write callbacks if registered
@@ -291,7 +291,7 @@ void CPU6510Impl::writeMemory(u16 addr, u8 value) {
  * @param start Starting memory address
  * @param data Span of bytes to copy to memory
  */
-void CPU6510Impl::copyMemoryBlock(u16 start, std::span<const u8> data) {
+void CPU6510Impl::copyMemoryBlock(u32 start, std::span<const u8> data) {
     memory_.copyMemoryBlock(start, data);
 }
 
@@ -305,13 +305,13 @@ void CPU6510Impl::copyMemoryBlock(u16 start, std::span<const u8> data) {
  * @param loadAddress Starting memory address to load the data
  * @throws std::runtime_error if file cannot be opened or data exceeds memory bounds
  */
-void CPU6510Impl::loadData(const std::string& filename, u16 loadAddress) {
+void CPU6510Impl::loadData(const std::string& filename, u32 loadAddress) {
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
         throw std::runtime_error("Failed to open file: " + filename);
     }
 
-    u16 addr = loadAddress;
+    u32 addr = loadAddress;
     u8 byte;
     while (file.read(reinterpret_cast<char*>(&byte), 1)) {
         memory_.writeByte(addr++, byte);
@@ -325,7 +325,7 @@ void CPU6510Impl::loadData(const std::string& filename, u16 loadAddress) {
  *
  * @param address The new program counter value
  */
-void CPU6510Impl::setPC(u16 address) {
+void CPU6510Impl::setPC(u32 address) {
     cpuState_.setPC(address);
 }
 
@@ -336,7 +336,7 @@ void CPU6510Impl::setPC(u16 address) {
  *
  * @return The current program counter value
  */
-u16 CPU6510Impl::getPC() const {
+u32 CPU6510Impl::getPC() const {
     return cpuState_.getPC();
 }
 
@@ -402,7 +402,7 @@ void CPU6510Impl::resetCycles() {
  * @param addr Memory address to fetch the opcode from
  * @return The opcode byte at the specified address
  */
-u8 CPU6510Impl::fetchOpcode(u16 addr) {
+u8 CPU6510Impl::fetchOpcode(u32 addr) {
     memory_.markMemoryAccess(addr, MemoryAccessFlag::Execute);
     memory_.markMemoryAccess(addr, MemoryAccessFlag::OpCode);
     return memory_.getMemoryAt(addr);
@@ -417,7 +417,7 @@ u8 CPU6510Impl::fetchOpcode(u16 addr) {
  * @param addr Memory address to fetch the operand from
  * @return The operand byte at the specified address
  */
-u8 CPU6510Impl::fetchOperand(u16 addr) {
+u8 CPU6510Impl::fetchOperand(u32 addr) {
     memory_.markMemoryAccess(addr, MemoryAccessFlag::Execute);
     return memory_.getMemoryAt(addr);
 }
@@ -431,7 +431,7 @@ u8 CPU6510Impl::fetchOperand(u16 addr) {
  * @param mode The addressing mode to use
  * @return The byte read from memory
  */
-u8 CPU6510Impl::readByAddressingMode(u16 addr, AddressingMode mode) {
+u8 CPU6510Impl::readByAddressingMode(u32 addr, AddressingMode mode) {
     switch (mode) {
     case AddressingMode::Indirect:
     case AddressingMode::Immediate:
@@ -476,7 +476,7 @@ u8 CPU6510Impl::pop() {
  * @param addr Starting memory address
  * @return The 16-bit word read from memory
  */
-u16 CPU6510Impl::readWord(u16 addr) {
+u16 CPU6510Impl::readWord(u32 addr) {
     const u8 low = readMemory(addr);
     const u8 high = readMemory(addr + 1);
     return static_cast<u16>(low) | (static_cast<u16>(high) << 8);
@@ -568,7 +568,7 @@ bool CPU6510Impl::isIllegalInstruction(u8 opcode) const {
  * @param pc Program counter of the instruction
  * @param offset Index offset value (X or Y register)
  */
-void CPU6510Impl::recordIndexOffset(u16 pc, u8 offset) {
+void CPU6510Impl::recordIndexOffset(u32 pc, u8 offset) {
     pcIndexRanges_[pc].update(offset);
 }
 
@@ -578,7 +578,7 @@ void CPU6510Impl::recordIndexOffset(u16 pc, u8 offset) {
  * @param pc Program counter of the instruction
  * @return A pair containing the minimum and maximum index offsets used
  */
-std::pair<u8, u8> CPU6510Impl::getIndexRange(u16 pc) const {
+std::pair<u8, u8> CPU6510Impl::getIndexRange(u32 pc) const {
     auto it = pcIndexRanges_.find(pc);
     if (it == pcIndexRanges_.end()) {
         return { 0, 0 };
@@ -622,7 +622,7 @@ std::span<const u8> CPU6510Impl::getMemoryAccess() const {
  * @param addr Memory address to check
  * @return Program counter of the last instruction that wrote to the address
  */
-u16 CPU6510Impl::getLastWriteTo(u16 addr) const {
+u32 CPU6510Impl::getLastWriteTo(u32 addr) const {
     return memory_.getLastWriteTo(addr);
 }
 
@@ -631,7 +631,7 @@ u16 CPU6510Impl::getLastWriteTo(u16 addr) const {
  *
  * @return Reference to the vector containing PC values of last write to each memory address
  */
-const std::vector<u16>& CPU6510Impl::getLastWriteToAddr() const {
+const std::vector<u32>& CPU6510Impl::getLastWriteToAddr() const {
     return memory_.getLastWriteToAddr();
 }
 
@@ -668,7 +668,7 @@ RegisterSourceInfo CPU6510Impl::getRegSourceY() const {
  * @param addr Memory address to check
  * @return Register source information for the last write to the address
  */
-RegisterSourceInfo CPU6510Impl::getWriteSourceInfo(u16 addr) const {
+RegisterSourceInfo CPU6510Impl::getWriteSourceInfo(u32 addr) const {
     return memory_.getWriteSourceInfo(addr);
 }
 

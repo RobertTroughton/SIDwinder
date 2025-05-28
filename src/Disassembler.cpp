@@ -35,11 +35,9 @@ namespace sidwinder {
      */
     Disassembler::~Disassembler() {
         // Clear all callbacks before destroying members
-        if (&cpu_) {  // Check if cpu_ reference is still valid
-            const_cast<CPU6510&>(cpu_).setOnMemoryFlowCallback(nullptr);
-            const_cast<CPU6510&>(cpu_).setOnWriteMemoryCallback(nullptr);
-            const_cast<CPU6510&>(cpu_).setOnIndirectReadCallback(nullptr);
-        }
+        const_cast<CPU6510&>(cpu_).setOnMemoryFlowCallback(nullptr);
+        const_cast<CPU6510&>(cpu_).setOnWriteMemoryCallback(nullptr);
+        const_cast<CPU6510&>(cpu_).setOnIndirectReadCallback(nullptr);
     }
 
     /**

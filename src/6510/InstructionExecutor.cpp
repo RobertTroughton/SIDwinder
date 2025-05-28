@@ -178,7 +178,7 @@ void InstructionExecutor::executeInstruction(Instruction instr, AddressingMode m
  */
 void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
     // Get the target address
-    const u16 addr = cpu_.addressingModes_.getAddress(mode);
+    const u32 addr = cpu_.addressingModes_.getAddress(mode);
 
     // Read the value using the appropriate method
     const u8 value = cpu_.readByAddressingMode(addr, mode);
@@ -267,7 +267,7 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
  * @param mode The addressing mode to use
  */
 void InstructionExecutor::executeStore(Instruction instr, AddressingMode mode) {
-    const u16 addr = cpu_.addressingModes_.getAddress(mode);
+    const u32 addr = cpu_.addressingModes_.getAddress(mode);
 
     switch (instr) {
     case Instruction::STA:
@@ -307,7 +307,7 @@ void InstructionExecutor::executeStore(Instruction instr, AddressingMode mode) {
 void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mode) {
     switch (instr) {
     case Instruction::ADC: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         if (cpu_.cpuState_.testFlag(StatusFlag::Decimal)) {
@@ -335,8 +335,7 @@ void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mo
         }
         else {
             // Normal binary arithmetic
-            const u16 sum = static_cast<u16>(cpu_.cpuState_.getA()) + static_cast<u16>(value) +
-                (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
+            const u32 sum = static_cast<u32>(cpu_.cpuState_.getA()) + static_cast<u32>(value) + (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
 
             cpu_.cpuState_.setFlag(StatusFlag::Carry, sum > 0xFF);
             cpu_.cpuState_.setFlag(StatusFlag::Zero, (sum & 0xFF) == 0);
@@ -350,7 +349,7 @@ void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mo
     }
 
     case Instruction::SBC: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // SBC is ADC with inverted operand
@@ -381,23 +380,19 @@ void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mo
         }
         else {
             // Normal binary arithmetic
-            const u16 diff = static_cast<u16>(cpu_.cpuState_.getA()) +
-                static_cast<u16>(invertedValue) +
-                (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
+            const u32 diff = static_cast<u32>(cpu_.cpuState_.getA()) + static_cast<u32>(invertedValue) + (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
 
             cpu_.cpuState_.setFlag(StatusFlag::Carry, diff > 0xFF);
             cpu_.cpuState_.setFlag(StatusFlag::Zero, (diff & 0xFF) == 0);
-            cpu_.cpuState_.setFlag(StatusFlag::Overflow,
-                ((~(cpu_.cpuState_.getA() ^ invertedValue) & (cpu_.cpuState_.getA() ^ diff) & 0x80) != 0));
+            cpu_.cpuState_.setFlag(StatusFlag::Overflow, ((~(cpu_.cpuState_.getA() ^ invertedValue) & (cpu_.cpuState_.getA() ^ diff) & 0x80) != 0));
             cpu_.cpuState_.setFlag(StatusFlag::Negative, (diff & 0x80) != 0);
-
             cpu_.cpuState_.setA(static_cast<u8>(diff & 0xFF));
         }
         break;
     }
 
     case Instruction::INC: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
         value++;
         cpu_.writeMemory(addr, value);
@@ -416,7 +411,7 @@ void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mo
         break;
 
     case Instruction::DEC: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
         value--;
         cpu_.writeMemory(addr, value);
@@ -449,7 +444,7 @@ void InstructionExecutor::executeArithmetic(Instruction instr, AddressingMode mo
  * @param mode The addressing mode to use
  */
 void InstructionExecutor::executeLogical(Instruction instr, AddressingMode mode) {
-    const u16 addr = cpu_.addressingModes_.getAddress(mode);
+    const u32 addr = cpu_.addressingModes_.getAddress(mode);
     const u8 value = cpu_.readByAddressingMode(addr, mode);
 
     switch (instr) {
@@ -537,8 +532,8 @@ void InstructionExecutor::executeBranch(Instruction instr, AddressingMode mode) 
 
     // If branch is taken, update PC and add cycles
     if (branchTaken) {
-        const u16 oldPC = cpu_.cpuState_.getPC();
-        const u16 newPC = oldPC + offset;
+        const u32 oldPC = cpu_.cpuState_.getPC();
+        const u32 newPC = oldPC + offset;
         cpu_.cpuState_.setPC(newPC);
         cpu_.memory_.markMemoryAccess(newPC, MemoryAccessFlag::JumpTarget);
 
@@ -564,19 +559,19 @@ void InstructionExecutor::executeBranch(Instruction instr, AddressingMode mode) 
 void InstructionExecutor::executeJump(Instruction instr, AddressingMode mode) {
     switch (instr) {
     case Instruction::JMP: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         cpu_.memory_.markMemoryAccess(addr, MemoryAccessFlag::JumpTarget);
         cpu_.cpuState_.setPC(addr);
         break;
     }
 
     case Instruction::JSR: {
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         cpu_.memory_.markMemoryAccess(addr, MemoryAccessFlag::JumpTarget);
 
         // PC is incremented during address calculation, so we need to decrement
         // to push the correct return address (last byte of JSR instruction)
-        u16 returnAddr = cpu_.cpuState_.getPC() - 1;
+        u32 returnAddr = cpu_.cpuState_.getPC() - 1;
         cpu_.push((returnAddr >> 8) & 0xFF); // Push high byte
         cpu_.push(returnAddr & 0xFF);        // Push low byte
         cpu_.cpuState_.setPC(addr);
@@ -586,7 +581,7 @@ void InstructionExecutor::executeJump(Instruction instr, AddressingMode mode) {
     case Instruction::RTS: {
         const u8 lo = cpu_.pop();
         const u8 hi = cpu_.pop();
-        const u16 addr = (hi << 8) | lo;
+        const u32 addr = (hi << 8) | lo;
         cpu_.cpuState_.setPC(addr + 1); // RTS increments PC after popping
         break;
     }
@@ -595,7 +590,7 @@ void InstructionExecutor::executeJump(Instruction instr, AddressingMode mode) {
         const u8 status = cpu_.pop();
         const u8 lo = cpu_.pop();
         const u8 hi = cpu_.pop();
-        const u16 addr = (hi << 8) | lo;
+        const u32 addr = (hi << 8) | lo;
 
         cpu_.cpuState_.setStatus(status);
         cpu_.cpuState_.setPC(addr);
@@ -607,7 +602,7 @@ void InstructionExecutor::executeJump(Instruction instr, AddressingMode mode) {
         cpu_.cpuState_.incrementPC();
 
         // Push PC and status register
-        u16 returnAddr = cpu_.cpuState_.getPC();
+        u32 returnAddr = cpu_.cpuState_.getPC();
         cpu_.push((returnAddr >> 8) & 0xFF); // Push high byte
         cpu_.push(returnAddr & 0xFF);        // Push low byte
 
@@ -620,7 +615,7 @@ void InstructionExecutor::executeJump(Instruction instr, AddressingMode mode) {
         cpu_.cpuState_.setFlag(StatusFlag::Interrupt, true);
 
         // Load interrupt vector
-        const u16 vectorAddr = cpu_.readMemory(0xFFFE) | (cpu_.readMemory(0xFFFF) << 8);
+        const u32 vectorAddr = cpu_.readMemory(0xFFFE) | (cpu_.readMemory(0xFFFF) << 8);
         cpu_.cpuState_.setPC(vectorAddr);
         break;
     }
@@ -764,7 +759,7 @@ void InstructionExecutor::executeFlag(Instruction instr, AddressingMode mode) {
  * @param mode The addressing mode to use
  */
 void InstructionExecutor::executeShift(Instruction instr, AddressingMode mode) {
-    u16 addr = 0;
+    u32 addr = 0;
     u8 value = 0;
 
     // Determine operand source
@@ -832,7 +827,7 @@ void InstructionExecutor::executeShift(Instruction instr, AddressingMode mode) {
  * @param mode The addressing mode to use
  */
 void InstructionExecutor::executeCompare(Instruction instr, AddressingMode mode) {
-    const u16 addr = cpu_.addressingModes_.getAddress(mode);
+    const u32 addr = cpu_.addressingModes_.getAddress(mode);
     const u8 value = cpu_.readByAddressingMode(addr, mode);
     u8 regValue = 0;
 
@@ -876,7 +871,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
     switch (instr) {
     case Instruction::SLO: {
         // SLO = ASL + ORA
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // ASL part
@@ -892,7 +887,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::RLA: {
         // RLA = ROL + AND
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // ROL part
@@ -909,7 +904,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::SRE: {
         // SRE = LSR + EOR
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // LSR part
@@ -925,7 +920,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::RRA: {
         // RRA = ROR + ADC
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // ROR part
@@ -935,23 +930,18 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
         cpu_.writeMemory(addr, value);
 
         // ADC part (simplified, not handling decimal mode here)
-        const u16 sum = static_cast<u16>(cpu_.cpuState_.getA()) +
-            static_cast<u16>(value) +
-            (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
-
+        const u32 sum = static_cast<u32>(cpu_.cpuState_.getA()) + static_cast<u32>(value) + (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
         cpu_.cpuState_.setFlag(StatusFlag::Carry, sum > 0xFF);
         cpu_.cpuState_.setFlag(StatusFlag::Zero, (sum & 0xFF) == 0);
-        cpu_.cpuState_.setFlag(StatusFlag::Overflow,
-            ((~(cpu_.cpuState_.getA() ^ value) & (cpu_.cpuState_.getA() ^ sum) & 0x80) != 0));
+        cpu_.cpuState_.setFlag(StatusFlag::Overflow, ((~(cpu_.cpuState_.getA() ^ value) & (cpu_.cpuState_.getA() ^ sum) & 0x80) != 0));
         cpu_.cpuState_.setFlag(StatusFlag::Negative, (sum & 0x80) != 0);
-
         cpu_.cpuState_.setA(static_cast<u8>(sum & 0xFF));
         break;
     }
 
     case Instruction::DCP: {
         // DCP = DEC + CMP
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // DEC part
@@ -968,7 +958,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::ISC: {
         // ISC = INC + SBC
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // INC part
@@ -977,9 +967,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
         // SBC part (using inverted operand)
         const u8 invertedValue = value ^ 0xFF;
-        const u16 diff = static_cast<u16>(cpu_.cpuState_.getA()) +
-            static_cast<u16>(invertedValue) +
-            (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
+        const u32 diff = static_cast<u32>(cpu_.cpuState_.getA()) + static_cast<u32>(invertedValue) + (cpu_.cpuState_.testFlag(StatusFlag::Carry) ? 1 : 0);
 
         cpu_.cpuState_.setFlag(StatusFlag::Carry, diff > 0xFF);
         cpu_.cpuState_.setFlag(StatusFlag::Zero, (diff & 0xFF) == 0);
@@ -993,7 +981,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::ANC: {
         // ANC = AND + set carry from bit 7
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         cpu_.cpuState_.setA(cpu_.cpuState_.getA() & value);
@@ -1004,7 +992,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::ALR: {
         // ALR = AND + LSR
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // AND part
@@ -1019,7 +1007,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::ARR: {
         // ARR = AND + ROR (with special flag behavior)
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // AND part
@@ -1040,11 +1028,11 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::AXS: {
         // AXS = A AND X, then subtract without borrow
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         const u8 temp = cpu_.cpuState_.getA() & cpu_.cpuState_.getX();
-        const u16 result = static_cast<u16>(temp) - static_cast<u16>(value);
+        const u32 result = static_cast<u32>(temp) - static_cast<u32>(value);
 
         cpu_.cpuState_.setFlag(StatusFlag::Carry, temp >= value);
         cpu_.cpuState_.setFlag(StatusFlag::Zero, (result & 0xFF) == 0);
@@ -1056,7 +1044,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::LAS: {
         // LAS = Memory AND SP -> A, X, SP
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         const u8 result = value & cpu_.cpuState_.getSP();
@@ -1080,7 +1068,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::XAA: {
         // XAA = Behavior varies by processor and conditions
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 value = cpu_.readByAddressingMode(addr, mode);
 
         // Simplified model: X -> A, then AND with value
@@ -1092,7 +1080,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
     case Instruction::AHX:
     case Instruction::SHA: {
         // AHX/SHA = Store A AND X AND (high byte + 1)
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 high = (addr >> 8) & 0xFF;
         const u8 result = cpu_.cpuState_.getA() & cpu_.cpuState_.getX() & (high + 1);
 
@@ -1102,7 +1090,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::SHX: {
         // SHX = Store X AND (high byte + 1)
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 high = (addr >> 8) & 0xFF;
         const u8 result = cpu_.cpuState_.getX() & (high + 1);
 
@@ -1112,7 +1100,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::SHY: {
         // SHY = Store Y AND (high byte + 1)
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 high = (addr >> 8) & 0xFF;
         const u8 result = cpu_.cpuState_.getY() & (high + 1);
 
@@ -1122,7 +1110,7 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 
     case Instruction::TAS: {
         // TAS = A AND X -> SP, then store SP AND (high byte + 1)
-        const u16 addr = cpu_.addressingModes_.getAddress(mode);
+        const u32 addr = cpu_.addressingModes_.getAddress(mode);
         const u8 high = (addr >> 8) & 0xFF;
 
         cpu_.cpuState_.setSP(cpu_.cpuState_.getA() & cpu_.cpuState_.getX());

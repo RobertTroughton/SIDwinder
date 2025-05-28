@@ -25,12 +25,12 @@ public:
      * @param mode The addressing mode to use
      * @return The calculated target address
      */
-    u16 getAddress(AddressingMode mode);
+    u32 getAddress(AddressingMode mode);
 
 private:
     // Reference to CPU implementation
     CPU6510Impl& cpu_;
 
     // Helper method to record index register usage
-    void recordIndexOffset(u16 pc, u8 offset);
+    void recordIndexOffset(u32 pc, u8 offset);
 };
