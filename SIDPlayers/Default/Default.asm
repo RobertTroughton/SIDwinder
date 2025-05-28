@@ -91,5 +91,5 @@ JustPlayMusic:
 D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
 D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
 
-.import source "..\INC\NMIFix.asm"
+.import source "../INC/NMIFix.asm"
 
