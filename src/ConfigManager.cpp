@@ -53,16 +53,11 @@ namespace sidwinder {
 
             // Emulation Settings
             configValues_["emulationFrames"] = "30000";
-            configValues_["cyclesPerLine"] = "63.0";
-            configValues_["linesPerFrame"] = "312.0";
+            configValues_["clockStandard"] = "PAL";  // PAL or NTSC
 
             // Logging Settings
             configValues_["logFile"] = "SIDwinder.log";
             configValues_["logLevel"] = "3";
-
-            // Development Settings
-            configValues_["debugComments"] = "true";
-            configValues_["keepTempFiles"] = "false";
 
             // Compression tool options
             configValues_["exomizerOptions"] = "-x 3 -q";
@@ -178,13 +173,8 @@ namespace sidwinder {
             ss << "# Number of frames to emulate for analysis and tracing\n";
             ss << "emulationFrames=" << configValues_["emulationFrames"] << "\n\n";
 
-            ss << "# C64 CPU cycle settings (PAL by default)\n";
-            ss << "cyclesPerLine=" << configValues_["cyclesPerLine"] << "\n";
-            ss << "linesPerFrame=" << configValues_["linesPerFrame"] << "\n\n";
-
-            ss << "# NTSC settings (uncomment to use NTSC timings)\n";
-            ss << "#cyclesPerLine=65.0\n";
-            ss << "#linesPerFrame=263.0\n\n";
+            ss << "# Clock standard (PAL or NTSC)\n";
+            ss << "clockStandard=" << configValues_["clockStandard"] << "\n\n";
 
             // Logging Settings
             ss << "# Logging Settings\n";
@@ -195,22 +185,13 @@ namespace sidwinder {
             ss << "# Default log level (1=Error, 2=Warning, 3=Info, 4=Debug)\n";
             ss << "logLevel=" << configValues_["logLevel"] << "\n\n";
 
-            // Development Settings
-            ss << "# Development Settings\n";
-            ss << "# ------------------\n";
-            ss << "# Enable debug output in generated assembly\n";
-            ss << "debugComments=" << configValues_["debugComments"] << "\n\n";
-
-            ss << "# Keep temporary files after processing\n";
-            ss << "keepTempFiles=" << configValues_["keepTempFiles"] << "\n\n";
-
             // Add any custom settings not included in our sections
             std::vector<std::string> handledKeys = {
                 "kickassPath", "exomizerPath", "pucrunchPath", "compressorType", "exomizerOptions", "pucrunchOptions",
                 "defaultSidLoadAddress", "defaultSidInitAddress", "defaultSidPlayAddress",
                 "playerName", "playerAddress", "playerDirectory", "defaultPlayCallsPerFrame",
-                "emulationFrames", "cyclesPerLine", "linesPerFrame",
-                "logFile", "logLevel", "debugComments", "keepTempFiles"
+                "emulationFrames", "clockStandard",
+                "logFile", "logLevel"
             };
 
             bool hasCustomSettings = false;
@@ -369,6 +350,30 @@ namespace sidwinder {
             return 0x1003;
         }
 
+        std::string ConfigManager::getClockStandard() {
+            std::string clockStr = getString("clockStandard", "PAL");
+            std::transform(clockStr.begin(), clockStr.end(), clockStr.begin(), ::toupper);
+
+            // Validate - default to PAL if invalid
+            if (clockStr != "PAL" && clockStr != "NTSC") {
+                clockStr = "PAL";
+            }
+
+            return clockStr;
+        }
+
+        double ConfigManager::getCyclesPerFrame() {
+            std::string clockStandard = getClockStandard();
+
+            if (clockStandard == "NTSC") {
+                // NTSC: 65 cycles per line, 263 lines per frame
+                return 65.0 * 263.0;
+            }
+            else {
+                // PAL: 63 cycles per line, 312 lines per frame
+                return 63.0 * 312.0;
+            }
+        }
+
     } // namespace util
 } // namespace sidwinder
-

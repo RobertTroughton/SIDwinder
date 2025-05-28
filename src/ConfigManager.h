@@ -75,6 +75,18 @@ namespace sidwinder {
             static u16 getDefaultSidInitAddress();
             static u16 getDefaultSidPlayAddress();
 
+            /**
+             * @brief Get the clock standard (PAL/NTSC)
+             * @return "PAL" or "NTSC"
+             */
+            static std::string getClockStandard();
+
+            /**
+             * @brief Get cycles per frame for the current clock standard
+             * @return Number of cycles per frame
+             */
+            static double getCyclesPerFrame();
+
         private:
             static std::map<std::string, std::string> configValues_;
             static std::filesystem::path configFile_;

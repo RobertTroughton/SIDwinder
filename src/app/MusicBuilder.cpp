@@ -165,32 +165,6 @@ namespace sidwinder {
             }
         }
 
-        // Clean up temporary files if configured not to keep them
-        if (!util::ConfigManager::getBool("keepTempFiles", false)) {
-            util::Logger::debug("Cleaning up temporary files");
-
-            std::vector<fs::path> tempFiles = {
-                tempLinkerFile,
-                tempPlayerPrgFile,
-                tempPrgFile
-                // Add any other temp files created during the process
-            };
-
-            for (const auto& file : tempFiles) {
-                if (fs::exists(file)) {
-                    try {
-                        fs::remove(file);
-                        util::Logger::debug("Removed temporary file: " + file.string());
-                    }
-                    catch (const std::exception& e) {
-                        // Just log cleanup errors, don't fail the build
-                        util::Logger::debug("Failed to remove temporary file: " + file.string() +
-                            " - " + e.what());
-                    }
-                }
-            }
-        }
-
         return true;
     }
 
@@ -368,25 +342,6 @@ namespace sidwinder {
             u16 sidLoad = options.sidLoadAddr;
             file << "* = $" << util::wordToHex(sidLoad) << "\n";
             file << ".import source \"" << musicFile.string() << "\"\n";
-            file << "\n";
-        }
-
-        // Add debug info if enabled in configuration
-        if (util::Configuration::getBool("debugComments", false)) {
-            file << "// Debug Information\n";
-            file << "// -----------------\n";
-            file << "// Player: " << options.playerName << "\n";
-            file << "// Player Address: $" << util::wordToHex(options.playerAddress) << "\n";
-            file << "// Calls Per Frame: " << options.playCallsPerFrame << "\n";
-            if (bIsSID) {
-                file << "// SID File: " << musicFile.string() << "\n";
-            }
-            else {
-                file << "// ASM File: " << musicFile.string() << "\n";
-                file << "// Load Address: $" << util::wordToHex(options.sidLoadAddr) << "\n";
-                file << "// Init Address: $" << util::wordToHex(options.sidInitAddr) << "\n";
-                file << "// Play Address: $" << util::wordToHex(options.sidPlayAddr) << "\n";
-            }
             file << "\n";
         }
 

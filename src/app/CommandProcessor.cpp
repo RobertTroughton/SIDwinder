@@ -274,6 +274,7 @@ namespace sidwinder {
         return true;
     }
 
+
     int CommandProcessor::calculatePlayCallsPerFrame(u8 CIATimerLo, u8 CIATimerHi) {
         const uint32_t speedBits = sid_->getHeader().speed;
         int count = 0;
@@ -293,11 +294,8 @@ namespace sidwinder {
         if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
             const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
 
-            // Use clock speed from config if available (default to PAL at 63 cycles per line, 312 lines)
-            double cyclesPerLine = util::ConfigManager::getDouble("cyclesPerLine", 63.0);
-            double linesPerFrame = util::ConfigManager::getDouble("linesPerFrame", 312.0);
-
-            const double NumCyclesPerFrame = (cyclesPerLine * linesPerFrame);
+            // Get cycles per frame based on clock standard
+            const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
             const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
             const int numCalls = static_cast<int>(freq + 0.5);
             numPlayCallsPerFrame = std::clamp(numCalls, 1, 16);

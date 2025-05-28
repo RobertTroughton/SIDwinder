@@ -157,16 +157,11 @@ Here are some common settings you might want to customize:
 
 #### Emulation Settings
 - `emulationFrames`: Number of frames to emulate (default: `30000`, about 10 minutes of C64 time)
-- `cyclesPerLine`: CPU cycles per scan line (PAL: `63.0`, NTSC: `65.0`)
-- `linesPerFrame`: Scan lines per frame (PAL: `312.0`, NTSC: `263.0`)
+- `clockStandard`: Whether the emulation system should be PAL or NTSC
 
 #### Logging Settings
 - `logFile`: Default log file path
 - `logLevel`: Logging detail level (1=Error, 2=Warning, 3=Info, 4=Debug)
-
-#### Development Settings
-- `debugComments`: Include debug comments in generated assembly (`true` or `false`)
-- `keepTempFiles`: Preserve temporary files after processing (`true` or `false`)
 
 ### When to Use Configuration vs. Command Line
 
