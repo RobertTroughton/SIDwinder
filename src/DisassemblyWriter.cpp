@@ -50,13 +50,13 @@ namespace sidwinder {
      * @param sidLoad New SID load address
      * @param sidInit New SID init address
      * @param sidPlay New SID play address
-     * @return Number of unused bytes removed
      */
-    int DisassemblyWriter::generateAsmFile(
+    void DisassemblyWriter::generateAsmFile(
         const std::string& filename,
         u16 sidLoad,
         u16 sidInit,
-        u16 sidPlay) {
+        u16 sidPlay,
+        bool removeCIAWrites) {
 
         util::Logger::info("Generating assembly file: " + filename);
 
@@ -64,7 +64,7 @@ namespace sidwinder {
         std::ofstream file(filename);
         if (!file) {
             util::Logger::error("Failed to open output file: " + filename);
-            return 0;
+            return;
         }
 
         // Write file header
@@ -86,14 +86,9 @@ namespace sidwinder {
         emitZPDefines(file);
 
         // Disassemble to file
-        int unusedByteCount = disassembleToFile(file);
-
-        // Output unused byte count
-        file << "//; " << unusedByteCount << " unused bytes zeroed out\n\n";
+        disassembleToFile(file, removeCIAWrites);
 
         file.close();
-
-        return unusedByteCount;
     }
 
     /**
@@ -349,14 +344,15 @@ namespace sidwinder {
      * data, and labels appropriately.
      *
      * @param file Output stream
-     * @return Number of unused bytes removed
      */
-    int DisassemblyWriter::disassembleToFile(std::ofstream& file) {
+    void DisassemblyWriter::disassembleToFile(std::ofstream& file, bool removeCIAWrites) {
+
+        formatter_.setCIAWriteRemoval(removeCIAWrites);
+
         u16 pc = sid_.getLoadAddress();
         file << "\n* = SIDLoad\n\n";
 
          const u16 sidEnd = sid_.getLoadAddress() + sid_.getDataSize();
-        int unusedByteCount = 0;
 
         while (pc < sidEnd) {
             // Check if we need to output a label
@@ -376,7 +372,7 @@ namespace sidwinder {
             }
             else if (analyzer_.getMemoryType(pc) & MemoryType::Data) {
                 // Format data bytes
-                unusedByteCount += formatter_.formatDataBytes(
+                formatter_.formatDataBytes(
                     file,
                     pc,
                     sid_.getOriginalMemory(),
@@ -390,8 +386,6 @@ namespace sidwinder {
                 ++pc;
             }
         }
-
-        return unusedByteCount;
     }
 
     void DisassemblyWriter::analyzeWritesForSelfModification() {

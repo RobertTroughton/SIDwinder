@@ -63,6 +63,7 @@ namespace sidwinder {
             u8 secondSIDAddress = originalHeader.secondSIDAddress;
             u8 thirdSIDAddress = originalHeader.thirdSIDAddress;
             u16 version = originalHeader.version;
+            u32 speed = originalHeader.speed;
 
             // Calculate relocated addresses
             result.newLoad = params.relocationAddress;
@@ -78,6 +79,7 @@ namespace sidwinder {
             Logger::info("Relocated addresses - Load: $" + wordToHex(result.newLoad) +
                 ", Init: $" + wordToHex(result.newInit) +
                 ", Play: $" + wordToHex(result.newPlay));
+
 
             // Create a Disassembler
             sidwinder::Disassembler disassembler(*cpu, *sid);
@@ -101,11 +103,12 @@ namespace sidwinder {
             const fs::path tempPrgFile = params.tempDir / (basename + "-relocated.prg");
 
             // Generate ASM with relocated addresses
-            result.unusedBytesRemoved = disassembler.generateAsmFile(
+            disassembler.generateAsmFile(
                 tempAsmFile.string(),
                 result.newLoad,
                 result.newInit,
-                result.newPlay);
+                result.newPlay,
+                false);
 
             // Assemble to PRG
             if (!assembleAsmToPrg(tempAsmFile, tempPrgFile, params.kickAssPath, params.tempDir)) {
@@ -128,10 +131,11 @@ namespace sidwinder {
                 title,
                 author,
                 copyright,
-                originalFlags,       // Pass original header flags
-                secondSIDAddress,    // Pass original secondSIDAddress
-                thirdSIDAddress,    // Pass original thirdSIDAddress
-                version)) {     // Pass original version number
+                originalFlags,
+                secondSIDAddress,
+                thirdSIDAddress,
+                version,
+                speed)) {
 
                 // If SID creation fails, fall back to PRG
                 Logger::warning("SID file generation failed. Saving as PRG instead.");
@@ -140,8 +144,7 @@ namespace sidwinder {
                     fs::copy_file(tempPrgFile, params.outputFile, fs::copy_options::overwrite_existing);
 
                     result.success = true;
-                    result.message = "Relocation complete (saved as PRG). " +
-                        std::to_string(result.unusedBytesRemoved) + " unused bytes removed.";
+                    result.message = "Relocation complete (saved as PRG).";
                     Logger::info(result.message);
                 }
                 catch (const std::exception& e) {
@@ -152,8 +155,7 @@ namespace sidwinder {
             }
             else {
                 result.success = true;
-                result.message = "Relocation to SID complete. " +
-                    std::to_string(result.unusedBytesRemoved) + " unused bytes removed.";
+                result.message = "Relocation to SID complete. ";
                 Logger::info(result.message);
             }
 
@@ -293,7 +295,8 @@ namespace sidwinder {
             u16 flags,
             u8 secondSIDAddress,
             u8 thirdSIDAddress,
-            u16 version) {
+            u16 version,
+            u32 speed) {
 
             // Read the PRG file
             std::ifstream prg(prgFile, std::ios::binary | std::ios::ate);
@@ -340,7 +343,7 @@ namespace sidwinder {
             header.playAddress = playAddr;   // Play address
             header.songs = 1;                // 1 song
             header.startSong = 1;            // Start song 1
-            header.speed = 0;                // No CIA timers specified
+            header.speed = speed;
 
             // Fill in metadata fields with null-termination
             std::memset(header.name, 0, sizeof(header.name));
@@ -398,6 +401,12 @@ namespace sidwinder {
             auto swapEndian = [](u16 value) -> u16 {
                 return (value >> 8) | (value << 8);
                 };
+            auto swapEndian32 = [](u32 value) -> u32 {
+                return  ((value & 0xff000000) >> 24)
+                    | ((value & 0x00ff0000) >> 8)
+                    | ((value & 0x0000ff00) << 8)
+                    | ((value & 0x000000ff) << 24);
+                };
 
             header.version = swapEndian(header.version);
             header.dataOffset = swapEndian(header.dataOffset);
@@ -407,6 +416,7 @@ namespace sidwinder {
             header.songs = swapEndian(header.songs);
             header.startSong = swapEndian(header.startSong);
             header.flags = swapEndian(header.flags);
+            header.speed = swapEndian32(header.speed);
 
             // Open the output SID file
             std::ofstream sid_file(sidFile, std::ios::binary);

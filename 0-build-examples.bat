@@ -16,6 +16,7 @@ SIDwinder.exe -relocate -relocateaddr=$2000 SID/larshoff-blades.sid temp/larshof
 
 REM Simple Bitmap With Default Bitmap
 SIDwinder.exe -player=SimpleBitmap SID/phat_frog_2sid.sid examples/phat_frog_2sid.prg
+SIDwinder.exe -player=SimpleBitmap SID/trident-cheap.sid examples/trident-cheap.prg
 
 REM Simple Bitmap With Provided Bitmaps
 SIDwinder.exe -player=SimpleBitmap -define KoalaFile="../../Bitmaps/redcrab-zebra.kla" temp/larshoff-blades-rel2000.sid examples/larshoff-blades.prg

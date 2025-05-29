@@ -59,6 +59,8 @@
 .const SPECTRUM_START_LINE = 11
 .const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
+.eval setSeed(55378008)
+
 //; Memory configuration
 .const VIC_BANK = 3						//; $C000-$FFFF
 .const VIC_BANK_ADDRESS = VIC_BANK * $4000
@@ -991,7 +993,7 @@ colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PA
 colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
 
 heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) /*+ (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))*/) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
+							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
 
 heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 

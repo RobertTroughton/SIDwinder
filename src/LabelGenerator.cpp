@@ -184,24 +184,28 @@ namespace sidwinder {
         static const u16 sidBaseAddr = 0xD400;
         static const u16 sidEndAddr = 0xD7FF;
 
-        if (addr >= sidBaseAddr && addr <= sidEndAddr) {
-            const u16 base = addr & 0xFFE0; // Align to 32 bytes (SID base granularity)
-            const u8 offset = addr & 0x1F;  // Offset within SID (0-31)
+        if (addr >= 0xD000 && addr <= 0xDFFF) {
+            if (addr >= sidBaseAddr && addr <= sidEndAddr) {
+                const u16 base = addr & 0xFFE0; // Align to 32 bytes (SID base granularity)
+                const u8 offset = addr & 0x1F;  // Offset within SID (0-31)
 
-            // Find the SID index in the registered hardware bases
-            for (const auto& hw : usedHardwareBases_) {
-                if (hw.type == HardwareType::SID && hw.address == base) {
-                    if (offset == 0) {
-                        return hw.name; // Return just "SID0", "SID1", etc. for the base address
-                    }
-                    else {
-                        return hw.name + "+" + std::to_string(offset); // "SID0+1", etc. for offsets
+                // Find the SID index in the registered hardware bases
+                for (const auto& hw : usedHardwareBases_) {
+                    if (hw.type == HardwareType::SID && hw.address == base) {
+                        if (offset == 0) {
+                            return hw.name; // Return just "SID0", "SID1", etc. for the base address
+                        }
+                        else {
+                            return hw.name + "+" + std::to_string(offset); // "SID0+1", etc. for offsets
+                        }
                     }
                 }
+
+                // If not found in registered bases, use a default SID0 reference
+                return "SID0+" + std::to_string(addr - sidBaseAddr);
             }
 
-            // If not found in registered bases, use a default SID0 reference
-            return "SID0+" + std::to_string(addr - sidBaseAddr);
+            return "$" + sidwinder::util::wordToHex(addr);
         }
 
         // Check if this is a mid-instruction label (hidden code)

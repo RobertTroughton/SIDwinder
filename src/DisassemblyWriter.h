@@ -74,15 +74,15 @@ namespace sidwinder {
          * @param sidLoad New SID load address
          * @param sidInit New SID init address
          * @param sidPlay New SID play address
-         * @return Number of unused bytes removed
          *
          * Creates a complete assembly language file for the disassembled SID.
          */
-        int generateAsmFile(
+        void generateAsmFile(
             const std::string& filename,
             u16 sidLoad,
             u16 sidInit,
-            u16 sidPlay);
+            u16 sidPlay,
+            bool removeCIAWrites = false);
 
         /**
          * @brief Add an indirect memory access
@@ -210,11 +210,10 @@ namespace sidwinder {
         /**
          * @brief Disassemble to the output file
          * @param file Output stream
-         * @return Number of unused bytes removed
          *
          * Performs the actual disassembly writing to the file.
          */
-        int disassembleToFile(std::ofstream& file);
+        void disassembleToFile(std::ofstream& file, bool removeCIAWrites);
 
         void processRelocationChain(const MemoryDataFlow& dataFlow, RelocationTable& relocTable, u16 addr, u16 targetAddr, RelocationEntry::Type relocType);
 

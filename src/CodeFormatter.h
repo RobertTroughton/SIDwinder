@@ -67,12 +67,11 @@ namespace sidwinder {
          * @param endAddress End address
          * @param relocationBytes Map of relocation bytes
          * @param memoryTags Memory type tags
-         * @return Number of unused bytes zeroed out
          *
          * Outputs data bytes in assembly format (.byte directives).
          * Handles relocation entries and unused bytes.
          */
-        int formatDataBytes(
+        void formatDataBytes(
             std::ostream& file,
             u16& pc,
             std::span<const u8> originalMemory,
@@ -121,10 +120,13 @@ namespace sidwinder {
             u8 minOffset,
             char indexReg) const;
 
+        void setCIAWriteRemoval(bool removeCIAWrites) const;
+
     private:
         const CPU6510& cpu_;                      // Reference to CPU
         const LabelGenerator& labelGenerator_;    // Reference to label generator
         std::span<const u8> memory_;              // Memory data
+        mutable bool removeCIAWrites_;            // Whether to remove CIA writes
     };
 
 } // namespace sidwinder

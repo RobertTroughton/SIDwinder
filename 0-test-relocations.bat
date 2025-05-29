@@ -7,6 +7,7 @@ set fail_count=0
 set total_count=0
 
 set logfile=relocations.log
+if exist "%logfile%" del "%logfile%"
 
 mkdir Reloc 2>nul
 
@@ -58,6 +59,8 @@ goto :eof
 :start
 
 :: Process all SID files
+call :relocate "SID/trident-cheap.sid" "Reloc/rel2000-trident-cheap.sid"
+
 call :relocate "SID/larshoff-recovery.sid" "Reloc/rel2000-larshoff-recovery.sid"
 call :relocate "SID/celticdesign-7-3.sid" "Reloc/rel2000-celticdesign-7-3.sid"
 call :relocate "SID/larshoff-blades.sid" "Reloc/rel2000-larshoff-blades.sid"
@@ -96,7 +99,6 @@ call :relocate "SID/stinsen-diagonality.sid" "Reloc/rel2000-stinsen-diagonality.
 call :relocate "SID/stinsenleaf-pushthrough.sid" "Reloc/rel2000-stinsenleaf-pushthrough.sid"
 call :relocate "SID/stinsen-onborrowedwings.sid" "Reloc/rel2000-stinsen-onborrowedwings.sid"
 call :relocate "SID/toggle-fireflies.sid" "Reloc/rel2000-toggle-fireflies.sid"
-call :relocate "SID/trident-cheap.sid" "Reloc/rel2000-trident-cheap.sid"
 call :relocate "SID/trident-elysoun.sid" "Reloc/rel2000-trident-elysoun.sid"
 call :relocate "SID/trident-sptest07.sid" "Reloc/rel2000-trident-sptest07.sid"
 call :relocate "SID/xiny-allstars.sid" "Reloc/rel2000-xiny-allstars.sid"

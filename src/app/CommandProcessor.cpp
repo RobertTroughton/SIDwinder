@@ -410,7 +410,7 @@ namespace sidwinder {
             const u16 newSidInit = newSidLoad + (sid_->getInitAddress() - sidLoad);
             const u16 newSidPlay = newSidLoad + (sid_->getPlayAddress() - sidLoad);
 
-            disassembler_->generateAsmFile(tempAsmFile.string(), newSidLoad, newSidInit, newSidPlay);
+            disassembler_->generateAsmFile(tempAsmFile.string(), newSidLoad, newSidInit, newSidPlay, true);
             util::Logger::info("Generated relocated assembly: " + tempAsmFile.string());
 
             // Run assembler to build with player
@@ -526,6 +526,7 @@ namespace sidwinder {
                 u8 secondSIDAddress = originalHeader.secondSIDAddress;
                 u8 thirdSIDAddress = originalHeader.thirdSIDAddress;
                 u16 version = originalHeader.version;
+                u32 speed = originalHeader.speed;
 
                 // Create SID from PRG
                 bool success = util::createSIDFromPRG(
@@ -540,7 +541,8 @@ namespace sidwinder {
                     flags,
                     secondSIDAddress,
                     thirdSIDAddress,
-                    version);
+                    version,
+                    speed);
 
                 if (!success) {
                     util::Logger::warning("SID file creation failed. Copying PRG instead.");
@@ -583,11 +585,9 @@ namespace sidwinder {
         const u16 newSidInit = outputSidLoad + (sid_->getInitAddress() - sidLoad);
         const u16 newSidPlay = outputSidLoad + (sid_->getPlayAddress() - sidLoad);
 
-        int unusedBytes = disassembler_->generateAsmFile(
-            options.outputFile.string(), outputSidLoad, newSidInit, newSidPlay);
+        disassembler_->generateAsmFile(options.outputFile.string(), outputSidLoad, newSidInit, newSidPlay, true);
 
-        util::Logger::info("Generated assembly file: " + options.outputFile.string() +
-            " (" + std::to_string(unusedBytes) + " unused bytes removed)");
+        util::Logger::info("Generated assembly file: " + options.outputFile.string());
 
         return true;
     }

@@ -39,7 +39,6 @@ namespace sidwinder {
             u16 newLoad;                  ///< New load address
             u16 newInit;                  ///< New init address
             u16 newPlay;                  ///< New play address
-            int unusedBytesRemoved;       ///< Number of unused bytes removed
             std::string message;          ///< Additional info/error message
         };
 
@@ -123,7 +122,8 @@ namespace sidwinder {
             u16 flags = 0,
             u8 secondSIDAddress = 0,
             u8 thirdSIDAddress = 0,
-            u16 version = 2);
+            u16 version = 2,
+            u32 speed = 0);
 
         /**
          * @brief Run SID emulation to analyze memory patterns

@@ -116,17 +116,17 @@ namespace sidwinder {
      * @param sidLoad New SID load address (for relocation)
      * @param sidInit New SID init address
      * @param sidPlay New SID play address
-     * @return Number of unused bytes removed, or -1 on error
      */
-    int Disassembler::generateAsmFile(
+    void Disassembler::generateAsmFile(
         const std::string& outputPath,
         u16 sidLoad,
         u16 sidInit,
-        u16 sidPlay) {
-
+        u16 sidPlay,
+        bool removeCIAWrites) {
+    
         if (!analyzer_ || !labelGenerator_ || !formatter_ || !writer_) {
             util::Logger::error("Disassembler not properly initialized");
-            return -1;
+            return;
         }
 
         // Perform memory analysis
@@ -151,7 +151,7 @@ namespace sidwinder {
         labelGenerator_->applySubdivisions();
 
         // Generate the assembly file
-        return writer_->generateAsmFile(outputPath, sidLoad, sidInit, sidPlay);
+        writer_->generateAsmFile(outputPath, sidLoad, sidInit, sidPlay, removeCIAWrites);
     }
 
 } // namespace sidwinder

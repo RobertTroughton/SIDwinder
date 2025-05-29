@@ -28,7 +28,8 @@ namespace sidwinder {
         std::span<const u8> memory)
         : cpu_(cpu),
         labelGenerator_(labelGenerator),
-        memory_(memory) {
+        memory_(memory),
+        removeCIAWrites_(false) {
     }
 
     /**
@@ -52,7 +53,7 @@ namespace sidwinder {
         const u16 startPC = pc;
 
         // Check for CIA timer patch
-        if (static_cast<int>(mode) == static_cast<int>(AddressingMode::Absolute)) {
+        if (removeCIAWrites_ && static_cast<int>(mode) == static_cast<int>(AddressingMode::Absolute)) {
             const u16 absAddr = memory_[pc + 1] | (memory_[pc + 2] << 8);
             if (isCIAStorePatch(opcode, static_cast<int>(mode), absAddr, mnemonic)) {
                 std::ostringstream patched;
@@ -100,9 +101,8 @@ namespace sidwinder {
      * @param endAddress End address
      * @param relocationBytes Map of relocation bytes
      * @param memoryTags Memory type tags
-     * @return Number of unused bytes zeroed out
      */
-    int CodeFormatter::formatDataBytes(
+    void CodeFormatter::formatDataBytes(
         std::ostream& file,
         u16& pc,
         std::span<const u8> originalMemory,
@@ -111,7 +111,6 @@ namespace sidwinder {
         const std::map<u16, RelocationEntry>& relocationBytes,
         std::span<const MemoryType> memoryTags) const {
 
-        int unusedByteCount = 0;
         const int commentColumn = 97; // Target column for alignment of comments (adjusted +1)
 
         while (pc < endAddress && (memoryTags[pc] & MemoryType::Data)) {
@@ -190,7 +189,6 @@ namespace sidwinder {
                 bool isUnused = !(memoryTags[pc] & (MemoryType::Accessed | MemoryType::LabelTarget));
                 if (isUnused) {
                     byte = 0;  // Always zero out unused bytes to help with compression
-                    unusedByteCount++;
                 }
 
                 lineSS << "$" << util::byteToHex(byte);
@@ -249,8 +247,6 @@ namespace sidwinder {
                     << util::wordToHex(lineEndPC) << "\n";
             }
         }
-
-        return unusedByteCount;
     }
 
     /**
@@ -391,5 +387,11 @@ namespace sidwinder {
 
         return labelGenerator_.formatAddress(baseAddr) + "," + indexReg;
     }
+
+    void CodeFormatter::setCIAWriteRemoval(bool removeCIAWrites) const
+    {
+        removeCIAWrites_ = removeCIAWrites;
+    }
+
 
 } // namespace sidwinder

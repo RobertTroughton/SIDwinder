@@ -58,16 +58,16 @@ namespace sidwinder {
          * @param sidLoad New SID load address
          * @param sidInit New SID init address (relative to load)
          * @param sidPlay New SID play address (relative to load)
-         * @return Number of unused bytes removed, or -1 on error
          *
          * Performs the entire disassembly process and writes the result
          * to the specified output file.
          */
-        int generateAsmFile(
+        void generateAsmFile(
             const std::string& outputPath,
             u16 sidLoad,
             u16 sidInit,
-            u16 sidPlay);
+            u16 sidPlay,
+            bool removeCIAWrites = false);
 
     private:
         const CPU6510& cpu_;  // Reference to CPU

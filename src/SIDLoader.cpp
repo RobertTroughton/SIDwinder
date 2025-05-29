@@ -258,6 +258,12 @@ void SIDLoader::fixHeaderEndianness(SIDHeader& header) {
     auto swapEndian = [](u16 value) -> u16 {
         return (value >> 8) | (value << 8);
         };
+    auto swapEndian32 = [](u32 value) -> u32 {
+        return  ((value & 0xff000000) >> 24)
+            | ((value & 0x00ff0000) >> 8)
+            | ((value & 0x0000ff00) << 8)
+            | ((value & 0x000000ff) << 24);
+        };
 
     // Swap multi-byte header fields
     header.version = swapEndian(header.version);
@@ -267,7 +273,7 @@ void SIDLoader::fixHeaderEndianness(SIDHeader& header) {
     header.playAddress = swapEndian(header.playAddress);
     header.songs = swapEndian(header.songs);
     header.startSong = swapEndian(header.startSong);
-    header.speed = swapEndian(header.speed);
+    header.speed = swapEndian32(header.speed);
     header.flags = swapEndian(header.flags);
 
     // Log version information
