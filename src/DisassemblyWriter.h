@@ -104,16 +104,41 @@ namespace sidwinder {
         void onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed);
 
         void updateSelfModifyingPattern(u16 instrAddr, int offset, u16 sourceAddr, u8 value) {
-            auto& pattern = selfModifyingPatterns_[instrAddr];
+            auto& patterns = selfModifyingPatterns_[instrAddr];
+
+            // Find or create a pattern for this modification
+            SelfModifyingPattern* currentPattern = nullptr;
+
+            // Look for an existing incomplete pattern
+            for (auto& pattern : patterns) {
+                // If we have a low byte but no high byte, and this is offset 2
+                if (pattern.hasLowByte && !pattern.hasHighByte && offset == 2) {
+                    currentPattern = &pattern;
+                    break;
+                }
+                // If we have a high byte but no low byte, and this is offset 1
+                else if (!pattern.hasLowByte && pattern.hasHighByte && offset == 1) {
+                    currentPattern = &pattern;
+                    break;
+                }
+            }
+
+            // If we didn't find a suitable pattern, create a new one
+            if (!currentPattern) {
+                patterns.push_back(SelfModifyingPattern{});
+                currentPattern = &patterns.back();
+            }
+
+            // Update the pattern
             if (offset == 1) {
-                pattern.lowByteSource = sourceAddr;
-                pattern.lowByte = value;
-                pattern.hasLowByte = true;
+                currentPattern->lowByteSource = sourceAddr;
+                currentPattern->lowByte = value;
+                currentPattern->hasLowByte = true;
             }
             else if (offset == 2) {
-                pattern.highByteSource = sourceAddr;
-                pattern.highByte = value;
-                pattern.hasHighByte = true;
+                currentPattern->highByteSource = sourceAddr;
+                currentPattern->highByte = value;
+                currentPattern->hasHighByte = true;
             }
         }
 
@@ -164,7 +189,7 @@ namespace sidwinder {
             bool hasLowByte = false;
             bool hasHighByte = false;
         };
-        std::map<u16, SelfModifyingPattern> selfModifyingPatterns_;
+        std::map<u16, std::vector<SelfModifyingPattern>> selfModifyingPatterns_;
 
         /**
          * @brief Output hardware constants to the assembly file

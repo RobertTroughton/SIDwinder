@@ -196,26 +196,25 @@ namespace sidwinder {
         }
 
         // Process self-modifying code patterns
-        for (const auto& [instrAddr, pattern] : selfModifyingPatterns_) {
-            if (pattern.hasLowByte && pattern.hasHighByte) {
-                // We have a complete address
-                u16 targetAddr = pattern.lowByte | (pattern.highByte << 8);
+        for (const auto& [instrAddr, patterns] : selfModifyingPatterns_) {
+            for (const auto& pattern : patterns) {
+                if (pattern.hasLowByte && pattern.hasHighByte) {
+                    // We have a complete address
+                    u16 targetAddr = pattern.lowByte | (pattern.highByte << 8);
 
-                // Add relocation entries
-                if (pattern.lowByteSource != 0) {
-                    relocTable_.addEntry(pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
-                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.lowByteSource);
-                    processRelocationChain(dataFlow, relocTable_, pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
+                    // Add relocation entries
+                    if (pattern.lowByteSource != 0) {
+                        relocTable_.addEntry(pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
+                        const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.lowByteSource);
+                        processRelocationChain(dataFlow, relocTable_, pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
+                    }
+
+                    if (pattern.highByteSource != 0) {
+                        relocTable_.addEntry(pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
+                        const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.highByteSource);
+                        processRelocationChain(dataFlow, relocTable_, pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
+                    }
                 }
-
-                if (pattern.highByteSource != 0) {
-                    relocTable_.addEntry(pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
-                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.highByteSource);
-                    processRelocationChain(dataFlow, relocTable_, pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
-                }
-
-                util::Logger::debug("Self-modifying code pattern detected at $" +
-                    util::wordToHex(instrAddr) + " -> $" + util::wordToHex(targetAddr));
             }
         }
     }
@@ -224,20 +223,7 @@ namespace sidwinder {
 
         // Store the source information for this register
         registerSources_[reg] = { sourceAddr, value, isIndexed };
-
-        // If this is an indexed read from what looks like a table, mark for potential relocation
-        if (isIndexed) {
-            // Check if nearby addresses also look like they might contain address data
-            // This is a heuristic - addresses often come in pairs (low/high bytes)
-            u8 prevValue = cpu_.getMemory()[sourceAddr - 1];
-            u8 nextValue = cpu_.getMemory()[sourceAddr + 1];
-
-            // Simple heuristic: if the values could form valid C64 addresses
-            u16 prevAddr = value | (prevValue << 8);
-            u16 nextAddr = nextValue | (value << 8);
-
-            const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(sourceAddr);
-        }
+        const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(sourceAddr);
     }
 
     void DisassemblyWriter::processRelocationChain(
@@ -415,7 +401,6 @@ namespace sidwinder {
         int selfModifyingCount = 0;
 
         for (const auto& write : allWrites_) {
-            // NOW we can check if it's code because analyzer is initialized
             if (analyzer_.getMemoryType(write.addr) & MemoryType::Code) {
                 u16 instrStart = analyzer_.findInstructionStartCovering(write.addr);
                 if (instrStart != write.addr) {
@@ -435,7 +420,35 @@ namespace sidwinder {
                     }
                     selfModifyingCount++;
 
-                    // Check register sources for more info
+                    // Find or create a pattern for this specific modification
+                    auto& patterns = selfModifyingPatterns_[instrStart];
+                    SelfModifyingPattern* currentPattern = nullptr;
+
+                    // Look for an existing incomplete pattern that we can add to
+                    for (auto& pattern : patterns) {
+                        // If we have a low byte but no high byte, and this is offset 2
+                        if (pattern.hasLowByte && !pattern.hasHighByte && offset == 2) {
+                            currentPattern = &pattern;
+                            break;
+                        }
+                        // If we have a high byte but no low byte, and this is offset 1
+                        else if (!pattern.hasLowByte && pattern.hasHighByte && offset == 1) {
+                            currentPattern = &pattern;
+                            break;
+                        }
+                        // If this pattern is already complete, skip it
+                        else if (pattern.hasLowByte && pattern.hasHighByte) {
+                            continue;
+                        }
+                    }
+
+                    // If we didn't find a suitable pattern, create a new one
+                    if (!currentPattern) {
+                        patterns.push_back(SelfModifyingPattern{});
+                        currentPattern = &patterns.back();
+                    }
+
+                    // Update the pattern based on register sources
                     bool foundInRegister = false;
                     for (const auto& [reg, flow] : registerSources_) {
                         if (flow.value == write.value) {
@@ -443,19 +456,17 @@ namespace sidwinder {
                                 std::string(1, reg) + " from $" +
                                 util::wordToHex(flow.sourceAddr));
 
-                            // Use the register source if we have it
                             if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory ||
                                 flow.isIndexed) {
-                                auto& pattern = selfModifyingPatterns_[instrStart];
                                 if (offset == 1) {
-                                    pattern.lowByteSource = flow.sourceAddr;
-                                    pattern.lowByte = write.value;
-                                    pattern.hasLowByte = true;
+                                    currentPattern->lowByteSource = flow.sourceAddr;
+                                    currentPattern->lowByte = write.value;
+                                    currentPattern->hasLowByte = true;
                                 }
                                 else if (offset == 2) {
-                                    pattern.highByteSource = flow.sourceAddr;
-                                    pattern.highByte = write.value;
-                                    pattern.hasHighByte = true;
+                                    currentPattern->highByteSource = flow.sourceAddr;
+                                    currentPattern->highByte = write.value;
+                                    currentPattern->hasHighByte = true;
                                 }
                                 foundInRegister = true;
                                 break;
@@ -465,16 +476,15 @@ namespace sidwinder {
 
                     // Fallback to original source info if not found in registers
                     if (!foundInRegister && write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
-                        auto& pattern = selfModifyingPatterns_[instrStart];
                         if (offset == 1) {
-                            pattern.lowByteSource = write.sourceInfo.address;
-                            pattern.lowByte = write.value;
-                            pattern.hasLowByte = true;
+                            currentPattern->lowByteSource = write.sourceInfo.address;
+                            currentPattern->lowByte = write.value;
+                            currentPattern->hasLowByte = true;
                         }
                         else if (offset == 2) {
-                            pattern.highByteSource = write.sourceInfo.address;
-                            pattern.highByte = write.value;
-                            pattern.hasHighByte = true;
+                            currentPattern->highByteSource = write.sourceInfo.address;
+                            currentPattern->highByte = write.value;
+                            currentPattern->hasHighByte = true;
                         }
                     }
                 }
@@ -483,7 +493,13 @@ namespace sidwinder {
 
         util::Logger::info("Found " + std::to_string(selfModifyingCount) +
             " self-modifying writes");
-        util::Logger::info("Created " + std::to_string(selfModifyingPatterns_.size()) +
+
+        // Count total patterns
+        size_t totalPatterns = 0;
+        for (const auto& [addr, patterns] : selfModifyingPatterns_) {
+            totalPatterns += patterns.size();
+        }
+        util::Logger::info("Created " + std::to_string(totalPatterns) +
             " self-modifying patterns");
     }
 

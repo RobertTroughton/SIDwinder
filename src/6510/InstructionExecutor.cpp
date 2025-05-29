@@ -245,6 +245,8 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
         cpu_.onMemoryFlowCallback_(cpu_.originalPc_, targetReg, addr, value, isIndexed);
     }
 
+
+
     // Set processor status flags
     if (instr == Instruction::LDX || instr == Instruction::LAX) {
         cpu_.cpuState_.setZN(cpu_.cpuState_.getX());
@@ -271,18 +273,18 @@ void InstructionExecutor::executeStore(Instruction instr, AddressingMode mode) {
 
     switch (instr) {
     case Instruction::STA:
-        cpu_.writeMemory(addr, cpu_.cpuState_.getA());
         cpu_.memory_.setWriteSourceInfo(addr, cpu_.cpuState_.getRegSourceA());
+        cpu_.writeMemory(addr, cpu_.cpuState_.getA());
         break;
 
     case Instruction::STX:
-        cpu_.writeMemory(addr, cpu_.cpuState_.getX());
         cpu_.memory_.setWriteSourceInfo(addr, cpu_.cpuState_.getRegSourceX());
+        cpu_.writeMemory(addr, cpu_.cpuState_.getX());
         break;
 
     case Instruction::STY:
-        cpu_.writeMemory(addr, cpu_.cpuState_.getY());
         cpu_.memory_.setWriteSourceInfo(addr, cpu_.cpuState_.getRegSourceY());
+        cpu_.writeMemory(addr, cpu_.cpuState_.getY());
         break;
 
     case Instruction::SAX:

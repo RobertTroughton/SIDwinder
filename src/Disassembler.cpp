@@ -102,13 +102,6 @@ namespace sidwinder {
                 RegisterSourceInfo sourceInfo = cpu_.getWriteSourceInfo(addr);
                 DisassemblyWriter::WriteRecord record = { addr, value, sourceInfo };
                 writer_->allWrites_.push_back(record);
-
-                // Log writes in our target range
-/*
-                if (addr >= 0xF6F0 && addr <= 0xF700) {
-                    util::Logger::debug("Write recorded: $" + util::wordToHex(addr) +
-                        " = $" + util::byteToHex(value));
-                }*/
             }
             });
     }
