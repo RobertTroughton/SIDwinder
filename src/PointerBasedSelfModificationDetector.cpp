@@ -1,6 +1,10 @@
 // PointerBasedSelfModificationDetector.cpp
 #include "PointerBasedSelfModificationDetector.h"
 #include "SIDwinderUtils.h"
+#include <algorithm>
+#include <sstream>
+#include <functional>
+#include <unordered_map>
 
 namespace sidwinder {
 
