@@ -55,24 +55,15 @@ u32 AddressingModes::getAddress(AddressingMode mode) {
         return addr;
     }
 
-                                 // In AddressingModes.cpp - make sure this is in getAddress()
     case AddressingMode::ZeroPageX: {
         u8 zeroPageAddr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-
-        // Record the index offset for tracking
-        recordIndexOffset(cpuState.getPC() - 2, cpuState.getX()); // -2 because PC was incremented
-
         return (zeroPageAddr + cpuState.getX()) & 0xFF;
     }
 
     case AddressingMode::ZeroPageY: {
         u8 zeroPageAddr = cpu_.fetchOperand(cpuState.getPC());
         cpuState.incrementPC();
-
-        // Record the index offset for tracking  
-        recordIndexOffset(cpuState.getPC() - 2, cpuState.getY()); // -2 because PC was incremented
-
         return (zeroPageAddr + cpuState.getY()) & 0xFF;
     }
 

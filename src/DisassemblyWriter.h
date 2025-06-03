@@ -11,7 +11,6 @@
 #include "MemoryAnalyzer.h"
 #include "SIDwinderUtils.h"
 #include "RelocationStructs.h"
-#include "PointerBasedSelfModificationDetector.h"
 
 #include <fstream>
 #include <map>
@@ -103,8 +102,6 @@ namespace sidwinder {
         void processIndirectAccesses();
 
         void onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed);
-        void onComparison(u16 pc, char reg, u8 compareValue, u16 sourceAddr, bool isMemorySource);
-
 
         void updateSelfModifyingPattern(u16 instrAddr, int offset, u16 sourceAddr, u8 value) {
             auto& patterns = selfModifyingPatterns_[instrAddr];
@@ -147,10 +144,6 @@ namespace sidwinder {
 
         void analyzeWritesForSelfModification();
 
-        void debugSelfModifyingCode();
-        void debugInstructionAtAddress(u16 addr);
-
-
     private:
         const CPU6510& cpu_;                      // Reference to CPU
         const SIDLoader& sid_;                    // Reference to SID loader
@@ -159,8 +152,6 @@ namespace sidwinder {
         const CodeFormatter& formatter_;          // Reference to code formatter
 
         RelocationTable relocTable_;              // Map of bytes that need relocation
-
-        std::unique_ptr<PointerBasedSelfModificationDetector> pointerDetector_;
 
         /**
          * @brief Struct for tracking indirect memory accesses
@@ -197,11 +188,6 @@ namespace sidwinder {
             u8 highByte = 0;
             bool hasLowByte = false;
             bool hasHighByte = false;
-
-            bool lowByteIsImmediate = false;
-            bool highByteIsImmediate = false;
-            u16 lowByteInstrPC = 0;
-            u16 highByteInstrPC = 0;
         };
         std::map<u16, std::vector<SelfModifyingPattern>> selfModifyingPatterns_;
 
@@ -221,12 +207,6 @@ namespace sidwinder {
          */
         void emitZPDefines(std::ofstream& file);
 
-        /**
-         * @brief Find zero page addresses accessed through indexed addressing
-         * @param indexedZP Set to store found addresses
-         */
-        void findIndexedZeroPageAccesses(std::set<u8>& indexedZP);
-            
         /**
          * @brief Disassemble to the output file
          * @param file Output stream

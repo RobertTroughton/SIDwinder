@@ -176,8 +176,6 @@ void InstructionExecutor::executeInstruction(Instruction instr, AddressingMode m
  * @param instr The load instruction to execute
  * @param mode The addressing mode to use
  */
- // In InstructionExecutor::executeLoad() method, replace the RegisterSourceInfo creation:
-
 void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
     // Get the target address
     const u32 addr = cpu_.addressingModes_.getAddress(mode);
@@ -198,23 +196,13 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
         isIndexed = true;
     }
 
-    // Create register source info - THIS IS THE KEY FIX
-    RegisterSourceInfo sourceInfo;
-
-    if (mode == AddressingMode::Immediate) {
-        // For immediate mode, store the PC of the instruction, not the operand address
-        sourceInfo.type = RegisterSourceInfo::SourceType::Immediate;
-        sourceInfo.address = cpu_.originalPc_;  // PC of the LDA instruction
-        sourceInfo.value = value;
-        sourceInfo.index = 0;  // No indexing for immediate mode
-    }
-    else {
-        // For all other modes, it's a memory access
-        sourceInfo.type = RegisterSourceInfo::SourceType::Memory;
-        sourceInfo.address = addr;
-        sourceInfo.value = value;
-        sourceInfo.index = index;
-    }
+    // Create register source info
+    RegisterSourceInfo sourceInfo = {
+        RegisterSourceInfo::SourceType::Memory,
+        addr,
+        value,
+        index
+    };
 
     // Determine which register we're loading into for the callback
     char targetReg = 'A';  // Default to A
@@ -256,6 +244,8 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
     if (mode != AddressingMode::Immediate && cpu_.onMemoryFlowCallback_) {
         cpu_.onMemoryFlowCallback_(cpu_.originalPc_, targetReg, addr, value, isIndexed);
     }
+
+
 
     // Set processor status flags
     if (instr == Instruction::LDX || instr == Instruction::LAX) {
@@ -842,33 +832,26 @@ void InstructionExecutor::executeCompare(Instruction instr, AddressingMode mode)
     const u32 addr = cpu_.addressingModes_.getAddress(mode);
     const u8 value = cpu_.readByAddressingMode(addr, mode);
     u8 regValue = 0;
-    char regName = 'A';
 
     // Select register to compare based on instruction
     switch (instr) {
     case Instruction::CMP:
         regValue = cpu_.cpuState_.getA();
-        regName = 'A';
         break;
+
     case Instruction::CPX:
         regValue = cpu_.cpuState_.getX();
-        regName = 'X';
         break;
+
     case Instruction::CPY:
         regValue = cpu_.cpuState_.getY();
-        regName = 'Y';
         break;
+
     default:
         break;
     }
 
-    // Trigger comparison callback if registered
-    if (cpu_.onComparisonCallback_) {
-        bool isMemorySource = (mode != AddressingMode::Immediate);
-        cpu_.onComparisonCallback_(cpu_.originalPc_, regName, value, addr, isMemorySource);
-    }
-
-    // Perform comparison and set flags (existing code)
+    // Perform comparison and set flags
     cpu_.cpuState_.setFlag(StatusFlag::Carry, regValue >= value);
     cpu_.cpuState_.setFlag(StatusFlag::Zero, regValue == value);
     cpu_.cpuState_.setFlag(StatusFlag::Negative, ((regValue - value) & 0x80) != 0);

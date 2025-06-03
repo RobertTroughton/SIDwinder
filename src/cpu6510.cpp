@@ -415,10 +415,6 @@ void CPU6510::setOnMemoryFlowCallback(MemoryFlowCallback callback) {
     pImpl_->setOnMemoryFlowCallback(std::move(callback));
 }
 
-void CPU6510::setOnComparisonCallback(ComparisonCallback callback) {
-    pImpl_->setOnComparisonCallback(std::move(callback));
-}
-
 const MemoryDataFlow& CPU6510::getMemoryDataFlow() const {
     return pImpl_->getMemoryDataFlow();
 }
