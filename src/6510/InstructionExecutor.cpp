@@ -176,6 +176,8 @@ void InstructionExecutor::executeInstruction(Instruction instr, AddressingMode m
  * @param instr The load instruction to execute
  * @param mode The addressing mode to use
  */
+ // In InstructionExecutor::executeLoad() method, replace the RegisterSourceInfo creation:
+
 void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
     // Get the target address
     const u32 addr = cpu_.addressingModes_.getAddress(mode);
@@ -196,13 +198,23 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
         isIndexed = true;
     }
 
-    // Create register source info
-    RegisterSourceInfo sourceInfo = {
-        RegisterSourceInfo::SourceType::Memory,
-        addr,
-        value,
-        index
-    };
+    // Create register source info - THIS IS THE KEY FIX
+    RegisterSourceInfo sourceInfo;
+
+    if (mode == AddressingMode::Immediate) {
+        // For immediate mode, store the PC of the instruction, not the operand address
+        sourceInfo.type = RegisterSourceInfo::SourceType::Immediate;
+        sourceInfo.address = cpu_.originalPc_;  // PC of the LDA instruction
+        sourceInfo.value = value;
+        sourceInfo.index = 0;  // No indexing for immediate mode
+    }
+    else {
+        // For all other modes, it's a memory access
+        sourceInfo.type = RegisterSourceInfo::SourceType::Memory;
+        sourceInfo.address = addr;
+        sourceInfo.value = value;
+        sourceInfo.index = index;
+    }
 
     // Determine which register we're loading into for the callback
     char targetReg = 'A';  // Default to A
@@ -244,8 +256,6 @@ void InstructionExecutor::executeLoad(Instruction instr, AddressingMode mode) {
     if (mode != AddressingMode::Immediate && cpu_.onMemoryFlowCallback_) {
         cpu_.onMemoryFlowCallback_(cpu_.originalPc_, targetReg, addr, value, isIndexed);
     }
-
-
 
     // Set processor status flags
     if (instr == Instruction::LDX || instr == Instruction::LAX) {

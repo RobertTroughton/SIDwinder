@@ -147,6 +147,10 @@ namespace sidwinder {
 
         void analyzeWritesForSelfModification();
 
+        void debugSelfModifyingCode();
+        void debugInstructionAtAddress(u16 addr);
+
+
     private:
         const CPU6510& cpu_;                      // Reference to CPU
         const SIDLoader& sid_;                    // Reference to SID loader
@@ -193,6 +197,11 @@ namespace sidwinder {
             u8 highByte = 0;
             bool hasLowByte = false;
             bool hasHighByte = false;
+
+            bool lowByteIsImmediate = false;
+            bool highByteIsImmediate = false;
+            u16 lowByteInstrPC = 0;
+            u16 highByteInstrPC = 0;
         };
         std::map<u16, std::vector<SelfModifyingPattern>> selfModifyingPatterns_;
 

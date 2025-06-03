@@ -38,7 +38,7 @@ namespace sidwinder {
         analyzer_(analyzer),
         labelGenerator_(labelGenerator),
         formatter_(formatter) {
-//;        pointerDetector_ = std::make_unique<PointerBasedSelfModificationDetector>();
+        pointerDetector_ = std::make_unique<PointerBasedSelfModificationDetector>();
     }
 
     /**
@@ -160,7 +160,10 @@ namespace sidwinder {
      * and pointer tables. Updated to use the new RelocationTable approach.
      */
     void DisassemblyWriter::processIndirectAccesses() {
+        util::Logger::info("=== Processing Indirect Accesses and Self-Modifying Patterns ===");
+
         if (indirectAccesses_.empty() && selfModifyingPatterns_.empty()) {
+            util::Logger::info("No indirect accesses or self-modifying patterns to process");
             return;
         }
 
@@ -171,6 +174,7 @@ namespace sidwinder {
         relocTable_.clear();
 
         // Process indirect accesses (existing code)
+        util::Logger::info("Processing " + std::to_string(indirectAccesses_.size()) + " indirect accesses");
         for (const auto& access : indirectAccesses_) {
             if (!access.targetAddresses.empty()) {
                 u16 targetAddr = access.targetAddresses[0];
@@ -179,38 +183,104 @@ namespace sidwinder {
                     relocTable_.addEntry(access.sourceLowAddress, targetAddr, RelocationEntry::Type::Low);
                     const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(access.sourceLowAddress);
                     processRelocationChain(dataFlow, relocTable_, access.sourceLowAddress, targetAddr, RelocationEntry::Type::Low);
+
+                    util::Logger::info("Added indirect low byte relocation: $" +
+                        util::wordToHex(access.sourceLowAddress) + " -> <(" +
+                        labelGenerator_.formatAddress(targetAddr) + ")");
                 }
 
                 if (access.sourceHighAddress != 0) {
                     relocTable_.addEntry(access.sourceHighAddress, targetAddr, RelocationEntry::Type::High);
                     const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(access.sourceHighAddress);
                     processRelocationChain(dataFlow, relocTable_, access.sourceHighAddress, targetAddr, RelocationEntry::Type::High);
+
+                    util::Logger::info("Added indirect high byte relocation: $" +
+                        util::wordToHex(access.sourceHighAddress) + " -> >(" +
+                        labelGenerator_.formatAddress(targetAddr) + ")");
                 }
             }
         }
 
         // Process self-modifying code patterns
+        util::Logger::info("Processing self-modifying code patterns for " +
+            std::to_string(selfModifyingPatterns_.size()) + " instructions");
+
         for (const auto& [instrAddr, patterns] : selfModifyingPatterns_) {
-            for (const auto& pattern : patterns) {
-                if (pattern.hasLowByte && pattern.hasHighByte) {
-                    // We have a complete address
-                    u16 targetAddr = pattern.lowByte | (pattern.highByte << 8);
+            util::Logger::info("Processing patterns for instruction at $" + util::wordToHex(instrAddr));
 
-                    // Add relocation entries
-                    if (pattern.lowByteSource != 0) {
-                        relocTable_.addEntry(pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
-                        const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.lowByteSource);
-                        processRelocationChain(dataFlow, relocTable_, pattern.lowByteSource, targetAddr, RelocationEntry::Type::Low);
-                    }
+            for (size_t i = 0; i < patterns.size(); i++) {
+                const auto& pattern = patterns[i];
+                util::Logger::info("  Processing pattern " + std::to_string(i));
 
-                    if (pattern.highByteSource != 0) {
-                        relocTable_.addEntry(pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
-                        const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.highByteSource);
-                        processRelocationChain(dataFlow, relocTable_, pattern.highByteSource, targetAddr, RelocationEntry::Type::High);
-                    }
+                // For self-modifying patterns, we only handle high byte modifications
+                // since this code assumes page-aligned relocations (low byte stays the same)
+
+                // Handle high byte modifications
+                if (pattern.hasHighByte && pattern.highByteIsImmediate) {
+                    // This came from an immediate operand - create relocation for the operand
+                    u16 operandAddr = pattern.highByteInstrPC + 1; // +1 to get to the operand byte
+
+                    // For page-aligned relocation, we need to determine what address this high byte refers to
+                    // We can look at the JSR instruction being modified to get the full target address
+                    u16 jsrTarget = cpu_.getMemory()[instrAddr + 1] | (cpu_.getMemory()[instrAddr + 2] << 8);
+
+                    util::Logger::info("    JSR instruction being modified has current target: $" +
+                        util::wordToHex(jsrTarget));
+
+                    // The target address for relocation is the address this high byte points to
+                    // We'll use the current JSR target as our reference
+                    u16 targetAddr = jsrTarget;
+
+                    relocTable_.addEntry(operandAddr, targetAddr, RelocationEntry::Type::High);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(operandAddr);
+
+                    util::Logger::info("    Added immediate high byte relocation: $" +
+                        util::wordToHex(operandAddr) + " -> >(" +
+                        labelGenerator_.formatAddress(targetAddr) + ")");
+
+                }
+                else if (pattern.hasHighByte && pattern.highByteSource != 0) {
+                    // This came from memory - existing logic  
+                    u16 jsrTarget = cpu_.getMemory()[instrAddr + 1] | (cpu_.getMemory()[instrAddr + 2] << 8);
+
+                    relocTable_.addEntry(pattern.highByteSource, jsrTarget, RelocationEntry::Type::High);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.highByteSource);
+                    processRelocationChain(dataFlow, relocTable_, pattern.highByteSource, jsrTarget, RelocationEntry::Type::High);
+
+                    util::Logger::info("    Added memory high byte relocation: $" +
+                        util::wordToHex(pattern.highByteSource) + " -> >(" +
+                        labelGenerator_.formatAddress(jsrTarget) + ")");
+                }
+
+                // For low byte modifications (rare in page-aligned self-modifying code)
+                if (pattern.hasLowByte && pattern.lowByteIsImmediate) {
+                    u16 operandAddr = pattern.lowByteInstrPC + 1;
+                    u16 jsrTarget = cpu_.getMemory()[instrAddr + 1] | (cpu_.getMemory()[instrAddr + 2] << 8);
+
+                    relocTable_.addEntry(operandAddr, jsrTarget, RelocationEntry::Type::Low);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(operandAddr);
+
+                    util::Logger::info("    Added immediate low byte relocation: $" +
+                        util::wordToHex(operandAddr) + " -> <(" +
+                        labelGenerator_.formatAddress(jsrTarget) + ")");
+
+                }
+                else if (pattern.hasLowByte && pattern.lowByteSource != 0) {
+                    u16 jsrTarget = cpu_.getMemory()[instrAddr + 1] | (cpu_.getMemory()[instrAddr + 2] << 8);
+
+                    relocTable_.addEntry(pattern.lowByteSource, jsrTarget, RelocationEntry::Type::Low);
+                    const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(pattern.lowByteSource);
+                    processRelocationChain(dataFlow, relocTable_, pattern.lowByteSource, jsrTarget, RelocationEntry::Type::Low);
+
+                    util::Logger::info("    Added memory low byte relocation: $" +
+                        util::wordToHex(pattern.lowByteSource) + " -> <(" +
+                        labelGenerator_.formatAddress(jsrTarget) + ")");
                 }
             }
         }
+
+        util::Logger::info("Total relocation entries created: " +
+            std::to_string(relocTable_.getAllEntries().size()));
     }
 
     void DisassemblyWriter::onMemoryFlow(u16 pc, char reg, u16 sourceAddr, u8 value, bool isIndexed) {
@@ -462,103 +532,263 @@ namespace sidwinder {
     }
 
     void DisassemblyWriter::analyzeWritesForSelfModification() {
-        // First pass: existing self-modification analysis
+        util::Logger::info("=== Analyzing " + std::to_string(allWrites_.size()) +
+            " writes for self-modification ===");
+
+        int selfModifyingCount = 0;
+        std::set<std::tuple<u16, int, u8>> processedWrites; // instrAddr, offset, value
+
         for (const auto& write : allWrites_) {
             if (analyzer_.getMemoryType(write.addr) & MemoryType::Code) {
                 u16 instrStart = analyzer_.findInstructionStartCovering(write.addr);
                 if (instrStart != write.addr) {
                     int offset = write.addr - instrStart;
 
+                    // Create unique key for this write
+                    auto writeKey = std::make_tuple(instrStart, offset, write.value);
+
+                    // Skip if we've already processed this exact write
+                    if (processedWrites.find(writeKey) != processedWrites.end()) {
+                        continue;
+                    }
+                    processedWrites.insert(writeKey);
+
+                    // Log first few self-modifying writes
+                    if (selfModifyingCount < 10) {
+                        util::Logger::info("Self-modifying write found: $" +
+                            util::wordToHex(write.addr) + " (instr $" +
+                            util::wordToHex(instrStart) + " +" + std::to_string(offset) +
+                            ") = $" + util::byteToHex(write.value));
+
+                        std::string sourceTypeStr;
+                        if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                            sourceTypeStr = "Memory";
+                        }
+                        else if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Immediate) {
+                            sourceTypeStr = "Immediate";
+                        }
+                        else {
+                            sourceTypeStr = "Unknown";
+                        }
+                        util::Logger::info("  Source: " + sourceTypeStr +
+                            " addr=$" + util::wordToHex(write.sourceInfo.address) +
+                            " value=$" + util::byteToHex(write.sourceInfo.value));
+                    }
+                    selfModifyingCount++;
+
                     // Find or create a pattern for this specific modification
                     auto& patterns = selfModifyingPatterns_[instrStart];
                     SelfModifyingPattern* currentPattern = nullptr;
 
-                    // Look for an existing incomplete pattern that we can add to
+                    // Look for an existing pattern we can update
                     for (auto& pattern : patterns) {
-                        // If we have a low byte but no high byte, and this is offset 2
-                        if (pattern.hasLowByte && !pattern.hasHighByte && offset == 2) {
-                            currentPattern = &pattern;
-                            break;
+                        // For offset 1 (low byte), look for pattern missing low byte or with same low byte
+                        if (offset == 1) {
+                            if (!pattern.hasLowByte ||
+                                (pattern.hasLowByte && pattern.lowByte == write.value)) {
+                                currentPattern = &pattern;
+                                break;
+                            }
                         }
-                        // If we have a high byte but no low byte, and this is offset 1
-                        else if (!pattern.hasLowByte && pattern.hasHighByte && offset == 1) {
-                            currentPattern = &pattern;
-                            break;
-                        }
-                        // If this pattern is already complete, skip it
-                        else if (pattern.hasLowByte && pattern.hasHighByte) {
-                            continue;
-                        }
-                    }
-
-                    // If we didn't find a suitable pattern, create a new one
-                    if (!currentPattern) {
-                        patterns.push_back(SelfModifyingPattern{});
-                        currentPattern = &patterns.back();
-                    }
-
-                    // Update the pattern based on register sources
-                    bool foundInRegister = false;
-                    for (const auto& [reg, flow] : registerSources_) {
-                        if (flow.value == write.value) {
-                            if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory ||
-                                flow.isIndexed) {
-                                if (offset == 1) {
-                                    currentPattern->lowByteSource = flow.sourceAddr;
-                                    currentPattern->lowByte = write.value;
-                                    currentPattern->hasLowByte = true;
-                                }
-                                else if (offset == 2) {
-                                    currentPattern->highByteSource = flow.sourceAddr;
-                                    currentPattern->highByte = write.value;
-                                    currentPattern->hasHighByte = true;
-                                }
-                                foundInRegister = true;
+                        // For offset 2 (high byte), look for pattern missing high byte or with same high byte
+                        else if (offset == 2) {
+                            if (!pattern.hasHighByte ||
+                                (pattern.hasHighByte && pattern.highByte == write.value)) {
+                                currentPattern = &pattern;
                                 break;
                             }
                         }
                     }
 
-                    // Fallback to original source info if not found in registers
-                    if (!foundInRegister && write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                    // If no suitable pattern found, create a new one
+                    if (!currentPattern) {
+                        patterns.push_back(SelfModifyingPattern{});
+                        currentPattern = &patterns.back();
+                    }
+
+                    // Update the pattern based on source type
+                    if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Immediate) {
+                        // This came from an immediate operand (like LDA #$21)
+                        if (offset == 1) {
+                            currentPattern->lowByte = write.value;
+                            currentPattern->hasLowByte = true;
+                            currentPattern->lowByteIsImmediate = true;
+                            currentPattern->lowByteInstrPC = write.sourceInfo.address;
+                        }
+                        else if (offset == 2) {
+                            currentPattern->highByte = write.value;
+                            currentPattern->hasHighByte = true;
+                            currentPattern->highByteIsImmediate = true;
+                            currentPattern->highByteInstrPC = write.sourceInfo.address;
+                        }
+                    }
+                    else if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                        // This came from memory
                         if (offset == 1) {
                             currentPattern->lowByteSource = write.sourceInfo.address;
                             currentPattern->lowByte = write.value;
                             currentPattern->hasLowByte = true;
+                            currentPattern->lowByteIsImmediate = false;
                         }
                         else if (offset == 2) {
                             currentPattern->highByteSource = write.sourceInfo.address;
                             currentPattern->highByte = write.value;
                             currentPattern->hasHighByte = true;
+                            currentPattern->highByteIsImmediate = false;
                         }
                     }
 
-                    // Record this self-modification for pointer-based pattern detection
-                    if (pointerDetector_) {
-                        SelfModificationRecord record;
-                        record.pc = 0; // We don't have the exact PC of the modifying instruction here
-                        record.targetAddr = write.addr;
-                        record.newValue = write.value;
-                        record.sourceAddr = (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) ?
-                            write.sourceInfo.address : 0;
-                        record.instrStart = instrStart;
-                        record.offset = offset;
-
-                        pointerDetector_->recordSelfModification(record);
+                    // Also check register flow for additional context
+                    for (const auto& [reg, flow] : registerSources_) {
+                        if (flow.value == write.value) {
+                            // If we have memory source info, prefer that over register flow
+                            if (!currentPattern->lowByteIsImmediate && offset == 1 &&
+                                currentPattern->lowByteSource == 0 && flow.sourceAddr != 0) {
+                                currentPattern->lowByteSource = flow.sourceAddr;
+                            }
+                            if (!currentPattern->highByteIsImmediate && offset == 2 &&
+                                currentPattern->highByteSource == 0 && flow.sourceAddr != 0) {
+                                currentPattern->highByteSource = flow.sourceAddr;
+                            }
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        // Count total patterns
+        util::Logger::info("Found " + std::to_string(selfModifyingCount) +
+            " unique self-modifying writes");
+
+        // Count and report patterns (with reasonable limits)
         size_t totalPatterns = 0;
         for (const auto& [addr, patterns] : selfModifyingPatterns_) {
             totalPatterns += patterns.size();
+
+            // Log details only for first few instructions
+            if (totalPatterns <= 5) {
+                util::Logger::info("Instruction $" + util::wordToHex(addr) +
+                    " has " + std::to_string(patterns.size()) + " pattern(s)");
+            }
         }
 
-        // Analyze pointer-based patterns if detector is available
-        if (pointerDetector_) {
-            pointerDetector_->analyzePatterns();
+        if (totalPatterns > 100) {
+            util::Logger::warning("Created " + std::to_string(totalPatterns) +
+                " patterns - this seems excessive, there may be a logic issue");
+        }
+        else {
+            util::Logger::info("Created " + std::to_string(totalPatterns) + " total patterns");
+        }
+    }
+
+    // Add this debug method to DisassemblyWriter class
+    void DisassemblyWriter::debugSelfModifyingCode() {
+        util::Logger::info("=== DEBUG: Self-Modifying Code Analysis ===");
+
+        // First, let's see what register sources we have (current state only)
+        util::Logger::info("Current register sources:");
+        for (const auto& [reg, flow] : registerSources_) {
+            util::Logger::info("  Register " + std::string(1, reg) +
+                " = $" + util::byteToHex(flow.value) +
+                " from $" + util::wordToHex(flow.sourceAddr) +
+                (flow.isIndexed ? " (indexed)" : " (direct)"));
+        }
+
+        // Then let's examine UNIQUE writes to self-modifying instructions
+        util::Logger::info("Examining UNIQUE writes to self-modifying instructions:");
+        std::set<std::pair<u16, u8>> uniqueWrites; // addr, value pairs
+
+        for (const auto& write : allWrites_) {
+            if (analyzer_.getMemoryType(write.addr) & MemoryType::Code) {
+                u16 instrStart = analyzer_.findInstructionStartCovering(write.addr);
+                if (instrStart != write.addr) {
+                    // Only log if we haven't seen this addr,value combination before
+                    auto writeKey = std::make_pair(write.addr, write.value);
+                    if (uniqueWrites.find(writeKey) == uniqueWrites.end()) {
+                        uniqueWrites.insert(writeKey);
+
+                        int offset = write.addr - instrStart;
+
+                        util::Logger::info("Self-modifying write: $" +
+                            util::wordToHex(write.addr) + " = $" + util::byteToHex(write.value));
+                        util::Logger::info("  Instruction start: $" + util::wordToHex(instrStart) +
+                            " + " + std::to_string(offset));
+                        std::string sourceTypeStr;
+                        if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
+                            sourceTypeStr = "Memory";
+                        }
+                        else if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Immediate) {
+                            sourceTypeStr = "Immediate";
+                        }
+                        else {
+                            sourceTypeStr = "Unknown";
+                        }
+                        util::Logger::info("  Source type: " + sourceTypeStr);
+                        util::Logger::info("  Source address: $" + util::wordToHex(write.sourceInfo.address));
+                        util::Logger::info("  Source value: $" + util::byteToHex(write.sourceInfo.value));
+                        util::Logger::info("");
+
+                        // Only show first 10 unique writes to avoid spam
+                        if (uniqueWrites.size() >= 10) {
+                            util::Logger::info("  ... (truncated after 10 unique writes)");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Finally, show the patterns we detected
+        util::Logger::info("Detected self-modifying patterns:");
+        for (const auto& [instrAddr, patterns] : selfModifyingPatterns_) {
+            util::Logger::info("Instruction at $" + util::wordToHex(instrAddr) + ":");
+            for (size_t i = 0; i < patterns.size(); i++) {
+                const auto& pattern = patterns[i];
+                util::Logger::info("  Pattern " + std::to_string(i) + ":");
+
+                if (pattern.hasLowByte) {
+                    util::Logger::info("    Low byte: $" + util::byteToHex(pattern.lowByte) +
+                        (pattern.lowByteIsImmediate ?
+                            " (immediate from PC $" + util::wordToHex(pattern.lowByteInstrPC) + ")" :
+                            " (memory from $" + util::wordToHex(pattern.lowByteSource) + ")"));
+                }
+
+                if (pattern.hasHighByte) {
+                    util::Logger::info("    High byte: $" + util::byteToHex(pattern.highByte) +
+                        (pattern.highByteIsImmediate ?
+                            " (immediate from PC $" + util::wordToHex(pattern.highByteInstrPC) + ")" :
+                            " (memory from $" + util::wordToHex(pattern.highByteSource) + ")"));
+                }
+
+                if (pattern.hasLowByte && pattern.hasHighByte) {
+                    u16 targetAddr = pattern.lowByte | (pattern.highByte << 8);
+                    util::Logger::info("    Target address: $" + util::wordToHex(targetAddr));
+                }
+            }
+        }
+    }
+
+    // Also, let's examine what instructions are being executed
+    void DisassemblyWriter::debugInstructionAtAddress(u16 addr) {
+        if (addr < cpu_.getMemory().size()) {
+            u8 opcode = cpu_.getMemory()[addr];
+            std::string mnemonic = std::string(cpu_.getMnemonic(opcode));
+            AddressingMode mode = cpu_.getAddressingMode(opcode);
+            int size = cpu_.getInstructionSize(opcode);
+
+            util::Logger::info("Instruction at $" + util::wordToHex(addr) + ": " +
+                mnemonic + " (opcode $" + util::byteToHex(opcode) +
+                ", size " + std::to_string(size) + ")");
+
+            if (size > 1) {
+                util::Logger::info("  Operand bytes:");
+                for (int i = 1; i < size; i++) {
+                    if (addr + i < cpu_.getMemory().size()) {
+                        util::Logger::info("    +" + std::to_string(i) + ": $" +
+                            util::byteToHex(cpu_.getMemory()[addr + i]));
+                    }
+                }
+            }
         }
     }
 

@@ -147,6 +147,10 @@ namespace sidwinder {
         // Analyze recorded writes for self-modification
         writer_->analyzeWritesForSelfModification();
 
+        writer_->debugSelfModifyingCode();
+        writer_->debugInstructionAtAddress(0x2B82); // The LDA #$21 instruction
+        writer_->debugInstructionAtAddress(0x2B84); // The STA instruction
+
         // Process indirect accesses and self-modifying code patterns
         writer_->processIndirectAccesses();
 
