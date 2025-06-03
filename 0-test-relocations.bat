@@ -59,13 +59,13 @@ goto :eof
 :start
 
 :: Process all SID files
-call :relocate "SID/trident-cheap.sid" "Reloc/rel2000-trident-cheap.sid"
+call :relocate "SID/dane-elderscrollers.sid" "Reloc/rel2000-dane-elderscrollers.sid"
 
+call :relocate "SID/trident-cheap.sid" "Reloc/rel2000-trident-cheap.sid"
 call :relocate "SID/larshoff-recovery.sid" "Reloc/rel2000-larshoff-recovery.sid"
 call :relocate "SID/celticdesign-7-3.sid" "Reloc/rel2000-celticdesign-7-3.sid"
 call :relocate "SID/larshoff-blades.sid" "Reloc/rel2000-larshoff-blades.sid"
 call :relocate "SID/dane-copperbooze.sid" "Reloc/rel2000-dane-copperbooze.sid"
-call :relocate "SID/dane-elderscrollers.sid" "Reloc/rel2000-dane-elderscrollers.sid"
 call :relocate "SID/dane-slowmotionsong.sid" "Reloc/rel2000-dane-slowmotionsong.sid"
 call :relocate "SID/drax-expand.sid" "Reloc/rel2000-drax-expand.sid"
 call :relocate "SID/drax-twine.sid" "Reloc/rel2000-drax-twine.sid"

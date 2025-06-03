@@ -233,6 +233,7 @@ public:
     using IndirectReadCallback = std::function<void(u32 pc, u8 zpAddr, u32 targetAddr)>;
     using MemoryWriteCallback = std::function<void(u32 addr, u8 value)>;
     using MemoryFlowCallback = std::function<void(u32 pc, char reg, u32 sourceAddr, u8 value, bool isIndexed)>;
+    using ComparisonCallback = std::function<void(u16 pc, char reg, u8 compareValue, u16 sourceAddr, bool isMemorySource)>;
 
     void setOnIndirectReadCallback(IndirectReadCallback callback);
     void setOnWriteMemoryCallback(MemoryWriteCallback callback);
@@ -240,6 +241,7 @@ public:
     void setOnSIDWriteCallback(MemoryWriteCallback callback);
     void setOnVICWriteCallback(MemoryWriteCallback callback);
     void setOnMemoryFlowCallback(MemoryFlowCallback callback);
+    void setOnComparisonCallback(ComparisonCallback callback);
 
 private:
     // Implementation pointer

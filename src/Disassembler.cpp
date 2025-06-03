@@ -38,6 +38,7 @@ namespace sidwinder {
         const_cast<CPU6510&>(cpu_).setOnMemoryFlowCallback(nullptr);
         const_cast<CPU6510&>(cpu_).setOnWriteMemoryCallback(nullptr);
         const_cast<CPU6510&>(cpu_).setOnIndirectReadCallback(nullptr);
+        const_cast<CPU6510&>(cpu_).setOnComparisonCallback(nullptr);
     }
 
     /**
@@ -104,6 +105,15 @@ namespace sidwinder {
                 writer_->allWrites_.push_back(record);
             }
             });
+
+        // Set up comparison callback for pointer-based pattern detection
+        const_cast<CPU6510&>(cpu_).setOnComparisonCallback(
+            [this](u16 pc, char reg, u8 compareValue, u16 sourceAddr, bool isMemorySource) {
+                if (writer_) {
+                    writer_->onComparison(pc, reg, compareValue, sourceAddr, isMemorySource);
+                }
+            }
+        );
     }
 
     /**

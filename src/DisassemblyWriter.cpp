@@ -38,6 +38,7 @@ namespace sidwinder {
         analyzer_(analyzer),
         labelGenerator_(labelGenerator),
         formatter_(formatter) {
+        pointerDetector_ = std::make_unique<PointerBasedSelfModificationDetector>();
     }
 
     /**
@@ -221,6 +222,20 @@ namespace sidwinder {
         const_cast<LabelGenerator&>(labelGenerator_).addPendingSubdivisionAddress(sourceAddr);
     }
 
+    void DisassemblyWriter::onComparison(u16 pc, char reg, u8 compareValue, u16 sourceAddr, bool isMemorySource) {
+        if (pointerDetector_) {
+            ComparisonRecord record;
+            record.pc = pc;
+            record.reg = reg;
+            record.compareValue = compareValue;
+            record.sourceAddr = sourceAddr;
+            record.isMemorySource = isMemorySource;
+            record.nextPC = pc + 2; // Most comparisons are 2 bytes, adjust as needed
+
+            pointerDetector_->recordComparison(record);
+        }
+    }
+
     void DisassemblyWriter::processRelocationChain(
         const MemoryDataFlow& dataFlow,
         RelocationTable& relocTable,
@@ -313,6 +328,12 @@ namespace sidwinder {
             }
         }
 
+        std::set<u8> indexedZP;
+        findIndexedZeroPageAccesses(indexedZP);
+
+        // Merge the sets
+        usedZP.insert(indexedZP.begin(), indexedZP.end());
+
         if (usedZP.empty()) {
             return;
         }
@@ -335,6 +356,60 @@ namespace sidwinder {
         }
 
         file << "\n";
+    }
+
+    // Helper method to find indexed zero page accesses
+    void DisassemblyWriter::findIndexedZeroPageAccesses(std::set<u8>& indexedZP) {
+        const u16 sidStart = sid_.getLoadAddress();
+        const u16 sidEnd = sidStart + sid_.getDataSize();
+
+        // Scan through all code for indexed zero page instructions
+        for (u16 pc = sidStart; pc < sidEnd; ) {
+            if (!(analyzer_.getMemoryType(pc) & MemoryType::Code)) {
+                ++pc;
+                continue;
+            }
+
+            const u8 opcode = cpu_.getMemory()[pc];
+            const auto mode = cpu_.getAddressingMode(opcode);
+            const int size = cpu_.getInstructionSize(opcode);
+
+            // Check for zero page indexed addressing modes
+            if (mode == AddressingMode::ZeroPageX || mode == AddressingMode::ZeroPageY) {
+                const u8 baseAddr = cpu_.getMemory()[pc + 1];
+
+                // Get the range of indices used with this instruction
+                const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc);
+
+                // Add all addresses in the range
+                for (int i = minIndex; i <= maxIndex; ++i) {
+                    u8 effectiveAddr = (baseAddr + i) & 0xFF; // Zero page wrapping
+                    indexedZP.insert(effectiveAddr);
+                }
+
+                // If no index range recorded, assume at least the base address
+                if (minIndex == 0 && maxIndex == 0) {
+                    indexedZP.insert(baseAddr);
+                }
+            }
+
+            if (mode == AddressingMode::AbsoluteY || mode == AddressingMode::AbsoluteX) {
+                const u16 baseAddr = cpu_.getMemory()[pc + 1] | (cpu_.getMemory()[pc + 2] << 8);
+
+                // Check if this absolute address is actually in zero page
+                if (baseAddr <= 0xFF) {
+                    const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc);
+
+                    // Add all addresses in the range
+                    for (int i = minIndex; i <= maxIndex; ++i) {
+                        u8 effectiveAddr = (baseAddr + i) & 0xFF; // Zero page wrapping
+                        indexedZP.insert(effectiveAddr);
+                    }
+                }
+            }
+
+            pc += size;
+        }
     }
 
     /**
@@ -389,30 +464,12 @@ namespace sidwinder {
     }
 
     void DisassemblyWriter::analyzeWritesForSelfModification() {
-        util::Logger::info("=== Analyzing " + std::to_string(allWrites_.size()) +
-            " writes for self-modification ===");
-
-        int selfModifyingCount = 0;
-
+        // First pass: existing self-modification analysis
         for (const auto& write : allWrites_) {
             if (analyzer_.getMemoryType(write.addr) & MemoryType::Code) {
                 u16 instrStart = analyzer_.findInstructionStartCovering(write.addr);
                 if (instrStart != write.addr) {
                     int offset = write.addr - instrStart;
-
-                    // Log first few self-modifying writes
-                    if (selfModifyingCount < 10) {
-                        util::Logger::info("Self-modifying write found: $" +
-                            util::wordToHex(write.addr) + " (instr $" +
-                            util::wordToHex(instrStart) + " +" + std::to_string(offset) +
-                            ") = $" + util::byteToHex(write.value));
-
-                        if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) {
-                            util::Logger::info("  Source: Memory $" +
-                                util::wordToHex(write.sourceInfo.address));
-                        }
-                    }
-                    selfModifyingCount++;
 
                     // Find or create a pattern for this specific modification
                     auto& patterns = selfModifyingPatterns_[instrStart];
@@ -446,10 +503,6 @@ namespace sidwinder {
                     bool foundInRegister = false;
                     for (const auto& [reg, flow] : registerSources_) {
                         if (flow.value == write.value) {
-                            util::Logger::debug("  Value matches register " +
-                                std::string(1, reg) + " from $" +
-                                util::wordToHex(flow.sourceAddr));
-
                             if (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory ||
                                 flow.isIndexed) {
                                 if (offset == 1) {
@@ -481,20 +534,34 @@ namespace sidwinder {
                             currentPattern->hasHighByte = true;
                         }
                     }
+
+                    // Record this self-modification for pointer-based pattern detection
+                    if (pointerDetector_) {
+                        SelfModificationRecord record;
+                        record.pc = 0; // We don't have the exact PC of the modifying instruction here
+                        record.targetAddr = write.addr;
+                        record.newValue = write.value;
+                        record.sourceAddr = (write.sourceInfo.type == RegisterSourceInfo::SourceType::Memory) ?
+                            write.sourceInfo.address : 0;
+                        record.instrStart = instrStart;
+                        record.offset = offset;
+
+                        pointerDetector_->recordSelfModification(record);
+                    }
                 }
             }
         }
-
-        util::Logger::info("Found " + std::to_string(selfModifyingCount) +
-            " self-modifying writes");
 
         // Count total patterns
         size_t totalPatterns = 0;
         for (const auto& [addr, patterns] : selfModifyingPatterns_) {
             totalPatterns += patterns.size();
         }
-        util::Logger::info("Created " + std::to_string(totalPatterns) +
-            " self-modifying patterns");
+
+        // Analyze pointer-based patterns if detector is available
+        if (pointerDetector_) {
+            pointerDetector_->analyzePatterns();
+        }
     }
 
 } // namespace sidwinder

@@ -832,26 +832,33 @@ void InstructionExecutor::executeCompare(Instruction instr, AddressingMode mode)
     const u32 addr = cpu_.addressingModes_.getAddress(mode);
     const u8 value = cpu_.readByAddressingMode(addr, mode);
     u8 regValue = 0;
+    char regName = 'A';
 
     // Select register to compare based on instruction
     switch (instr) {
     case Instruction::CMP:
         regValue = cpu_.cpuState_.getA();
+        regName = 'A';
         break;
-
     case Instruction::CPX:
         regValue = cpu_.cpuState_.getX();
+        regName = 'X';
         break;
-
     case Instruction::CPY:
         regValue = cpu_.cpuState_.getY();
+        regName = 'Y';
         break;
-
     default:
         break;
     }
 
-    // Perform comparison and set flags
+    // Trigger comparison callback if registered
+    if (cpu_.onComparisonCallback_) {
+        bool isMemorySource = (mode != AddressingMode::Immediate);
+        cpu_.onComparisonCallback_(cpu_.originalPc_, regName, value, addr, isMemorySource);
+    }
+
+    // Perform comparison and set flags (existing code)
     cpu_.cpuState_.setFlag(StatusFlag::Carry, regValue >= value);
     cpu_.cpuState_.setFlag(StatusFlag::Zero, regValue == value);
     cpu_.cpuState_.setFlag(StatusFlag::Negative, ((regValue - value) & 0x80) != 0);

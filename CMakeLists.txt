@@ -34,7 +34,7 @@ add_executable(SIDwinder
     ${SOURCES}
     ${APP_SOURCES}
     ${CPU6510_SOURCES}
- "src/app/TraceLogger.h" "src/app/MusicBuilder.h" "src/app/MusicBuilder.cpp"   "src/app/CommandProcessor.h" "src/app/CommandProcessor.cpp"  "src/app/SIDwinderApp.h" "src/RelocationUtils.cpp" "src/RelocationUtils.h" "src/SIDEmulator.h" "src/SIDEmulator.cpp"    "src/Common.cpp" "src/RelocationStructs.h"  "src/ConfigManager.h" "src/ConfigManager.cpp" "src/SIDWriteTracker.h" "src/SIDWriteTracker.cpp" "src/SIDPatternFinder.h" "src/SIDpatternFinder.cpp" "src/SIDShadowRegisterFinder.h" "src/SIDShadowRegisterFinder.cpp")
+ "src/app/TraceLogger.h" "src/app/MusicBuilder.h" "src/app/MusicBuilder.cpp"   "src/app/CommandProcessor.h" "src/app/CommandProcessor.cpp"  "src/app/SIDwinderApp.h" "src/RelocationUtils.cpp" "src/RelocationUtils.h" "src/SIDEmulator.h" "src/SIDEmulator.cpp"    "src/Common.cpp" "src/RelocationStructs.h"  "src/ConfigManager.h" "src/ConfigManager.cpp" "src/SIDWriteTracker.h" "src/SIDWriteTracker.cpp" "src/SIDPatternFinder.h" "src/SIDpatternFinder.cpp" "src/SIDShadowRegisterFinder.h" "src/SIDShadowRegisterFinder.cpp" "src/PointerBasedSelfModificationDetector.h" "src/PointerBasedSelfModificationDetector.cpp")
 
 # Create source groups for the APP and CPU6510 files (for Visual Studio organization)
 source_group("APP" FILES ${APP_SOURCES} ${APP_HEADERS})

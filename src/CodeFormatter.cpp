@@ -300,16 +300,41 @@ namespace sidwinder {
             return labelGenerator_.formatZeroPage(zp);
         }
 
+                                     // In CodeFormatter::formatOperand() - replace the ZeroPageX and ZeroPageY cases
         case AddressingMode::ZeroPageX: {
             const u8 zp = memory_[pc + 1];
-            const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
-            return baseAddr + ",X";
+            const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc + 1);
+
+            // Check if this creates a range that needs special handling
+            if (maxIndex > minIndex && (maxIndex - minIndex) > 1) {
+                // This is accessing a range of ZP addresses
+                const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
+                return baseAddr + ",X  ; accesses $" +
+                    util::byteToHex(zp + minIndex) + "-$" +
+                    util::byteToHex(zp + maxIndex);
+            }
+            else {
+                const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
+                return baseAddr + ",X";
+            }
         }
 
         case AddressingMode::ZeroPageY: {
             const u8 zp = memory_[pc + 1];
-            const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
-            return baseAddr + ",Y";
+            const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc + 1);
+
+            // Check if this creates a range that needs special handling  
+            if (maxIndex > minIndex && (maxIndex - minIndex) > 1) {
+                // This is accessing a range of ZP addresses
+                const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
+                return baseAddr + ",Y  ; accesses $" +
+                    util::byteToHex(zp + minIndex) + "-$" +
+                    util::byteToHex(zp + maxIndex);
+            }
+            else {
+                const std::string baseAddr = labelGenerator_.formatZeroPage(zp);
+                return baseAddr + ",Y";
+            }
         }
 
         case AddressingMode::IndirectX: {
@@ -331,12 +356,28 @@ namespace sidwinder {
 
         case AddressingMode::AbsoluteX: {
             const u16 baseAddr = memory_[pc + 1] | (memory_[pc + 2] << 8);
+
+            if (baseAddr <= 0xFF) {
+                const std::string zpName = labelGenerator_.formatZeroPage(static_cast<u8>(baseAddr));
+                if (!zpName.empty() && zpName != "$" + util::byteToHex(static_cast<u8>(baseAddr))) {
+                    return zpName + ",X";
+                }
+            }
+
             const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc + 1);
             return formatIndexedAddressWithMinOffset(baseAddr, minIndex, 'X');
         }
 
         case AddressingMode::AbsoluteY: {
             const u16 baseAddr = memory_[pc + 1] | (memory_[pc + 2] << 8);
+
+            if (baseAddr <= 0xFF) {
+                const std::string zpName = labelGenerator_.formatZeroPage(static_cast<u8>(baseAddr));
+                if (!zpName.empty() && zpName != "$" + util::byteToHex(static_cast<u8>(baseAddr))) {
+                    return zpName + ",Y";
+                }
+            }
+
             const auto [minIndex, maxIndex] = cpu_.getIndexRange(pc + 1);
             return formatIndexedAddressWithMinOffset(baseAddr, minIndex, 'Y');
         }

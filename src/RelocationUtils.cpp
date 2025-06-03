@@ -5,6 +5,7 @@
 #include "SIDEmulator.h"
 #include "SIDLoader.h"
 #include "Disassembler.h"
+#include "PointerBasedSelfModificationDetector.h"
 
 #include <fstream>
 
@@ -471,6 +472,88 @@ namespace sidwinder {
             options.traceEnabled = false;
 
             return emulator.runEmulation(options);
+        }
+
+        // Helper function to find operand address in comparison instructions
+        u16 findComparisonOperandAddress(u16 instructionPC, std::span<const u8> memory) {
+            u8 opcode = memory[instructionPC];
+
+            // Check for CMP/CPX/CPY immediate mode instructions
+            if (opcode == 0xC9 || opcode == 0xE0 || opcode == 0xC0) { // CMP/CPX/CPY #immediate
+                return instructionPC + 1;
+            }
+
+            // Check for CMP/CPX/CPY absolute mode instructions  
+            if (opcode == 0xCD || opcode == 0xEC || opcode == 0xCC) { // CMP/CPX/CPY absolute
+                // For absolute mode, we'd need to check if we're comparing against a relocated address
+                // This requires more complex analysis
+                return 0; // For now, only handle immediate mode
+            }
+
+            return 0;
+        }
+
+        // Helper function to find operand address in modification instructions
+        u16 findModificationOperandAddress(u16 instructionPC, std::span<const u8> memory) {
+            u8 opcode = memory[instructionPC];
+
+            // Check for LDA immediate mode (0xA9)
+            if (opcode == 0xA9) {
+                return instructionPC + 1;
+            }
+
+            return 0;
+        }
+
+        void processPointerBasedRelocation(
+            const std::vector<ConditionalModificationPattern>& patterns,
+            u16 originalLoad, u16 newLoad,
+            std::span<u8> memory) {
+
+            i16 offset = static_cast<i16>(newLoad) - static_cast<i16>(originalLoad);
+            u8 pageOffset = static_cast<u8>(offset >> 8);
+
+            util::Logger::info("Processing pointer-based relocation with offset $" +
+                util::wordToHex(static_cast<u16>(offset)) + " (page offset: $" +
+                util::byteToHex(pageOffset) + ")");
+
+            for (const auto& pattern : patterns) {
+                util::Logger::info("Relocating pattern at $" + util::wordToHex(pattern.startPC));
+
+                // Process each comparison in the pattern
+                for (const auto& comp : pattern.comparisons) {
+                    // If this comparison involves a relocated address, update it
+                    if (comp.compareValue >= 0x10 && comp.compareValue <= 0x9F) {
+                        u8 newCompareValue = comp.compareValue + pageOffset;
+
+                        // Find the comparison instruction and update its immediate value
+                        u16 operandAddr = findComparisonOperandAddress(comp.pc, memory);
+                        if (operandAddr != 0) {
+                            util::Logger::info("  Updating comparison at $" + util::wordToHex(comp.pc) +
+                                " from $" + util::byteToHex(comp.compareValue) +
+                                " to $" + util::byteToHex(newCompareValue));
+                            memory[operandAddr] = newCompareValue;
+                        }
+                    }
+                }
+
+                // Process each modification in the pattern  
+                for (const auto& mod : pattern.modifications) {
+                    // If this modification writes a high byte that references relocated code/data
+                    if (mod.offset == 2 && mod.newValue >= 0x10 && mod.newValue <= 0x9F) {
+                        u8 newModValue = mod.newValue + pageOffset;
+
+                        // Find the instruction that does the modification and update its immediate value
+                        u16 operandAddr = findModificationOperandAddress(mod.pc, memory);
+                        if (operandAddr != 0) {
+                            util::Logger::info("  Updating modification at $" + util::wordToHex(mod.pc) +
+                                " from $" + util::byteToHex(mod.newValue) +
+                                " to $" + util::byteToHex(newModValue));
+                            memory[operandAddr] = newModValue;
+                        }
+                    }
+                }
+            }
         }
 
     }
