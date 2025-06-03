@@ -13,18 +13,10 @@ namespace sidwinder {
 
     void PointerBasedSelfModificationDetector::recordComparison(const ComparisonRecord& record) {
         comparisons_.push_back(record);
-
-        util::Logger::debug("Comparison recorded: PC=$" + util::wordToHex(record.pc) +
-            " " + std::string(1, record.reg) + " vs $" + util::byteToHex(record.compareValue) +
-            " from $" + util::wordToHex(record.sourceAddr));
     }
 
     void PointerBasedSelfModificationDetector::recordSelfModification(const SelfModificationRecord& record) {
         modifications_.push_back(record);
-
-        util::Logger::debug("Self-modification recorded: PC=$" + util::wordToHex(record.pc) +
-            " modifies $" + util::wordToHex(record.targetAddr) +
-            " with $" + util::byteToHex(record.newValue));
     }
 
     void PointerBasedSelfModificationDetector::recordBranch(u16 fromPC, u16 toPC, bool taken) {
@@ -34,16 +26,9 @@ namespace sidwinder {
     }
 
     void PointerBasedSelfModificationDetector::analyzePatterns() {
-        util::Logger::info("Analyzing pointer-based self-modification patterns...");
-        util::Logger::info("Found " + std::to_string(comparisons_.size()) + " comparisons and " +
-            std::to_string(modifications_.size()) + " self-modifications");
-
         findComparisonSequences();
         correlateComparisonsWithModifications();
         validatePatterns();
-
-        util::Logger::info("Detected " + std::to_string(detectedPatterns_.size()) +
-            " pointer-based self-modification patterns");
     }
 
     void PointerBasedSelfModificationDetector::findComparisonSequences() {
@@ -131,23 +116,6 @@ namespace sidwinder {
             });
 
         detectedPatterns_.erase(it, detectedPatterns_.end());
-
-        // Log detailed information about valid patterns
-        for (size_t i = 0; i < detectedPatterns_.size(); i++) {
-            const auto& pattern = detectedPatterns_[i];
-            util::Logger::info("Pattern " + std::to_string(i + 1) + ": PC=$" +
-                util::wordToHex(pattern.startPC) + "-$" + util::wordToHex(pattern.endPC));
-
-            for (const auto& comp : pattern.comparisons) {
-                util::Logger::info("  Compare: " + std::string(1, comp.reg) + " vs $" +
-                    util::byteToHex(comp.compareValue) + " at $" + util::wordToHex(comp.pc));
-            }
-
-            for (const auto& mod : pattern.modifications) {
-                util::Logger::info("  Modifies: $" + util::wordToHex(mod.targetAddr) +
-                    " with $" + util::byteToHex(mod.newValue) + " at $" + util::wordToHex(mod.pc));
-            }
-        }
     }
 
     bool PointerBasedSelfModificationDetector::isPointerComparison(const ComparisonRecord& comp) const {

@@ -22,9 +22,6 @@ namespace sidwinder {
         if (!isOpen_) {
             util::Logger::error("Failed to open trace log file: " + filename);
         }
-        else {
-            util::Logger::debug("Trace log opened: " + filename);
-        }
     }
 
     TraceLogger::~TraceLogger() {

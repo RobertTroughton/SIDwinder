@@ -61,20 +61,13 @@ namespace sidwinder {
             fs::path playerAsmFile = fs::path(playerDir) / playerToUse / (playerToUse + ".asm");
 
             // Create the player directory if it doesn't exist
-            try {
-                fs::create_directories(playerAsmFile.parent_path());
-            }
-            catch (const std::exception& e) {
-                util::Logger::warning(std::string("Failed to create player directory: ") + e.what());
-                // Continue anyway, the assembler will fail if the file doesn't exist
-            }
+            fs::create_directories(playerAsmFile.parent_path());
 
             // Generate helpful data for double-buffering
             fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
 
             // Only run analysis if the file doesn't exist
             if (emulator_) {
-                util::Logger::info("Analyzing SID for helpful data generation...");
 
                 // Configure emulation options
                 SIDEmulator::EmulationOptions options;
@@ -87,9 +80,6 @@ namespace sidwinder {
                 if (emulator_->runEmulation(options)) {
                     // Generate the helpful data file
                     emulator_->generateHelpfulDataFile(helpfulDataFile.string());
-                }
-                else {
-                    util::Logger::warning("SID analysis failed, helpful data not generated");
                 }
             }
 
@@ -107,7 +97,6 @@ namespace sidwinder {
             if (options.compress) {
                 if (!compressPrg(tempPlayerPrgFile, outputFile, options.playerAddress, options)) {
                     // Fallback to uncompressed if compression fails
-                    util::Logger::warning(std::string("Compression failed on ") + tempPlayerPrgFile.string());
                     try {
                         fs::copy_file(tempPlayerPrgFile, outputFile,
                             fs::copy_options::overwrite_existing);
@@ -347,8 +336,6 @@ namespace sidwinder {
 
         file.close();
 
-        util::Logger::debug("Created player linker file: " + linkerFile.string());
-
         return true;
     }
 
@@ -409,15 +396,12 @@ namespace sidwinder {
         }
 
         // Execute the compression command
-        util::Logger::debug("Compressing with command: " + compressCommand);
         const int result = std::system(compressCommand.c_str());
 
         if (result != 0) {
             util::Logger::error("Compression failed: " + compressCommand);
             return false;
         }
-
-        util::Logger::info("Compressed PRG created: " + outputPrg.string());
         return true;
     }
 
@@ -453,11 +437,6 @@ namespace sidwinder {
             }
         }
 
-        // Log what we're doing
-        util::Logger::debug("Extracting PRG from SID: " + sidFile.string() +
-            " (load address: $" + util::wordToHex(loadAddress) +
-            ", data offset: $" + util::wordToHex(dataOffset) + ")");
-
         // Create PRG file (first 2 bytes are load address in little-endian)
         std::ofstream output(outputPrg, std::ios::binary);
         if (!output) {
@@ -490,7 +469,6 @@ namespace sidwinder {
             }
         }
 
-        util::Logger::debug("Extracted PRG data to: " + outputPrg.string());
         return true;
     }
 

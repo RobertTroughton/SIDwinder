@@ -36,8 +36,6 @@ namespace sidwinder {
 
     bool CommandProcessor::processFile(const ProcessingOptions& options) {
         try {
-            util::Logger::info("Processing file: " + options.inputFile.string());
-
             // Create temp directory if it doesn't exist
             fs::create_directories(options.tempDir);
 
@@ -54,8 +52,6 @@ namespace sidwinder {
                 cpu_->setOnCIAWriteCallback([this](u16 addr, u8 value) {
                     traceLogger_->logCIAWrite(addr, value);
                     });
-
-                util::Logger::info("Trace logging enabled to: " + options.traceLogPath);
             }
 
             // Load the input file
@@ -89,7 +85,6 @@ namespace sidwinder {
                     });
 
                 // Run emulation to analyze SID patterns
-                util::Logger::info("Analyzing SID register write patterns...");
                 if (!emulator.runEmulation(emulationOptions)) {
                     util::Logger::warning("SID pattern analysis failed - continuing without pattern info");
                 }
@@ -134,8 +129,6 @@ namespace sidwinder {
             if (!generateOutput(options)) {
                 return false;
             }
-
-            util::Logger::info("Processing complete: " + options.inputFile.string());
             return true;
         }
         catch (const std::exception& e) {
@@ -172,20 +165,14 @@ namespace sidwinder {
         if (loaded) {
             // Apply overrides if specified
             if (options.hasOverrideInit) {
-                util::Logger::debug("Overriding SID init address: $" +
-                    util::wordToHex(options.overrideInitAddress));
                 sid_->setInitAddress(options.overrideInitAddress);
             }
 
             if (options.hasOverridePlay) {
-                util::Logger::debug("Overriding SID play address: $" +
-                    util::wordToHex(options.overridePlayAddress));
                 sid_->setPlayAddress(options.overridePlayAddress);
             }
 
             if (options.hasOverrideLoad) {
-                util::Logger::debug("Overriding SID load address: $" +
-                    util::wordToHex(options.overrideLoadAddress));
                 sid_->setLoadAddress(options.overrideLoadAddress);
             }
 
@@ -202,17 +189,14 @@ namespace sidwinder {
         // Apply overrides from command line
         if (!options.overrideTitle.empty()) {
             sid_->setTitle(options.overrideTitle);
-            util::Logger::debug("Overriding SID title: " + options.overrideTitle);
         }
 
         if (!options.overrideAuthor.empty()) {
             sid_->setAuthor(options.overrideAuthor);
-            util::Logger::debug("Overriding SID author: " + options.overrideAuthor);
         }
 
         if (!options.overrideCopyright.empty()) {
             sid_->setCopyright(options.overrideCopyright);
-            util::Logger::debug("Overriding SID copyright: " + options.overrideCopyright);
         }
     }
 
@@ -260,12 +244,6 @@ namespace sidwinder {
         const u16 sidLoad = sid_->getLoadAddress();
         const u16 sidInit = sid_->getInitAddress();
         const u16 sidPlay = sid_->getPlayAddress();
-
-        util::Logger::info("SID info - Load: $" + util::wordToHex(sidLoad) +
-            ", Init: $" + util::wordToHex(sidInit) +
-            ", Play: $" + util::wordToHex(sidPlay));
-
-        util::Logger::info("Play calls per frame: " + std::to_string(playCallsPerFrame));
 
         // Get cycle statistics
         auto [avgCycles, maxCycles] = emulator.getCycleStats();
@@ -320,10 +298,6 @@ namespace sidwinder {
             // Calculate offset for init and play addresses
             newSidInit = newSidLoad + (sidInit - sidLoad);
             newSidPlay = newSidLoad + (sidPlay - sidLoad);
-
-            util::Logger::info("Relocated addresses - Load: $" + util::wordToHex(newSidLoad) +
-                ", Init: $" + util::wordToHex(newSidInit) +
-                ", Play: $" + util::wordToHex(newSidPlay));
         }
         else {
             // Use original addresses if not relocating
@@ -389,20 +363,13 @@ namespace sidwinder {
 
         // If the input file is a SID and we haven't extracted it yet, do so now
         if ((!bRelocation) && (bIsSID) && (!fs::exists(tempExtractedPrg))) {
-            util::Logger::debug("Extracting PRG from SID file: " + options.inputFile.string());
             MusicBuilder builder(cpu_.get(), sid_.get());
             builder.extractPrgFromSid(options.inputFile, tempExtractedPrg);
         }
 
         // Determine if we need to use the disassembler for relocation
         if (bRelocation) {
-            // Only try to restore memory if we've backed it up
-            try {
-                sid_->restoreMemory();
-            }
-            catch (const std::exception& e) {
-                util::Logger::debug("Memory restore skipped (probably not backed up): " + std::string(e.what()));
-            }
+            sid_->restoreMemory();
 
             // For relocation, generate assembly file
             fs::path tempAsmFile = tempDir / (basename + ".asm");
@@ -411,7 +378,6 @@ namespace sidwinder {
             const u16 newSidPlay = newSidLoad + (sid_->getPlayAddress() - sidLoad);
 
             disassembler_->generateAsmFile(tempAsmFile.string(), newSidLoad, newSidInit, newSidPlay, true);
-            util::Logger::info("Generated relocated assembly: " + tempAsmFile.string());
 
             // Run assembler to build with player
             MusicBuilder builder(cpu_.get(), sid_.get());
@@ -483,9 +449,6 @@ namespace sidwinder {
             params.relocationAddress = options.relocationAddress;
             params.kickAssPath = options.kickAssPath;
 
-            util::Logger::info("Relocating " + options.inputFile.string() + " to $" +
-                util::wordToHex(options.relocationAddress) + " -> " + options.outputFile.string());
-
             // Perform the relocation
             util::RelocationResult result = util::relocateSID(cpu_.get(), sid_.get(), params);
 
@@ -545,8 +508,6 @@ namespace sidwinder {
                     speed);
 
                 if (!success) {
-                    util::Logger::warning("SID file creation failed. Copying PRG instead.");
-
                     try {
                         fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
                         return true;
@@ -586,8 +547,6 @@ namespace sidwinder {
         const u16 newSidPlay = outputSidLoad + (sid_->getPlayAddress() - sidLoad);
 
         disassembler_->generateAsmFile(options.outputFile.string(), outputSidLoad, newSidInit, newSidPlay, true);
-
-        util::Logger::info("Generated assembly file: " + options.outputFile.string());
 
         return true;
     }

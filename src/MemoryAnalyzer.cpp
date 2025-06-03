@@ -49,7 +49,6 @@ namespace sidwinder {
      * and jump targets. Marks these regions with appropriate memory type flags.
      */
     void MemoryAnalyzer::analyzeExecution() {
-        util::Logger::debug("Analyzing execution patterns...");
 
         int codeCount = 0;
         int jumpCount = 0;
@@ -68,10 +67,6 @@ namespace sidwinder {
                 jumpCount++;
             }
         }
-
-        util::Logger::debug("Execution analysis complete: " +
-            std::to_string(codeCount) + " code bytes, " +
-            std::to_string(jumpCount) + " jump targets");
     }
 
     /**
@@ -81,8 +76,6 @@ namespace sidwinder {
      * and additional label targets where memory that is also code is accessed as data.
      */
     void MemoryAnalyzer::analyzeAccesses() {
-        util::Logger::debug("Analyzing memory accesses...");
-
         // For each address in the entire memory
         for (u32 addr = 0; addr < 0x10000; ++addr) {
             // Check if the address has been read or written
@@ -100,8 +93,6 @@ namespace sidwinder {
                 }
             }
         }
-
-        util::Logger::debug("Memory access analysis complete");
     }
 
     /**
@@ -112,8 +103,6 @@ namespace sidwinder {
      * all memory in the analyzed range.
      */
     void MemoryAnalyzer::analyzeData() {
-        util::Logger::debug("Analyzing data regions...");
-
         // For each address in the entire memory
         for (u32 addr = 0; addr < 0x10000; ++addr) {
             // If this address is not code, mark it as data
@@ -121,8 +110,6 @@ namespace sidwinder {
                 memoryTypes_[addr] |= MemoryType::Data;
             }
         }
-
-        util::Logger::debug("Data region analysis complete");
     }
 
     /**

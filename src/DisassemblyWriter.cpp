@@ -38,7 +38,7 @@ namespace sidwinder {
         analyzer_(analyzer),
         labelGenerator_(labelGenerator),
         formatter_(formatter) {
-        pointerDetector_ = std::make_unique<PointerBasedSelfModificationDetector>();
+//;        pointerDetector_ = std::make_unique<PointerBasedSelfModificationDetector>();
     }
 
     /**
@@ -58,8 +58,6 @@ namespace sidwinder {
         u16 sidInit,
         u16 sidPlay,
         bool removeCIAWrites) {
-
-        util::Logger::info("Generating assembly file: " + filename);
 
         // Open the output file
         std::ofstream file(filename);

@@ -125,16 +125,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
             return false;
         }
         else if (currentPC < 0x0100 && !jumpToZeroPageTracked) {  // Any zero page execution
-            sidwinder::util::Logger::warning("Zero page execution detected at $" +
-                sidwinder::util::wordToHex(currentPC));
             jumpToZeroPageTracked = true; // Only log once to avoid spam
-        }
-
-        // Check for stack issues
-        if (cpuState_.getSP() < 0xA0) {  // Potential stack overflow
-            sidwinder::util::Logger::warning("Low stack pointer: $" +
-                sidwinder::util::byteToHex(cpuState_.getSP()) +
-                " at PC: $" + sidwinder::util::wordToHex(currentPC));
         }
 
         // Fetch the opcode
@@ -162,28 +153,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
             }
             else if (operand < 0x0100 &&
                 reportedProblematicJumps.find(operand) == reportedProblematicJumps.end()) {
-
-                sidwinder::util::Logger::warning("Suspicious " + std::string(getMnemonic(opcode)) +
-                    " at $" + sidwinder::util::wordToHex(currentPC) +
-                    " to zero page $" +
-                    sidwinder::util::wordToHex(operand));
                 reportedProblematicJumps.insert(operand);
-            }
-        }
-
-        // Track RTS instructions to check return addresses
-        if (opcode == 0x60) { // RTS
-            if (cpuState_.getSP() < 0xFC) { // Make sure we can safely read from stack
-                const u8 lo = memory_.getMemoryAt(0x0100 + cpuState_.getSP() + 1);
-                const u8 hi = memory_.getMemoryAt(0x0100 + cpuState_.getSP() + 2);
-                const u32 returnAddr = (hi << 8) | lo;
-
-                // Log suspicious return addresses
-                if (returnAddr < 0x0100) {
-                    sidwinder::util::Logger::warning("RTS with suspicious return address: $" +
-                        sidwinder::util::wordToHex(returnAddr) +
-                        ", SP: $" + sidwinder::util::byteToHex(cpuState_.getSP()));
-                }
             }
         }
 

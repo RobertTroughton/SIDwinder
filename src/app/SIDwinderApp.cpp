@@ -183,7 +183,6 @@ namespace sidwinder {
         if (command_.getType() == CommandClass::Type::Relocate) {
             options.relocationAddress = command_.getHexParameter("relocateaddr", 0);
             options.hasRelocation = true;
-            util::Logger::debug("Relocation address set to $" + util::wordToHex(options.relocationAddress));
         }
 
         // Trace options
@@ -310,10 +309,6 @@ namespace sidwinder {
             util::RelocationResult result = util::relocateSID(cpu.get(), sid.get(), params);
 
             if (result.success) {
-                util::Logger::info("Successfully relocated " + inputFile.string() + " to " + outputFile.string() +
-                    " (Load: $" + util::wordToHex(result.newLoad) +
-                    ", Init: $" + util::wordToHex(result.newInit) +
-                    ", Play: $" + util::wordToHex(result.newPlay) + ")", true);
                 return 0;
             }
             else {
@@ -381,11 +376,7 @@ namespace sidwinder {
         // Create and run command processor
         CommandProcessor processor;
         bool success = processor.processFile(options);
-
-        if (success) {
-            util::Logger::info("Successfully disassembled " + inputFile.string() + " to " + outputFile.string(), true);
-        }
-        else {
+        if (!success) {
             util::Logger::error("Failed to disassemble " + inputFile.string());
         }
 
@@ -419,9 +410,6 @@ namespace sidwinder {
         // Determine trace format
         std::string traceFormatStr = command_.getParameter("traceformat", "binary");
         TraceFormat traceFormat = (traceFormatStr == "text") ? TraceFormat::Text : TraceFormat::Binary;
-
-        util::Logger::info("Tracing SID register writes for " + inputFile.string() +
-            " to " + traceLogPath + " in " + traceFormatStr + " format");
 
         // Create CPU and SID Loader
         auto cpu = std::make_unique<CPU6510>();
@@ -460,7 +448,6 @@ namespace sidwinder {
         bool success = emulator.runEmulation(options);
 
         if (success) {
-            util::Logger::info("Successfully traced SID register writes to: " + traceLogPath, true);
             return 0;
         }
         else {

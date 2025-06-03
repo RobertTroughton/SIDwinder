@@ -66,8 +66,6 @@ namespace sidwinder {
      * (mid-instruction jump targets).
      */
     void LabelGenerator::generateLabels() {
-        util::Logger::debug("Generating labels...");
-
         // First pass: identify all label targets and check if they're mid-instruction
         std::vector<u16> labelTargets = analyzer_.findLabelTargets();
 
@@ -99,10 +97,6 @@ namespace sidwinder {
                                     if (labelMap_.find(possibleStart) == labelMap_.end()) {
                                         labelMap_[possibleStart] = "Label_" + std::to_string(codeLabelCounter_++);
                                     }
-
-                                    util::Logger::debug("Mid-instruction label detected: $" +
-                                        util::wordToHex(targetAddr) + " is at " +
-                                        labelMap_[possibleStart] + " + " + std::to_string(offset));
 
                                     foundMidInstruction = true;
                                     break; // Found it, no need to look further back
@@ -143,10 +137,6 @@ namespace sidwinder {
             labelMap_[prevEnd] = label;
             dataBlocks_.push_back({ label, prevEnd, static_cast<u16>(endAddress_ - 1) });
         }
-
-        util::Logger::debug("Generated " + std::to_string(codeLabelCounter_) +
-            " code labels and " + std::to_string(dataLabelCounter_) +
-            " data block labels");
     }
 
     /**
@@ -332,7 +322,6 @@ namespace sidwinder {
             [&](const DataBlock& b) { return b.label == blockLabel; });
 
         if (it == dataBlocks_.end()) {
-            util::Logger::warning("Attempted to add subdivision to non-existent data block: " + blockLabel);
             return;
         }
 
@@ -377,8 +366,6 @@ namespace sidwinder {
      * data block structure accordingly.
      */
     void LabelGenerator::applySubdivisions() {
-        util::Logger::debug("Applying data block subdivisions...");
-
         // Step 1: Deduplicate and sort addresses
         std::vector<u16> sorted(pendingSubdivisionAddresses_.begin(), pendingSubdivisionAddresses_.end());
         std::sort(sorted.begin(), sorted.end());
@@ -466,14 +453,10 @@ namespace sidwinder {
             const auto newLabel = label + "_0";
             labelMap_[it->start] = newLabel;
             it->label = newLabel;
-
-            util::Logger::debug("Renamed original block " + oldLabel + " to " + newLabel);
         }
 
         // Add the new subdivided blocks to the list
         dataBlocks_.insert(dataBlocks_.end(), newBlocks.begin(), newBlocks.end());
-
-        util::Logger::debug("Applied " + std::to_string(newBlocks.size()) + " subdivisions");
 
         // Clear pending addresses after processing
         pendingSubdivisionAddresses_.clear();
@@ -511,10 +494,6 @@ namespace sidwinder {
         base.name = name;
 
         usedHardwareBases_.push_back(base);
-
-        util::Logger::debug("Added hardware base: " + name + " at $" +
-            util::wordToHex(address) + " (index " +
-            std::to_string(index) + ")");
     }
 
     /**

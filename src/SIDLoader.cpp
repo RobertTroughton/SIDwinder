@@ -299,7 +299,6 @@ bool SIDLoader::backupMemory() {
     // Make a copy
     memoryBackup_.assign(cpuMemory.begin(), cpuMemory.end());
 
-    sidwinder::util::Logger::debug("Memory backup created: " + std::to_string(memoryBackup_.size()) + " bytes");
     return true;
 }
 
@@ -312,12 +311,10 @@ bool SIDLoader::backupMemory() {
  */
 bool SIDLoader::restoreMemory() {
     if (!cpu_) {
-        sidwinder::util::Logger::warning("Cannot restore memory: CPU not set");
         return false;
     }
 
     if (memoryBackup_.empty()) {
-        sidwinder::util::Logger::debug("Memory backup is empty, skipping restore");
         return false;  // Return false but don't log as error - this is expected in some workflows
     }
 
@@ -328,7 +325,6 @@ bool SIDLoader::restoreMemory() {
         cpu_->writeByte(static_cast<u16>(addr), memoryBackup_[addr]);
     }
 
-    sidwinder::util::Logger::debug("Memory restored from backup");
     return true;
 }
 

@@ -140,21 +140,17 @@ namespace sidwinder {
         }
 
         // Perform memory analysis
-        util::Logger::debug("Performing memory analysis...");
         analyzer_->analyzeExecution();
         analyzer_->analyzeAccesses();
         analyzer_->analyzeData();
 
         // Analyze recorded writes for self-modification
-        util::Logger::debug("Analyzing writes for self-modification...");
         writer_->analyzeWritesForSelfModification();
 
         // Process indirect accesses and self-modifying code patterns
-        util::Logger::debug("Processing indirect memory accesses and self-modifying code...");
         writer_->processIndirectAccesses();
 
         // Generate labels based on the analysis
-        util::Logger::debug("Generating labels...");
         labelGenerator_->generateLabels();
 
         // Apply any pending subdivisions to data blocks

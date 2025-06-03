@@ -70,10 +70,6 @@ namespace sidwinder {
         const u16 initAddr = sid_->getInitAddress();
         const u16 playAddr = sid_->getPlayAddress();
 
-        util::Logger::debug("Running SID emulation - Init: $" + util::wordToHex(initAddr) +
-            ", Play: $" + util::wordToHex(playAddr) +
-            ", Frames: " + std::to_string(options.frames));
-
         // Execute the init routine once
         cpu_->resetRegistersAndFlags();
         updateSIDCallback(false);
@@ -117,7 +113,6 @@ namespace sidwinder {
 
         if (options.shadowRegisterDetectionEnabled) {
             shadowRegisterFinder_.analyzeResults();
-            util::Logger::info("Shadow register detection: " + shadowRegisterFinder_.getSummary());
         }
 
         // Reset counters
@@ -184,22 +179,7 @@ namespace sidwinder {
         // Analyze pattern if pattern detection was enabled
         if (options.patternDetectionEnabled) {
             patternFinder_.analyzePattern();
-
-            // Log pattern detection results
-            if (patternFinder_.getPatternPeriod() > 0) {
-                util::Logger::info("SID register write pattern detected: " +
-                    std::to_string(patternFinder_.getInitFramesCount()) + " init frames + " +
-                    std::to_string(patternFinder_.getPatternPeriod()) + " frames per cycle");
-            }
-            else {
-                util::Logger::info("No clear repeating pattern detected in SID register writes");
-            }
         }
-
-        // Log cycle stats
-        const u64 avgCycles = options.frames > 0 ? totalCycles_ / options.frames : 0;
-        util::Logger::debug("SID emulation complete - Average cycles per frame: " +
-            std::to_string(avgCycles) + ", Maximum: " + std::to_string(maxCyclesPerFrame_));
 
         // Restore original memory
         sid_->restoreMemory();
@@ -278,9 +258,6 @@ namespace sidwinder {
         // Part 4: Shadow Register information
         file << shadowRegisterFinder_.generateHelpfulDataSection();
 
-        util::Logger::info("Generated helpful data file: " + filename +
-            " (" + std::to_string(writtenAddresses.size()) + " addresses, " +
-            std::to_string(shadowRegisterFinder_.getShadowRegisterCount()) + " shadow registers)");
         return true;
     }
 

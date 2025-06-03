@@ -513,12 +513,7 @@ namespace sidwinder {
             i16 offset = static_cast<i16>(newLoad) - static_cast<i16>(originalLoad);
             u8 pageOffset = static_cast<u8>(offset >> 8);
 
-            util::Logger::info("Processing pointer-based relocation with offset $" +
-                util::wordToHex(static_cast<u16>(offset)) + " (page offset: $" +
-                util::byteToHex(pageOffset) + ")");
-
             for (const auto& pattern : patterns) {
-                util::Logger::info("Relocating pattern at $" + util::wordToHex(pattern.startPC));
 
                 // Process each comparison in the pattern
                 for (const auto& comp : pattern.comparisons) {
@@ -529,9 +524,6 @@ namespace sidwinder {
                         // Find the comparison instruction and update its immediate value
                         u16 operandAddr = findComparisonOperandAddress(comp.pc, memory);
                         if (operandAddr != 0) {
-                            util::Logger::info("  Updating comparison at $" + util::wordToHex(comp.pc) +
-                                " from $" + util::byteToHex(comp.compareValue) +
-                                " to $" + util::byteToHex(newCompareValue));
                             memory[operandAddr] = newCompareValue;
                         }
                     }
@@ -546,9 +538,6 @@ namespace sidwinder {
                         // Find the instruction that does the modification and update its immediate value
                         u16 operandAddr = findModificationOperandAddress(mod.pc, memory);
                         if (operandAddr != 0) {
-                            util::Logger::info("  Updating modification at $" + util::wordToHex(mod.pc) +
-                                " from $" + util::byteToHex(mod.newValue) +
-                                " to $" + util::byteToHex(newModValue));
                             memory[operandAddr] = newModValue;
                         }
                     }
