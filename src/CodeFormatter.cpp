@@ -6,6 +6,7 @@
 #include "CodeFormatter.h"
 #include "cpu6510.h"
 #include "DisassemblyWriter.h"
+#include "MemoryConstants.h"
 
 #include <algorithm>
 #include <sstream>
@@ -270,7 +271,7 @@ namespace sidwinder {
             return false;
         }
 
-        if (operand != 0xDC04 && operand != 0xDC05) {
+        if (operand != MemoryConstants::CIA1_TIMER_LO && operand != MemoryConstants::CIA1_TIMER_HI) {
             return false;
         }
 

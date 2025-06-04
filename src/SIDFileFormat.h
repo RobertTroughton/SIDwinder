@@ -88,27 +88,3 @@ constexpr u16 SID_FLAG_CLOCK_PAL = 0x0004;  // Bit 2: PAL clock
 constexpr u16 SID_FLAG_CLOCK_NTSC = 0x0008;  // Bit 3: NTSC clock
 constexpr u16 SID_FLAG_SID_6581 = 0x0010;  // Bit 4: MOS6581 SID model
 constexpr u16 SID_FLAG_SID_8580 = 0x0020;  // Bit 5: MOS8580 SID model
-
-// Version 3/4 SID Addressing
-constexpr u16 SID_BASE_ADDRESS = 0xD400; // Base address of the SID chip
-constexpr u8 SID_ADDRESS_OFFSET = 0x20;  // 32-byte offset between SIDs (for 2nd/3rd SID)
-
-/**
- * @brief Calculate memory address for secondary/tertiary SID chips
- *
- * @param addressByte Address byte from SID header (upper 4 bits used)
- * @return Actual memory address or 0 if not present
- */
-inline u16 getSIDMemoryAddress(u8 addressByte) {
-    // The upper 4 bits of the address byte encode the address
-    u8 addressValue = (addressByte >> 4) & 0x0F;
-
-    // If value is 0, no SID is present
-    if (addressValue == 0) {
-        return 0;
-    }
-
-    // Otherwise, calculate the address
-    // Base address is $D400, and each secondary SID is at $D420, $D440, etc.
-    return SID_BASE_ADDRESS + (addressValue * SID_ADDRESS_OFFSET);
-}

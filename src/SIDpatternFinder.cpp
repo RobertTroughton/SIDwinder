@@ -1,6 +1,8 @@
 // SIDPatternFinder.cpp
 #include "SIDPatternFinder.h"
 #include "SIDwinderUtils.h"
+#include "MemoryConstants.h"
+
 #include <sstream>
 #include <functional>
 #include <algorithm>
@@ -21,12 +23,7 @@ namespace sidwinder {
     }
 
     void SIDPatternFinder::recordWrite(u16 addr, u8 value) {
-        // Only track actual SID registers (0xD400-0xD418)
-        if (addr >= 0xD400 && addr <= 0xD418) {
-            // Record this register write if not already in current frame (for same register)
-            u8 regOffset = addr - 0xD400;
-
-            // Check if we already have a write to this register in the current frame
+        if (MemoryConstants::isSID(addr)) {
             bool alreadyWritten = false;
             for (const auto& write : currentFrame_) {
                 if (write.addr == addr) {
@@ -34,8 +31,6 @@ namespace sidwinder {
                     break;
                 }
             }
-
-            // If not already written, add to current frame
             if (!alreadyWritten) {
                 currentFrame_.push_back({ addr, value });
             }

@@ -2,6 +2,7 @@
 #include "cpu6510.h"
 #include "SIDLoader.h"
 #include "SIDwinderUtils.h"
+#include "MemoryConstants.h"
 
 #include <set>
 
@@ -77,8 +78,8 @@ namespace sidwinder {
 
         // Run a short playback period to identify initial memory patterns
         // This helps with memory copies performed during initialization
-        const int preAnalysisFrames = util::Configuration::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
-        for (int frame = 0; frame < preAnalysisFrames; ++frame) {
+        const int numEmulationFrames = util::Configuration::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
+        for (int frame = 0; frame < numEmulationFrames; ++frame) {
             for (int call = 0; call < options.callsPerFrame; ++call) {
                 cpu_->resetRegistersAndFlags();
                 if (!cpu_->executeFunction(playAddr)) {
@@ -109,10 +110,6 @@ namespace sidwinder {
         // Mark end of initialization in trace log
         if (options.traceEnabled && traceLogger_) {
             traceLogger_->logFrameMarker();
-        }
-
-        if (options.shadowRegisterDetectionEnabled) {
-            shadowRegisterFinder_.analyzeResults();
         }
 
         // Reset counters
@@ -222,7 +219,7 @@ namespace sidwinder {
         // Add addresses to the list - limit to 8 per line for readability
         int numItems = 0;
         for (u16 addr : writtenAddresses) {
-            if ((addr < 0xD400) || (addr >= 0xD800)) {
+            if (!MemoryConstants::isSID(addr)) {
                 file << ".add($" << util::wordToHex(addr) << ")";
                 numItems++;
             }

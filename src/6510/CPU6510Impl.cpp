@@ -1,5 +1,6 @@
 #include "CPU6510Impl.h"
 #include "SIDwinderUtils.h"
+#include "MemoryConstants.h"
 
 #include <algorithm>
 #include <fstream>
@@ -7,6 +8,8 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+
+using namespace sidwinder;
 
 /**
  * @brief Default constructor for CPU6510Impl
@@ -97,7 +100,6 @@ bool CPU6510Impl::executeFunction(u32 address) {
 
     // Track potentially dangerous jump targets
     bool jumpToZeroPageTracked = false;
-    std::set<u32> reportedProblematicJumps;
 
     // Simulate JSR manually
     const u32 returnAddress = cpuState_.getPC() - 1; // What JSR would have pushed (the address of the last byte of JSR instruction)
@@ -135,34 +137,12 @@ bool CPU6510Impl::executeFunction(u32 address) {
         const auto mode = getAddressingMode(opcode);
         const int size = getInstructionSize(opcode);
 
-        // Track JMP and JSR instructions to potentially problematic addresses
-        if (size == 3 && (opcode == 0x4C || opcode == 0x20)) { // JMP or JSR
-            const u32 operand = memory_.getMemoryAt(currentPC + 1) |
-                (memory_.getMemoryAt(currentPC + 2) << 8);
-
-            // Check for jumps to very low addresses
-            if (operand < 0x0002 &&
-                reportedProblematicJumps.find(operand) == reportedProblematicJumps.end()) {
-
-                sidwinder::util::Logger::error("CRITICAL: " + std::string(getMnemonic(opcode)) +
-                    " at $" + sidwinder::util::wordToHex(currentPC) +
-                    " to illegal address $" +
-                    sidwinder::util::wordToHex(operand));
-                reportedProblematicJumps.insert(operand);
-                return false;
-            }
-            else if (operand < 0x0100 &&
-                reportedProblematicJumps.find(operand) == reportedProblematicJumps.end()) {
-                reportedProblematicJumps.insert(operand);
-            }
-        }
-
         // Execute the instruction
         step();
         stepCount++;
 
         // Check if we've returned from the function
-        if (opcode == 0x60) { // RTS
+        if (opcodeTable_[opcode].instruction == Instruction::RTS) {
             if (cpuState_.getSP() == targetSP + 2) { // Stack unwound
                 break;
             }
@@ -235,20 +215,19 @@ void CPU6510Impl::writeByte(u32 addr, u8 value) {
 void CPU6510Impl::writeMemory(u32 addr, u8 value) {
     memory_.writeMemory(addr, value, originalPc_);
 
-    // Call the write callbacks if registered
     if (onWriteMemoryCallback_) {
         onWriteMemoryCallback_(addr, value);
     }
 
-    if (onCIAWriteCallback_ && (addr >= 0xdc00) && (addr <= 0xdcff)) {
+    if (onCIAWriteCallback_ && MemoryConstants::isCIA(addr)) {
         onCIAWriteCallback_(addr, value);
     }
 
-    if (onSIDWriteCallback_ && (addr >= 0xd400) && (addr <= 0xd7ff)) {
+    if (onSIDWriteCallback_ && MemoryConstants::isSID(addr)) {
         onSIDWriteCallback_(addr, value);
     }
 
-    if (onVICWriteCallback_ && (addr >= 0xd000) && (addr <= 0xd3ff)) {
+    if (onVICWriteCallback_ && MemoryConstants::isVIC(addr)) {
         onVICWriteCallback_(addr, value);
     }
 }

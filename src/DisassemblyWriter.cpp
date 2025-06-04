@@ -6,6 +6,7 @@
 #include "DisassemblyWriter.h"
 #include "SIDLoader.h"
 #include "cpu6510.h"
+#include "MemoryConstants.h"
 
 #include <algorithm>
 #include <iostream>
@@ -259,7 +260,7 @@ namespace sidwinder {
 
         // SID detection
         std::set<u16> sidBases;
-        for (u16 addr = 0xD400; addr <= 0xD7FF; addr++) {
+        for (u16 addr = MemoryConstants::SID_START; addr <= MemoryConstants::SID_END; addr++) {
             if (analyzer_.getMemoryType(addr) & (MemoryType::Accessed)) {
                 u16 base = addr & 0xFFE0; // Align to 32 bytes for SID
                 sidBases.insert(base);
@@ -268,7 +269,7 @@ namespace sidwinder {
 
         // Ensure at least one SID is always present
         if (sidBases.empty()) {
-            sidBases.insert(0xD400);
+            sidBases.insert(MemoryConstants::SID_START);
         }
 
         // Register SID bases
@@ -277,19 +278,13 @@ namespace sidwinder {
             const std::string name = "SID" + std::to_string(sidIndex);
 
             // Register with label generator
-            const_cast<LabelGenerator&>(labelGenerator_).addHardwareBase(
-                HardwareType::SID, base, sidIndex, name);
+            const_cast<LabelGenerator&>(labelGenerator_).addHardwareBase(HardwareType::SID, base, sidIndex, name);
 
             // Output to assembly file
-            file << ".const " << name << " = $" << util::wordToHex(base) << "\n";
+            file << ".const " << name << " = $" << util::wordToHex(MemoryConstants::SID_START + (sidIndex * MemoryConstants::SID_SIZE)) << "\n";
 
             sidIndex++;
         }
-
-        // Future hardware component detection can be added here:
-        // VIC-II detection (0xD000-0xD3FF)
-        // CIA detection (0xDC00-0xDCFF for CIA1, 0xDD00-0xDDFF for CIA2)
-        // etc.
 
         file << "\n";
     }

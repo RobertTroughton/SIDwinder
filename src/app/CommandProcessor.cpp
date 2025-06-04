@@ -12,6 +12,7 @@
 #include "../Disassembler.h"
 #include "../RelocationUtils.h"
 #include "MusicBuilder.h"
+#include "MemoryConstants.h"
 
 #include <algorithm>
 #include <fstream>
@@ -80,8 +81,8 @@ namespace sidwinder {
                 u8 CIATimerLo = 0;
                 u8 CIATimerHi = 0;
                 cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-                    if (addr == 0xDC04) CIATimerLo = value;
-                    if (addr == 0xDC05) CIATimerHi = value;
+                    if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
+                    if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
                     });
 
                 // Run emulation to analyze SID patterns
@@ -208,8 +209,8 @@ namespace sidwinder {
         u8 CIATimerLo = 0;
         u8 CIATimerHi = 0;
         cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-            if (addr == 0xDC04) CIATimerLo = value;
-            if (addr == 0xDC05) CIATimerHi = value;
+            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
+            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
             });
 
         // Set up Disassembler if needed
