@@ -102,11 +102,14 @@ namespace sidwinder {
             }
         }
 
-        u32 testAddr = initAddr + 6;
-        if ((playAddr == initAddr + 3) && (cpu_->readMemory(testAddr) == 0x4C))
-        {
+
+        u32 testAddr = 0;
+        if (playAddr == initAddr + 3)
+            testAddr = initAddr + 6;
+        if (playAddr == initAddr + 6)
+            testAddr = initAddr + 3;
+        if ((testAddr != 0) && (cpu_->readMemory(testAddr) == 0x4C))
             cpu_->executeFunction(testAddr);
-        }
 
         // Re-run the init routine to reset the player state
         cpu_->resetRegistersAndFlags();
