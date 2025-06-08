@@ -102,6 +102,12 @@ namespace sidwinder {
             }
         }
 
+        u32 testAddr = initAddr + 6;
+        if ((playAddr == initAddr + 3) && (cpu_->readMemory(testAddr) == 0x4C))
+        {
+            cpu_->executeFunction(testAddr);
+        }
+
         // Re-run the init routine to reset the player state
         cpu_->resetRegistersAndFlags();
         updateSIDCallback(false);
@@ -166,6 +172,11 @@ namespace sidwinder {
             }
 
             framesExecuted_++;
+        }
+
+        if ((playAddr == initAddr + 3) && (cpu_->readMemory(testAddr) == 0x4C))
+        {
+            cpu_->executeFunction(testAddr);
         }
 
         // Analyze register write patterns if tracking was enabled
