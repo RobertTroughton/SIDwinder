@@ -43,16 +43,6 @@ namespace sidwinder {
             // Set up tracing if enabled
             if (options.enableTracing && !options.traceLogPath.empty()) {
                 traceLogger_ = std::make_unique<TraceLogger>(options.traceLogPath, options.traceFormat);
-
-                // Set up callback for SID writes
-                cpu_->setOnSIDWriteCallback([this](u16 addr, u8 value) {
-                    traceLogger_->logSIDWrite(addr, value);
-                    });
-
-                // Set up callback for CIA writes
-                cpu_->setOnCIAWriteCallback([this](u16 addr, u8 value) {
-                    traceLogger_->logCIAWrite(addr, value);
-                    });
             }
 
             // Load the input file
@@ -69,7 +59,7 @@ namespace sidwinder {
                 SIDEmulator emulator(cpu_.get(), sid_.get());
                 SIDEmulator::EmulationOptions emulationOptions;
                 emulationOptions.frames = options.frames > 0 ?
-                    options.frames : util::Configuration::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
+                    options.frames : util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
 
                 // Enable register tracking specifically for player generation
                 emulationOptions.registerTrackingEnabled = true;
@@ -222,7 +212,7 @@ namespace sidwinder {
 
         // Use frames count from options (from command line or config)
         emulationOptions.frames = options.frames > 0 ?
-            options.frames : util::Configuration::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
+            options.frames : util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
 
         emulationOptions.traceEnabled = options.enableTracing;
         emulationOptions.traceFormat = options.traceFormat;

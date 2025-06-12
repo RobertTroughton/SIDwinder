@@ -82,10 +82,10 @@ namespace sidwinder {
 
 
             // Create a Disassembler
-            sidwinder::Disassembler disassembler(*cpu, *sid);
+            Disassembler disassembler(*cpu, *sid);
 
             // Run emulation to analyze memory access patterns
-            const int numFrames = sidwinder::util::ConfigManager::getInt("emulationFrames");
+            const int numFrames = util::ConfigManager::getInt("emulationFrames");
             if (!runSIDEmulation(cpu, sid, numFrames)) {
                 result.message = "Failed to run SID emulation for memory analysis";
                 Logger::error(result.message);

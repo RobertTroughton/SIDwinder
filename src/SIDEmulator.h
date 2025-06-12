@@ -4,7 +4,6 @@
 #include "Common.h"
 #include "app/TraceLogger.h"
 #include "SIDPatternFinder.h"
-#include "SIDShadowRegisterFinder.h"
 #include "SIDWriteTracker.h"
 
 #include <functional>
@@ -71,9 +70,6 @@ namespace sidwinder {
          */
         const SIDPatternFinder& getPatternFinder() const { return patternFinder_; }
 
-        const SIDShadowRegisterFinder& getShadowRegisterFinder() const { return shadowRegisterFinder_; }
-
-
         /**
          * @brief Generate a helpful data file with addresses that change and register order
          * @param filename Output filename
@@ -91,7 +87,6 @@ namespace sidwinder {
 
         SIDWriteTracker writeTracker_; ///< Tracks SID register write order
         SIDPatternFinder patternFinder_; ///< Detects repeating SID patterns
-        SIDShadowRegisterFinder shadowRegisterFinder_;  ///< Detects shadow register locations
 
     };
 

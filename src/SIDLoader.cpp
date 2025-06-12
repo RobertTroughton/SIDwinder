@@ -13,7 +13,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace sidwinder::util;
+using namespace sidwinder;
 
 /**
  * @brief Constructor for SIDLoader
@@ -40,7 +40,7 @@ void SIDLoader::setCPU(CPU6510* cpuPtr) {
  */
 void SIDLoader::setInitAddress(u16 address) {
     header_.initAddress = address;
-    Logger::debug("SID init address overridden: $" + wordToHex(address));
+    util::Logger::debug("SID init address overridden: $" + util::wordToHex(address));
 }
 
 /**
@@ -50,7 +50,7 @@ void SIDLoader::setInitAddress(u16 address) {
  */
 void SIDLoader::setPlayAddress(u16 address) {
     header_.playAddress = address;
-    Logger::debug("SID play address overridden: $" + wordToHex(address));
+    util::Logger::debug("SID play address overridden: $" + util::wordToHex(address));
 }
 
 /**
@@ -60,7 +60,7 @@ void SIDLoader::setPlayAddress(u16 address) {
  */
 void SIDLoader::setLoadAddress(u16 address) {
     header_.loadAddress = address;
-    Logger::debug("SID load address overridden: $" + wordToHex(address));
+    util::Logger::debug("SID load address overridden: $" + util::wordToHex(address));
 }
 
 /**
@@ -136,20 +136,20 @@ bool SIDLoader::loadSID(const std::string& filename) {
 
     // Handle multi-SID configurations for v3+ files
     if (header_.version >= 3) {
-        Logger::info("SID file version " + std::to_string(header_.version) +
+        util::Logger::info("SID file version " + std::to_string(header_.version) +
             " (supports multiple SID chips)");
 
         if (header_.secondSIDAddress != 0) {
             // Address for the second SID is encoded in the secondSIDAddress field
             u16 secondSIDAddr = header_.secondSIDAddress << 4;  // Convert to actual address
-            Logger::info("Second SID chip at address: $" + wordToHex(secondSIDAddr));
+            util::Logger::info("Second SID chip at address: $" + util::wordToHex(secondSIDAddr));
             // Your code to set up the second SID chip would go here
         }
 
         if (header_.version >= 4 && header_.thirdSIDAddress != 0) {
             // Address for the third SID is encoded in the thirdSIDAddress field (v4 only)
             u16 thirdSIDAddr = header_.thirdSIDAddress << 4;  // Convert to actual address
-            Logger::info("Third SID chip at address: $" + wordToHex(thirdSIDAddr));
+            util::Logger::info("Third SID chip at address: $" + util::wordToHex(thirdSIDAddr));
             // Your code to set up the third SID chip would go here
         }
     }
@@ -157,7 +157,7 @@ bool SIDLoader::loadSID(const std::string& filename) {
     // Determine the data offset based on version
     u16 expectedOffset = (header_.version == 1) ? 0x76 : 0x7C;
     if (header_.dataOffset != expectedOffset) {
-        Logger::warning("Unexpected dataOffset value: " + std::to_string(header_.dataOffset) +
+        util::Logger::warning("Unexpected dataOffset value: " + std::to_string(header_.dataOffset) +
             ", expected: " + std::to_string(expectedOffset));
     }
 
@@ -171,7 +171,7 @@ bool SIDLoader::loadSID(const std::string& filename) {
         const u8 hi = buffer[header_.dataOffset + 1];
         header_.loadAddress = static_cast<u16>(lo | (hi << 8));
         header_.dataOffset += 2;
-        Logger::debug("Using embedded load address: $" + wordToHex(header_.loadAddress));
+        util::Logger::debug("Using embedded load address: $" + util::wordToHex(header_.loadAddress));
     }
 
     // Calculate data size
@@ -184,7 +184,7 @@ bool SIDLoader::loadSID(const std::string& filename) {
 
     if (header_.loadAddress + dataSize_ > 65536) {
         std::cerr << "SID file data exceeds C64 memory limits! (Load address: $"
-            << wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
+            << util::wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
         return false;
     }
 
@@ -196,15 +196,15 @@ bool SIDLoader::loadSID(const std::string& filename) {
     }
 
     // Log SID file details
-    Logger::info("Loaded PSID v" + std::to_string(header_.version) +
+    util::Logger::info("Loaded PSID v" + std::to_string(header_.version) +
         " file: " + std::string(header_.name));
-    Logger::info("Songs: " + std::to_string(header_.songs) +
+    util::Logger::info("Songs: " + std::to_string(header_.songs) +
         ", Start song: " + std::to_string(header_.startSong));
-    Logger::info("Author: " + std::string(header_.author));
-    Logger::info("Released: " + std::string(header_.copyright));
-    Logger::debug("Load address: $" + wordToHex(header_.loadAddress) +
-        ", Init: $" + wordToHex(header_.initAddress) +
-        ", Play: $" + wordToHex(header_.playAddress));
+    util::Logger::info("Author: " + std::string(header_.author));
+    util::Logger::info("Released: " + std::string(header_.copyright));
+    util::Logger::debug("Load address: $" + util::wordToHex(header_.loadAddress) +
+        ", Init: $" + util::wordToHex(header_.initAddress) +
+        ", Play: $" + util::wordToHex(header_.playAddress));
 
     return true;
 }
@@ -277,7 +277,7 @@ void SIDLoader::fixHeaderEndianness(SIDHeader& header) {
     header.flags = swapEndian(header.flags);
 
     // Log version information
-    Logger::debug("SID format version " + std::to_string(header.version) + " detected");
+    util::Logger::debug("SID format version " + std::to_string(header.version) + " detected");
 }
 
 /**
@@ -289,7 +289,7 @@ void SIDLoader::fixHeaderEndianness(SIDHeader& header) {
  */
 bool SIDLoader::backupMemory() {
     if (!cpu_) {
-        sidwinder::util::Logger::error("CPU not set for memory backup!");
+        util::Logger::error("CPU not set for memory backup!");
         return false;
     }
 

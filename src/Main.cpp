@@ -6,6 +6,8 @@
 
 namespace fs = std::filesystem;
 
+using namespace sidwinder;
+
 /**
  * @brief Main entry point for the SIDwinder application
  *
@@ -34,7 +36,7 @@ int main(int argc, char** argv) {
         };
 
         // Create and run the application
-        sidwinder::SIDwinderApp app(argc, argv);
+        SIDwinderApp app(argc, argv);
         return app.run();
     }
     catch (const std::exception& e) {

@@ -192,7 +192,7 @@ namespace sidwinder {
                 return "SID0+" + std::to_string(reg);
             }
 
-            return "$" + sidwinder::util::wordToHex(addr);
+            return "$" + util::wordToHex(addr);
         }
 
         // Check if this is a mid-instruction label (hidden code)
@@ -259,7 +259,7 @@ namespace sidwinder {
         }
 
         // Default to hex
-        return "$" + sidwinder::util::wordToHex(addr);
+        return "$" + util::wordToHex(addr);
     }
 
     /**

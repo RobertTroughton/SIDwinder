@@ -35,32 +35,6 @@ namespace sidwinder {
         }
     }
 
-    void TraceLogger::logSIDWrite(u16 addr, u8 value) {
-        if (!isOpen_) return;
-
-        if (format_ == TraceFormat::Text) {
-            writeTextRecord(addr, value);
-        }
-        else {
-            TraceRecord record(addr, value);
-            writeBinaryRecord(record);
-        }
-    }
-
-    void TraceLogger::logCIAWrite(u16 addr, u8 value) {
-        return; // TODO: we need a way to enable/disable each sort of trace
-
-        if (!isOpen_) return;
-
-        if (format_ == TraceFormat::Text) {
-            writeTextRecord(addr, value);
-        }
-        else {
-            TraceRecord record(addr, value);
-            writeBinaryRecord(record);
-        }
-    }
-
     void TraceLogger::logFrameMarker() {
         if (!isOpen_) return;
 

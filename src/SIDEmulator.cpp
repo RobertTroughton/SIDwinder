@@ -3,6 +3,7 @@
 #include "SIDLoader.h"
 #include "SIDwinderUtils.h"
 #include "MemoryConstants.h"
+#include "ConfigManager.h"
 
 #include <set>
 
@@ -42,11 +43,6 @@ namespace sidwinder {
         // Set up callbacks based on enabled features
         auto updateSIDCallback = [this, &temporaryTrackingEnabled, &options](bool enableTracking) {
             cpu_->setOnSIDWriteCallback([this, enableTracking, &options](u16 addr, u8 value) {
-                // Call the trace logger if enabled
-                if (traceLogger_) {
-                    traceLogger_->logSIDWrite(addr, value);
-                }
-
                 // Record the write in our tracker if tracking is enabled
                 if (enableTracking) {
                     writeTracker_.recordWrite(addr, value);
@@ -55,11 +51,6 @@ namespace sidwinder {
                 // Record the write in our pattern finder if pattern detection is enabled
                 if (options.patternDetectionEnabled) {
                     patternFinder_.recordWrite(addr, value);
-                }
-
-                // Record for shadow register detection if enabled
-                if (options.shadowRegisterDetectionEnabled) {
-                    shadowRegisterFinder_.recordSIDWrite(addr, value);
                 }
                 });
             };
@@ -78,15 +69,12 @@ namespace sidwinder {
 
         // Run a short playback period to identify initial memory patterns
         // This helps with memory copies performed during initialization
-        const int numEmulationFrames = util::Configuration::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
+        const int numEmulationFrames = util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
         for (int frame = 0; frame < numEmulationFrames; ++frame) {
             for (int call = 0; call < options.callsPerFrame; ++call) {
                 cpu_->resetRegistersAndFlags();
                 if (!cpu_->executeFunction(playAddr)) {
                     return false;
-                }
-                if (options.shadowRegisterDetectionEnabled) {
-                    shadowRegisterFinder_.checkMemoryForShadowRegisters(cpu_->getMemory());
                 }
                 if (options.traceEnabled && traceLogger_) {
                     traceLogger_->logFrameMarker();
@@ -265,9 +253,6 @@ namespace sidwinder {
             file << ".var SIDInitFrames = 0\n";
             file << ".var SIDPatternPeriod = 0\n\n";
         }
-
-        // Part 4: Shadow Register information
-        file << shadowRegisterFinder_.generateHelpfulDataSection();
 
         return true;
     }

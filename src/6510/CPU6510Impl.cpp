@@ -98,9 +98,6 @@ bool CPU6510Impl::executeFunction(u32 address) {
     u32 pcHistory[HISTORY_SIZE] = { 0 };
     int historyIndex = 0;
 
-    // Track potentially dangerous jump targets
-    bool jumpToZeroPageTracked = false;
-
     // Simulate JSR manually
     const u32 returnAddress = cpuState_.getPC() - 1; // What JSR would have pushed (the address of the last byte of JSR instruction)
 
@@ -120,14 +117,11 @@ bool CPU6510Impl::executeFunction(u32 address) {
 
         // Check for problematic PC values
         if (currentPC < 0x0002) {  // $00 or $01 is definitely a problem
-            sidwinder::util::Logger::error("CRITICAL: Execution at $" +
-                sidwinder::util::wordToHex(currentPC) +
+            util::Logger::error("CRITICAL: Execution at $" +
+                util::wordToHex(currentPC) +
                 " detected - illegal jump target");
             // Break to avoid immediate crash
             return false;
-        }
-        else if (currentPC < 0x0100 && !jumpToZeroPageTracked) {  // Any zero page execution
-            jumpToZeroPageTracked = true; // Only log once to avoid spam
         }
 
         // Fetch the opcode
@@ -151,19 +145,19 @@ bool CPU6510Impl::executeFunction(u32 address) {
 
     // Check if we hit the step limit
     if (stepCount >= MAX_STEPS) {
-        sidwinder::util::Logger::error("Function execution aborted after " + std::to_string(MAX_STEPS) +
+        util::Logger::error("Function execution aborted after " + std::to_string(MAX_STEPS) +
             " steps - possible infinite loop");
-        sidwinder::util::Logger::error("Last PC: $" + sidwinder::util::wordToHex(cpuState_.getPC()) +
-            ", SP: $" + sidwinder::util::byteToHex(cpuState_.getSP()));
+        util::Logger::error("Last PC: $" + util::wordToHex(cpuState_.getPC()) +
+            ", SP: $" + util::byteToHex(cpuState_.getSP()));
 
         // Dump more diagnostic info
         std::ostringstream pcHistoryStr;
         pcHistoryStr << "Recent PC history: ";
         for (int i = 0; i < HISTORY_SIZE; i++) {
             int idx = (historyIndex + i) % HISTORY_SIZE;
-            pcHistoryStr << "$" << sidwinder::util::wordToHex(pcHistory[idx]) << " ";
+            pcHistoryStr << "$" << util::wordToHex(pcHistory[idx]) << " ";
         }
-        sidwinder::util::Logger::error(pcHistoryStr.str());
+        util::Logger::error(pcHistoryStr.str());
         return false;
     }
     return true;

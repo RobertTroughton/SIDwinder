@@ -43,20 +43,6 @@ namespace sidwinder {
         ~TraceLogger();
 
         /**
-         * @brief Log a SID register write
-         * @param addr SID register address
-         * @param value Value written to the register
-         */
-        void logSIDWrite(u16 addr, u8 value);
-
-        /**
-         * @brief Log a CIA register write
-         * @param addr CIA register address
-         * @param value Value written to the register
-         */
-        void logCIAWrite(u16 addr, u8 value);
-
-        /**
          * @brief Log a frame marker
          *
          * Marks the end of a frame in the trace log

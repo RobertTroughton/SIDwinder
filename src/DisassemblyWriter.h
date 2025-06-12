@@ -162,8 +162,6 @@ namespace sidwinder {
         struct IndirectAccessInfo {
             u16 instructionAddress = 0;   // Address of the instruction
             u8 zpAddr = 0;                // Zero page pointer address (low byte)
-            u16 lastWriteLow = 0;         // Address of last write to low byte
-            u16 lastWriteHigh = 0;        // Address of last write to high byte
             u16 sourceLowAddress = 0;     // Source of the low byte value
             u16 sourceHighAddress = 0;    // Source of the high byte value
             std::vector<u16> targetAddresses; // ALL target addresses for this ZP pointer

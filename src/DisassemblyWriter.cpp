@@ -105,10 +105,6 @@ namespace sidwinder {
         const auto& lowSource = cpu_.getWriteSourceInfo(zpAddr);
         const auto& highSource = cpu_.getWriteSourceInfo(zpAddr + 1);
 
-        // Get the last instructions that wrote to these ZP addresses
-        u16 lastWriteLow = cpu_.getLastWriteTo(zpAddr);
-        u16 lastWriteHigh = cpu_.getLastWriteTo(zpAddr + 1);
-
         // Look for an existing record for this ZP address
         IndirectAccessInfo* existingInfo = nullptr;
         for (auto& existing : indirectAccesses_) {
@@ -125,8 +121,6 @@ namespace sidwinder {
             IndirectAccessInfo info;
             info.instructionAddress = pc;
             info.zpAddr = zpAddr;
-            info.lastWriteLow = lastWriteLow;
-            info.lastWriteHigh = lastWriteHigh;
 
             // Capture source addresses when available
             if (lowSource.type == RegisterSourceInfo::SourceType::Memory) {

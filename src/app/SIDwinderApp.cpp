@@ -427,11 +427,6 @@ namespace sidwinder {
         // Create trace logger
         auto traceLogger = std::make_unique<TraceLogger>(traceLogPath, traceFormat);
 
-        // Set up callback for SID writes
-        cpu->setOnSIDWriteCallback([&traceLogger](u16 addr, u8 value) {
-            traceLogger->logSIDWrite(addr, value);
-            });
-
         // Create emulator
         SIDEmulator emulator(cpu.get(), sid.get());
         SIDEmulator::EmulationOptions options;
