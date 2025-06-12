@@ -14,9 +14,6 @@
 #include "MusicBuilder.h"
 #include "MemoryConstants.h"
 
-#include <algorithm>
-#include <fstream>
-#include <cctype>
 
 namespace sidwinder {
 
@@ -54,7 +51,7 @@ namespace sidwinder {
             applySIDMetadataOverrides(options);
 
             // For -player command, we need to run emulation to analyze register patterns
-            if (options.includePlayer && getFileExtension(options.outputFile) == ".prg" && options.analyzeRegisterOrder) {
+            if (options.includePlayer && util::isValidPRGFile(options.outputFile) && options.analyzeRegisterOrder) {
                 // Create SID emulator
                 SIDEmulator emulator(cpu_.get(), sid_.get());
                 SIDEmulator::EmulationOptions emulationOptions;
@@ -89,8 +86,8 @@ namespace sidwinder {
             bool needsEmulation = false;
 
             // If output is ASM (disassembly) or SID with relocation, we need emulation
-            if (getFileExtension(options.outputFile) == ".asm" ||
-                (getFileExtension(options.outputFile) == ".sid" && options.hasRelocation)) {
+            if (util::isValidASMFile(options.outputFile) ||
+                (util::isValidSIDFile(options.outputFile) && options.hasRelocation)) {
                 needsEmulation = true;
             }
 
@@ -100,7 +97,7 @@ namespace sidwinder {
             }
 
             // If we're just linking a player with SID, we don't need emulation
-            if (options.includePlayer && getFileExtension(options.outputFile) == ".prg") {
+            if (options.includePlayer && util::isValidPRGFile(options.outputFile)) {
                 needsEmulation = false;
             }
 
@@ -134,8 +131,8 @@ namespace sidwinder {
         // Setup temporary file paths
         fs::path tempExtractedPrg = options.tempDir / (basename + "-original.prg");
 
-        std::string ext = getFileExtension(options.inputFile);
-        if (ext != ".sid")
+        bool isSidFile = util::isValidSIDFile(options.inputFile);
+        if (!isSidFile)
         {
             util::Logger::error("Unsupported file type: " + options.inputFile.string() + " - only SID files accepted.");
             return false;
@@ -296,7 +293,7 @@ namespace sidwinder {
         }
 
         // Generate the appropriate output format
-        std::string ext = getFileExtension(options.outputFile);
+        std::string ext = util::getFileExtension(options.outputFile);
         if (ext == ".prg") {
             return generatePRGOutput(options);
         }
@@ -318,13 +315,8 @@ namespace sidwinder {
         fs::path tempDir = options.tempDir;
         fs::path tempExtractedPrg = tempDir / (basename + "-original.prg");
 
-        std::string inputExt = getFileExtension(options.inputFile);
-        bool bIsSID = (inputExt == ".sid");
-        bool bIsASM = (inputExt == ".asm");
-        bool bIsPRG = (inputExt == ".prg");
-
         // For LinkPlayer with SID input, go directly to MusicBuilder without disassembly
-        if (options.includePlayer && bIsSID) {
+        if (options.includePlayer && util::isValidSIDFile(options.inputFile)) {
             MusicBuilder builder(cpu_.get(), sid_.get());
             MusicBuilder::BuildOptions buildOptions;
             buildOptions.includePlayer = true;
@@ -351,7 +343,7 @@ namespace sidwinder {
         u16 newSidLoad = options.relocationAddress;
 
         // If the input file is a SID and we haven't extracted it yet, do so now
-        if ((!bRelocation) && (bIsSID) && (!fs::exists(tempExtractedPrg))) {
+        if ((!bRelocation) && (util::isValidSIDFile(options.inputFile)) && (!fs::exists(tempExtractedPrg))) {
             MusicBuilder builder(cpu_.get(), sid_.get());
             builder.extractPrgFromSid(options.inputFile, tempExtractedPrg);
         }
@@ -387,7 +379,7 @@ namespace sidwinder {
 
             return builder.buildMusic(basename, tempAsmFile, options.outputFile, buildOptions);
         }
-        else if (bIsSID) {
+        else if (util::isValidSIDFile(options.inputFile)) {
             // No relocation, and input is a SID file - handled earlier for LinkPlayer
             // This branch handles SID input when not using a player
             MusicBuilder builder(cpu_.get(), sid_.get());
@@ -421,7 +413,7 @@ namespace sidwinder {
             buildOptions.userDefinitions = options.userDefinitions;
 
             // Use the original file directly - either ASM or the extracted PRG
-            fs::path inputToUse = bIsASM ? options.inputFile : tempExtractedPrg;
+            fs::path inputToUse = util::isValidASMFile(options.inputFile) ? options.inputFile : tempExtractedPrg;
 
             return builder.buildMusic(basename, inputToUse, options.outputFile, buildOptions);
         }
@@ -447,10 +439,7 @@ namespace sidwinder {
         else {
             // No relocation requested - just create a SID file
 
-            // Different handling based on input type
-            std::string ext = getFileExtension(options.inputFile);
-
-            if (ext == ".sid") {
+            if (util::isValidSIDFile(options.inputFile)) {
                 // Input is already a SID - just copy it (or extract/modify if needed)
                 try {
                     fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
@@ -461,7 +450,7 @@ namespace sidwinder {
                     return false;
                 }
             }
-            else if (ext == ".prg") {
+            else if (util::isValidPRGFile(options.inputFile)) {
                 // Input is PRG - need to create a SID file
 
                 // We need load, init, and play addresses

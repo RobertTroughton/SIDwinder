@@ -1,8 +1,12 @@
 #include "MemorySubsystem.h"
 #include "CPU6510Impl.h"
+#include "SIDwinderUtils.h"
+
 #include <algorithm>
 #include <iomanip>
-#include <iostream>
+
+using namespace sidwinder;
+
 
 /**
  * @brief Constructor for MemorySubsystem
@@ -101,24 +105,21 @@ u8 MemorySubsystem::getMemoryAt(u32 addr) const {
  * @param filename Path to the output file
  */
 void MemorySubsystem::dumpMemoryAccess(const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file) {
-        return;
-    }
+    std::vector<std::string> lines;
 
     for (u32 addr = 0; addr < 65536; ++addr) {
         if (memoryAccess_[addr] != 0) {
-            file << std::hex << std::setw(4) << std::setfill('0') << addr << ": ";
-
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Execute)) ? "E" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::OpCode)) ? "1" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Read)) ? "R" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Write)) ? "W" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::JumpTarget)) ? "J" : ".");
-
-            file << "\n";
+            std::string line = util::wordToHex(addr) + ": ";
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Execute)) ? "E" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::OpCode)) ? "1" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Read)) ? "R" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Write)) ? "W" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::JumpTarget)) ? "J" : ".");
+            lines.push_back(line);
         }
     }
+
+    util::writeTextFileLines(filename, lines);
 }
 
 /**

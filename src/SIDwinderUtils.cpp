@@ -8,12 +8,11 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
-#include <ctime>
 
 namespace sidwinder {
     namespace util {
@@ -22,6 +21,133 @@ namespace sidwinder {
         Logger::Level Logger::minLevel_ = Logger::Level::Info;
         std::optional<std::filesystem::path> Logger::logFile_ = std::nullopt;
         bool Logger::consoleOutput_ = true;
+
+
+        void fixSIDHeaderEndianness(SIDHeader& header) {
+            header.version = swapEndian(header.version);
+            header.dataOffset = swapEndian(header.dataOffset);
+            header.loadAddress = swapEndian(header.loadAddress);
+            header.initAddress = swapEndian(header.initAddress);
+            header.playAddress = swapEndian(header.playAddress);
+            header.songs = swapEndian(header.songs);
+            header.startSong = swapEndian(header.startSong);
+            header.flags = swapEndian(header.flags);
+            header.speed = swapEndian(header.speed);
+        }
+
+
+        std::string getFileExtension(const fs::path& filePath) {
+            std::string ext = filePath.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+            return ext;
+        }
+
+        bool hasExtension(const fs::path& filePath, const std::string& extension) {
+            return getFileExtension(filePath) == extension;
+        }
+
+        bool isValidSIDFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".sid");
+        }
+
+        bool isValidPRGFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".prg");
+        }
+
+        bool isValidASMFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".asm");
+        }
+
+
+
+        std::optional<std::vector<u8>> readBinaryFile(const fs::path& path) {
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (!file) {
+                Logger::error("Failed to open file: " + path.string());
+                return std::nullopt;
+            }
+
+            const auto fileSize = file.tellg();
+            if (fileSize < 0) {
+                Logger::error("Failed to get file size: " + path.string());
+                return std::nullopt;
+            }
+
+            file.seekg(0, std::ios::beg);
+
+            std::vector<u8> buffer(static_cast<size_t>(fileSize));
+            if (!file.read(reinterpret_cast<char*>(buffer.data()), fileSize)) {
+                Logger::error("Failed to read file: " + path.string());
+                return std::nullopt;
+            }
+
+            return buffer;
+        }
+
+        bool readTextFileLines(const fs::path& path, std::function<bool(const std::string&)> lineHandler) {
+            std::ifstream file(path);
+            if (!file) {
+                Logger::error("Failed to open file: " + path.string());
+                return false;
+            }
+
+            std::string line;
+            while (std::getline(file, line)) {
+                if (!lineHandler(line)) {
+                    break; // Handler requested stop
+                }
+            }
+
+            return !file.bad();
+        }
+
+        bool writeBinaryFile(const fs::path& path, const void* data, size_t size) {
+            std::ofstream file(path, std::ios::binary);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+
+            if (!file.write(static_cast<const char*>(data), size)) {
+                Logger::error("Failed to write to file: " + path.string());
+                return false;
+            }
+
+            return true;
+        }
+
+        bool writeBinaryFile(const fs::path& path, const std::vector<u8>& data) {
+            return writeBinaryFile(path, data.data(), data.size());
+        }
+
+
+        std::string HexFormatter::hexbyte(u8 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<int>(value);
+            return ss.str();
+        }
+
+        std::string HexFormatter::hexword(u16 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(4) << std::setfill('0')
+                << value;
+            return ss.str();
+        }
+
+        std::string HexFormatter::hexdword(u32 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(8) << std::setfill('0')
+                << value;
+            return ss.str();
+        }
 
         /**
          * @brief Parse a hexadecimal string into a numeric value
@@ -268,6 +394,32 @@ namespace sidwinder {
          */
         void Logger::error(const std::string& message, bool toConsole) {
             log(Level::Error, message, toConsole);
+        }
+
+        bool writeTextFile(const fs::path& path, const std::string& content) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            file << content;
+            if (!file.good()) {
+                Logger::error("Failed to write to file: " + path.string());
+                return false;
+            }
+            return true;
+        }
+
+        bool writeTextFileLines(const fs::path& path, const std::vector<std::string>& lines) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            for (const auto& line : lines) {
+                file << line << "\n";
+            }
+            return file.good();
         }
 
     } // namespace util

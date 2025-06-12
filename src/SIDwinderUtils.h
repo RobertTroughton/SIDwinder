@@ -6,9 +6,11 @@
 #pragma once
 
 #include "Common.h"
+#include "SIDFileFormat.h"
 
 #include <array>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -27,6 +29,11 @@ namespace sidwinder {
 
     namespace util {
 
+        std::optional<std::vector<u8>> readBinaryFile(const fs::path& path);
+        bool readTextFileLines(const fs::path& path, std::function<bool(const std::string&)> lineHandler);
+        bool writeBinaryFile(const fs::path& path, const void* data, size_t size);
+        bool writeBinaryFile(const fs::path& path, const std::vector<u8>& data);
+
         inline u16 swapEndian(u16 value) {
             return (value >> 8) | (value << 8);
         }
@@ -38,33 +45,39 @@ namespace sidwinder {
                 | ((value & 0x000000ff) << 24);
         }
 
-        /**
-         * @brief Convert a byte to a hexadecimal string
-         * @param value Byte value to convert
-         * @param upperCase Whether to use uppercase letters (default: true)
-         * @return Formatted hex string (always 2 characters)
-         */
+        std::string getFileExtension(const fs::path& filePath);
+
+        // Helper for case-insensitive extension comparison
+        bool hasExtension(const fs::path& filePath, const std::string& extension);
+
+        // Validate file extensions for specific operations
+        bool isValidSIDFile(const fs::path& filePath);
+        bool isValidPRGFile(const fs::path& filePath);
+        bool isValidASMFile(const fs::path& filePath);
+
+        void fixSIDHeaderEndianness(SIDHeader& header);
+
+        class HexFormatter {
+        public:
+            static std::string hexbyte(u8 value, bool prefix = false, bool upperCase = true);
+            static std::string hexword(u16 value, bool prefix = false, bool upperCase = true);
+            static std::string hexdword(u32 value, bool prefix = false, bool upperCase = true);
+
+            // Specialized C64 formatting
+            static std::string address(u16 addr) { return "$" + hexword(addr, false, true); }
+            static std::string registerValue(u8 value) { return "$" + hexbyte(value, false, true); }
+            static std::string memoryDump(u16 addr, u8 value) {
+                return hexword(addr, false, true) + ":$" + hexbyte(value, false, true);
+            }
+        };
+
+        // Replace scattered formatting with these
         inline std::string byteToHex(u8 value, bool upperCase = true) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(value);
-            return ss.str();
+            return HexFormatter::hexbyte(value, false, upperCase);
         }
 
-        /**
-         * @brief Convert a word to a hexadecimal string
-         * @param value Word value to convert
-         * @param upperCase Whether to use uppercase letters (default: true)
-         * @return Formatted hex string (always 4 characters)
-         */
-        inline std::string wordToHex(u16 value, bool upperCase = true)
-        {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(4) << std::setfill('0')
-                << value;
-            return ss.str();
+        inline std::string wordToHex(u16 value, bool upperCase = true) {
+            return HexFormatter::hexword(value, false, upperCase);
         }
 
         /**
@@ -187,5 +200,52 @@ namespace sidwinder {
             static bool consoleOutput_;                              // Whether to output to console
         };
 
+        // Text file writing utilities
+        bool writeTextFile(const fs::path& path, const std::string& content);
+        bool writeTextFileLines(const fs::path& path, const std::vector<std::string>& lines);
+
+        // Template for objects that can stream themselves
+        template<typename T>
+        bool writeStreamableToFile(const fs::path& path, const T& obj) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            file << obj;
+            return file.good();
+        }
+
+        // String builder utility for complex text generation
+        class TextFileBuilder {
+        public:
+            TextFileBuilder& line(const std::string& text = "") {
+                content_ += text + "\n";
+                return *this;
+            }
+
+            TextFileBuilder& append(const std::string& text) {
+                content_ += text;
+                return *this;
+            }
+
+            TextFileBuilder& section(const std::string& title) {
+                if (!content_.empty()) content_ += "\n";
+                content_ += "// " + title + "\n";
+                content_ += "// " + std::string(title.length(), '-') + "\n";
+                return *this;
+            }
+
+            bool saveToFile(const fs::path& path) const {
+                return writeTextFile(path, content_);
+            }
+
+            const std::string& getString() const { return content_; }
+
+        private:
+            std::string content_;
+        };
+
     } // namespace util
 } // namespace sidwinder
+

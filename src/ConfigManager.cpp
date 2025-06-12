@@ -1,8 +1,9 @@
 // ConfigManager.cpp
 #include "ConfigManager.h"
+#include "SIDwinderUtils.h"
+
 #include <algorithm>
 #include <cctype>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -65,26 +66,16 @@ namespace sidwinder {
         }
 
         bool ConfigManager::loadFromFile(const std::filesystem::path& configFile) {
-            std::ifstream file(configFile);
-            if (!file) {
-                std::cerr << "Could not open configuration file: " << configFile.string() << std::endl;
-                return false;
-            }
-
-            std::string line;
-            while (std::getline(file, line)) {
-                // Skip empty lines and comments
+            return util::readTextFileLines(configFile, [](const std::string& line) {
                 if (line.empty() || line[0] == '#' || line[0] == ';') {
-                    continue;
+                    return true; // Continue to next line
                 }
 
-                // Find key-value separator
                 const auto pos = line.find('=');
                 if (pos == std::string::npos) {
-                    continue;
+                    return true; // Continue to next line
                 }
 
-                // Extract key and value
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
 
@@ -95,22 +86,13 @@ namespace sidwinder {
                 value.erase(value.find_last_not_of(" \t") + 1);
 
                 configValues_[key] = value;
-            }
-
-            return true;
+                return true; // Continue to next line
+                });
         }
 
         bool ConfigManager::saveToFile(const std::filesystem::path& configFile) {
-            std::ofstream file(configFile);
-            if (!file) {
-                std::cerr << "Could not create configuration file: " << configFile.string() << std::endl;
-                return false;
-            }
-
-            // Write formatted configuration
-            file << generateFormattedConfig();
-
-            return file.good();
+            std::string content = generateFormattedConfig();
+            return util::writeTextFile(configFile, content);
         }
 
         std::string ConfigManager::generateFormattedConfig() {

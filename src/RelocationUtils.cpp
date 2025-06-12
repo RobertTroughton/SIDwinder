@@ -3,10 +3,9 @@
 #include "ConfigManager.h"
 #include "cpu6510.h"
 #include "SIDEmulator.h"
+#include "SIDFileFormat.h"
 #include "SIDLoader.h"
 #include "Disassembler.h"
-
-#include <fstream>
 
 
 namespace sidwinder {
@@ -285,59 +284,49 @@ namespace sidwinder {
             u16 version,
             u32 speed) {
 
-            // Read the PRG file
-            std::ifstream prg(prgFile, std::ios::binary | std::ios::ate);
-            if (!prg) {
-                Logger::error("Failed to open PRG file: " + prgFile.string());
-                return false;
+            // Read entire PRG file
+            auto prgData = util::readBinaryFile(prgFile);
+            if (!prgData) {
+                return false; // Error already logged
             }
 
-            // Get file size
-            const auto filePos = prg.tellg();
-            const size_t fileSize = static_cast<size_t>(filePos);
-            prg.seekg(0, std::ios::beg);
-
-            if (fileSize < 2) {
+            if (prgData->size() < 2) {
                 Logger::error("PRG file too small: " + prgFile.string());
                 return false;
             }
 
-            // PRG files start with a 2-byte load address, verify it matches our expected loadAddr
-            u8 lo, hi;
-            prg.read(reinterpret_cast<char*>(&lo), 1);
-            prg.read(reinterpret_cast<char*>(&hi), 1);
+            // Extract load address from PRG
+            const u16 prgLoadAddr = (*prgData)[0] | ((*prgData)[1] << 8);
 
-            // The load address from the PRG file
-            const u16 prgLoadAddr = (hi << 8) | lo;
-
-            // If the specified load address doesn't match the one in the PRG, log a warning
             if (prgLoadAddr != loadAddr) {
-                Logger::warning("PRG file load address ($" + wordToHex(prgLoadAddr) +
-                    ") doesn't match specified address ($" + wordToHex(loadAddr) + ")");
-                // We'll use the load address from the PRG if it doesn't match
+                Logger::warning("PRG file load address ($" + util::wordToHex(prgLoadAddr) +
+                    ") doesn't match specified address ($" + util::wordToHex(loadAddr) + ")");
                 loadAddr = prgLoadAddr;
             }
 
-            // Create a SID header
+            // Create and initialize SID header
             SIDHeader header;
+            std::memset(&header, 0, sizeof(header));
 
-            // Fill in the header fields (initially in little-endian format)
-            std::memcpy(header.magicID, "PSID", 4);  // Magic ID for SID format
-            header.version = version;        // Use original version number
-            header.dataOffset = (version == 1) ? 0x76 : 0x7C;  // Adjust based on version
-            header.loadAddress = 0;          // 0 means load address is in the data
-            header.initAddress = initAddr;   // Init address
-            header.playAddress = playAddr;   // Play address
-            header.songs = 1;                // 1 song
-            header.startSong = 1;            // Start song 1
+            // Basic header fields
+            std::memcpy(header.magicID, "PSID", 4);
+            header.version = version;
+            header.dataOffset = (version == 1) ? 0x76 : 0x7C;
+            header.loadAddress = 0;          // Embedded in data
+            header.initAddress = initAddr;
+            header.playAddress = playAddr;
+            header.songs = 1;
+            header.startSong = 1;
             header.speed = speed;
+            header.flags = flags;
+            header.startPage = 0;
+            header.pageLength = 0;
 
-            // Fill in metadata fields with null-termination
+            // Copy metadata strings safely
             std::memset(header.name, 0, sizeof(header.name));
             std::memset(header.author, 0, sizeof(header.author));
             std::memset(header.copyright, 0, sizeof(header.copyright));
 
-            // Copy metadata if provided, ensuring null-termination
             if (!title.empty()) {
                 std::strncpy(header.name, title.c_str(), sizeof(header.name) - 1);
             }
@@ -348,76 +337,27 @@ namespace sidwinder {
                 std::strncpy(header.copyright, copyright.c_str(), sizeof(header.copyright) - 1);
             }
 
-            // Set flags and SID chip addresses
-            header.flags = flags;                // Use provided flags instead of default 0
-            header.startPage = 0;                // Not used in this context
-            header.pageLength = 0;               // Not used in this context
+            header.secondSIDAddress = secondSIDAddress;
+            header.thirdSIDAddress = thirdSIDAddress;
 
-            // Only set secondSIDAddress if version >= 3
-            if (version >= 3) {
-                header.secondSIDAddress = secondSIDAddress;
-            }
-            else {
-                header.secondSIDAddress = 0;
-                // Log if we're losing information
-                if (secondSIDAddress != 0) {
-                    Logger::warning("Second SID address information ($" +
-                        wordToHex(secondSIDAddress << 4) +
-                        ") lost due to SID version " +
-                        std::to_string(version) + " (requires v3+)");
-                }
-            }
+            // Fix endianness for SID format
+            util::fixSIDHeaderEndianness(header);
 
-            // Only set thirdSIDAddress if version >= 4
-            if (version >= 4) {
-                header.thirdSIDAddress = thirdSIDAddress;
-            }
-            else {
-                header.thirdSIDAddress = 0;
-                // Log if we're losing information
-                if (thirdSIDAddress != 0) {
-                    Logger::warning("Third SID address information ($" +
-                        wordToHex(thirdSIDAddress << 4) +
-                        ") lost due to SID version " +
-                        std::to_string(version) + " (requires v4)");
-                }
-            }
+            // Build complete SID file in memory
+            std::vector<u8> sidData;
+            sidData.reserve(sizeof(header) + prgData->size());
 
-            // Fix endianness (SID files are big-endian)
-            // We need to reverse the byte order for all multi-byte fields
-            header.version = util::swapEndian(header.version);
-            header.dataOffset = util::swapEndian(header.dataOffset);
-            header.loadAddress = util::swapEndian(header.loadAddress);
-            header.initAddress = util::swapEndian(header.initAddress);
-            header.playAddress = util::swapEndian(header.playAddress);
-            header.songs = util::swapEndian(header.songs);
-            header.startSong = util::swapEndian(header.startSong);
-            header.flags = util::swapEndian(header.flags);
-            header.speed = util::swapEndian(header.speed);
+            // Add header
+            const u8* headerBytes = reinterpret_cast<const u8*>(&header);
+            sidData.insert(sidData.end(), headerBytes, headerBytes + sizeof(header));
 
-            // Open the output SID file
-            std::ofstream sid_file(sidFile, std::ios::binary);
-            if (!sid_file) {
-                Logger::error("Failed to create SID file: " + sidFile.string());
-                return false;
-            }
+            // Add PRG data (including the load address bytes)
+            sidData.insert(sidData.end(), prgData->begin(), prgData->end());
 
-            // Write the header
-            sid_file.write(reinterpret_cast<const char*>(&header), sizeof(header));
+            // Write complete SID file
+            bool success = util::writeBinaryFile(sidFile, sidData);
 
-            // Write the load address (little-endian) at the beginning of the data
-            sid_file.write(reinterpret_cast<const char*>(&lo), 1);
-            sid_file.write(reinterpret_cast<const char*>(&hi), 1);
-
-            // Write the actual PRG data, skipping the 2-byte load address that was already in the PRG
-            const size_t dataSize = fileSize - 2;
-            std::vector<char> buffer(dataSize);
-            prg.read(buffer.data(), dataSize);
-            sid_file.write(buffer.data(), dataSize);
-
-            sid_file.close();
-
-            return true;
+            return success;
         }
 
         /**

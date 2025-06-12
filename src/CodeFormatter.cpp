@@ -8,9 +8,6 @@
 #include "DisassemblyWriter.h"
 #include "MemoryConstants.h"
 
-#include <algorithm>
-#include <sstream>
-
 namespace sidwinder {
 
     /**
@@ -58,8 +55,7 @@ namespace sidwinder {
             const u16 absAddr = memory_[pc + 1] | (memory_[pc + 2] << 8);
             if (isCIAStorePatch(opcode, static_cast<int>(mode), absAddr, mnemonic)) {
                 std::ostringstream patched;
-                patched << "    bit $abcd   //; disabled " << mnemonic << " $"
-                    << util::wordToHex(absAddr) << " (CIA Timer)";
+                patched << "    bit $abcd   //; disabled " << mnemonic << " $" << util::wordToHex(absAddr) << " (CIA Timer)";
                 pc += size;
                 return patched.str();
             }
@@ -76,16 +72,11 @@ namespace sidwinder {
         // Update PC
         pc += size;
 
-        // Calculate the end PC
-        u16 endPC = startPC + size - 1;
-
         // Pad to fixed column and add address comment
         std::string lineStr = line.str();
         int padding = std::max(0, 97 - static_cast<int>(lineStr.length())); // Adjusted to column 97
 
-        return lineStr + std::string(padding, ' ') + "//; $" +
-            util::wordToHex(startPC) + " - " +
-            util::wordToHex(endPC);
+        return lineStr + std::string(padding, ' ') + "//; $" + util::wordToHex(startPC) + " - " + util::wordToHex(startPC + size - 1);
     }
 
     /**
@@ -129,7 +120,6 @@ namespace sidwinder {
 
                 // Store the current PC for comment
                 const u16 startPC = pc;
-                const u16 endPC = pc; // For relocation entries, end = start (1 byte)
 
                 // Build the line in a string stream
                 std::ostringstream lineSS;
@@ -149,9 +139,7 @@ namespace sidwinder {
 
                 // Calculate padding needed
                 int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
-                file << std::string(padding, ' ') << "//; $"
-                    << util::wordToHex(startPC) << " - "
-                    << util::wordToHex(endPC) << "\n";
+                file << std::string(padding, ' ') << "//; $" << util::wordToHex(startPC) << "\n";
 
                 ++pc;
                 continue;
@@ -215,9 +203,7 @@ namespace sidwinder {
 
                     // Calculate padding needed
                     int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
-                    file << std::string(padding, ' ') << "//; $"
-                        << util::wordToHex(lineStartPC) << " - "
-                        << util::wordToHex(lineEndPC) << "\n";
+                    file << std::string(padding, ' ') << "//; $" << util::wordToHex(lineStartPC) << " - " << util::wordToHex(lineEndPC) << "\n";
 
                     // Start a new line if there are more bytes
                     if (pc < endAddress && (memoryTags[pc] & MemoryType::Data)) {
@@ -243,9 +229,7 @@ namespace sidwinder {
 
                 // Calculate padding needed
                 int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
-                file << std::string(padding, ' ') << "//; $"
-                    << util::wordToHex(lineStartPC) << " - "
-                    << util::wordToHex(lineEndPC) << "\n";
+                file << std::string(padding, ' ') << "//; $" << util::wordToHex(lineStartPC) << " - " << util::wordToHex(lineEndPC) << "\n";
             }
         }
     }

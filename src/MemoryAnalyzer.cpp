@@ -145,10 +145,7 @@ namespace sidwinder {
      * @return Memory type flags for the address
      */
     MemoryType MemoryAnalyzer::getMemoryType(u16 addr) const {
-        if (addr < memoryTypes_.size()) {
-            return memoryTypes_[addr];
-        }
-        return MemoryType::Unknown;
+        return memoryTypes_[addr];
     }
 
     /**

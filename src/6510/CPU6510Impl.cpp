@@ -2,11 +2,7 @@
 #include "SIDwinderUtils.h"
 #include "MemoryConstants.h"
 
-#include <algorithm>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <set>
 #include <sstream>
 
 using namespace sidwinder;
@@ -106,7 +102,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
 
     cpuState_.setPC(address);
 
-    const u8 targetSP = cpuState_.getSP(); // After pushing return address (so after manual JSR)
+    const u8 targetSP = cpuState_.getSP() + 2; // After pushing return address (so after manual JSR)
 
     while (stepCount < MAX_STEPS) {
         const u32 currentPC = cpuState_.getPC();
@@ -137,7 +133,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
 
         // Check if we've returned from the function
         if (opcodeTable_[opcode].instruction == Instruction::RTS) {
-            if (cpuState_.getSP() == targetSP + 2) { // Stack unwound
+            if (cpuState_.getSP() == targetSP) { // Stack unwound
                 break;
             }
         }
@@ -249,16 +245,12 @@ void CPU6510Impl::copyMemoryBlock(u32 start, std::span<const u8> data) {
  * @throws std::runtime_error if file cannot be opened or data exceeds memory bounds
  */
 void CPU6510Impl::loadData(const std::string& filename, u32 loadAddress) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
+    auto data = util::readBinaryFile(filename);
+    if (!data) {
+        throw std::runtime_error("Failed to load file: " + filename);
     }
 
-    u32 addr = loadAddress;
-    u8 byte;
-    while (file.read(reinterpret_cast<char*>(&byte), 1)) {
-        memory_.writeByte(addr++, byte);
-    }
+    memory_.copyMemoryBlock(loadAddress, *data);
 }
 
 /**

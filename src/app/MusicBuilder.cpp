@@ -9,7 +9,6 @@
 #include "../cpu6510.h"
 #include "../SIDLoader.h"
 
-#include <algorithm>
 #include <fstream>
 #include <cctype>
 
@@ -43,7 +42,7 @@ namespace sidwinder {
         fs::path tempLinkerFile = tempDir / (basename + "-linker.asm");
 
         // Determine input file type
-        std::string ext = getFileExtension(inputFile);
+        std::string ext = util::getFileExtension(inputFile);
         bool bIsSID = (ext == ".sid");
         bool bIsASM = (ext == ".asm");
         bool bIsPRG = (ext == ".prg");
@@ -226,7 +225,7 @@ namespace sidwinder {
         const fs::path& playerAsmFile,
         const BuildOptions& options) {
 
-        std::string ext = getFileExtension(musicFile);
+        std::string ext = util::getFileExtension(musicFile);
 
         bool bIsSID = (ext == ".sid");
         bool bIsASM = (ext == ".asm");
@@ -405,71 +404,39 @@ namespace sidwinder {
         return true;
     }
 
+    // Instead of complex stream manipulation:
     bool MusicBuilder::extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg) {
-        // Read the SID file
-        std::ifstream input(sidFile, std::ios::binary);
-        if (!input) {
-            util::Logger::error("Failed to open SID file for extraction: " + sidFile.string());
-            return false;
-        }
+        // 1. Read entire SID file
+        auto sidData = util::readBinaryFile(sidFile);
+        if (!sidData) return false;
 
-        // Read header to determine data offset
+        // 2. Parse header to get offsets
         SIDHeader header;
-        input.read(reinterpret_cast<char*>(&header), sizeof(header));
+        std::memcpy(&header, sidData->data(), sizeof(header));
+        util::fixSIDHeaderEndianness(header);
 
-        // Fix endianness (SID files are big-endian)
-        u16 dataOffset = (header.dataOffset >> 8) | (header.dataOffset << 8);
-        u16 loadAddress = (header.loadAddress >> 8) | (header.loadAddress << 8);
+        // 3. Calculate where music data starts
+        u16 dataOffset = header.dataOffset;
+        u16 loadAddress = header.loadAddress;
 
-        // Handle embedded load address if present
         if (loadAddress == 0) {
-            // If load address is 0, it's embedded in the file
-            if (input.seekg(dataOffset, std::ios::beg)) {
-                u8 lo, hi;
-                input.read(reinterpret_cast<char*>(&lo), 1);
-                input.read(reinterpret_cast<char*>(&hi), 1);
-                loadAddress = (hi << 8) | lo;
-                dataOffset += 2; // Skip these two bytes in subsequent copy
-            }
-            else {
-                util::Logger::error("Error seeking to data in SID file");
-                return false;
-            }
+            // Embedded load address
+            loadAddress = sidData->at(dataOffset) | (sidData->at(dataOffset + 1) << 8);
+            dataOffset += 2;
         }
 
-        // Create PRG file (first 2 bytes are load address in little-endian)
-        std::ofstream output(outputPrg, std::ios::binary);
-        if (!output) {
-            util::Logger::error("Failed to create PRG file: " + outputPrg.string());
-            return false;
-        }
+        // 4. Build PRG data in memory
+        std::vector<u8> prgData;
+        prgData.push_back(loadAddress & 0xFF);        // Low byte
+        prgData.push_back((loadAddress >> 8) & 0xFF); // High byte
 
-        // Write load address (little-endian)
-        const u8 lo = loadAddress & 0xFF;
-        const u8 hi = (loadAddress >> 8) & 0xFF;
-        output.write(reinterpret_cast<const char*>(&lo), 1);
-        output.write(reinterpret_cast<const char*>(&hi), 1);
+        // 5. Copy music data
+        prgData.insert(prgData.end(),
+            sidData->begin() + dataOffset,
+            sidData->end());
 
-        // Position to start of data
-        if (!input.seekg(dataOffset, std::ios::beg)) {
-            util::Logger::error("Error seeking to data in SID file");
-            return false;
-        }
-
-        // Copy the data
-        char buffer[4096];
-        while (input) {
-            input.read(buffer, sizeof(buffer));
-            std::streamsize bytesRead = input.gcount();
-            if (bytesRead > 0) {
-                output.write(buffer, bytesRead);
-            }
-            else {
-                break;
-            }
-        }
-
-        return true;
+        // 6. Write result
+        return util::writeBinaryFile(outputPrg, prgData);
     }
 
 } // namespace sidwinder

@@ -4,8 +4,6 @@
 #include "cpu6510.h"
 #include "DisassemblyWriter.h"
 #include "MemoryConstants.h"
-#include <algorithm>
-#include <sstream>
 namespace sidwinder {
     CodeFormatter::CodeFormatter(
         const CPU6510& cpu,
@@ -28,7 +26,6 @@ namespace sidwinder {
             if (isCIAStorePatch(opcode, static_cast<int>(mode), absAddr, mnemonic)) {
                 std::ostringstream patched;
                 patched << "    bit $abcd   
-                    << util::wordToHex(absAddr) << " (CIA Timer)";
                 pc += size;
                 return patched.str();
             }
@@ -38,12 +35,9 @@ namespace sidwinder {
             line << " " << formatOperand(pc, static_cast<int>(mode));
         }
         pc += size;
-        u16 endPC = startPC + size - 1;
         std::string lineStr = line.str();
         int padding = std::max(0, 97 - static_cast<int>(lineStr.length())); 
         return lineStr + std::string(padding, ' ') + "
-            util::wordToHex(startPC) + " - " +
-            util::wordToHex(endPC);
     }
     void CodeFormatter::formatDataBytes(
         std::ostream& file,
@@ -64,7 +58,6 @@ namespace sidwinder {
                 const u16 target = relocIt->second.targetAddress;
                 const std::string targetLabel = labelGenerator_.formatAddress(target);
                 const u16 startPC = pc;
-                const u16 endPC = pc; 
                 std::ostringstream lineSS;
                 lineSS << "    .byte ";
                 if (relocIt->second.type == RelocationEntry::Type::Low) {
@@ -77,8 +70,6 @@ namespace sidwinder {
                 file << line;
                 int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
                 file << std::string(padding, ' ') << "
-                    << util::wordToHex(startPC) << " - "
-                    << util::wordToHex(endPC) << "\n";
                 ++pc;
                 continue;
             }
@@ -116,8 +107,6 @@ namespace sidwinder {
                     file << line;
                     int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
                     file << std::string(padding, ' ') << "
-                        << util::wordToHex(lineStartPC) << " - "
-                        << util::wordToHex(lineEndPC) << "\n";
                     if (pc < endAddress && (memoryTags[pc] & MemoryType::Data)) {
                         lineSS.str("");  
                         lineSS << "    .byte ";
@@ -132,8 +121,6 @@ namespace sidwinder {
                 file << line;
                 int padding = std::max(0, commentColumn - static_cast<int>(line.length()));
                 file << std::string(padding, ' ') << "
-                    << util::wordToHex(lineStartPC) << " - "
-                    << util::wordToHex(lineEndPC) << "\n";
             }
         }
     }
@@ -378,7 +365,7 @@ namespace sidwinder {
                     else if (name == "trace") {
                         cmd.setType(CommandClass::Type::Trace);
                         cmd.setParameter("tracelog", value);
-                        std::string ext = getFileExtension(value);
+                        std::string ext = util::getFileExtension(value);
                         if (ext == ".txt" || ext == ".log") {
                             cmd.setParameter("traceformat", "text");
                         }
@@ -556,22 +543,10 @@ namespace sidwinder {
 ```
 
 
-### FILE: src/Common.cpp
-```cpp
-#include "Common.h"
-#include <algorithm>
-std::string getFileExtension(const fs::path& filePath) {
-    std::string ext = filePath.extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(),
-        [](unsigned char c) { return std::tolower(c); });
-    return ext;
-}
-```
-
-
 ### FILE: src/ConfigManager.cpp
 ```cpp
 #include "ConfigManager.h"
+#include "SIDwinderUtils.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -612,19 +587,13 @@ namespace sidwinder {
             configValues_["pucrunchOptions"] = "-x";
         }
         bool ConfigManager::loadFromFile(const std::filesystem::path& configFile) {
-            std::ifstream file(configFile);
-            if (!file) {
-                std::cerr << "Could not open configuration file: " << configFile.string() << std::endl;
-                return false;
-            }
-            std::string line;
-            while (std::getline(file, line)) {
+            return util::readTextFileLines(configFile, [](const std::string& line) {
                 if (line.empty() || line[0] == '#' || line[0] == ';') {
-                    continue;
+                    return true; 
                 }
                 const auto pos = line.find('=');
                 if (pos == std::string::npos) {
-                    continue;
+                    return true; 
                 }
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
@@ -633,17 +602,12 @@ namespace sidwinder {
                 value.erase(0, value.find_first_not_of(" \t"));
                 value.erase(value.find_last_not_of(" \t") + 1);
                 configValues_[key] = value;
-            }
-            return true;
+                return true; 
+                });
         }
         bool ConfigManager::saveToFile(const std::filesystem::path& configFile) {
-            std::ofstream file(configFile);
-            if (!file) {
-                std::cerr << "Could not create configuration file: " << configFile.string() << std::endl;
-                return false;
-            }
-            file << generateFormattedConfig();
-            return file.good();
+            std::string content = generateFormattedConfig();
+            return util::writeTextFile(configFile, content);
         }
         std::string ConfigManager::generateFormattedConfig() {
             std::stringstream ss;
@@ -1065,10 +1029,7 @@ namespace sidwinder {
 #include "cpu6510.h"
 #include "MemoryConstants.h"
 #include <algorithm>
-#include <iostream>
-#include <queue>
 #include <set>
-#include <functional>
 namespace sidwinder {
     DisassemblyWriter::DisassemblyWriter(
         const CPU6510& cpu,
@@ -1730,10 +1691,7 @@ namespace sidwinder {
         return addr;
     }
     MemoryType MemoryAnalyzer::getMemoryType(u16 addr) const {
-        if (addr < memoryTypes_.size()) {
-            return memoryTypes_[addr];
-        }
-        return MemoryType::Unknown;
+        return memoryTypes_[addr];
     }
     std::span<const MemoryType> MemoryAnalyzer::getMemoryTypes() const {
         return std::span<const MemoryType>(memoryTypes_.data(), memoryTypes_.size());
@@ -1798,9 +1756,9 @@ namespace sidwinder {
 #include "ConfigManager.h"
 #include "cpu6510.h"
 #include "SIDEmulator.h"
+#include "SIDFileFormat.h"
 #include "SIDLoader.h"
 #include "Disassembler.h"
-#include <fstream>
 namespace sidwinder {
     namespace util {
         RelocationResult relocateSID(
@@ -2007,37 +1965,34 @@ namespace sidwinder {
             u8 thirdSIDAddress,
             u16 version,
             u32 speed) {
-            std::ifstream prg(prgFile, std::ios::binary | std::ios::ate);
-            if (!prg) {
-                Logger::error("Failed to open PRG file: " + prgFile.string());
-                return false;
+            auto prgData = util::readBinaryFile(prgFile);
+            if (!prgData) {
+                return false; 
             }
-            const auto filePos = prg.tellg();
-            const size_t fileSize = static_cast<size_t>(filePos);
-            prg.seekg(0, std::ios::beg);
-            if (fileSize < 2) {
+            if (prgData->size() < 2) {
                 Logger::error("PRG file too small: " + prgFile.string());
                 return false;
             }
-            u8 lo, hi;
-            prg.read(reinterpret_cast<char*>(&lo), 1);
-            prg.read(reinterpret_cast<char*>(&hi), 1);
-            const u16 prgLoadAddr = (hi << 8) | lo;
+            const u16 prgLoadAddr = (*prgData)[0] | ((*prgData)[1] << 8);
             if (prgLoadAddr != loadAddr) {
-                Logger::warning("PRG file load address ($" + wordToHex(prgLoadAddr) +
-                    ") doesn't match specified address ($" + wordToHex(loadAddr) + ")");
+                Logger::warning("PRG file load address ($" + util::wordToHex(prgLoadAddr) +
+                    ") doesn't match specified address ($" + util::wordToHex(loadAddr) + ")");
                 loadAddr = prgLoadAddr;
             }
             SIDHeader header;
-            std::memcpy(header.magicID, "PSID", 4);  
-            header.version = version;        
-            header.dataOffset = (version == 1) ? 0x76 : 0x7C;  
+            std::memset(&header, 0, sizeof(header));
+            std::memcpy(header.magicID, "PSID", 4);
+            header.version = version;
+            header.dataOffset = (version == 1) ? 0x76 : 0x7C;
             header.loadAddress = 0;          
-            header.initAddress = initAddr;   
-            header.playAddress = playAddr;   
-            header.songs = 1;                
-            header.startSong = 1;            
+            header.initAddress = initAddr;
+            header.playAddress = playAddr;
+            header.songs = 1;
+            header.startSong = 1;
             header.speed = speed;
+            header.flags = flags;
+            header.startPage = 0;
+            header.pageLength = 0;
             std::memset(header.name, 0, sizeof(header.name));
             std::memset(header.author, 0, sizeof(header.author));
             std::memset(header.copyright, 0, sizeof(header.copyright));
@@ -2050,56 +2005,16 @@ namespace sidwinder {
             if (!copyright.empty()) {
                 std::strncpy(header.copyright, copyright.c_str(), sizeof(header.copyright) - 1);
             }
-            header.flags = flags;                
-            header.startPage = 0;                
-            header.pageLength = 0;               
-            if (version >= 3) {
-                header.secondSIDAddress = secondSIDAddress;
-            }
-            else {
-                header.secondSIDAddress = 0;
-                if (secondSIDAddress != 0) {
-                    Logger::warning("Second SID address information ($" +
-                        wordToHex(secondSIDAddress << 4) +
-                        ") lost due to SID version " +
-                        std::to_string(version) + " (requires v3+)");
-                }
-            }
-            if (version >= 4) {
-                header.thirdSIDAddress = thirdSIDAddress;
-            }
-            else {
-                header.thirdSIDAddress = 0;
-                if (thirdSIDAddress != 0) {
-                    Logger::warning("Third SID address information ($" +
-                        wordToHex(thirdSIDAddress << 4) +
-                        ") lost due to SID version " +
-                        std::to_string(version) + " (requires v4)");
-                }
-            }
-            header.version = util::swapEndian(header.version);
-            header.dataOffset = util::swapEndian(header.dataOffset);
-            header.loadAddress = util::swapEndian(header.loadAddress);
-            header.initAddress = util::swapEndian(header.initAddress);
-            header.playAddress = util::swapEndian(header.playAddress);
-            header.songs = util::swapEndian(header.songs);
-            header.startSong = util::swapEndian(header.startSong);
-            header.flags = util::swapEndian(header.flags);
-            header.speed = util::swapEndian(header.speed);
-            std::ofstream sid_file(sidFile, std::ios::binary);
-            if (!sid_file) {
-                Logger::error("Failed to create SID file: " + sidFile.string());
-                return false;
-            }
-            sid_file.write(reinterpret_cast<const char*>(&header), sizeof(header));
-            sid_file.write(reinterpret_cast<const char*>(&lo), 1);
-            sid_file.write(reinterpret_cast<const char*>(&hi), 1);
-            const size_t dataSize = fileSize - 2;
-            std::vector<char> buffer(dataSize);
-            prg.read(buffer.data(), dataSize);
-            sid_file.write(buffer.data(), dataSize);
-            sid_file.close();
-            return true;
+            header.secondSIDAddress = secondSIDAddress;
+            header.thirdSIDAddress = thirdSIDAddress;
+            util::fixSIDHeaderEndianness(header);
+            std::vector<u8> sidData;
+            sidData.reserve(sizeof(header) + prgData->size());
+            const u8* headerBytes = reinterpret_cast<const u8*>(&header);
+            sidData.insert(sidData.end(), headerBytes, headerBytes + sizeof(header));
+            sidData.insert(sidData.end(), prgData->begin(), prgData->end());
+            bool success = util::writeBinaryFile(sidFile, sidData);
+            return success;
         }
         bool runSIDEmulation(
             CPU6510* cpu,
@@ -2249,13 +2164,10 @@ namespace sidwinder {
         return { avgCycles, maxCyclesPerFrame_ };
     }
     bool SIDEmulator::generateHelpfulDataFile(const std::string& filename) const {
-        std::ofstream file(filename);
-        if (!file) {
-            util::Logger::error("Failed to create helpful data file: " + filename);
-            return false;
-        }
-        file << "
-        file << "
+        util::TextFileBuilder builder;
+        builder.section("SIDwinder Generated Helpful Data")
+            .line()
+            .line("
         std::set<u16> writtenAddresses;
         auto accessFlags = cpu_->getMemoryAccess();
         for (u32 addr = 0; addr < 65536; ++addr) {
@@ -2263,38 +2175,36 @@ namespace sidwinder {
                 writtenAddresses.insert(addr);
             }
         }
-        file << "
-        file << ".var SIDModifiedMemory = List()";
-        int numItems = 0;
+        builder.line(".var SIDModifiedMemory = List()");
         for (u16 addr : writtenAddresses) {
             if (!MemoryConstants::isSID(addr)) {
-                file << ".add($" << util::wordToHex(addr) << ")";
-                numItems++;
+                builder.append(".add($" + util::wordToHex(addr) + ")");
             }
         }
-        file << "\n.var SIDModifiedMemoryCount = SIDModifiedMemory.size()  
+        builder.line(".var SIDModifiedMemoryCount = SIDModifiedMemory.size()  
+            std::to_string(writtenAddresses.size()) + " total");
         if (writeTracker_.hasConsistentPattern()) {
-            file << "
-            file << "#define SID_REGISTER_REORDER_AVAILABLE\n";
-            file << writeTracker_.getWriteOrderString() << "\n";
+            builder.section("SID Register Reordering Available")
+                .line("#define SID_REGISTER_REORDER_AVAILABLE")
+                .line(writeTracker_.getWriteOrderString());
         }
         else {
-            file << "
-            file << ".var SIDRegisterCount = 0\n";
-            file << ".var SIDRegisterOrder = List()\n\n";
+            builder.section("No SID Register Pattern Detected")
+                .line(".var SIDRegisterCount = 0")
+                .line(".var SIDRegisterOrder = List()");
         }
         if (patternFinder_.getPatternPeriod() > 0) {
-            file << "
-            file << "#define SID_PATTERN_DETECTED\n";
-            file << ".var SIDInitFrames = " << patternFinder_.getInitFramesCount() << "\n";
-            file << ".var SIDPatternPeriod = " << patternFinder_.getPatternPeriod() << "\n\n";
+            builder.section("SID Pattern Detected")
+                .line("#define SID_PATTERN_DETECTED")
+                .line(".var SIDInitFrames = " + std::to_string(patternFinder_.getInitFramesCount()))
+                .line(".var SIDPatternPeriod = " + std::to_string(patternFinder_.getPatternPeriod()));
         }
         else {
-            file << "
-            file << ".var SIDInitFrames = 0\n";
-            file << ".var SIDPatternPeriod = 0\n\n";
+            builder.section("No SID Pattern Detected")
+                .line(".var SIDInitFrames = 0")
+                .line(".var SIDPatternPeriod = 0");
         }
-        return true;
+        return builder.saveToFile(filename);
     }
 }
 ```
@@ -2308,7 +2218,6 @@ namespace sidwinder {
 #include "SIDwinderUtils.h"
 #include <algorithm>
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 using namespace sidwinder;
@@ -2329,62 +2238,40 @@ void SIDLoader::setLoadAddress(u16 address) {
 }
 bool SIDLoader::loadSID(const std::string& filename) {
     if (!cpu_) {
-        std::cerr << "CPU not set!\n";
         return false;
     }
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "Failed to open file: " << filename << "\n";
+    auto fileData = util::readBinaryFile(filename);
+    if (!fileData) {
+        return false; 
+    }
+    if (fileData->size() < sizeof(SIDHeader)) {
+        util::Logger::error("SID file too small to contain a valid header!");
         return false;
     }
-    file.seekg(0, std::ios::end);
-    std::streamsize fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    if (fileSize <= 0) {
-        std::cerr << "File is empty: " << filename << "\n";
-        return false;
-    }
-    std::vector<u8> buffer(static_cast<size_t>(fileSize));
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), fileSize)) {
-        std::cerr << "Failed to read file: " << filename << "\n";
-        return false;
-    }
-    if (fileSize < sizeof(SIDHeader)) {
-        std::cerr << "SID file too small to contain a valid header!\n";
-        return false;
-    }
-    std::memcpy(&header_, buffer.data(), sizeof(header_));
+    std::memcpy(&header_, fileData->data(), sizeof(header_));
     if (std::string(header_.magicID, 4) == "RSID") {
-        std::cerr << "RSID file format detected: \"" << filename << "\"\n";
-        std::cerr << "RSID files require a true C64 environment and cannot be emulated by SIDwinder.\n";
-        std::cerr << "Please use a PSID formatted file instead.\n";
+        util::Logger::error("RSID file format detected: \"" + filename + "\"");
+        util::Logger::error("RSID files require a true C64 environment and cannot be emulated by SIDwinder.");
+        util::Logger::error("Please use a PSID formatted file instead.");
         return false;
     }
     if (std::string(header_.magicID, 4) != "PSID") {
-        std::cerr << "Invalid SID file: Expected 'PSID' magic ID, found '"
-            << std::string(header_.magicID, 4) << "'\n";
+        util::Logger::error("Invalid SID file: Expected 'PSID' magic ID, found '" +
+            std::string(header_.magicID, 4) + "'");
         return false;
     }
-    header_.version = util::swapEndian(header_.version);
-    header_.dataOffset = util::swapEndian(header_.dataOffset);
-    header_.loadAddress = util::swapEndian(header_.loadAddress);
-    header_.initAddress = util::swapEndian(header_.initAddress);
-    header_.playAddress = util::swapEndian(header_.playAddress);
-    header_.songs = util::swapEndian(header_.songs);
-    header_.startSong = util::swapEndian(header_.startSong);
-    header_.speed = util::swapEndian(header_.speed);
-    header_.flags = util::swapEndian(header_.flags);
+    util::fixSIDHeaderEndianness(header_);
     if (header_.version < 1 || header_.version > 4) {
-        std::cerr << "Unsupported SID version: " << header_.version
-            << ". Supported versions are 1-4.\n";
+        util::Logger::error("Unsupported SID version: " + std::to_string(header_.version) +
+            ". Supported versions are 1-4.");
         return false;
     }
     if (header_.version >= 3) {
         if (header_.secondSIDAddress != 0) {
-            u16 secondSIDAddr = header_.secondSIDAddress << 4;  
+            u16 secondSIDAddr = header_.secondSIDAddress << 4;
         }
         if (header_.version >= 4 && header_.thirdSIDAddress != 0) {
-            u16 thirdSIDAddr = header_.thirdSIDAddress << 4;  
+            u16 thirdSIDAddr = header_.thirdSIDAddress << 4;
         }
     }
     u16 expectedOffset = (header_.version == 1) ? 0x76 : 0x7C;
@@ -2392,28 +2279,31 @@ bool SIDLoader::loadSID(const std::string& filename) {
         util::Logger::warning("Unexpected dataOffset value: " + std::to_string(header_.dataOffset) +
             ", expected: " + std::to_string(expectedOffset));
     }
+    u16 dataStart = header_.dataOffset;
     if (header_.loadAddress == 0) {
-        if (fileSize < header_.dataOffset + 2) {
-            std::cerr << "SID file corrupt (missing embedded load address)!\n";
+        if (fileData->size() < header_.dataOffset + 2) {
+            util::Logger::error("SID file corrupt (missing embedded load address)!");
             return false;
         }
-        const u8 lo = buffer[header_.dataOffset];
-        const u8 hi = buffer[header_.dataOffset + 1];
+        const u8 lo = (*fileData)[header_.dataOffset];
+        const u8 hi = (*fileData)[header_.dataOffset + 1];
         header_.loadAddress = static_cast<u16>(lo | (hi << 8));
-        header_.dataOffset += 2;
+        dataStart += 2;
+        util::Logger::debug("Using embedded load address: $" + util::wordToHex(header_.loadAddress));
     }
-    dataSize_ = static_cast<u16>(fileSize - header_.dataOffset);
+    dataSize_ = static_cast<u16>(fileData->size() - dataStart);
     if (dataSize_ <= 0) {
-        std::cerr << "SID file contains no music data!\n";
+        util::Logger::error("SID file contains no music data!");
         return false;
     }
     if (header_.loadAddress + dataSize_ > 65536) {
-        std::cerr << "SID file data exceeds C64 memory limits! (Load address: $" << util::wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
+        util::Logger::error("SID file data exceeds C64 memory limits! (Load address: $" +
+            util::wordToHex(header_.loadAddress) + ", Size: " + std::to_string(dataSize_) + " bytes)");
         return false;
     }
-    const u8* musicData = &buffer[header_.dataOffset];
+    const u8* musicData = fileData->data() + dataStart;
     if (!copyMusicToMemory(musicData, dataSize_, header_.loadAddress)) {
-        std::cerr << "Failed to copy music data to memory!\n";
+        util::Logger::error("Failed to copy music data to memory!");
         return false;
     }
     return true;
@@ -2588,17 +2478,117 @@ namespace sidwinder {
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
-#include <ctime>
 namespace sidwinder {
     namespace util {
         Logger::Level Logger::minLevel_ = Logger::Level::Info;
         std::optional<std::filesystem::path> Logger::logFile_ = std::nullopt;
         bool Logger::consoleOutput_ = true;
+        void fixSIDHeaderEndianness(SIDHeader& header) {
+            header.version = swapEndian(header.version);
+            header.dataOffset = swapEndian(header.dataOffset);
+            header.loadAddress = swapEndian(header.loadAddress);
+            header.initAddress = swapEndian(header.initAddress);
+            header.playAddress = swapEndian(header.playAddress);
+            header.songs = swapEndian(header.songs);
+            header.startSong = swapEndian(header.startSong);
+            header.flags = swapEndian(header.flags);
+            header.speed = swapEndian(header.speed);
+        }
+        std::string getFileExtension(const fs::path& filePath) {
+            std::string ext = filePath.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+            return ext;
+        }
+        bool hasExtension(const fs::path& filePath, const std::string& extension) {
+            return getFileExtension(filePath) == extension;
+        }
+        bool isValidSIDFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".sid");
+        }
+        bool isValidPRGFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".prg");
+        }
+        bool isValidASMFile(const fs::path& filePath) {
+            return hasExtension(filePath, ".asm");
+        }
+        std::optional<std::vector<u8>> readBinaryFile(const fs::path& path) {
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (!file) {
+                Logger::error("Failed to open file: " + path.string());
+                return std::nullopt;
+            }
+            const auto fileSize = file.tellg();
+            if (fileSize < 0) {
+                Logger::error("Failed to get file size: " + path.string());
+                return std::nullopt;
+            }
+            file.seekg(0, std::ios::beg);
+            std::vector<u8> buffer(static_cast<size_t>(fileSize));
+            if (!file.read(reinterpret_cast<char*>(buffer.data()), fileSize)) {
+                Logger::error("Failed to read file: " + path.string());
+                return std::nullopt;
+            }
+            return buffer;
+        }
+        bool readTextFileLines(const fs::path& path, std::function<bool(const std::string&)> lineHandler) {
+            std::ifstream file(path);
+            if (!file) {
+                Logger::error("Failed to open file: " + path.string());
+                return false;
+            }
+            std::string line;
+            while (std::getline(file, line)) {
+                if (!lineHandler(line)) {
+                    break; 
+                }
+            }
+            return !file.bad();
+        }
+        bool writeBinaryFile(const fs::path& path, const void* data, size_t size) {
+            std::ofstream file(path, std::ios::binary);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            if (!file.write(static_cast<const char*>(data), size)) {
+                Logger::error("Failed to write to file: " + path.string());
+                return false;
+            }
+            return true;
+        }
+        bool writeBinaryFile(const fs::path& path, const std::vector<u8>& data) {
+            return writeBinaryFile(path, data.data(), data.size());
+        }
+        std::string HexFormatter::hexbyte(u8 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<int>(value);
+            return ss.str();
+        }
+        std::string HexFormatter::hexword(u16 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(4) << std::setfill('0')
+                << value;
+            return ss.str();
+        }
+        std::string HexFormatter::hexdword(u32 value, bool prefix, bool upperCase) {
+            std::ostringstream ss;
+            if (prefix) ss << (upperCase ? "0x" : "0x");
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(8) << std::setfill('0')
+                << value;
+            return ss.str();
+        }
         std::optional<u16> parseHex(std::string_view str) {
             const auto start = str.find_first_not_of(" \t\r\n");
             if (start == std::string_view::npos) {
@@ -2714,6 +2704,30 @@ namespace sidwinder {
         }
         void Logger::error(const std::string& message, bool toConsole) {
             log(Level::Error, message, toConsole);
+        }
+        bool writeTextFile(const fs::path& path, const std::string& content) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            file << content;
+            if (!file.good()) {
+                Logger::error("Failed to write to file: " + path.string());
+                return false;
+            }
+            return true;
+        }
+        bool writeTextFileLines(const fs::path& path, const std::vector<std::string>& lines) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            for (const auto& line : lines) {
+                file << line << "\n";
+            }
+            return file.good();
         }
     } 
 }
@@ -2944,11 +2958,7 @@ void AddressingModes::recordIndexOffset(u32 pc, u8 offset) {
 #include "CPU6510Impl.h"
 #include "SIDwinderUtils.h"
 #include "MemoryConstants.h"
-#include <algorithm>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <set>
 #include <sstream>
 using namespace sidwinder;
 CPU6510Impl::CPU6510Impl()
@@ -2993,7 +3003,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
     push((returnAddress >> 8) & 0xFF); 
     push(returnAddress & 0xFF);         
     cpuState_.setPC(address);
-    const u8 targetSP = cpuState_.getSP(); 
+    const u8 targetSP = cpuState_.getSP() + 2; 
     while (stepCount < MAX_STEPS) {
         const u32 currentPC = cpuState_.getPC();
         pcHistory[historyIndex] = currentPC;
@@ -3010,7 +3020,7 @@ bool CPU6510Impl::executeFunction(u32 address) {
         step();
         stepCount++;
         if (opcodeTable_[opcode].instruction == Instruction::RTS) {
-            if (cpuState_.getSP() == targetSP + 2) { 
+            if (cpuState_.getSP() == targetSP) { 
                 break;
             }
         }
@@ -3059,15 +3069,11 @@ void CPU6510Impl::copyMemoryBlock(u32 start, std::span<const u8> data) {
     memory_.copyMemoryBlock(start, data);
 }
 void CPU6510Impl::loadData(const std::string& filename, u32 loadAddress) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
+    auto data = util::readBinaryFile(filename);
+    if (!data) {
+        throw std::runtime_error("Failed to load file: " + filename);
     }
-    u32 addr = loadAddress;
-    u8 byte;
-    while (file.read(reinterpret_cast<char*>(&byte), 1)) {
-        memory_.writeByte(addr++, byte);
-    }
+    memory_.copyMemoryBlock(loadAddress, *data);
 }
 void CPU6510Impl::setPC(u32 address) {
     cpuState_.setPC(address);
@@ -4065,9 +4071,10 @@ void InstructionExecutor::executeIllegal(Instruction instr, AddressingMode mode)
 ```cpp
 #include "MemorySubsystem.h"
 #include "CPU6510Impl.h"
+#include "SIDwinderUtils.h"
 #include <algorithm>
 #include <iomanip>
-#include <iostream>
+using namespace sidwinder;
 MemorySubsystem::MemorySubsystem(CPU6510Impl& cpu) : cpu_(cpu) {
     reset();
 }
@@ -4100,21 +4107,19 @@ u8 MemorySubsystem::getMemoryAt(u32 addr) const {
     return memory_[addr];
 }
 void MemorySubsystem::dumpMemoryAccess(const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file) {
-        return;
-    }
+    std::vector<std::string> lines;
     for (u32 addr = 0; addr < 65536; ++addr) {
         if (memoryAccess_[addr] != 0) {
-            file << std::hex << std::setw(4) << std::setfill('0') << addr << ": ";
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Execute)) ? "E" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::OpCode)) ? "1" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Read)) ? "R" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Write)) ? "W" : ".");
-            file << ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::JumpTarget)) ? "J" : ".");
-            file << "\n";
+            std::string line = util::wordToHex(addr) + ": ";
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Execute)) ? "E" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::OpCode)) ? "1" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Read)) ? "R" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::Write)) ? "W" : ".");
+            line += ((memoryAccess_[addr] & static_cast<u8>(MemoryAccessFlag::JumpTarget)) ? "J" : ".");
+            lines.push_back(line);
         }
     }
+    util::writeTextFileLines(filename, lines);
 }
 std::span<const u8> MemorySubsystem::getMemory() const {
     return std::span<const u8>(memory_.data(), memory_.size());
@@ -4430,9 +4435,6 @@ const std::array<OpcodeInfo, 256> CPU6510Impl::opcodeTable_ = { {
 #include "../RelocationUtils.h"
 #include "MusicBuilder.h"
 #include "MemoryConstants.h"
-#include <algorithm>
-#include <fstream>
-#include <cctype>
 namespace sidwinder {
     CommandProcessor::CommandProcessor() {
         cpu_ = std::make_unique<CPU6510>();
@@ -4453,7 +4455,7 @@ namespace sidwinder {
                 return false;
             }
             applySIDMetadataOverrides(options);
-            if (options.includePlayer && getFileExtension(options.outputFile) == ".prg" && options.analyzeRegisterOrder) {
+            if (options.includePlayer && util::isValidPRGFile(options.outputFile) && options.analyzeRegisterOrder) {
                 SIDEmulator emulator(cpu_.get(), sid_.get());
                 SIDEmulator::EmulationOptions emulationOptions;
                 emulationOptions.frames = options.frames > 0 ?
@@ -4473,14 +4475,14 @@ namespace sidwinder {
                 sid_->setNumPlayCallsPerFrame(playCallsPerFrame);
             }
             bool needsEmulation = false;
-            if (getFileExtension(options.outputFile) == ".asm" ||
-                (getFileExtension(options.outputFile) == ".sid" && options.hasRelocation)) {
+            if (util::isValidASMFile(options.outputFile) ||
+                (util::isValidSIDFile(options.outputFile) && options.hasRelocation)) {
                 needsEmulation = true;
             }
             if (options.enableTracing) {
                 needsEmulation = true;
             }
-            if (options.includePlayer && getFileExtension(options.outputFile) == ".prg") {
+            if (options.includePlayer && util::isValidPRGFile(options.outputFile)) {
                 needsEmulation = false;
             }
             if (needsEmulation) {
@@ -4504,8 +4506,8 @@ namespace sidwinder {
     bool CommandProcessor::loadInputFile(const ProcessingOptions& options) {
         std::string basename = options.inputFile.stem().string();
         fs::path tempExtractedPrg = options.tempDir / (basename + "-original.prg");
-        std::string ext = getFileExtension(options.inputFile);
-        if (ext != ".sid")
+        bool isSidFile = util::isValidSIDFile(options.inputFile);
+        if (!isSidFile)
         {
             util::Logger::error("Unsupported file type: " + options.inputFile.string() + " - only SID files accepted.");
             return false;
@@ -4609,7 +4611,7 @@ namespace sidwinder {
             newSidInit = sidInit;
             newSidPlay = sidPlay;
         }
-        std::string ext = getFileExtension(options.outputFile);
+        std::string ext = util::getFileExtension(options.outputFile);
         if (ext == ".prg") {
             return generatePRGOutput(options);
         }
@@ -4626,11 +4628,7 @@ namespace sidwinder {
         std::string basename = options.inputFile.stem().string();
         fs::path tempDir = options.tempDir;
         fs::path tempExtractedPrg = tempDir / (basename + "-original.prg");
-        std::string inputExt = getFileExtension(options.inputFile);
-        bool bIsSID = (inputExt == ".sid");
-        bool bIsASM = (inputExt == ".asm");
-        bool bIsPRG = (inputExt == ".prg");
-        if (options.includePlayer && bIsSID) {
+        if (options.includePlayer && util::isValidSIDFile(options.inputFile)) {
             MusicBuilder builder(cpu_.get(), sid_.get());
             MusicBuilder::BuildOptions buildOptions;
             buildOptions.includePlayer = true;
@@ -4650,7 +4648,7 @@ namespace sidwinder {
         }
         bool bRelocation = options.hasRelocation;
         u16 newSidLoad = options.relocationAddress;
-        if ((!bRelocation) && (bIsSID) && (!fs::exists(tempExtractedPrg))) {
+        if ((!bRelocation) && (util::isValidSIDFile(options.inputFile)) && (!fs::exists(tempExtractedPrg))) {
             MusicBuilder builder(cpu_.get(), sid_.get());
             builder.extractPrgFromSid(options.inputFile, tempExtractedPrg);
         }
@@ -4678,7 +4676,7 @@ namespace sidwinder {
             buildOptions.userDefinitions = options.userDefinitions;
             return builder.buildMusic(basename, tempAsmFile, options.outputFile, buildOptions);
         }
-        else if (bIsSID) {
+        else if (util::isValidSIDFile(options.inputFile)) {
             MusicBuilder builder(cpu_.get(), sid_.get());
             MusicBuilder::BuildOptions buildOptions;
             buildOptions.includePlayer = options.includePlayer;
@@ -4706,7 +4704,7 @@ namespace sidwinder {
             buildOptions.tempDir = tempDir;
             buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
             buildOptions.userDefinitions = options.userDefinitions;
-            fs::path inputToUse = bIsASM ? options.inputFile : tempExtractedPrg;
+            fs::path inputToUse = util::isValidASMFile(options.inputFile) ? options.inputFile : tempExtractedPrg;
             return builder.buildMusic(basename, inputToUse, options.outputFile, buildOptions);
         }
     }
@@ -4722,8 +4720,7 @@ namespace sidwinder {
             return result.success;
         }
         else {
-            std::string ext = getFileExtension(options.inputFile);
-            if (ext == ".sid") {
+            if (util::isValidSIDFile(options.inputFile)) {
                 try {
                     fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
                     return true;
@@ -4733,7 +4730,7 @@ namespace sidwinder {
                     return false;
                 }
             }
-            else if (ext == ".prg") {
+            else if (util::isValidPRGFile(options.inputFile)) {
                 u16 loadAddr = options.hasOverrideLoad ?
                     options.overrideLoadAddress : util::ConfigManager::getDefaultSidLoadAddress();
                 u16 initAddr = options.hasOverrideInit ?
@@ -4801,7 +4798,6 @@ namespace sidwinder {
 #include "../ConfigManager.h"
 #include "../cpu6510.h"
 #include "../SIDLoader.h"
-#include <algorithm>
 #include <fstream>
 #include <cctype>
 namespace sidwinder {
@@ -4825,7 +4821,7 @@ namespace sidwinder {
         fs::path tempPrgFile = tempDir / (basename + ".prg");
         fs::path tempPlayerPrgFile = tempDir / (basename + "-player.prg");
         fs::path tempLinkerFile = tempDir / (basename + "-linker.asm");
-        std::string ext = getFileExtension(inputFile);
+        std::string ext = util::getFileExtension(inputFile);
         bool bIsSID = (ext == ".sid");
         bool bIsASM = (ext == ".asm");
         bool bIsPRG = (ext == ".prg");
@@ -4962,7 +4958,7 @@ namespace sidwinder {
         const fs::path& musicFile,
         const fs::path& playerAsmFile,
         const BuildOptions& options) {
-        std::string ext = getFileExtension(musicFile);
+        std::string ext = util::getFileExtension(musicFile);
         bool bIsSID = (ext == ".sid");
         bool bIsASM = (ext == ".asm");
         if ((!bIsSID) && (!bIsASM))
@@ -5093,53 +5089,24 @@ namespace sidwinder {
         return true;
     }
     bool MusicBuilder::extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg) {
-        std::ifstream input(sidFile, std::ios::binary);
-        if (!input) {
-            util::Logger::error("Failed to open SID file for extraction: " + sidFile.string());
-            return false;
-        }
+        auto sidData = util::readBinaryFile(sidFile);
+        if (!sidData) return false;
         SIDHeader header;
-        input.read(reinterpret_cast<char*>(&header), sizeof(header));
-        u16 dataOffset = (header.dataOffset >> 8) | (header.dataOffset << 8);
-        u16 loadAddress = (header.loadAddress >> 8) | (header.loadAddress << 8);
+        std::memcpy(&header, sidData->data(), sizeof(header));
+        util::fixSIDHeaderEndianness(header);
+        u16 dataOffset = header.dataOffset;
+        u16 loadAddress = header.loadAddress;
         if (loadAddress == 0) {
-            if (input.seekg(dataOffset, std::ios::beg)) {
-                u8 lo, hi;
-                input.read(reinterpret_cast<char*>(&lo), 1);
-                input.read(reinterpret_cast<char*>(&hi), 1);
-                loadAddress = (hi << 8) | lo;
-                dataOffset += 2; 
-            }
-            else {
-                util::Logger::error("Error seeking to data in SID file");
-                return false;
-            }
+            loadAddress = sidData->at(dataOffset) | (sidData->at(dataOffset + 1) << 8);
+            dataOffset += 2;
         }
-        std::ofstream output(outputPrg, std::ios::binary);
-        if (!output) {
-            util::Logger::error("Failed to create PRG file: " + outputPrg.string());
-            return false;
-        }
-        const u8 lo = loadAddress & 0xFF;
-        const u8 hi = (loadAddress >> 8) & 0xFF;
-        output.write(reinterpret_cast<const char*>(&lo), 1);
-        output.write(reinterpret_cast<const char*>(&hi), 1);
-        if (!input.seekg(dataOffset, std::ios::beg)) {
-            util::Logger::error("Error seeking to data in SID file");
-            return false;
-        }
-        char buffer[4096];
-        while (input) {
-            input.read(buffer, sizeof(buffer));
-            std::streamsize bytesRead = input.gcount();
-            if (bytesRead > 0) {
-                output.write(buffer, bytesRead);
-            }
-            else {
-                break;
-            }
-        }
-        return true;
+        std::vector<u8> prgData;
+        prgData.push_back(loadAddress & 0xFF);        
+        prgData.push_back((loadAddress >> 8) & 0xFF); 
+        prgData.insert(prgData.end(),
+            sidData->begin() + dataOffset,
+            sidData->end());
+        return util::writeBinaryFile(outputPrg, prgData);
     }
 }
 ```
@@ -5300,12 +5267,12 @@ namespace sidwinder {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Player command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
         }
-        std::string outExt = getFileExtension(outputFile);
+        std::string outExt = util::getFileExtension(outputFile);
         if (outExt != ".prg") {
             std::cout << "Error: Player command requires a .prg output file, got: " << outExt << std::endl;
             return 1;
@@ -5393,12 +5360,12 @@ namespace sidwinder {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Disassemble command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
         }
-        std::string outExt = getFileExtension(outputFile);
+        std::string outExt = util::getFileExtension(outputFile);
         if (outExt != ".asm") {
             std::cout << "Error: Disassemble command requires an .asm output file, got: " << outExt << std::endl;
             return 1;
@@ -5421,7 +5388,7 @@ namespace sidwinder {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Trace command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
@@ -5510,11 +5477,14 @@ namespace sidwinder {
         const std::string& originalLog,
         const std::string& relocatedLog,
         const std::string& reportFile) {
-        std::ifstream original(originalLog, std::ios::binary);
-        std::ifstream relocated(relocatedLog, std::ios::binary);
+        auto originalData = util::readBinaryFile(originalLog);
+        auto relocatedData = util::readBinaryFile(relocatedLog);
+        if (!originalData || !relocatedData) {
+            return false; 
+        }
         std::ofstream report(reportFile);
-        if (!original || !relocated || !report) {
-            util::Logger::error("Failed to open trace log files for comparison");
+        if (!report) {
+            util::Logger::error("Failed to create report file: " + reportFile);
             return false;
         }
         bool identical = true;
@@ -5522,39 +5492,39 @@ namespace sidwinder {
         int originalFrameCount = 0;
         int relocatedFrameCount = 0;
         int differentFrameCount = 0;
-        const int maxDifferenceOutput = 64; 
+        const int maxDifferenceOutput = 64;
         report << "SIDwinder Trace Log Comparison Report\n";
         report << "Original: " << originalLog << "\n";
         report << "Relocated: " << relocatedLog << "\n\n";
         std::vector<std::pair<u16, u8>> originalFrameData;
         std::vector<std::pair<u16, u8>> relocatedFrameData;
-        TraceRecord origRecord, relocRecord;
-        bool origEof = false;
-        bool relocEof = false;
-        while (!origEof && !relocEof) {
+        size_t origPos = 0;
+        size_t relocPos = 0;
+        while (origPos < originalData->size() && relocPos < relocatedData->size()) {
             originalFrameData.clear();
-            while (original.read(reinterpret_cast<char*>(&origRecord), sizeof(TraceRecord))) {
-                if (origRecord.commandTag == FRAME_MARKER) {
+            relocatedFrameData.clear();
+            while (origPos + sizeof(TraceRecord) <= originalData->size()) {
+                TraceRecord record;
+                std::memcpy(&record, originalData->data() + origPos, sizeof(TraceRecord));
+                origPos += sizeof(TraceRecord);
+                if (record.commandTag == FRAME_MARKER) {
                     originalFrameCount++;
                     break;
                 }
-                originalFrameData.emplace_back(origRecord.write.address, origRecord.write.value);
+                originalFrameData.emplace_back(record.write.address, record.write.value);
             }
-            if (original.eof()) {
-                origEof = true;
-            }
-            relocatedFrameData.clear();
-            while (relocated.read(reinterpret_cast<char*>(&relocRecord), sizeof(TraceRecord))) {
-                if (relocRecord.commandTag == FRAME_MARKER) {
+            while (relocPos + sizeof(TraceRecord) <= relocatedData->size()) {
+                TraceRecord record;
+                std::memcpy(&record, relocatedData->data() + relocPos, sizeof(TraceRecord));
+                relocPos += sizeof(TraceRecord);
+                if (record.commandTag == FRAME_MARKER) {
                     relocatedFrameCount++;
                     break;
                 }
-                relocatedFrameData.emplace_back(relocRecord.write.address, relocRecord.write.value);
+                relocatedFrameData.emplace_back(record.write.address, record.write.value);
             }
-            if (relocated.eof()) {
-                relocEof = true;
-            }
-            if (origEof || relocEof) {
+            if ((origPos >= originalData->size() && !originalFrameData.empty()) ||
+                (relocPos >= relocatedData->size() && !relocatedFrameData.empty())) {
                 break;
             }
             frameCount++;
@@ -5590,7 +5560,7 @@ namespace sidwinder {
                     report << reloLine << "\n";
                     const size_t indicatorLength = std::max(origLine.length(), reloLine.length());
                     std::string indicatorLine(indicatorLength, ' ');
-                    size_t origPos = 8; 
+                    size_t origPos = 8;
                     for (const auto& [addr, value] : originalFrameData) {
                         std::string entry = util::wordToHex(addr) + ":" + util::byteToHex(value);
                         bool found = (reloMap.find(addr) != reloMap.end());
@@ -5601,7 +5571,7 @@ namespace sidwinder {
                         }
                         origPos += entry.length() + 1;
                     }
-                    size_t reloPos = 8; 
+                    size_t reloPos = 8;
                     for (const auto& [addr, value] : relocatedFrameData) {
                         std::string entry = util::wordToHex(addr) + ":" + util::byteToHex(value);
                         bool found = (origMap.find(addr) != origMap.end());
@@ -5611,24 +5581,6 @@ namespace sidwinder {
                             }
                         }
                         reloPos += entry.length() + 1;
-                    }
-                    if (originalFrameData.size() > relocatedFrameData.size() && !relocatedFrameData.empty()) {
-                        size_t markPos = reloPos;
-                        while (markPos < indicatorLength) {
-                            for (int i = 0; i < 7 && markPos + i < indicatorLength; i++) {
-                                indicatorLine[markPos + i] = '*';
-                            }
-                            markPos += 8; 
-                        }
-                    }
-                    else if (relocatedFrameData.size() > originalFrameData.size() && !originalFrameData.empty()) {
-                        size_t markPos = origPos;
-                        while (markPos < indicatorLength) {
-                            for (int i = 0; i < 7 && markPos + i < indicatorLength; i++) {
-                                indicatorLine[markPos + i] = '*';
-                            }
-                            markPos += 8; 
-                        }
                     }
                     report << indicatorLine << "\n\n";
                 }
@@ -5823,7 +5775,6 @@ using i8 = std::int8_t;
 using i16 = std::int16_t;
 using i32 = std::int32_t;
 using i64 = std::int64_t;
-std::string getFileExtension(const fs::path& filePath);
 ```
 
 
@@ -6466,13 +6417,13 @@ namespace sidwinder {
             bool verbose = false;         
         };
         struct RelocationResult {
-            bool success;                 
-            u16 originalLoad;             
-            u16 originalInit;             
-            u16 originalPlay;             
-            u16 newLoad;                  
-            u16 newInit;                  
-            u16 newPlay;                  
+            bool success = false;         
+            u16 originalLoad = 0;         
+            u16 originalInit = 0;         
+            u16 originalPlay = 0;         
+            u16 newLoad = 0;              
+            u16 newInit = 0;              
+            u16 newPlay = 0;              
             std::string message;          
         };
         RelocationResult relocateSID(
@@ -6713,14 +6664,20 @@ namespace sidwinder {
 ```cpp
 #pragma once
 #include "Common.h"
+#include "SIDFileFormat.h"
 #include <array>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 namespace sidwinder {
     namespace util {
+        std::optional<std::vector<u8>> readBinaryFile(const fs::path& path);
+        bool readTextFileLines(const fs::path& path, std::function<bool(const std::string&)> lineHandler);
+        bool writeBinaryFile(const fs::path& path, const void* data, size_t size);
+        bool writeBinaryFile(const fs::path& path, const std::vector<u8>& data);
         inline u16 swapEndian(u16 value) {
             return (value >> 8) | (value << 8);
         }
@@ -6730,20 +6687,28 @@ namespace sidwinder {
                 | ((value & 0x0000ff00) << 8)
                 | ((value & 0x000000ff) << 24);
         }
+        std::string getFileExtension(const fs::path& filePath);
+        bool hasExtension(const fs::path& filePath, const std::string& extension);
+        bool isValidSIDFile(const fs::path& filePath);
+        bool isValidPRGFile(const fs::path& filePath);
+        bool isValidASMFile(const fs::path& filePath);
+        void fixSIDHeaderEndianness(SIDHeader& header);
+        class HexFormatter {
+        public:
+            static std::string hexbyte(u8 value, bool prefix = false, bool upperCase = true);
+            static std::string hexword(u16 value, bool prefix = false, bool upperCase = true);
+            static std::string hexdword(u32 value, bool prefix = false, bool upperCase = true);
+            static std::string address(u16 addr) { return "$" + hexword(addr, false, true); }
+            static std::string registerValue(u8 value) { return "$" + hexbyte(value, false, true); }
+            static std::string memoryDump(u16 addr, u8 value) {
+                return hexword(addr, false, true) + ":$" + hexbyte(value, false, true);
+            }
+        };
         inline std::string byteToHex(u8 value, bool upperCase = true) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(value);
-            return ss.str();
+            return HexFormatter::hexbyte(value, false, upperCase);
         }
-        inline std::string wordToHex(u16 value, bool upperCase = true)
-        {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(4) << std::setfill('0')
-                << value;
-            return ss.str();
+        inline std::string wordToHex(u16 value, bool upperCase = true) {
+            return HexFormatter::hexword(value, false, upperCase);
         }
         std::optional<u16> parseHex(std::string_view str);
         std::string padToColumn(std::string_view str, size_t width);
@@ -6774,6 +6739,41 @@ namespace sidwinder {
             static Level minLevel_;                                  
             static std::optional<std::filesystem::path> logFile_;    
             static bool consoleOutput_;                              
+        };
+        bool writeTextFile(const fs::path& path, const std::string& content);
+        bool writeTextFileLines(const fs::path& path, const std::vector<std::string>& lines);
+        template<typename T>
+        bool writeStreamableToFile(const fs::path& path, const T& obj) {
+            std::ofstream file(path);
+            if (!file) {
+                Logger::error("Failed to create file: " + path.string());
+                return false;
+            }
+            file << obj;
+            return file.good();
+        }
+        class TextFileBuilder {
+        public:
+            TextFileBuilder& line(const std::string& text = "") {
+                content_ += text + "\n";
+                return *this;
+            }
+            TextFileBuilder& append(const std::string& text) {
+                content_ += text;
+                return *this;
+            }
+            TextFileBuilder& section(const std::string& title) {
+                if (!content_.empty()) content_ += "\n";
+                content_ += "
+                content_ += "
+                return *this;
+            }
+            bool saveToFile(const fs::path& path) const {
+                return writeTextFile(path, content_);
+            }
+            const std::string& getString() const { return content_; }
+        private:
+            std::string content_;
         };
     } 
 }

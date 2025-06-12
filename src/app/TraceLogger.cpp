@@ -66,12 +66,17 @@ namespace sidwinder {
         const std::string& relocatedLog,
         const std::string& reportFile) {
 
-        std::ifstream original(originalLog, std::ios::binary);
-        std::ifstream relocated(relocatedLog, std::ios::binary);
-        std::ofstream report(reportFile);
+        // Read both trace files using new utilities
+        auto originalData = util::readBinaryFile(originalLog);
+        auto relocatedData = util::readBinaryFile(relocatedLog);
 
-        if (!original || !relocated || !report) {
-            util::Logger::error("Failed to open trace log files for comparison");
+        if (!originalData || !relocatedData) {
+            return false; // Error already logged by readBinaryFile
+        }
+
+        std::ofstream report(reportFile);
+        if (!report) {
+            util::Logger::error("Failed to create report file: " + reportFile);
             return false;
         }
 
@@ -80,71 +85,66 @@ namespace sidwinder {
         int originalFrameCount = 0;
         int relocatedFrameCount = 0;
         int differentFrameCount = 0;
-        const int maxDifferenceOutput = 64; // Maximum number of frame differences to output
+        const int maxDifferenceOutput = 64;
 
         report << "SIDwinder Trace Log Comparison Report\n";
         report << "Original: " << originalLog << "\n";
         report << "Relocated: " << relocatedLog << "\n\n";
 
-        // Storage for current frame data
         std::vector<std::pair<u16, u8>> originalFrameData;
         std::vector<std::pair<u16, u8>> relocatedFrameData;
 
-        TraceRecord origRecord, relocRecord;
-        bool origEof = false;
-        bool relocEof = false;
+        // Parse binary data in memory instead of file streams
+        size_t origPos = 0;
+        size_t relocPos = 0;
 
-        // Process both files frame by frame
-        while (!origEof && !relocEof) {
-            // Read original frame
+        while (origPos < originalData->size() && relocPos < relocatedData->size()) {
             originalFrameData.clear();
-            while (original.read(reinterpret_cast<char*>(&origRecord), sizeof(TraceRecord))) {
-                if (origRecord.commandTag == FRAME_MARKER) {
+            relocatedFrameData.clear();
+
+            // Parse original frame
+            while (origPos + sizeof(TraceRecord) <= originalData->size()) {
+                TraceRecord record;
+                std::memcpy(&record, originalData->data() + origPos, sizeof(TraceRecord));
+                origPos += sizeof(TraceRecord);
+
+                if (record.commandTag == FRAME_MARKER) {
                     originalFrameCount++;
                     break;
                 }
-                originalFrameData.emplace_back(origRecord.write.address, origRecord.write.value);
+                originalFrameData.emplace_back(record.write.address, record.write.value);
             }
 
-            if (original.eof()) {
-                origEof = true;
-            }
+            // Parse relocated frame
+            while (relocPos + sizeof(TraceRecord) <= relocatedData->size()) {
+                TraceRecord record;
+                std::memcpy(&record, relocatedData->data() + relocPos, sizeof(TraceRecord));
+                relocPos += sizeof(TraceRecord);
 
-            // Read relocated frame
-            relocatedFrameData.clear();
-            while (relocated.read(reinterpret_cast<char*>(&relocRecord), sizeof(TraceRecord))) {
-                if (relocRecord.commandTag == FRAME_MARKER) {
+                if (record.commandTag == FRAME_MARKER) {
                     relocatedFrameCount++;
                     break;
                 }
-                relocatedFrameData.emplace_back(relocRecord.write.address, relocRecord.write.value);
+                relocatedFrameData.emplace_back(record.write.address, record.write.value);
             }
 
-            if (relocated.eof()) {
-                relocEof = true;
-            }
-
-            // Stop comparison if either file ends
-            if (origEof || relocEof) {
+            // Check if we've reached end of either file
+            if ((origPos >= originalData->size() && !originalFrameData.empty()) ||
+                (relocPos >= relocatedData->size() && !relocatedFrameData.empty())) {
                 break;
             }
 
-            // Compare the frames
             frameCount++;
 
-            // Format frame data as strings for easier comparison and indicator placement
+            // Build comparison strings (same as before)
             std::string origLine = "  Orig: ";
             std::string reloLine = "  Relo: ";
-
-            // Format the original frame data
             bool first = true;
             for (const auto& [addr, value] : originalFrameData) {
                 if (!first) origLine += ",";
                 origLine += util::wordToHex(addr) + ":" + util::byteToHex(value);
                 first = false;
             }
-
-            // Format the relocated frame data
             first = true;
             for (const auto& [addr, value] : relocatedFrameData) {
                 if (!first) reloLine += ",";
@@ -152,92 +152,54 @@ namespace sidwinder {
                 first = false;
             }
 
-            // Create a map for easier lookup
+            // Compare frames (same logic as before)
             std::map<u16, u8> origMap;
             std::map<u16, u8> reloMap;
-
             for (const auto& [addr, value] : originalFrameData) {
                 origMap[addr] = value;
             }
-
             for (const auto& [addr, value] : relocatedFrameData) {
                 reloMap[addr] = value;
             }
 
-            // Compare the data and mark differences
             bool frameIdentical = (originalFrameData == relocatedFrameData);
-
-            // If frame is different, output details
             if (!frameIdentical) {
                 differentFrameCount++;
                 identical = false;
 
-                // Only output details for up to maxDifferenceOutput frames
                 if (differentFrameCount <= maxDifferenceOutput) {
                     report << "Frame " << frameCount << ":\n";
                     report << origLine << "\n";
                     report << reloLine << "\n";
 
-                    // Create a combined indicator that shows all differences
-                    // Start with a blank line matching the length of the shorter of the two lines
+                    // Generate difference indicators (same logic as before)
                     const size_t indicatorLength = std::max(origLine.length(), reloLine.length());
                     std::string indicatorLine(indicatorLength, ' ');
 
-                    // Compare each entry in original to relocated
-                    size_t origPos = 8; // Starting position (after "  Orig: ")
+                    // Mark differences in original
+                    size_t origPos = 8;
                     for (const auto& [addr, value] : originalFrameData) {
                         std::string entry = util::wordToHex(addr) + ":" + util::byteToHex(value);
                         bool found = (reloMap.find(addr) != reloMap.end());
-
                         if (!found || reloMap[addr] != value) {
-                            // Mark this entry as different or missing from relocated
                             for (size_t i = 0; i < 7 && (origPos + i) < indicatorLength; i++) {
                                 indicatorLine[origPos + i] = '*';
                             }
                         }
-
-                        // Move to next position (entry length + comma)
                         origPos += entry.length() + 1;
                     }
 
-                    // Compare each entry in relocated to original
-                    size_t reloPos = 8; // Starting position (after "  Relo: ")
+                    // Mark differences in relocated (same logic as before)
+                    size_t reloPos = 8;
                     for (const auto& [addr, value] : relocatedFrameData) {
                         std::string entry = util::wordToHex(addr) + ":" + util::byteToHex(value);
                         bool found = (origMap.find(addr) != origMap.end());
-
                         if (!found || origMap[addr] != value) {
-                            // Mark this entry as different or missing from original
                             for (size_t i = 0; i < 7 && (reloPos + i) < indicatorLength; i++) {
                                 indicatorLine[reloPos + i] = '*';
                             }
                         }
-
-                        // Move to next position (entry length + comma)
                         reloPos += entry.length() + 1;
-                    }
-
-                    // For significant structural differences (many registers present in one but not the other)
-                    // Mark the spots after the end of the shorter list
-                    if (originalFrameData.size() > relocatedFrameData.size() && !relocatedFrameData.empty()) {
-                        // Mark spots where original has entries but relocated doesn't
-                        size_t markPos = reloPos;
-                        while (markPos < indicatorLength) {
-                            for (int i = 0; i < 7 && markPos + i < indicatorLength; i++) {
-                                indicatorLine[markPos + i] = '*';
-                            }
-                            markPos += 8; // Approximate spacing for missing entries
-                        }
-                    }
-                    else if (relocatedFrameData.size() > originalFrameData.size() && !originalFrameData.empty()) {
-                        // Mark spots where relocated has entries but original doesn't
-                        size_t markPos = origPos;
-                        while (markPos < indicatorLength) {
-                            for (int i = 0; i < 7 && markPos + i < indicatorLength; i++) {
-                                indicatorLine[markPos + i] = '*';
-                            }
-                            markPos += 8; // Approximate spacing for missing entries
-                        }
                     }
 
                     report << indicatorLine << "\n\n";
@@ -248,16 +210,14 @@ namespace sidwinder {
             }
         }
 
-        // Check for frame count mismatch
+        // Summary (same as before)
         if (originalFrameCount != relocatedFrameCount) {
             report << "Frame count mismatch: Original has " << originalFrameCount
                 << " frames, Relocated has " << relocatedFrameCount << " frames\n\n";
             identical = false;
         }
 
-        // Output summary
         report << "Summary:\n";
-
         if (identical) {
             report << "File 1: " << originalFrameCount << " frames\n";
             report << "File 2: " << relocatedFrameCount << " frames\n";

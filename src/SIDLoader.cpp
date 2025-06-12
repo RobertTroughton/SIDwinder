@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -70,126 +69,96 @@ void SIDLoader::setLoadAddress(u16 address) {
  */
 bool SIDLoader::loadSID(const std::string& filename) {
     if (!cpu_) {
-        std::cerr << "CPU not set!\n";
         return false;
     }
 
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "Failed to open file: " << filename << "\n";
+    // Read entire SID file
+    auto fileData = util::readBinaryFile(filename);
+    if (!fileData) {
+        return false; // Error already logged
+    }
+
+    if (fileData->size() < sizeof(SIDHeader)) {
+        util::Logger::error("SID file too small to contain a valid header!");
         return false;
     }
 
-    // Get file size
-    file.seekg(0, std::ios::end);
-    std::streamsize fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
+    // Copy and validate header
+    std::memcpy(&header_, fileData->data(), sizeof(header_));
 
-    if (fileSize <= 0) {
-        std::cerr << "File is empty: " << filename << "\n";
-        return false;
-    }
-
-    // Read the entire file into a buffer
-    std::vector<u8> buffer(static_cast<size_t>(fileSize));
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), fileSize)) {
-        std::cerr << "Failed to read file: " << filename << "\n";
-        return false;
-    }
-
-    // Check if file is large enough to contain a header
-    if (fileSize < sizeof(SIDHeader)) {
-        std::cerr << "SID file too small to contain a valid header!\n";
-        return false;
-    }
-
-    // Copy header data
-    std::memcpy(&header_, buffer.data(), sizeof(header_));
-
-    // Check for RSID files, which we don't support
+    // Check file format
     if (std::string(header_.magicID, 4) == "RSID") {
-        std::cerr << "RSID file format detected: \"" << filename << "\"\n";
-        std::cerr << "RSID files require a true C64 environment and cannot be emulated by SIDwinder.\n";
-        std::cerr << "Please use a PSID formatted file instead.\n";
+        util::Logger::error("RSID file format detected: \"" + filename + "\"");
+        util::Logger::error("RSID files require a true C64 environment and cannot be emulated by SIDwinder.");
+        util::Logger::error("Please use a PSID formatted file instead.");
         return false;
     }
 
-    // Check for PSID magic ID
     if (std::string(header_.magicID, 4) != "PSID") {
-        std::cerr << "Invalid SID file: Expected 'PSID' magic ID, found '"
-            << std::string(header_.magicID, 4) << "'\n";
+        util::Logger::error("Invalid SID file: Expected 'PSID' magic ID, found '" +
+            std::string(header_.magicID, 4) + "'");
         return false;
     }
 
-    // Fix endianness (SID files are big-endian)
-    header_.version = util::swapEndian(header_.version);
-    header_.dataOffset = util::swapEndian(header_.dataOffset);
-    header_.loadAddress = util::swapEndian(header_.loadAddress);
-    header_.initAddress = util::swapEndian(header_.initAddress);
-    header_.playAddress = util::swapEndian(header_.playAddress);
-    header_.songs = util::swapEndian(header_.songs);
-    header_.startSong = util::swapEndian(header_.startSong);
-    header_.speed = util::swapEndian(header_.speed);
-    header_.flags = util::swapEndian(header_.flags);
+    // Fix header endianness
+    util::fixSIDHeaderEndianness(header_);
 
-    // Validate version number
+    // Validate version
     if (header_.version < 1 || header_.version > 4) {
-        std::cerr << "Unsupported SID version: " << header_.version
-            << ". Supported versions are 1-4.\n";
+        util::Logger::error("Unsupported SID version: " + std::to_string(header_.version) +
+            ". Supported versions are 1-4.");
         return false;
     }
 
-    // Handle multi-SID configurations for v3+ files
+    // Log version-specific info
     if (header_.version >= 3) {
         if (header_.secondSIDAddress != 0) {
-            // Address for the second SID is encoded in the secondSIDAddress field
-            u16 secondSIDAddr = header_.secondSIDAddress << 4;  // Convert to actual address
-            // Your code to set up the second SID chip would go here
+            u16 secondSIDAddr = header_.secondSIDAddress << 4;
         }
-
         if (header_.version >= 4 && header_.thirdSIDAddress != 0) {
-            // Address for the third SID is encoded in the thirdSIDAddress field (v4 only)
-            u16 thirdSIDAddr = header_.thirdSIDAddress << 4;  // Convert to actual address
-            // Your code to set up the third SID chip would go here
+            u16 thirdSIDAddr = header_.thirdSIDAddress << 4;
         }
     }
 
-    // Determine the data offset based on version
+    // Validate data offset
     u16 expectedOffset = (header_.version == 1) ? 0x76 : 0x7C;
     if (header_.dataOffset != expectedOffset) {
         util::Logger::warning("Unexpected dataOffset value: " + std::to_string(header_.dataOffset) +
             ", expected: " + std::to_string(expectedOffset));
     }
 
-    // Handle embedded load address if needed
+    // Handle embedded or explicit load address
+    u16 dataStart = header_.dataOffset;
     if (header_.loadAddress == 0) {
-        if (fileSize < header_.dataOffset + 2) {
-            std::cerr << "SID file corrupt (missing embedded load address)!\n";
+        if (fileData->size() < header_.dataOffset + 2) {
+            util::Logger::error("SID file corrupt (missing embedded load address)!");
             return false;
         }
-        const u8 lo = buffer[header_.dataOffset];
-        const u8 hi = buffer[header_.dataOffset + 1];
+
+        const u8 lo = (*fileData)[header_.dataOffset];
+        const u8 hi = (*fileData)[header_.dataOffset + 1];
         header_.loadAddress = static_cast<u16>(lo | (hi << 8));
-        header_.dataOffset += 2;
+        dataStart += 2;
+        util::Logger::debug("Using embedded load address: $" + util::wordToHex(header_.loadAddress));
     }
 
-    // Calculate data size
-    dataSize_ = static_cast<u16>(fileSize - header_.dataOffset);
-
+    // Calculate and validate data size
+    dataSize_ = static_cast<u16>(fileData->size() - dataStart);
     if (dataSize_ <= 0) {
-        std::cerr << "SID file contains no music data!\n";
+        util::Logger::error("SID file contains no music data!");
         return false;
     }
 
     if (header_.loadAddress + dataSize_ > 65536) {
-        std::cerr << "SID file data exceeds C64 memory limits! (Load address: $" << util::wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
+        util::Logger::error("SID file data exceeds C64 memory limits! (Load address: $" +
+            util::wordToHex(header_.loadAddress) + ", Size: " + std::to_string(dataSize_) + " bytes)");
         return false;
     }
 
     // Copy music data to CPU memory
-    const u8* musicData = &buffer[header_.dataOffset];
+    const u8* musicData = fileData->data() + dataStart;
     if (!copyMusicToMemory(musicData, dataSize_, header_.loadAddress)) {
-        std::cerr << "Failed to copy music data to memory!\n";
+        util::Logger::error("Failed to copy music data to memory!");
         return false;
     }
 

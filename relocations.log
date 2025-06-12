@@ -2,39 +2,54 @@
 Relocating SIDs 
 --------------- 
  
-FAILURE: "SID/dane-elderscrollers.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/dane-elderscrollers.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/trident-cheap.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/larshoff-recovery.sid" SID file relocated OK with matching before/after trace outputs
+[2025-06-12 18:59:47] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 18:59:48] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:00:00] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:00:01] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:00:01] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:00:02] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
 SUCCESS: "SID/celticdesign-7-3.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/larshoff-blades.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/dane-copperbooze.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/dane-slowmotionsong.sid" SID file relocated OK with matching before/after trace outputs
-FAILURE: "SID/drax-expand.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/drax-expand.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/drax-twine.sid" SID file relocated OK with matching before/after trace outputs
-FAILURE: "SID/flex-eurogubbe.sid" SID relocation verification failed - before/after trace outputs differ
-FAILURE: "SID/flex-hawkeye.sid" SID relocation verification failed - before/after trace outputs differ
-FAILURE: "SID/Flex-lundia.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/flex-eurogubbe.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/flex-hawkeye.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/Flex-lundia.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/jammer-mm.sid" SID file relocated OK with matching before/after trace outputs
-SUCCESS: "SID/jammer-soccer.sid" SID file relocated OK with matching before/after trace outputs
+[2025-06-12 19:01:54] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+FAILURE: "SID/jammer-soccer.sid" Emulation of relocated SID file failed
 SUCCESS: "SID/jch-allaroundtheworld.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/jch-crystalline.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/leaf-takeitorleafit.sid" SID file relocated OK with matching before/after trace outputs
-[2025-06-03 12:11:04] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:02:27] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
 FAILURE: "SID/lukhash-codeveronica.sid" Emulation of relocated SID file failed
 SUCCESS: "SID/magnar-airwolf.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/magnar-firestarter.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/magnar-lastnight.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/magnar-magnumpi.sid" SID file relocated OK with matching before/after trace outputs
-FAILURE: "SID/magnar-wecomeinpeace.sid" SID relocation verification failed - before/after trace outputs differ
-FAILURE: "SID/magnar-wonderland12.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/magnar-wecomeinpeace.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/magnar-wonderland12.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/mch-chordexplorer.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/mch-montyontherundnbedit-2sid.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/mibri-gettinginthevan.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/mrmouse-downhill.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/nordischsound-crockettstheme.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/phat_frog_2sid.sid" SID file relocated OK with matching before/after trace outputs
-FAILURE: "SID/proton-knightrider.sid" SID relocation verification failed - before/after trace outputs differ
-SUCCESS: "SID/psycho-nobounds.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/proton-knightrider.sid" SID file relocated OK with matching before/after trace outputs
+[2025-06-12 19:05:05] [ERROR] Function execution aborted after 30000 steps - possible infinite loop
+[2025-06-12 19:05:05] [ERROR] Last PC: $1947, SP: $FB
+[2025-06-12 19:05:05] [ERROR] Recent PC history: $1947 $1947 $1947 $1947 $1947 $1947 $1947 $1947 
+[2025-06-12 19:05:06] [ERROR] Function execution aborted after 30000 steps - possible infinite loop
+[2025-06-12 19:05:06] [ERROR] Last PC: $1947, SP: $F9
+[2025-06-12 19:05:06] [ERROR] Recent PC history: $1947 $1947 $1947 $1947 $1947 $1947 $1947 $1947 
+[2025-06-12 19:05:07] [ERROR] FAILURE: temp\psycho-nobounds-relocated.asm - please see output log for details: temp\psycho-nobounds-relocated_kickass.log
+[2025-06-12 19:05:07] [ERROR] Failed to assemble relocated code: temp\psycho-nobounds-relocated.asm
+FAILURE: "SID/psycho-nobounds.sid" Relocation failed: Failed to assemble relocated code: temp\psycho-nobounds-relocated.asm
 SUCCESS: "SID/steel-92littleshortyrockers.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/steel-lastnightdrunk.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/steelstinsen-dangerdawg.sid" SID file relocated OK with matching before/after trace outputs
@@ -46,10 +61,16 @@ SUCCESS: "SID/trident-elysoun.sid" SID file relocated OK with matching before/af
 SUCCESS: "SID/trident-sptest07.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/xiny-allstars.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/xiny-splashes.sid" SID file relocated OK with matching before/after trace outputs
-FAILURE: "SID/zardax-eldorado.sid" SID relocation verification failed - before/after trace outputs differ
-FAILURE: "SID/6r6-axelf.sid" SID relocation verification failed - before/after trace outputs differ
-FAILURE: "SID/6r6-selfiesfromtheex.sid" SID relocation verification failed - before/after trace outputs differ
+SUCCESS: "SID/zardax-eldorado.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/6r6-axelf.sid" SID file relocated OK with matching before/after trace outputs
+SUCCESS: "SID/6r6-selfiesfromtheex.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/acrouzet-raistlin50.sid" SID file relocated OK with matching before/after trace outputs
+[2025-06-12 19:06:56] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:06:56] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:06:59] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:06:59] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:07:00] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
+[2025-06-12 19:07:00] [ERROR] CRITICAL: Execution at $0000 detected - illegal jump target
 SUCCESS: "SID/acrouzet-soulspace.sid" SID file relocated OK with matching before/after trace outputs
 SUCCESS: "SID/celticdesign-blueearth.sid" SID file relocated OK with matching before/after trace outputs
  
@@ -57,4 +78,4 @@ SUCCESS: "SID/celticdesign-blueearth.sid" SID file relocated OK with matching be
 RELOCATION RESULTS 
 ======================================== 
  
-37/49 relocations succeeded 
+46/49 relocations succeeded 

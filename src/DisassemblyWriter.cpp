@@ -9,10 +9,7 @@
 #include "MemoryConstants.h"
 
 #include <algorithm>
-#include <iostream>
-#include <queue>
 #include <set>
-#include <functional>
 
 namespace sidwinder {
 

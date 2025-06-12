@@ -61,7 +61,7 @@ namespace sidwinder {
                         cmd.setParameter("tracelog", value);
 
                         // Determine format based on file extension
-                        std::string ext = getFileExtension(value);
+                        std::string ext = util::getFileExtension(value);
                         if (ext == ".txt" || ext == ".log") {
                             cmd.setParameter("traceformat", "text");
                         }

@@ -32,13 +32,13 @@ namespace sidwinder {
          * @brief Result of a relocation operation
          */
         struct RelocationResult {
-            bool success;                 ///< Operation success
-            u16 originalLoad;             ///< Original load address
-            u16 originalInit;             ///< Original init address
-            u16 originalPlay;             ///< Original play address
-            u16 newLoad;                  ///< New load address
-            u16 newInit;                  ///< New init address
-            u16 newPlay;                  ///< New play address
+            bool success = false;         ///< Operation success
+            u16 originalLoad = 0;         ///< Original load address
+            u16 originalInit = 0;         ///< Original init address
+            u16 originalPlay = 0;         ///< Original play address
+            u16 newLoad = 0;              ///< New load address
+            u16 newInit = 0;              ///< New init address
+            u16 newPlay = 0;              ///< New play address
             std::string message;          ///< Additional info/error message
         };
 

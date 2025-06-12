@@ -223,13 +223,13 @@ namespace sidwinder {
         }
 
         // Strictly enforce .sid input and .prg output
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Player command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
         }
 
-        std::string outExt = getFileExtension(outputFile);
+        std::string outExt = util::getFileExtension(outputFile);
         if (outExt != ".prg") {
             std::cout << "Error: Player command requires a .prg output file, got: " << outExt << std::endl;
             return 1;
@@ -356,13 +356,13 @@ namespace sidwinder {
         }
 
         // Strictly enforce .sid input and .asm output
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Disassemble command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
         }
 
-        std::string outExt = getFileExtension(outputFile);
+        std::string outExt = util::getFileExtension(outputFile);
         if (outExt != ".asm") {
             std::cout << "Error: Disassemble command requires an .asm output file, got: " << outExt << std::endl;
             return 1;
@@ -396,7 +396,7 @@ namespace sidwinder {
         }
 
         // Strictly enforce .sid extension for input
-        std::string inExt = getFileExtension(inputFile);
+        std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Trace command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
