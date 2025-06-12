@@ -1846,14 +1846,6 @@ namespace sidwinder {
             result.newLoad = params.relocationAddress;
             result.newInit = result.newLoad + (result.originalInit - result.originalLoad);
             result.newPlay = result.newLoad + (result.originalPlay - result.originalLoad);
-            Logger::info("Original addresses - Load: $" + wordToHex(result.originalLoad) +
-                ", Init: $" + wordToHex(result.originalInit) +
-                ", Play: $" + wordToHex(result.originalPlay) +
-                ", Flags: $" + wordToHex(originalFlags) +
-                ", Version: " + std::to_string(version));
-            Logger::info("Relocated addresses - Load: $" + wordToHex(result.newLoad) +
-                ", Init: $" + wordToHex(result.newInit) +
-                ", Play: $" + wordToHex(result.newPlay));
             Disassembler disassembler(*cpu, *sid);
             const int numFrames = util::ConfigManager::getInt("emulationFrames");
             if (!runSIDEmulation(cpu, sid, numFrames)) {
@@ -1897,7 +1889,6 @@ namespace sidwinder {
                     fs::copy_file(tempPrgFile, params.outputFile, fs::copy_options::overwrite_existing);
                     result.success = true;
                     result.message = "Relocation complete (saved as PRG).";
-                    Logger::info(result.message);
                 }
                 catch (const std::exception& e) {
                     result.message = std::string("Failed to copy output file: ") + e.what();
@@ -1908,7 +1899,6 @@ namespace sidwinder {
             else {
                 result.success = true;
                 result.message = "Relocation to SID complete. ";
-                Logger::info(result.message);
             }
             return result;
         }
@@ -2087,24 +2077,15 @@ namespace sidwinder {
                         std::to_string(version) + " (requires v4)");
                 }
             }
-            auto swapEndian = [](u16 value) -> u16 {
-                return (value >> 8) | (value << 8);
-                };
-            auto swapEndian32 = [](u32 value) -> u32 {
-                return  ((value & 0xff000000) >> 24)
-                    | ((value & 0x00ff0000) >> 8)
-                    | ((value & 0x0000ff00) << 8)
-                    | ((value & 0x000000ff) << 24);
-                };
-            header.version = swapEndian(header.version);
-            header.dataOffset = swapEndian(header.dataOffset);
-            header.loadAddress = swapEndian(header.loadAddress);
-            header.initAddress = swapEndian(header.initAddress);
-            header.playAddress = swapEndian(header.playAddress);
-            header.songs = swapEndian(header.songs);
-            header.startSong = swapEndian(header.startSong);
-            header.flags = swapEndian(header.flags);
-            header.speed = swapEndian32(header.speed);
+            header.version = util::swapEndian(header.version);
+            header.dataOffset = util::swapEndian(header.dataOffset);
+            header.loadAddress = util::swapEndian(header.loadAddress);
+            header.initAddress = util::swapEndian(header.initAddress);
+            header.playAddress = util::swapEndian(header.playAddress);
+            header.songs = util::swapEndian(header.songs);
+            header.startSong = util::swapEndian(header.startSong);
+            header.flags = util::swapEndian(header.flags);
+            header.speed = util::swapEndian(header.speed);
             std::ofstream sid_file(sidFile, std::ios::binary);
             if (!sid_file) {
                 Logger::error("Failed to create SID file: " + sidFile.string());
@@ -2118,11 +2099,6 @@ namespace sidwinder {
             prg.read(buffer.data(), dataSize);
             sid_file.write(buffer.data(), dataSize);
             sid_file.close();
-            Logger::info("Created SID file: " + sidFile.string() +
-                " (Load: $" + wordToHex(loadAddr) +
-                ", Init: $" + wordToHex(initAddr) +
-                ", Play: $" + wordToHex(playAddr) +
-                ", Flags: $" + wordToHex(flags) + ")");
             return true;
         }
         bool runSIDEmulation(
@@ -2344,15 +2320,12 @@ void SIDLoader::setCPU(CPU6510* cpuPtr) {
 }
 void SIDLoader::setInitAddress(u16 address) {
     header_.initAddress = address;
-    util::Logger::debug("SID init address overridden: $" + util::wordToHex(address));
 }
 void SIDLoader::setPlayAddress(u16 address) {
     header_.playAddress = address;
-    util::Logger::debug("SID play address overridden: $" + util::wordToHex(address));
 }
 void SIDLoader::setLoadAddress(u16 address) {
     header_.loadAddress = address;
-    util::Logger::debug("SID load address overridden: $" + util::wordToHex(address));
 }
 bool SIDLoader::loadSID(const std::string& filename) {
     if (!cpu_) {
@@ -2392,22 +2365,26 @@ bool SIDLoader::loadSID(const std::string& filename) {
             << std::string(header_.magicID, 4) << "'\n";
         return false;
     }
-    fixHeaderEndianness(header_);
+    header_.version = util::swapEndian(header_.version);
+    header_.dataOffset = util::swapEndian(header_.dataOffset);
+    header_.loadAddress = util::swapEndian(header_.loadAddress);
+    header_.initAddress = util::swapEndian(header_.initAddress);
+    header_.playAddress = util::swapEndian(header_.playAddress);
+    header_.songs = util::swapEndian(header_.songs);
+    header_.startSong = util::swapEndian(header_.startSong);
+    header_.speed = util::swapEndian(header_.speed);
+    header_.flags = util::swapEndian(header_.flags);
     if (header_.version < 1 || header_.version > 4) {
         std::cerr << "Unsupported SID version: " << header_.version
             << ". Supported versions are 1-4.\n";
         return false;
     }
     if (header_.version >= 3) {
-        util::Logger::info("SID file version " + std::to_string(header_.version) +
-            " (supports multiple SID chips)");
         if (header_.secondSIDAddress != 0) {
             u16 secondSIDAddr = header_.secondSIDAddress << 4;  
-            util::Logger::info("Second SID chip at address: $" + util::wordToHex(secondSIDAddr));
         }
         if (header_.version >= 4 && header_.thirdSIDAddress != 0) {
             u16 thirdSIDAddr = header_.thirdSIDAddress << 4;  
-            util::Logger::info("Third SID chip at address: $" + util::wordToHex(thirdSIDAddr));
         }
     }
     u16 expectedOffset = (header_.version == 1) ? 0x76 : 0x7C;
@@ -2424,7 +2401,6 @@ bool SIDLoader::loadSID(const std::string& filename) {
         const u8 hi = buffer[header_.dataOffset + 1];
         header_.loadAddress = static_cast<u16>(lo | (hi << 8));
         header_.dataOffset += 2;
-        util::Logger::debug("Using embedded load address: $" + util::wordToHex(header_.loadAddress));
     }
     dataSize_ = static_cast<u16>(fileSize - header_.dataOffset);
     if (dataSize_ <= 0) {
@@ -2432,8 +2408,7 @@ bool SIDLoader::loadSID(const std::string& filename) {
         return false;
     }
     if (header_.loadAddress + dataSize_ > 65536) {
-        std::cerr << "SID file data exceeds C64 memory limits! (Load address: $"
-            << util::wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
+        std::cerr << "SID file data exceeds C64 memory limits! (Load address: $" << util::wordToHex(header_.loadAddress) << ", Size: " << dataSize_ << " bytes)\n";
         return false;
     }
     const u8* musicData = &buffer[header_.dataOffset];
@@ -2441,15 +2416,6 @@ bool SIDLoader::loadSID(const std::string& filename) {
         std::cerr << "Failed to copy music data to memory!\n";
         return false;
     }
-    util::Logger::info("Loaded PSID v" + std::to_string(header_.version) +
-        " file: " + std::string(header_.name));
-    util::Logger::info("Songs: " + std::to_string(header_.songs) +
-        ", Start song: " + std::to_string(header_.startSong));
-    util::Logger::info("Author: " + std::string(header_.author));
-    util::Logger::info("Released: " + std::string(header_.copyright));
-    util::Logger::debug("Load address: $" + util::wordToHex(header_.loadAddress) +
-        ", Init: $" + util::wordToHex(header_.initAddress) +
-        ", Play: $" + util::wordToHex(header_.playAddress));
     return true;
 }
 bool SIDLoader::copyMusicToMemory(const u8* data, u16 size, u16 loadAddr) {
@@ -2468,27 +2434,6 @@ bool SIDLoader::copyMusicToMemory(const u8* data, u16 size, u16 loadAddr) {
     originalMemory_.assign(data, data + size);
     originalMemoryBase_ = loadAddr;
     return true;
-}
-void SIDLoader::fixHeaderEndianness(SIDHeader& header) {
-    auto swapEndian = [](u16 value) -> u16 {
-        return (value >> 8) | (value << 8);
-        };
-    auto swapEndian32 = [](u32 value) -> u32 {
-        return  ((value & 0xff000000) >> 24)
-            | ((value & 0x00ff0000) >> 8)
-            | ((value & 0x0000ff00) << 8)
-            | ((value & 0x000000ff) << 24);
-        };
-    header.version = swapEndian(header.version);
-    header.dataOffset = swapEndian(header.dataOffset);
-    header.loadAddress = swapEndian(header.loadAddress);
-    header.initAddress = swapEndian(header.initAddress);
-    header.playAddress = swapEndian(header.playAddress);
-    header.songs = swapEndian(header.songs);
-    header.startSong = swapEndian(header.startSong);
-    header.speed = swapEndian32(header.speed);
-    header.flags = swapEndian(header.flags);
-    util::Logger::debug("SID format version " + std::to_string(header.version) + " detected");
 }
 bool SIDLoader::backupMemory() {
     if (!cpu_) {
@@ -2510,34 +2455,6 @@ bool SIDLoader::restoreMemory() {
         cpu_->writeByte(static_cast<u16>(addr), memoryBackup_[addr]);
     }
     return true;
-}
-std::string SIDLoader::getSIDModel() const {
-    if (header_.version >= 2) {
-        u16 flags = header_.flags;
-        u8 model = (flags >> 4) & 0x03;
-        switch (model) {
-        case 0: return "Unknown";
-        case 1: return "6581 (MOS6581)";
-        case 2: return "8580 (MOS8580)";
-        case 3: return "6581 or 8580";
-        default: return "Unknown";
-        }
-    }
-    return "Unknown (not specified in v1 files)";
-}
-std::string SIDLoader::getClockSpeed() const {
-    if (header_.version >= 2) {
-        u16 flags = header_.flags;
-        u8 clock = (flags >> 2) & 0x03;
-        switch (clock) {
-        case 0: return "Unknown";
-        case 1: return "PAL (50Hz)";
-        case 2: return "NTSC (60Hz)";
-        case 3: return "PAL and NTSC";
-        default: return "Unknown";
-        }
-    }
-    return "Unknown (not specified in v1 files)";
 }
 ```
 
@@ -2682,20 +2599,6 @@ namespace sidwinder {
         Logger::Level Logger::minLevel_ = Logger::Level::Info;
         std::optional<std::filesystem::path> Logger::logFile_ = std::nullopt;
         bool Logger::consoleOutput_ = true;
-        std::string byteToHex(u8 value, bool upperCase) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(value);
-            return ss.str();
-        }
-        std::string wordToHex(u16 value, bool upperCase) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(4) << std::setfill('0')
-                << value;
-            return ss.str();
-        }
         std::optional<u16> parseHex(std::string_view str) {
             const auto start = str.find_first_not_of(" \t\r\n");
             if (start == std::string_view::npos) {
@@ -4186,12 +4089,9 @@ void MemorySubsystem::writeMemory(u32 addr, u8 value, u32 sourcePC) {
     lastWriteToAddr_[addr] = sourcePC;
 }
 void MemorySubsystem::copyMemoryBlock(u32 start, std::span<const u8> data) {
-    for (size_t i = 0; i < data.size(); ++i) {
-        const auto idx = static_cast<u32>(i);
-        if (start + idx < memory_.size()) {
-            memory_[start + idx] = data[i];
-        }
-    }
+    if (start >= memory_.size()) return;
+    const size_t maxCopy = std::min(data.size(), memory_.size() - start);
+    std::copy_n(data.begin(), maxCopy, memory_.begin() + start);
 }
 void MemorySubsystem::markMemoryAccess(u32 addr, MemoryAccessFlag flag) {
     memoryAccess_[addr] |= static_cast<u8>(flag);
@@ -4582,7 +4482,6 @@ namespace sidwinder {
             }
             if (options.includePlayer && getFileExtension(options.outputFile) == ".prg") {
                 needsEmulation = false;
-                util::Logger::debug("Skipping emulation for LinkPlayer command - not needed");
             }
             if (needsEmulation) {
                 if (!analyzeMusic(options)) {
@@ -4672,7 +4571,6 @@ namespace sidwinder {
         const u16 sidInit = sid_->getInitAddress();
         const u16 sidPlay = sid_->getPlayAddress();
         auto [avgCycles, maxCycles] = emulator.getCycleStats();
-        util::Logger::debug("Maximum cycles per frame: " + std::to_string(maxCycles));
         return true;
     }
     int CommandProcessor::calculatePlayCallsPerFrame(u8 CIATimerLo, u8 CIATimerHi) {
@@ -5327,7 +5225,6 @@ namespace sidwinder {
             static_cast<util::Logger::Level>(std::min(std::max(configLogLevel - 1, 0), 3));
         util::Logger::initialize(logFile_);
         util::Logger::setLogLevel(logLevel);
-        util::Logger::info(SIDwinder_VERSION " started");
     }
     int SIDwinderApp::executeCommand() {
         switch (command_.getType()) {
@@ -6748,9 +6645,6 @@ public:
         header_.copyright[sizeof(header_.copyright) - 1] = '\0';
     }
     bool loadSID(const std::string& filename);
-    u16 getVersion() const { return header_.version; }
-    std::string getSIDModel() const;
-    std::string getClockSpeed() const;
     u16 getInitAddress() const { return header_.initAddress; }
     u16 getPlayAddress() const { return header_.playAddress; }
     u16 getLoadAddress() const { return header_.loadAddress; }
@@ -6764,7 +6658,6 @@ public:
     bool restoreMemory();
 private:
     bool copyMusicToMemory(const u8* data, u16 size, u16 loadAddr);
-    void fixHeaderEndianness(SIDHeader& header);
     SIDHeader header_;          
     u16 dataSize_ = 0;          
     CPU6510* cpu_ = nullptr;    
@@ -6828,8 +6721,30 @@ namespace sidwinder {
 #include <unordered_map>
 namespace sidwinder {
     namespace util {
-        std::string byteToHex(u8 value, bool upperCase = true);
-        std::string wordToHex(u16 value, bool upperCase = true);
+        inline u16 swapEndian(u16 value) {
+            return (value >> 8) | (value << 8);
+        }
+        inline u32 swapEndian(u32 value) {
+            return ((value & 0xff000000) >> 24)
+                | ((value & 0x00ff0000) >> 8)
+                | ((value & 0x0000ff00) << 8)
+                | ((value & 0x000000ff) << 24);
+        }
+        inline std::string byteToHex(u8 value, bool upperCase = true) {
+            std::ostringstream ss;
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<int>(value);
+            return ss.str();
+        }
+        inline std::string wordToHex(u16 value, bool upperCase = true)
+        {
+            std::ostringstream ss;
+            ss << (upperCase ? std::uppercase : std::nouppercase)
+                << std::hex << std::setw(4) << std::setfill('0')
+                << value;
+            return ss.str();
+        }
         std::optional<u16> parseHex(std::string_view str);
         std::string padToColumn(std::string_view str, size_t width);
         class IndexRange {

@@ -70,17 +70,6 @@ namespace sidwinder {
             result.newInit = result.newLoad + (result.originalInit - result.originalLoad);
             result.newPlay = result.newLoad + (result.originalPlay - result.originalLoad);
 
-            Logger::info("Original addresses - Load: $" + wordToHex(result.originalLoad) +
-                ", Init: $" + wordToHex(result.originalInit) +
-                ", Play: $" + wordToHex(result.originalPlay) +
-                ", Flags: $" + wordToHex(originalFlags) +
-                ", Version: " + std::to_string(version));
-
-            Logger::info("Relocated addresses - Load: $" + wordToHex(result.newLoad) +
-                ", Init: $" + wordToHex(result.newInit) +
-                ", Play: $" + wordToHex(result.newPlay));
-
-
             // Create a Disassembler
             Disassembler disassembler(*cpu, *sid);
 
@@ -145,7 +134,6 @@ namespace sidwinder {
 
                     result.success = true;
                     result.message = "Relocation complete (saved as PRG).";
-                    Logger::info(result.message);
                 }
                 catch (const std::exception& e) {
                     result.message = std::string("Failed to copy output file: ") + e.what();
@@ -156,7 +144,6 @@ namespace sidwinder {
             else {
                 result.success = true;
                 result.message = "Relocation to SID complete. ";
-                Logger::info(result.message);
             }
 
             return result;
@@ -398,25 +385,15 @@ namespace sidwinder {
 
             // Fix endianness (SID files are big-endian)
             // We need to reverse the byte order for all multi-byte fields
-            auto swapEndian = [](u16 value) -> u16 {
-                return (value >> 8) | (value << 8);
-                };
-            auto swapEndian32 = [](u32 value) -> u32 {
-                return  ((value & 0xff000000) >> 24)
-                    | ((value & 0x00ff0000) >> 8)
-                    | ((value & 0x0000ff00) << 8)
-                    | ((value & 0x000000ff) << 24);
-                };
-
-            header.version = swapEndian(header.version);
-            header.dataOffset = swapEndian(header.dataOffset);
-            header.loadAddress = swapEndian(header.loadAddress);
-            header.initAddress = swapEndian(header.initAddress);
-            header.playAddress = swapEndian(header.playAddress);
-            header.songs = swapEndian(header.songs);
-            header.startSong = swapEndian(header.startSong);
-            header.flags = swapEndian(header.flags);
-            header.speed = swapEndian32(header.speed);
+            header.version = util::swapEndian(header.version);
+            header.dataOffset = util::swapEndian(header.dataOffset);
+            header.loadAddress = util::swapEndian(header.loadAddress);
+            header.initAddress = util::swapEndian(header.initAddress);
+            header.playAddress = util::swapEndian(header.playAddress);
+            header.songs = util::swapEndian(header.songs);
+            header.startSong = util::swapEndian(header.startSong);
+            header.flags = util::swapEndian(header.flags);
+            header.speed = util::swapEndian(header.speed);
 
             // Open the output SID file
             std::ofstream sid_file(sidFile, std::ios::binary);
@@ -439,12 +416,6 @@ namespace sidwinder {
             sid_file.write(buffer.data(), dataSize);
 
             sid_file.close();
-
-            Logger::info("Created SID file: " + sidFile.string() +
-                " (Load: $" + wordToHex(loadAddr) +
-                ", Init: $" + wordToHex(initAddr) +
-                ", Play: $" + wordToHex(playAddr) +
-                ", Flags: $" + wordToHex(flags) + ")");
 
             return true;
         }

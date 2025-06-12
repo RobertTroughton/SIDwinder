@@ -102,7 +102,6 @@ namespace sidwinder {
             // If we're just linking a player with SID, we don't need emulation
             if (options.includePlayer && getFileExtension(options.outputFile) == ".prg") {
                 needsEmulation = false;
-                util::Logger::debug("Skipping emulation for LinkPlayer command - not needed");
             }
 
             // Analyze the music (only if needed)
@@ -238,7 +237,6 @@ namespace sidwinder {
 
         // Get cycle statistics
         auto [avgCycles, maxCycles] = emulator.getCycleStats();
-        util::Logger::debug("Maximum cycles per frame: " + std::to_string(maxCycles));
 
         return true;
     }

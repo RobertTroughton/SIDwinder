@@ -24,36 +24,6 @@ namespace sidwinder {
         bool Logger::consoleOutput_ = true;
 
         /**
-         * @brief Convert a byte to a hexadecimal string
-         *
-         * @param value Byte value to convert
-         * @param upperCase Whether to use uppercase letters
-         * @return Formatted hex string (always 2 characters)
-         */
-        std::string byteToHex(u8 value, bool upperCase) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(value);
-            return ss.str();
-        }
-
-        /**
-         * @brief Convert a word to a hexadecimal string
-         *
-         * @param value Word value to convert
-         * @param upperCase Whether to use uppercase letters
-         * @return Formatted hex string (always 4 characters)
-         */
-        std::string wordToHex(u16 value, bool upperCase) {
-            std::ostringstream ss;
-            ss << (upperCase ? std::uppercase : std::nouppercase)
-                << std::hex << std::setw(4) << std::setfill('0')
-                << value;
-            return ss.str();
-        }
-
-        /**
          * @brief Parse a hexadecimal string into a numeric value
          *
          * Handles different formats including:

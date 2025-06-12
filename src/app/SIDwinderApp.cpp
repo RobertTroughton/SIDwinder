@@ -119,8 +119,6 @@ namespace sidwinder {
         // Initialize logger
         util::Logger::initialize(logFile_);
         util::Logger::setLogLevel(logLevel);
-
-        util::Logger::info(SIDwinder_VERSION " started");
     }
 
     int SIDwinderApp::executeCommand() {

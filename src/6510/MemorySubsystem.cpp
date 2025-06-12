@@ -69,12 +69,10 @@ void MemorySubsystem::writeMemory(u32 addr, u8 value, u32 sourcePC) {
  * @param data Span of bytes to copy
  */
 void MemorySubsystem::copyMemoryBlock(u32 start, std::span<const u8> data) {
-    for (size_t i = 0; i < data.size(); ++i) {
-        const auto idx = static_cast<u32>(i);
-        if (start + idx < memory_.size()) {
-            memory_[start + idx] = data[i];
-        }
-    }
+    if (start >= memory_.size()) return;
+
+    const size_t maxCopy = std::min(data.size(), memory_.size() - start);
+    std::copy_n(data.begin(), maxCopy, memory_.begin() + start);
 }
 
 /**

@@ -106,24 +106,6 @@ public:
      */
     bool loadSID(const std::string& filename);
 
-    /**
-     * @brief Get the SID file format version
-     * @return Version number (1-4)
-     */
-    u16 getVersion() const { return header_.version; }
-
-    /**
-     * @brief Get the SID chip model used in this file
-     * @return String representation of SID model(s)
-     */
-    std::string getSIDModel() const;
-
-    /**
-     * @brief Get the clock speed used in this file
-     * @return String representation of clock speed
-     */
-    std::string getClockSpeed() const;
-
     // Accessor methods
 
     /**
@@ -207,14 +189,6 @@ private:
      * Loads music data into the CPU memory at the specified address.
      */
     bool copyMusicToMemory(const u8* data, u16 size, u16 loadAddr);
-
-    /**
-     * @brief Fix SID header endianness (SID files use big-endian)
-     * @param header Reference to the header to fix
-     *
-     * Swaps endianness of multi-byte values in the SID header.
-     */
-    void fixHeaderEndianness(SIDHeader& header);
 
     // Member variables
     SIDHeader header_;          // SID file header
