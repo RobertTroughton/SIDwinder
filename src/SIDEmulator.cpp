@@ -6,6 +6,7 @@
 #include "ConfigManager.h"
 
 #include <set>
+#include <sstream>
 
 namespace sidwinder {
 
