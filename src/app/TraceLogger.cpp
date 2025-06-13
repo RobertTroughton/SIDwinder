@@ -5,6 +5,7 @@
 // ==================================
 #include "TraceLogger.h"
 #include "../SIDwinderUtils.h"
+#include <cstring>
 #include <map>
 
 namespace sidwinder {
