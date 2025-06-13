@@ -249,7 +249,7 @@ namespace sidwinder {
         }
         else {
             // Simple extraction from SID to PRG
-            return musicBuilder_->extractPrgFromSid(options.inputFile, options.outputFile);
+            return SIDLoader::extractPrgFromSid(options.inputFile, options.outputFile);
         }
     }
 

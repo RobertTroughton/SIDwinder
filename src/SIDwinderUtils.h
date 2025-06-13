@@ -10,6 +10,7 @@
 
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <optional>
 #include <string>

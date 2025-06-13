@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -247,4 +248,53 @@ bool SIDLoader::restoreMemory() {
     }
 
     return true;
+}
+
+bool SIDLoader::extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg) {
+    // 1. Read entire SID file
+    auto sidData = util::readBinaryFile(sidFile);
+    if (!sidData) {
+        util::Logger::error("Failed to read SID file: " + sidFile.string());
+        return false;
+    }
+
+    // 2. Parse header to get offsets
+    SIDHeader header;
+    std::memcpy(&header, sidData->data(), sizeof(header));
+    util::fixSIDHeaderEndianness(header);
+
+    // Validate it's a SID file
+    if (std::string(header.magicID, 4) != "PSID") {
+        util::Logger::error("Not a valid PSID file: " + sidFile.string());
+        return false;
+    }
+
+    // 3. Calculate where music data starts
+    u16 dataOffset = header.dataOffset;
+    u16 loadAddress = header.loadAddress;
+
+    if (loadAddress == 0) {
+        // Embedded load address
+        if (sidData->size() < dataOffset + 2) {
+            util::Logger::error("SID file too small for embedded load address");
+            return false;
+        }
+        loadAddress = sidData->at(dataOffset) | (sidData->at(dataOffset + 1) << 8);
+        dataOffset += 2;
+    }
+
+    // 4. Build PRG data in memory
+    std::vector<u8> prgData;
+    prgData.push_back(loadAddress & 0xFF);        // Low byte
+    prgData.push_back((loadAddress >> 8) & 0xFF); // High byte
+
+    // 5. Copy music data
+    if (dataOffset < sidData->size()) {
+        prgData.insert(prgData.end(),
+            sidData->begin() + dataOffset,
+            sidData->end());
+    }
+
+    // 6. Write result
+    return util::writeBinaryFile(outputPrg, prgData);
 }
