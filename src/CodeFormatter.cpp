@@ -8,6 +8,8 @@
 #include "DisassemblyWriter.h"
 #include "MemoryConstants.h"
 
+#include <sstream>
+
 namespace sidwinder {
 
     /**
