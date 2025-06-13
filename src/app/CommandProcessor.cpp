@@ -11,9 +11,10 @@
 #include "../SIDLoader.h"
 #include "../Disassembler.h"
 #include "../RelocationUtils.h"
+#include "../MemoryConstants.h"
+#include "../SIDplayers/PlayerManager.h"
+#include "../SIDplayers/PlayerOptions.h"
 #include "MusicBuilder.h"
-#include "MemoryConstants.h"
-
 
 namespace sidwinder {
 
@@ -25,6 +26,10 @@ namespace sidwinder {
         // Initialize SID Loader
         sid_ = std::make_unique<SIDLoader>();
         sid_->setCPU(cpu_.get());
+
+        // Initialize builders
+        musicBuilder_ = std::make_unique<MusicBuilder>(cpu_.get(), sid_.get());
+        playerManager_ = std::make_unique<PlayerManager>(cpu_.get(), sid_.get());
     }
 
     CommandProcessor::~CommandProcessor() {
@@ -50,38 +55,6 @@ namespace sidwinder {
             // Apply any metadata overrides
             applySIDMetadataOverrides(options);
 
-            // For -player command, we need to run emulation to analyze register patterns
-            if (options.includePlayer && util::isValidPRGFile(options.outputFile) && options.analyzeRegisterOrder) {
-                // Create SID emulator
-                SIDEmulator emulator(cpu_.get(), sid_.get());
-                SIDEmulator::EmulationOptions emulationOptions;
-                emulationOptions.frames = options.frames > 0 ?
-                    options.frames : util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES);
-
-                // Enable register tracking specifically for player generation
-                emulationOptions.registerTrackingEnabled = true;
-
-                // Enable pattern detection
-                emulationOptions.patternDetectionEnabled = true;
-
-                // Track CIA timer writes
-                u8 CIATimerLo = 0;
-                u8 CIATimerHi = 0;
-                cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-                    if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
-                    if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
-                    });
-
-                // Run emulation to analyze SID patterns
-                if (!emulator.runEmulation(emulationOptions)) {
-                    util::Logger::warning("SID pattern analysis failed - continuing without pattern info");
-                }
-
-                // Calculate play calls per frame
-                int playCallsPerFrame = calculatePlayCallsPerFrame(CIATimerLo, CIATimerHi);
-                sid_->setNumPlayCallsPerFrame(playCallsPerFrame);
-            }
-
             // Determine if we need emulation based on the command type
             bool needsEmulation = false;
 
@@ -96,26 +69,18 @@ namespace sidwinder {
                 needsEmulation = true;
             }
 
-            // If we're just linking a player with SID, we don't need emulation
-            if (options.includePlayer && util::isValidPRGFile(options.outputFile)) {
-                needsEmulation = false;
-            }
-
-            // Analyze the music (only if needed)
+            // Analyze the music if needed
             if (needsEmulation) {
                 if (!analyzeMusic(options)) {
                     return false;
                 }
-            }
-            else {
-                // For LinkPlayer, we still need the Disassembler but without running emulation
-                disassembler_ = std::make_unique<Disassembler>(*cpu_, *sid_);
             }
 
             // Generate the output file
             if (!generateOutput(options)) {
                 return false;
             }
+
             return true;
         }
         catch (const std::exception& e) {
@@ -125,51 +90,36 @@ namespace sidwinder {
     }
 
     bool CommandProcessor::loadInputFile(const ProcessingOptions& options) {
-        // Base name for temporary files
-        std::string basename = options.inputFile.stem().string();
+        // Verify input file exists
+        if (!fs::exists(options.inputFile)) {
+            util::Logger::error("Input file not found: " + options.inputFile.string());
+            return false;
+        }
 
-        // Setup temporary file paths
-        fs::path tempExtractedPrg = options.tempDir / (basename + "-original.prg");
-
-        bool isSidFile = util::isValidSIDFile(options.inputFile);
-        if (!isSidFile)
-        {
+        // Only accept SID files
+        if (!util::isValidSIDFile(options.inputFile)) {
             util::Logger::error("Unsupported file type: " + options.inputFile.string() + " - only SID files accepted.");
             return false;
         }
-        if (!loadSidFile(options, tempExtractedPrg)) {
-            util::Logger::error("Failed to load file: " + options.inputFile.string());
+
+        // Load the SID file
+        if (!sid_->loadSID(options.inputFile.string())) {
+            util::Logger::error("Failed to load SID file: " + options.inputFile.string());
             return false;
         }
 
-        return true;
-    }
-
-
-    bool CommandProcessor::loadSidFile(const ProcessingOptions& options, const fs::path& tempExtractedPrg) {
-        bool loaded = sid_->loadSID(options.inputFile.string());
-
-        if (loaded) {
-            // Apply overrides if specified
-            if (options.hasOverrideInit) {
-                sid_->setInitAddress(options.overrideInitAddress);
-            }
-
-            if (options.hasOverridePlay) {
-                sid_->setPlayAddress(options.overridePlayAddress);
-            }
-
-            if (options.hasOverrideLoad) {
-                sid_->setLoadAddress(options.overrideLoadAddress);
-            }
-
-            // Extract PRG data from SID to temp file
-            // Create a temporary MusicBuilder to use its extractPrgFromSid method
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            builder.extractPrgFromSid(options.inputFile, tempExtractedPrg);
+        // Apply address overrides if specified
+        if (options.hasOverrideInit) {
+            sid_->setInitAddress(options.overrideInitAddress);
+        }
+        if (options.hasOverridePlay) {
+            sid_->setPlayAddress(options.overridePlayAddress);
+        }
+        if (options.hasOverrideLoad) {
+            sid_->setLoadAddress(options.overrideLoadAddress);
         }
 
-        return loaded;
+        return true;
     }
 
     void CommandProcessor::applySIDMetadataOverrides(const ProcessingOptions& options) {
@@ -177,11 +127,9 @@ namespace sidwinder {
         if (!options.overrideTitle.empty()) {
             sid_->setTitle(options.overrideTitle);
         }
-
         if (!options.overrideAuthor.empty()) {
             sid_->setAuthor(options.overrideAuthor);
         }
-
         if (!options.overrideCopyright.empty()) {
             sid_->setCopyright(options.overrideCopyright);
         }
@@ -190,17 +138,6 @@ namespace sidwinder {
     bool CommandProcessor::analyzeMusic(const ProcessingOptions& options) {
         // Backup memory before emulation
         sid_->backupMemory();
-
-        // Track CIA timer writes
-        u8 CIATimerLo = 0;
-        u8 CIATimerHi = 0;
-        cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
-            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
-            });
-
-        // Set up Disassembler if needed
-        disassembler_ = std::make_unique<Disassembler>(*cpu_, *sid_);
 
         // Set up emulation options
         SIDEmulator emulator(cpu_.get(), sid_.get());
@@ -214,86 +151,22 @@ namespace sidwinder {
         emulationOptions.traceFormat = options.traceFormat;
         emulationOptions.traceLogPath = options.traceLogPath;
 
-        // Don't enable register tracking by default
-        emulationOptions.registerTrackingEnabled = false;
-
         // Run the emulation
         if (!emulator.runEmulation(emulationOptions)) {
             util::Logger::error("SID emulation failed");
             return false;
         }
 
-        // Calculate play calls per frame
-        int playCallsPerFrame = calculatePlayCallsPerFrame(CIATimerLo, CIATimerHi);
-        sid_->setNumPlayCallsPerFrame(playCallsPerFrame);
-
-        // Get SID info
-        const u16 sidLoad = sid_->getLoadAddress();
-        const u16 sidInit = sid_->getInitAddress();
-        const u16 sidPlay = sid_->getPlayAddress();
-
-        // Get cycle statistics
-        auto [avgCycles, maxCycles] = emulator.getCycleStats();
+        // Create disassembler after emulation
+        disassembler_ = std::make_unique<Disassembler>(*cpu_, *sid_);
 
         return true;
     }
 
-
-    int CommandProcessor::calculatePlayCallsPerFrame(u8 CIATimerLo, u8 CIATimerHi) {
-        const uint32_t speedBits = sid_->getHeader().speed;
-        int count = 0;
-
-        // Count bits in speed field
-        for (int i = 0; i < 32; ++i) {
-            if (speedBits & (1u << i)) {
-                ++count;
-            }
-        }
-
-        // Default to calls per frame from config, or 1 if not set
-        int defaultCalls = util::ConfigManager::getInt("defaultPlayCallsPerFrame", 1);
-        int numPlayCallsPerFrame = std::clamp(count == 0 ? defaultCalls : count, 1, 16);
-
-        // Check for CIA timer
-        if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
-            const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
-
-            // Get cycles per frame based on clock standard
-            const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
-            const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
-            const int numCalls = static_cast<int>(freq + 0.5);
-            numPlayCallsPerFrame = std::clamp(numCalls, 1, 16);
-        }
-
-        return numPlayCallsPerFrame;
-    }
-
     bool CommandProcessor::generateOutput(const ProcessingOptions& options) {
-
-        // Determine new addresses for relocation
-        u16 newSidLoad;
-        u16 newSidInit;
-        u16 newSidPlay;
-
-        const u16 sidLoad = sid_->getLoadAddress();
-        const u16 sidInit = sid_->getInitAddress();
-        const u16 sidPlay = sid_->getPlayAddress();
-
-        if (options.hasRelocation) {
-            newSidLoad = options.relocationAddress;
-            // Calculate offset for init and play addresses
-            newSidInit = newSidLoad + (sidInit - sidLoad);
-            newSidPlay = newSidLoad + (sidPlay - sidLoad);
-        }
-        else {
-            // Use original addresses if not relocating
-            newSidLoad = sidLoad;
-            newSidInit = sidInit;
-            newSidPlay = sidPlay;
-        }
-
         // Generate the appropriate output format
         std::string ext = util::getFileExtension(options.outputFile);
+
         if (ext == ".prg") {
             return generatePRGOutput(options);
         }
@@ -303,119 +176,80 @@ namespace sidwinder {
         else if (ext == ".asm") {
             return generateASMOutput(options);
         }
-        util::Logger::error("Unsupported output format");
+
+        util::Logger::error("Unsupported output format: " + ext);
         return false;
     }
 
     bool CommandProcessor::generatePRGOutput(const ProcessingOptions& options) {
-        // Base name for files
+        // If including player, delegate to PlayerManager
+        if (options.includePlayer) {
+            // Convert options to PlayerOptions
+            PlayerOptions playerOpts;
+            playerOpts.playerName = options.playerName;
+            playerOpts.playerAddress = options.playerAddress;
+            playerOpts.compress = options.compress;
+            playerOpts.compressorType = options.compressorType;
+            playerOpts.exomizerPath = options.exomizerPath;
+            playerOpts.kickAssPath = options.kickAssPath;
+            playerOpts.tempDir = options.tempDir;
+            playerOpts.userDefinitions = options.userDefinitions;
+
+            // Set SID addresses
+            playerOpts.sidLoadAddr = sid_->getLoadAddress();
+            playerOpts.sidInitAddr = sid_->getInitAddress();
+            playerOpts.sidPlayAddr = sid_->getPlayAddress();
+
+            // Calculate play calls per frame
+            const uint32_t speedBits = sid_->getHeader().speed;
+            int count = 0;
+            for (int i = 0; i < 32; ++i) {
+                if (speedBits & (1u << i)) {
+                    ++count;
+                }
+            }
+            playerOpts.playCallsPerFrame = std::clamp(count == 0 ? 1 : count, 1, 16);
+
+            // Analyze music if needed
+            playerManager_->analyzeMusicForPlayer(playerOpts);
+
+            return playerManager_->processWithPlayer(options.inputFile, options.outputFile, playerOpts);
+        }
+
+        // For non-player PRG output
         std::string basename = options.inputFile.stem().string();
 
-        // Setup temporary file paths
-        fs::path tempDir = options.tempDir;
-        fs::path tempExtractedPrg = tempDir / (basename + "-original.prg");
+        // Handle relocation
+        if (options.hasRelocation) {
+            // Need to disassemble and reassemble at new address
+            if (!disassembler_) {
+                // Run analysis if not already done
+                if (!analyzeMusic(options)) {
+                    return false;
+                }
+            }
 
-        // For LinkPlayer with SID input, go directly to MusicBuilder without disassembly
-        if (options.includePlayer && util::isValidSIDFile(options.inputFile)) {
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            MusicBuilder::BuildOptions buildOptions;
-            buildOptions.includePlayer = true;
-            buildOptions.playerName = options.playerName;
-            buildOptions.playerAddress = options.playerAddress;
-            buildOptions.compress = options.compress;
-            buildOptions.compressorType = options.compressorType;
-            buildOptions.exomizerPath = options.exomizerPath;
-            buildOptions.kickAssPath = options.kickAssPath;
-            buildOptions.tempDir = tempDir;
-            buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
-            buildOptions.userDefinitions = options.userDefinitions;
-
-            // These aren't used for SID input - KickAss will get them from the SID file
-            buildOptions.sidLoadAddr = sid_->getLoadAddress();
-            buildOptions.sidInitAddr = sid_->getInitAddress();
-            buildOptions.sidPlayAddr = sid_->getPlayAddress();
-
-            return builder.buildMusic(basename, options.inputFile, options.outputFile, buildOptions);
-        }
-
-        // The rest of the method handles relocation and other special cases
-        bool bRelocation = options.hasRelocation;
-        u16 newSidLoad = options.relocationAddress;
-
-        // If the input file is a SID and we haven't extracted it yet, do so now
-        if ((!bRelocation) && (util::isValidSIDFile(options.inputFile)) && (!fs::exists(tempExtractedPrg))) {
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            builder.extractPrgFromSid(options.inputFile, tempExtractedPrg);
-        }
-
-        // Determine if we need to use the disassembler for relocation
-        if (bRelocation) {
             sid_->restoreMemory();
 
-            // For relocation, generate assembly file
-            fs::path tempAsmFile = tempDir / (basename + ".asm");
+            // Generate relocated assembly
+            fs::path tempAsmFile = options.tempDir / (basename + "-relocated.asm");
             const u16 sidLoad = sid_->getLoadAddress();
+            const u16 newSidLoad = options.relocationAddress;
             const u16 newSidInit = newSidLoad + (sid_->getInitAddress() - sidLoad);
             const u16 newSidPlay = newSidLoad + (sid_->getPlayAddress() - sidLoad);
 
             disassembler_->generateAsmFile(tempAsmFile.string(), newSidLoad, newSidInit, newSidPlay, true);
 
-            // Run assembler to build with player
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            MusicBuilder::BuildOptions buildOptions;
-            buildOptions.includePlayer = options.includePlayer;
-            buildOptions.playerName = options.playerName;
-            buildOptions.playerAddress = options.playerAddress;
-            buildOptions.compress = options.compress;
-            buildOptions.compressorType = options.compressorType;
-            buildOptions.exomizerPath = options.exomizerPath;
-            buildOptions.kickAssPath = options.kickAssPath;
-            buildOptions.tempDir = tempDir;
-            buildOptions.sidLoadAddr = newSidLoad;
-            buildOptions.sidInitAddr = newSidInit;
-            buildOptions.sidPlayAddr = newSidPlay;
-            buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
-            buildOptions.userDefinitions = options.userDefinitions;
+            // Build the relocated PRG
+            MusicBuilder::BuildOptions buildOpts;
+            buildOpts.kickAssPath = options.kickAssPath;
+            buildOpts.tempDir = options.tempDir;
 
-            return builder.buildMusic(basename, tempAsmFile, options.outputFile, buildOptions);
-        }
-        else if (util::isValidSIDFile(options.inputFile)) {
-            // No relocation, and input is a SID file - handled earlier for LinkPlayer
-            // This branch handles SID input when not using a player
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            MusicBuilder::BuildOptions buildOptions;
-            buildOptions.includePlayer = options.includePlayer;
-            buildOptions.playerName = options.playerName;
-            buildOptions.playerAddress = options.playerAddress;
-            buildOptions.compress = options.compress;
-            buildOptions.compressorType = options.compressorType;
-            buildOptions.exomizerPath = options.exomizerPath;
-            buildOptions.kickAssPath = options.kickAssPath;
-            buildOptions.tempDir = tempDir;
-            buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
-            buildOptions.userDefinitions = options.userDefinitions;
-
-            return builder.buildMusic(basename, options.inputFile, options.outputFile, buildOptions);
+            return musicBuilder_->buildMusic(basename, tempAsmFile, options.outputFile, buildOpts);
         }
         else {
-            // No relocation, input is PRG or ASM
-            MusicBuilder builder(cpu_.get(), sid_.get());
-            MusicBuilder::BuildOptions buildOptions;
-            buildOptions.includePlayer = options.includePlayer;
-            buildOptions.playerName = options.playerName;
-            buildOptions.playerAddress = options.playerAddress;
-            buildOptions.compress = options.compress;
-            buildOptions.compressorType = options.compressorType;
-            buildOptions.exomizerPath = options.exomizerPath;
-            buildOptions.kickAssPath = options.kickAssPath;
-            buildOptions.tempDir = tempDir;
-            buildOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
-            buildOptions.userDefinitions = options.userDefinitions;
-
-            // Use the original file directly - either ASM or the extracted PRG
-            fs::path inputToUse = util::isValidASMFile(options.inputFile) ? options.inputFile : tempExtractedPrg;
-
-            return builder.buildMusic(basename, inputToUse, options.outputFile, buildOptions);
+            // Simple extraction from SID to PRG
+            return musicBuilder_->extractPrgFromSid(options.inputFile, options.outputFile);
         }
     }
 
@@ -432,98 +266,41 @@ namespace sidwinder {
 
             // Perform the relocation
             util::RelocationResult result = util::relocateSID(cpu_.get(), sid_.get(), params);
-
-            // Return success/failure
             return result.success;
         }
         else {
-            // No relocation requested - just create a SID file
-
-            if (util::isValidSIDFile(options.inputFile)) {
-                // Input is already a SID - just copy it (or extract/modify if needed)
-                try {
-                    fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
-                    return true;
-                }
-                catch (const std::exception& e) {
-                    util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
-                    return false;
-                }
+            // No relocation - just copy the SID file
+            try {
+                fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
+                return true;
             }
-            else if (util::isValidPRGFile(options.inputFile)) {
-                // Input is PRG - need to create a SID file
-
-                // We need load, init, and play addresses
-                u16 loadAddr = options.hasOverrideLoad ?
-                    options.overrideLoadAddress : util::ConfigManager::getDefaultSidLoadAddress();
-                u16 initAddr = options.hasOverrideInit ?
-                    options.overrideInitAddress : util::ConfigManager::getDefaultSidInitAddress();
-                u16 playAddr = options.hasOverridePlay ?
-                    options.overridePlayAddress : util::ConfigManager::getDefaultSidPlayAddress();
-
-                // Get default flags and SID addresses
-                const SIDHeader& originalHeader = sid_->getHeader();
-                u16 flags = originalHeader.flags;
-                u8 secondSIDAddress = originalHeader.secondSIDAddress;
-                u8 thirdSIDAddress = originalHeader.thirdSIDAddress;
-                u16 version = originalHeader.version;
-                u32 speed = originalHeader.speed;
-
-                // Create SID from PRG
-                bool success = util::createSIDFromPRG(
-                    options.inputFile,
-                    options.outputFile,
-                    loadAddr,
-                    initAddr,
-                    playAddr,
-                    options.overrideTitle,
-                    options.overrideAuthor,
-                    options.overrideCopyright,
-                    flags,
-                    secondSIDAddress,
-                    thirdSIDAddress,
-                    version,
-                    speed);
-
-                if (!success) {
-                    try {
-                        fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
-                        return true;
-                    }
-                    catch (const std::exception& e) {
-                        util::Logger::error(std::string("Failed to copy PRG file: ") + e.what());
-                        return false;
-                    }
-                }
-
-                return success;
-            }
-            else {
-                util::Logger::error("Unsupported input file type for SID output");
+            catch (const std::exception& e) {
+                util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
                 return false;
             }
         }
     }
 
     bool CommandProcessor::generateASMOutput(const ProcessingOptions& options) {
-        // Base name for files
-        std::string basename = options.inputFile.stem().string();
-
-        // Setup temporary file paths
-        fs::path tempDir = options.tempDir;
+        // Ensure we have analyzed the music
+        if (!disassembler_) {
+            if (!analyzeMusic(options)) {
+                return false;
+            }
+        }
 
         // Restore original memory for clean disassembly
         sid_->restoreMemory();
 
-        // Determine if we're relocating
+        // Determine output addresses
         u16 outputSidLoad = options.hasRelocation ?
             options.relocationAddress : sid_->getLoadAddress();
 
-        // Generate disassembly with adjusted addresses as needed
         const u16 sidLoad = sid_->getLoadAddress();
         const u16 newSidInit = outputSidLoad + (sid_->getInitAddress() - sidLoad);
         const u16 newSidPlay = outputSidLoad + (sid_->getPlayAddress() - sidLoad);
 
+        // Generate disassembly
         disassembler_->generateAsmFile(options.outputFile.string(), outputSidLoad, newSidInit, newSidPlay, true);
 
         return true;

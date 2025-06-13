@@ -66,28 +66,50 @@ namespace sidwinder {
         }
 
         bool ConfigManager::loadFromFile(const std::filesystem::path& configFile) {
-            return util::readTextFileLines(configFile, [](const std::string& line) {
-                if (line.empty() || line[0] == '#' || line[0] == ';') {
-                    return true; // Continue to next line
-                }
+            try {
+                return util::readTextFileLines(configFile, [](const std::string& line) {
+                    try {
+                        if (line.empty() || line[0] == '#' || line[0] == ';') {
+                            return true;
+                        }
+                        const auto pos = line.find('=');
+                        if (pos == std::string::npos) {
+                            return true;
+                        }
 
-                const auto pos = line.find('=');
-                if (pos == std::string::npos) {
-                    return true; // Continue to next line
-                }
+                        std::string key = line.substr(0, pos);
+                        std::string value = line.substr(pos + 1);
 
-                std::string key = line.substr(0, pos);
-                std::string value = line.substr(pos + 1);
+                        // Safer string trimming
+                        auto trimString = [](std::string& str) {
+                            auto start = str.find_first_not_of(" \t");
+                            if (start == std::string::npos) {
+                                str.clear();
+                                return;
+                            }
+                            auto end = str.find_last_not_of(" \t");
+                            str = str.substr(start, end - start + 1);
+                            };
 
-                // Trim whitespace
-                key.erase(0, key.find_first_not_of(" \t"));
-                key.erase(key.find_last_not_of(" \t") + 1);
-                value.erase(0, value.find_first_not_of(" \t"));
-                value.erase(value.find_last_not_of(" \t") + 1);
+                        trimString(key);
+                        trimString(value);
 
-                configValues_[key] = value;
-                return true; // Continue to next line
-                });
+                        if (!key.empty()) {
+                            configValues_[key] = value;
+                        }
+                        return true;
+                    }
+                    catch (const std::exception& e) {
+                        // Log the error but continue processing other lines
+                        Logger::warning("Error parsing config line: " + line + " - " + e.what());
+                        return true; // Continue processing
+                    }
+                    });
+            }
+            catch (const std::exception& e) {
+                Logger::error("Failed to load config file: " + std::string(e.what()));
+                return false;
+            }
         }
 
         bool ConfigManager::saveToFile(const std::filesystem::path& configFile) {

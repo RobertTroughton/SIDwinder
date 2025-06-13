@@ -102,7 +102,7 @@ namespace sidwinder {
          * @param addr Address to look up
          * @return Label for the address, or empty string if no label
          */
-        std::string getLabel(u16 addr) const;
+        const std::string& getLabel(u16 addr) const;
 
         /**
          * @brief Get all identified data blocks

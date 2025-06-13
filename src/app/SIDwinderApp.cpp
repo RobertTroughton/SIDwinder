@@ -1,4 +1,8 @@
-﻿// SIDwinderApp.cpp
+﻿// ==================================
+//             SIDwinder
+//
+//  Raistlin / Genesis Project (G*P)
+// ==================================
 #include "SIDwinderApp.h"
 #include "CommandProcessor.h"
 #include "RelocationUtils.h"
@@ -15,23 +19,18 @@ namespace sidwinder {
     SIDwinderApp::SIDwinderApp(int argc, char** argv)
         : cmdParser_(argc, argv),
         command_(CommandClass::Type::Unknown) {
-
-        // Setup command line options
         setupCommandLine();
     }
 
     int SIDwinderApp::run() {
-        // Look for configuration file in current directory and executable directory
+        // Find and initialize configuration
         fs::path configFile = "SIDwinder.cfg";
         if (!fs::exists(configFile)) {
-            // Try executable directory
             configFile = fs::path(cmdParser_.getProgramName()).parent_path() / "SIDwinder.cfg";
         }
-
-        // Initialize configuration system
         util::ConfigManager::initialize(configFile);
 
-        // Parse command line into command object
+        // Parse command line
         command_ = cmdParser_.parse();
 
         // Initialize logging
@@ -42,87 +41,71 @@ namespace sidwinder {
     }
 
     void SIDwinderApp::setupCommandLine() {
-        // Command type flags - updated with new simplified syntax
+        // Commands
         cmdParser_.addFlagDefinition("player", "Link SID music with a player (convert .sid to playable .prg)", "Commands");
         cmdParser_.addFlagDefinition("relocate", "Relocate a SID file to a new address (use -relocate=<address>)", "Commands");
         cmdParser_.addFlagDefinition("disassemble", "Disassemble a SID file to assembly code", "Commands");
         cmdParser_.addFlagDefinition("trace", "Trace SID register writes during emulation", "Commands");
 
-        // Remove old options and add new ones
-        std::string defaultPlayerName = util::ConfigManager::getPlayerName();
-
         // General options
         cmdParser_.addOptionDefinition("log", "file", "Log file path", "General", util::ConfigManager::getString("logFile", "SIDwinder.log"));
-
         cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General", util::ConfigManager::getKickAssPath());
-
         cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General", util::ConfigManager::getExomizerPath());
-
         cmdParser_.addOptionDefinition("define", "key=value", "Add user definition (can be used multiple times)", "Assembly");
-
-        // Flags
         cmdParser_.addFlagDefinition("verbose", "Enable verbose logging", "General");
         cmdParser_.addFlagDefinition("help", "Display this help message", "General");
         cmdParser_.addFlagDefinition("force", "Force overwrite of output file", "General");
-        cmdParser_.addFlagDefinition("nocompress", "Disable compression for PRG output", "General");
+
+        // Player-specific options
+        cmdParser_.addOptionDefinition("playeraddr", "address", "Player load address", "Player", "$4000");
+        cmdParser_.addFlagDefinition("nocompress", "Disable compression for PRG output", "Player");
+
+        // Relocation options
         cmdParser_.addFlagDefinition("noverify", "Skip verification after relocation", "Relocation");
 
-        // Add example usages
+        // Examples
         cmdParser_.addExample(
             "SIDwinder -player music.sid music.prg",
             "Links music.sid with the default player to create an executable music.prg");
-
         cmdParser_.addExample(
             "SIDwinder -player=SimpleBitmap music.sid player.prg",
             "Links music.sid with SimpleBitmap player");
-
         cmdParser_.addExample(
             "SIDwinder -relocate=$2000 music.sid relocated.sid",
             "Relocates music.sid to $2000 and saves as relocated.sid");
-
         cmdParser_.addExample(
             "SIDwinder -disassemble music.sid music.asm",
             "Disassembles music.sid to assembly code in music.asm");
-
         cmdParser_.addExample(
             "SIDwinder -trace music.sid",
             "Traces SID register writes to trace.bin in binary format");
-
         cmdParser_.addExample(
             "SIDwinder -trace=music.log music.sid",
             "Traces SID register writes to music.log in text format");
-
         cmdParser_.addExample(
             "SIDwinder -player -define BackgroundColor=$02 -define PlayerName=Dave music.sid game.prg",
             "Creates player with custom definitions accessible in the player code");
-
         cmdParser_.addExample(
             "SIDwinder -player=RaistlinBarsWithLogo -define LogoFile=\"Logos/MCH.kla\" music.sid game.prg",
             "Example with different logo for the player");
     }
 
     void SIDwinderApp::initializeLogging() {
-        // Get log file path from command parameters or config
         std::string logFilePath = command_.getParameter("logfile",
             util::ConfigManager::getString("logFile", "SIDwinder.log"));
         logFile_ = fs::path(logFilePath);
-
-        // Set log level based on verbose flag or config
         verbose_ = command_.hasFlag("verbose");
 
-        // Convert integer log level from config to Logger::Level
-        int configLogLevel = util::ConfigManager::getInt("logLevel", 3); // Default to Info
+        int configLogLevel = util::ConfigManager::getInt("logLevel", 3);
         auto logLevel = verbose_ ?
             util::Logger::Level::Debug :
             static_cast<util::Logger::Level>(std::min(std::max(configLogLevel - 1, 0), 3));
 
-        // Initialize logger
         util::Logger::initialize(logFile_);
         util::Logger::setLogLevel(logLevel);
     }
 
     int SIDwinderApp::executeCommand() {
-        // Execute based on command type
         switch (command_.getType()) {
         case CommandClass::Type::Help:
             return showHelp();
@@ -135,7 +118,6 @@ namespace sidwinder {
         case CommandClass::Type::Trace:
             return processTrace();
         default:
-            // Show help when no valid command is specified
             std::cout << "Unknown command or no command specified" << std::endl << std::endl;
             return showHelp();
         }
@@ -144,12 +126,11 @@ namespace sidwinder {
     CommandProcessor::ProcessingOptions SIDwinderApp::createProcessingOptions() {
         CommandProcessor::ProcessingOptions options;
 
-        // Get input and output files
+        // Basic file options
         options.inputFile = fs::path(command_.getInputFile());
         options.outputFile = fs::path(command_.getOutputFile());
-
-        // Create temp directory
         options.tempDir = fs::path("temp");
+
         try {
             fs::create_directories(options.tempDir);
         }
@@ -157,40 +138,35 @@ namespace sidwinder {
             util::Logger::error(std::string("Failed to create temp directory: ") + e.what());
         }
 
-        // Get user definitions
+        // User definitions
         options.userDefinitions = command_.getDefinitions();
 
-        // Player options for Player command (formerly LinkPlayer)
+        // Assembly options
+        options.kickAssPath = command_.getParameter("kickass", util::ConfigManager::getKickAssPath());
+
+        // Handle command-specific options
         if (command_.getType() == CommandClass::Type::Player) {
             options.includePlayer = true;
             options.playerName = command_.getParameter("playerName", util::ConfigManager::getPlayerName());
             options.playerAddress = command_.getHexParameter("playeraddr", util::ConfigManager::getPlayerAddress());
-            options.analyzeRegisterOrder = true; // Enable register order analysis for player
-        }
-        else {
-            options.includePlayer = false;
+            options.compress = !command_.hasFlag("nocompress");
+            options.exomizerPath = command_.getParameter("exomizer", util::ConfigManager::getExomizerPath());
+            options.compressorType = util::ConfigManager::getCompressorType();
         }
 
-        // Build options
-        options.kickAssPath = command_.getParameter("kickass", util::ConfigManager::getKickAssPath());
-        options.exomizerPath = command_.getParameter("exomizer", util::ConfigManager::getExomizerPath());
-        options.compressorType = util::ConfigManager::getCompressorType();
-        options.compress = !command_.hasFlag("nocompress");
-
-        // Parse relocation address for Relocate command
         if (command_.getType() == CommandClass::Type::Relocate) {
             options.relocationAddress = command_.getHexParameter("relocateaddr", 0);
             options.hasRelocation = true;
         }
 
-        // Trace options
-        options.traceLogPath = command_.getParameter("tracelog", "");
-        options.enableTracing = !options.traceLogPath.empty() || (command_.getType() == CommandClass::Type::Trace);
-        std::string traceFormat = command_.getParameter("traceformat", "binary");
-        options.traceFormat = (traceFormat == "text") ?
-            TraceFormat::Text : TraceFormat::Binary;
+        if (command_.getType() == CommandClass::Type::Trace) {
+            options.enableTracing = true;
+            options.traceLogPath = command_.getParameter("tracelog", "trace.bin");
+            std::string traceFormat = command_.getParameter("traceformat", "binary");
+            options.traceFormat = (traceFormat == "text") ? TraceFormat::Text : TraceFormat::Binary;
+        }
 
-        // Get frames to emulate from command line or config
+        // Emulation frames
         options.frames = command_.getIntParameter("frames",
             util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES));
 
@@ -203,26 +179,24 @@ namespace sidwinder {
     }
 
     int SIDwinderApp::processPlayer() {
-        // Validate input file
         fs::path inputFile = fs::path(command_.getInputFile());
         fs::path outputFile = fs::path(command_.getOutputFile());
 
+        // Validate input
         if (inputFile.empty()) {
             std::cout << "Error: No input file specified for player command" << std::endl;
             return 1;
         }
-
         if (outputFile.empty()) {
             std::cout << "Error: No output file specified for player command" << std::endl;
             return 1;
         }
-
         if (!fs::exists(inputFile)) {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
 
-        // Strictly enforce .sid input and .prg output
+        // Check file types
         std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Player command requires a .sid input file, got: " << inExt << std::endl;
@@ -238,16 +212,11 @@ namespace sidwinder {
         // Create processing options
         CommandProcessor::ProcessingOptions options = createProcessingOptions();
 
-        // Set Player specific options
-        options.includePlayer = true;
-        options.playerName = command_.getParameter("playerName", util::ConfigManager::getPlayerName());
-        options.playerAddress = command_.getHexParameter("playeraddr", util::ConfigManager::getPlayerAddress());
-
-        // Create and run command processor
+        // Process the file
         CommandProcessor processor;
         bool success = processor.processFile(options);
-        if (success)
-        {
+
+        if (success) {
             std::cout << "SUCCESS: " << outputFile << " successfully generated" << std::endl;
         }
 
@@ -255,7 +224,6 @@ namespace sidwinder {
     }
 
     int SIDwinderApp::processRelocation() {
-        // Validate input file
         fs::path inputFile = fs::path(command_.getInputFile());
         fs::path outputFile = fs::path(command_.getOutputFile());
 
@@ -263,29 +231,22 @@ namespace sidwinder {
             std::cout << "Error: No input file specified for relocate command" << std::endl;
             return 1;
         }
-
         if (outputFile.empty()) {
             std::cout << "Error: No output file specified for relocate command" << std::endl;
             return 1;
         }
 
-        // [Existing validation code remains the same]
-
-        // Create CPU and SID Loader
+        // Create CPU and SID loader for relocation
         auto cpu = std::make_unique<CPU6510>();
         cpu->reset();
-
         auto sid = std::make_unique<SIDLoader>();
         sid->setCPU(cpu.get());
 
-        // Get relocation address
         u16 relocAddress = command_.getHexParameter("relocateaddr", 0);
-
-        // Determine if verification should be skipped (can add a flag for this)
         bool skipVerify = command_.hasFlag("noverify");
 
         if (skipVerify) {
-            // Original relocation code without verification
+            // Simple relocation without verification
             util::RelocationParams params;
             params.inputFile = inputFile;
             params.outputFile = outputFile;
@@ -294,7 +255,6 @@ namespace sidwinder {
             params.kickAssPath = command_.getParameter("kickass", util::ConfigManager::getKickAssPath());
             params.verbose = command_.hasFlag("verbose");
 
-            // Ensure temp directory exists
             try {
                 fs::create_directories(params.tempDir);
             }
@@ -303,10 +263,10 @@ namespace sidwinder {
                 return 1;
             }
 
-            // Relocate the SID file
             util::RelocationResult result = util::relocateSID(cpu.get(), sid.get(), params);
 
             if (result.success) {
+                std::cout << "SUCCESS: Relocated " << inputFile << " to $" << util::wordToHex(relocAddress) << std::endl;
                 return 0;
             }
             else {
@@ -315,7 +275,7 @@ namespace sidwinder {
             }
         }
         else {
-            // Use relocate and verify method
+            // Relocation with verification
             fs::path tempDir = fs::path("temp");
             try {
                 fs::create_directories(tempDir);
@@ -325,37 +285,36 @@ namespace sidwinder {
                 return 1;
             }
 
-            // Perform relocation with verification
-            util::RelocationVerificationResult result = util::relocateAndVerifySID(cpu.get(), sid.get(), inputFile, outputFile, relocAddress, tempDir, command_.getParameter("kickass", util::ConfigManager::getKickAssPath()));
+            util::RelocationVerificationResult result = util::relocateAndVerifySID(
+                cpu.get(), sid.get(), inputFile, outputFile, relocAddress, tempDir,
+                command_.getParameter("kickass", util::ConfigManager::getKickAssPath()));
 
-            // Display results to user
             bool bTotalSuccess = result.success && result.verified && result.outputsMatch;
             std::cout << (bTotalSuccess ? "SUCCESS" : "FAILURE") << ": " << inputFile << " " << result.message << std::endl;
+
             return bTotalSuccess ? 0 : 1;
         }
     }
 
     int SIDwinderApp::processDisassembly() {
-        // Validate input file
         fs::path inputFile = fs::path(command_.getInputFile());
         fs::path outputFile = fs::path(command_.getOutputFile());
 
+        // Validate input
         if (inputFile.empty()) {
             std::cout << "Error: No input file specified for disassemble command" << std::endl;
             return 1;
         }
-
         if (outputFile.empty()) {
             std::cout << "Error: No output file specified for disassemble command" << std::endl;
             return 1;
         }
-
         if (!fs::exists(inputFile)) {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
 
-        // Strictly enforce .sid input and .asm output
+        // Check file types
         std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Disassemble command requires a .sid input file, got: " << inExt << std::endl;
@@ -371,10 +330,14 @@ namespace sidwinder {
         // Create processing options
         CommandProcessor::ProcessingOptions options = createProcessingOptions();
 
-        // Create and run command processor
+        // Process the file
         CommandProcessor processor;
         bool success = processor.processFile(options);
-        if (!success) {
+
+        if (success) {
+            std::cout << "SUCCESS: Disassembled " << inputFile << " to " << outputFile << std::endl;
+        }
+        else {
             util::Logger::error("Failed to disassemble " + inputFile.string());
         }
 
@@ -382,71 +345,42 @@ namespace sidwinder {
     }
 
     int SIDwinderApp::processTrace() {
-        // Validate input file
         fs::path inputFile = fs::path(command_.getInputFile());
 
+        // Validate input
         if (inputFile.empty()) {
             std::cout << "Error: No input file specified for trace command" << std::endl;
             return 1;
         }
-
         if (!fs::exists(inputFile)) {
             std::cout << "Error: Input file not found: " << inputFile.string() << std::endl;
             return 1;
         }
 
-        // Strictly enforce .sid extension for input
+        // Check file type
         std::string inExt = util::getFileExtension(inputFile);
         if (inExt != ".sid") {
             std::cout << "Error: Trace command requires a .sid input file, got: " << inExt << std::endl;
             return 1;
         }
 
-        // Get trace log path from the command
-        std::string traceLogPath = command_.getParameter("tracelog", "trace.bin");
+        // Create processing options
+        CommandProcessor::ProcessingOptions options = createProcessingOptions();
+        options.inputFile = inputFile;
+        options.outputFile = fs::path(); // No output file for trace
 
-        // Determine trace format
-        std::string traceFormatStr = command_.getParameter("traceformat", "binary");
-        TraceFormat traceFormat = (traceFormatStr == "text") ? TraceFormat::Text : TraceFormat::Binary;
-
-        // Create CPU and SID Loader
-        auto cpu = std::make_unique<CPU6510>();
-        cpu->reset();
-
-        auto sid = std::make_unique<SIDLoader>();
-        sid->setCPU(cpu.get());
-
-        // Load the SID file
-        if (!sid->loadSID(inputFile.string())) {
-            std::cout << "Error: Failed to load SID file: " << inputFile.string() << std::endl;
-            return 1;
-        }
-
-        // Create trace logger
-        auto traceLogger = std::make_unique<TraceLogger>(traceLogPath, traceFormat);
-
-        // Create emulator
-        SIDEmulator emulator(cpu.get(), sid.get());
-        SIDEmulator::EmulationOptions options;
-
-        // Get frames count from command line or config
-        options.frames = command_.getIntParameter("frames",
-            util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES));
-
-        options.traceEnabled = true;
-        options.traceFormat = traceFormat;
-        options.traceLogPath = traceLogPath;
-
-        // Run the emulation
-        bool success = emulator.runEmulation(options);
+        // Process the file
+        CommandProcessor processor;
+        bool success = processor.processFile(options);
 
         if (success) {
-            return 0;
+            std::cout << "SUCCESS: Trace log written to " << options.traceLogPath << std::endl;
         }
         else {
             util::Logger::error("Error occurred during SID emulation on " + inputFile.string());
-            return 1;
         }
+
+        return success ? 0 : 1;
     }
 
 } // namespace sidwinder

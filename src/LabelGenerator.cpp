@@ -146,9 +146,10 @@ namespace sidwinder {
      * @param addr Address to look up
      * @return Label for the address, or empty string if no label
      */
-    std::string LabelGenerator::getLabel(u16 addr) const {
+    const std::string& LabelGenerator::getLabel(u16 addr) const {
+        static const std::string emptyString;
         auto it = labelMap_.find(addr);
-        return (it != labelMap_.end()) ? it->second : "";
+        return (it != labelMap_.end()) ? it->second : emptyString;
     }
 
     /**

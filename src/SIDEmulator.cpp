@@ -62,6 +62,14 @@ namespace sidwinder {
         const u16 initAddr = sid_->getInitAddress();
         const u16 playAddr = sid_->getPlayAddress();
 
+        u32 extraAddr = 0;
+        if (playAddr == initAddr + 3)
+            extraAddr = initAddr + 6;
+        if (playAddr == initAddr + 6)
+            extraAddr = initAddr + 3;
+        if (cpu_->readMemory(extraAddr) != 0x4C)
+            extraAddr = 0;
+
         // Execute the init routine once
         cpu_->resetRegistersAndFlags();
         updateSIDCallback(false);
@@ -90,14 +98,11 @@ namespace sidwinder {
             }
         }
 
-
-        u32 testAddr = 0;
-        if (playAddr == initAddr + 3)
-            testAddr = initAddr + 6;
-        if (playAddr == initAddr + 6)
-            testAddr = initAddr + 3;
-        if ((testAddr != 0) && (cpu_->readMemory(testAddr) == 0x4C))
-            cpu_->executeFunction(testAddr);
+        if (extraAddr != 0)
+        {
+            cpu_->resetRegistersAndFlags();
+            cpu_->executeFunction(extraAddr);
+        }
 
         // Re-run the init routine to reset the player state
         cpu_->resetRegistersAndFlags();
@@ -165,9 +170,10 @@ namespace sidwinder {
             framesExecuted_++;
         }
 
-        if ((playAddr == initAddr + 3) && (cpu_->readMemory(testAddr) == 0x4C))
+        if (extraAddr != 0)
         {
-            cpu_->executeFunction(testAddr);
+            cpu_->resetRegistersAndFlags();
+            cpu_->executeFunction(extraAddr);
         }
 
         // Analyze register write patterns if tracking was enabled
