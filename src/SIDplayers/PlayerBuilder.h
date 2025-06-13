@@ -15,7 +15,7 @@ namespace sidwinder {
 
     class PlayerBuilder {
     public:
-        PlayerBuilder(const CPU6510* cpu, const SIDLoader* sid);
+        PlayerBuilder(CPU6510* cpu, SIDLoader* sid);
         ~PlayerBuilder(); // Destructor must be declared
 
         // Build music with player
@@ -31,8 +31,8 @@ namespace sidwinder {
             const PlayerOptions& options);
 
     private:
-        const CPU6510* cpu_;
-        const SIDLoader* sid_;
+        CPU6510* cpu_;
+        SIDLoader* sid_;
         std::unique_ptr<SIDEmulator> emulator_;
 
         // Create the linker file that combines player and music

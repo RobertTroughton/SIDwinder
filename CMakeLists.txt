@@ -29,7 +29,7 @@ set(CORE_SOURCES
     src/RelocationUtils.cpp
     src/SIDEmulator.cpp
     src/SIDLoader.cpp
-    src/SIDPatternFinder.cpp
+    src/SIDpatternFinder.cpp
     src/SIDwinderUtils.cpp
     src/SIDWriteTracker.cpp
 )

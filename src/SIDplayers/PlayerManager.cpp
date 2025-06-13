@@ -83,33 +83,9 @@ namespace sidwinder {
             return false;
         }
 
-        // Track CIA timer writes to detect play frequency
-        u8 CIATimerLo = 0;
-        u8 CIATimerHi = 0;
-
-        cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
-            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
-            });
-
         // Generate helpful data for player optimization
         fs::path helpfulDataFile = options.tempDir / "analysis-HelpfulData.asm";
-        if (builder_->generateHelpfulData(helpfulDataFile, options)) {
-            // Analysis succeeded
-
-            // Calculate play calls per frame based on CIA timer
-            if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
-                const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
-                const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
-                const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
-                const int numCalls = static_cast<int>(freq + 0.5);
-                sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
-            }
-
-            return true;
-        }
-
-        return false;
+        return builder_->generateHelpfulData(helpfulDataFile, options);
     }
 
     fs::path PlayerManager::getPlayerAsmPath(const std::string& playerName) const {

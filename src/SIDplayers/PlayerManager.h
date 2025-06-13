@@ -41,5 +41,8 @@ namespace sidwinder {
 
         // Get player assembly file path
         fs::path getPlayerAsmPath(const std::string& playerName) const;
+
+        // Check if the player has required components
+        bool validatePlayerComponents(const std::string& playerName) const;
     };
 }

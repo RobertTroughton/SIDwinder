@@ -9,16 +9,17 @@
 #include "../cpu6510.h"
 #include "../SIDLoader.h"
 #include "../SIDEmulator.h"
+#include "../MemoryConstants.h"
 
 #include <fstream>
 #include <cctype>
 
 namespace sidwinder {
 
-    PlayerBuilder::PlayerBuilder(const CPU6510* cpu, const SIDLoader* sid)
+    PlayerBuilder::PlayerBuilder(CPU6510* cpu, SIDLoader* sid)
         : cpu_(cpu), sid_(sid) {
         // Create an emulator for analysis
-        emulator_ = std::make_unique<SIDEmulator>(const_cast<CPU6510*>(cpu), const_cast<SIDLoader*>(sid));
+        emulator_ = std::make_unique<SIDEmulator>(cpu, sid);
     }
 
     PlayerBuilder::~PlayerBuilder() = default; // Destructor implementation
@@ -55,12 +56,18 @@ namespace sidwinder {
         // Create the player directory if it doesn't exist
         fs::create_directories(playerAsmFile.parent_path());
 
-        // Generate helpful data for double-buffering
+        // Generate helpful data and analyze play frequency FIRST
         fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
+
+        // This will analyze the music and update sid_->setNumPlayCallsPerFrame()
         generateHelpfulData(helpfulDataFile, options);
 
-        // Create linker file
-        if (!createLinkerFile(tempLinkerFile, inputFile, playerAsmFile, options)) {
+        // Now get the updated play calls per frame from the SID loader
+        PlayerOptions updatedOptions = options;
+        updatedOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+
+        // Create linker file with the correct play calls per frame
+        if (!createLinkerFile(tempLinkerFile, inputFile, playerAsmFile, updatedOptions)) {
             return false;
         }
 
@@ -105,6 +112,15 @@ namespace sidwinder {
 
         if (!emulator_) return false;
 
+        // Track CIA timer writes during emulation
+        u8 CIATimerLo = 0;
+        u8 CIATimerHi = 0;
+
+        cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
+            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
+            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
+            });
+
         // Configure emulation options
         SIDEmulator::EmulationOptions emulOptions;
         emulOptions.frames = 100; // Just need a short run to identify key patterns
@@ -114,6 +130,15 @@ namespace sidwinder {
 
         // Run the emulation
         if (emulator_->runEmulation(emulOptions)) {
+            // Calculate play calls per frame based on CIA timer
+            if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
+                const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
+                const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
+                const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
+                const int numCalls = static_cast<int>(freq + 0.5);
+                sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
+            }
+
             // Generate the helpful data file
             return emulator_->generateHelpfulDataFile(helpfulDataFile.string());
         }
