@@ -33,7 +33,7 @@ SIDwinder.exe -player=RaistlinBars SID/dane-elderscrollers.sid examples/dane-eld
 SIDwinder.exe -player=RaistlinBars SID/drax-twine.sid examples/drax-twine.prg
 SIDwinder.exe -player=RaistlinBars SID/flex-eurogubbe.sid examples/flex-eurogubbe.prg
 SIDwinder.exe -player=RaistlinBars SID/flex-lundia.sid examples/flex-lundia.prg
-SIDwinder.exe -player=RaistlinBars SID/magnar-lastnight.sid examples/magnar-lastnight.prg
+SIDwinder.exe -player=RaistlinBars -sidauthor="- !Magnar! -" SID/magnar-lastnight.sid examples/magnar-lastnight.prg
 SIDwinder.exe -player=RaistlinBars SID/magnar-magnumpi.sid examples/magnar-magnumpi.prg
 SIDwinder.exe -player=RaistlinBars SID/mibri-gettinginthevan.sid examples/mibri-gettinginthevan.prg
 SIDwinder.exe -player=RaistlinBars SID/nordischsound-crockettstheme.sid examples/nordischsound-crockettstheme.prg

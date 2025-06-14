@@ -4,6 +4,7 @@
 #include "cpu6510.h"
 #include "DisassemblyWriter.h"
 #include "MemoryConstants.h"
+#include <sstream>
 namespace sidwinder {
     CodeFormatter::CodeFormatter(
         const CPU6510& cpu,
@@ -349,7 +350,7 @@ namespace sidwinder {
                 continue;
             }
             if (arg[0] == '-') {
-                std::string option = arg.substr(1);  
+                std::string option = arg.substr(1);
                 size_t equalPos = option.find('=');
                 if (equalPos != std::string::npos) {
                     std::string name = option.substr(0, equalPos);
@@ -375,6 +376,15 @@ namespace sidwinder {
                     }
                     else if (name == "log") {
                         cmd.setParameter("logfile", value);
+                    }
+                    else if (name == "sidname") {
+                        cmd.setParameter("sidname", value);
+                    }
+                    else if (name == "sidauthor") {
+                        cmd.setParameter("sidauthor", value);
+                    }
+                    else if (name == "sidcopyright") {
+                        cmd.setParameter("sidcopyright", value);
                     }
                     else {
                         cmd.setParameter(name, value);
@@ -406,7 +416,7 @@ namespace sidwinder {
                             static const std::set<std::string> valueOptions = {
                                 "kickass", "input", "title", "author", "copyright",
                                 "sidloadaddr", "sidinitaddr", "sidplayaddr", "playeraddr",
-                                "exomizer", "define"  
+                                "exomizer", "define", "sidname", "sidauthor", "sidcopyright"  
                             };
                             if (valueOptions.find(option) != valueOptions.end()) {
                                 if (option == "define") {
@@ -426,6 +436,15 @@ namespace sidwinder {
                                     else {
                                         cmd.addDefinition(defValue, "true");
                                     }
+                                }
+                                else if (option == "sidname") {
+                                    cmd.setParameter("sidname", args_[i++]);
+                                }
+                                else if (option == "sidauthor") {
+                                    cmd.setParameter("sidauthor", args_[i++]);
+                                }
+                                else if (option == "sidcopyright") {
+                                    cmd.setParameter("sidcopyright", args_[i++]);
                                 }
                                 else {
                                     cmd.setParameter(option, args_[i++]);
@@ -491,6 +510,11 @@ namespace sidwinder {
         std::cout << "                         .bin extension = binary format" << std::endl;
         std::cout << "                         .txt/.log extension = text format" << std::endl;
         std::cout << std::endl;
+        std::cout << "SID METADATA OPTIONS:" << std::endl;
+        std::cout << "  -sidname=<name>        Override SID title/name" << std::endl;
+        std::cout << "  -sidauthor=<author>    Override SID author" << std::endl;
+        std::cout << "  -sidcopyright=<text>   Override SID copyright" << std::endl;
+        std::cout << std::endl;
         std::cout << "GENERAL OPTIONS:" << std::endl;
         std::cout << "  -verbose               Enable verbose logging" << std::endl;
         std::cout << "  -force                 Force overwrite of output file" << std::endl;
@@ -515,6 +539,12 @@ namespace sidwinder {
         std::cout << std::endl;
         std::cout << "  " << programName_ << " -disassemble music.sid music.asm" << std::endl;
         std::cout << "    Disassembles music.sid to assembly code in music.asm" << std::endl;
+        std::cout << std::endl;
+        std::cout << "  " << programName_ << " -player -sidname=\"My Cool Tune\" -sidauthor=\"DJ Awesome\" music.sid player.prg" << std::endl;
+        std::cout << "    Creates player with overridden SID metadata" << std::endl;
+        std::cout << std::endl;
+        std::cout << "  " << programName_ << " -relocate=$3000 -sidcopyright=\"(C) 2025 Me\" music.sid relocated.sid" << std::endl;
+        std::cout << "    Relocates SID with updated copyright information" << std::endl;
         std::cout << std::endl;
     }
     CommandLineParser& CommandLineParser::addFlagDefinition(
@@ -1846,9 +1876,10 @@ namespace sidwinder {
                 Logger::error(result.message);
                 return result;
             }
-            const std::string title = originalHeader.name;
-            const std::string author = originalHeader.author;
-            const std::string copyright = originalHeader.copyright;
+            const SIDHeader& currentHeader = sid->getHeader();
+            const std::string title = std::string(currentHeader.name);
+            const std::string author = std::string(currentHeader.author);
+            const std::string copyright = std::string(currentHeader.copyright);
             if (!createSIDFromPRG(
                 tempPrgFile,
                 params.outputFile,
@@ -2061,6 +2092,7 @@ namespace sidwinder {
 #include "MemoryConstants.h"
 #include "ConfigManager.h"
 #include <set>
+#include <sstream>
 namespace sidwinder {
     SIDEmulator::SIDEmulator(CPU6510* cpu, SIDLoader* sid)
         : cpu_(cpu), sid_(sid) {
@@ -2249,6 +2281,7 @@ namespace sidwinder {
 #include "SIDwinderUtils.h"
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 using namespace sidwinder;
@@ -2376,6 +2409,39 @@ bool SIDLoader::restoreMemory() {
         cpu_->writeByte(static_cast<u16>(addr), memoryBackup_[addr]);
     }
     return true;
+}
+bool SIDLoader::extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg) {
+    auto sidData = util::readBinaryFile(sidFile);
+    if (!sidData) {
+        util::Logger::error("Failed to read SID file: " + sidFile.string());
+        return false;
+    }
+    SIDHeader header;
+    std::memcpy(&header, sidData->data(), sizeof(header));
+    util::fixSIDHeaderEndianness(header);
+    if (std::string(header.magicID, 4) != "PSID") {
+        util::Logger::error("Not a valid PSID file: " + sidFile.string());
+        return false;
+    }
+    u16 dataOffset = header.dataOffset;
+    u16 loadAddress = header.loadAddress;
+    if (loadAddress == 0) {
+        if (sidData->size() < dataOffset + 2) {
+            util::Logger::error("SID file too small for embedded load address");
+            return false;
+        }
+        loadAddress = sidData->at(dataOffset) | (sidData->at(dataOffset + 1) << 8);
+        dataOffset += 2;
+    }
+    std::vector<u8> prgData;
+    prgData.push_back(loadAddress & 0xFF);        
+    prgData.push_back((loadAddress >> 8) & 0xFF); 
+    if (dataOffset < sidData->size()) {
+        prgData.insert(prgData.end(),
+            sidData->begin() + dataOffset,
+            sidData->end());
+    }
+    return util::writeBinaryFile(outputPrg, prgData);
 }
 ```
 
@@ -4623,7 +4689,7 @@ namespace sidwinder {
             return musicBuilder_->buildMusic(basename, tempAsmFile, options.outputFile, buildOpts);
         }
         else {
-            return musicBuilder_->extractPrgFromSid(options.inputFile, options.outputFile);
+            return SIDLoader::extractPrgFromSid(options.inputFile, options.outputFile);
         }
     }
     bool CommandProcessor::generateSIDOutput(const ProcessingOptions& options) {
@@ -4638,13 +4704,41 @@ namespace sidwinder {
             return result.success;
         }
         else {
-            try {
-                fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
-                return true;
+            if (!options.overrideTitle.empty() || !options.overrideAuthor.empty() || !options.overrideCopyright.empty()) {
+                auto sidData = util::readBinaryFile(options.inputFile);
+                if (!sidData) {
+                    util::Logger::error("Failed to read input SID file");
+                    return false;
+                }
+                SIDHeader header;
+                std::memcpy(&header, sidData->data(), sizeof(header));
+                if (!options.overrideTitle.empty()) {
+                    std::memset(header.name, 0, sizeof(header.name));
+                    std::strncpy(header.name, options.overrideTitle.c_str(), sizeof(header.name) - 1);
+                }
+                if (!options.overrideAuthor.empty()) {
+                    std::memset(header.author, 0, sizeof(header.author));
+                    std::strncpy(header.author, options.overrideAuthor.c_str(), sizeof(header.author) - 1);
+                }
+                if (!options.overrideCopyright.empty()) {
+                    std::memset(header.copyright, 0, sizeof(header.copyright));
+                    std::strncpy(header.copyright, options.overrideCopyright.c_str(), sizeof(header.copyright) - 1);
+                }
+                std::vector<u8> newSidData;
+                newSidData.resize(sizeof(header));
+                std::memcpy(newSidData.data(), &header, sizeof(header));
+                newSidData.insert(newSidData.end(), sidData->begin() + sizeof(header), sidData->end());
+                return util::writeBinaryFile(options.outputFile, newSidData);
             }
-            catch (const std::exception& e) {
-                util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
-                return false;
+            else {
+                try {
+                    fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
+                    return true;
+                }
+                catch (const std::exception& e) {
+                    util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
+                    return false;
+                }
             }
         }
     }
@@ -4677,7 +4771,7 @@ namespace sidwinder {
 #include <fstream>
 #include <cctype>
 namespace sidwinder {
-    MusicBuilder::MusicBuilder(const CPU6510* cpu, const SIDLoader* sid)
+    MusicBuilder::MusicBuilder(CPU6510* cpu, SIDLoader* sid)
         : cpu_(cpu), sid_(sid) {
     }
     bool MusicBuilder::buildMusic(
@@ -4713,7 +4807,7 @@ namespace sidwinder {
             }
         }
         else if (bIsSID) {
-            return extractPrgFromSid(inputFile, outputFile);
+            return SIDLoader::extractPrgFromSid(inputFile, outputFile);
         }
         else {
             util::Logger::error("Unsupported input file type");
@@ -4736,26 +4830,6 @@ namespace sidwinder {
             return false;
         }
         return true;
-    }
-    bool MusicBuilder::extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg) {
-        auto sidData = util::readBinaryFile(sidFile);
-        if (!sidData) return false;
-        SIDHeader header;
-        std::memcpy(&header, sidData->data(), sizeof(header));
-        util::fixSIDHeaderEndianness(header);
-        u16 dataOffset = header.dataOffset;
-        u16 loadAddress = header.loadAddress;
-        if (loadAddress == 0) {
-            loadAddress = sidData->at(dataOffset) | (sidData->at(dataOffset + 1) << 8);
-            dataOffset += 2;
-        }
-        std::vector<u8> prgData;
-        prgData.push_back(loadAddress & 0xFF);        
-        prgData.push_back((loadAddress >> 8) & 0xFF); 
-        prgData.insert(prgData.end(),
-            sidData->begin() + dataOffset,
-            sidData->end());
-        return util::writeBinaryFile(outputPrg, prgData);
     }
 }
 ```
@@ -4799,6 +4873,9 @@ namespace sidwinder {
         cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General", util::ConfigManager::getKickAssPath());
         cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General", util::ConfigManager::getExomizerPath());
         cmdParser_.addOptionDefinition("define", "key=value", "Add user definition (can be used multiple times)", "Assembly");
+        cmdParser_.addOptionDefinition("sidname", "name", "Override SID title/name", "SID Metadata");
+        cmdParser_.addOptionDefinition("sidauthor", "author", "Override SID author", "SID Metadata");
+        cmdParser_.addOptionDefinition("sidcopyright", "text", "Override SID copyright", "SID Metadata");
         cmdParser_.addFlagDefinition("verbose", "Enable verbose logging", "General");
         cmdParser_.addFlagDefinition("help", "Display this help message", "General");
         cmdParser_.addFlagDefinition("force", "Force overwrite of output file", "General");
@@ -4829,6 +4906,12 @@ namespace sidwinder {
         cmdParser_.addExample(
             "SIDwinder -player=RaistlinBarsWithLogo -define LogoFile=\"Logos/MCH.kla\" music.sid game.prg",
             "Example with different logo for the player");
+        cmdParser_.addExample(
+            "SIDwinder -player -sidname=\"My Cool Tune\" -sidauthor=\"DJ Awesome\" music.sid player.prg",
+            "Creates player with overridden SID metadata");
+        cmdParser_.addExample(
+            "SIDwinder -relocate=$3000 -sidcopyright=\"(C) 2025 Me\" music.sid relocated.sid",
+            "Relocates SID with updated copyright information");
     }
     void SIDwinderApp::initializeLogging() {
         std::string logFilePath = command_.getParameter("logfile",
@@ -4872,6 +4955,15 @@ namespace sidwinder {
         }
         options.userDefinitions = command_.getDefinitions();
         options.kickAssPath = command_.getParameter("kickass", util::ConfigManager::getKickAssPath());
+        if (command_.hasParameter("sidname")) {
+            options.overrideTitle = command_.getParameter("sidname");
+        }
+        if (command_.hasParameter("sidauthor")) {
+            options.overrideAuthor = command_.getParameter("sidauthor");
+        }
+        if (command_.hasParameter("sidcopyright")) {
+            options.overrideCopyright = command_.getParameter("sidcopyright");
+        }
         if (command_.getType() == CommandClass::Type::Player) {
             options.includePlayer = true;
             options.playerName = command_.getParameter("playerName", util::ConfigManager::getPlayerName());
@@ -5062,6 +5154,7 @@ namespace sidwinder {
 ```cpp
 #include "TraceLogger.h"
 #include "../SIDwinderUtils.h"
+#include <cstring>
 #include <map>
 namespace sidwinder {
     TraceLogger::TraceLogger(const std::string& filename, TraceFormat format)
@@ -5252,12 +5345,13 @@ namespace sidwinder {
 #include "../cpu6510.h"
 #include "../SIDLoader.h"
 #include "../SIDEmulator.h"
+#include "../MemoryConstants.h"
 #include <fstream>
 #include <cctype>
 namespace sidwinder {
-    PlayerBuilder::PlayerBuilder(const CPU6510* cpu, const SIDLoader* sid)
+    PlayerBuilder::PlayerBuilder(CPU6510* cpu, SIDLoader* sid)
         : cpu_(cpu), sid_(sid) {
-        emulator_ = std::make_unique<SIDEmulator>(const_cast<CPU6510*>(cpu), const_cast<SIDLoader*>(sid));
+        emulator_ = std::make_unique<SIDEmulator>(cpu, sid);
     }
     PlayerBuilder::~PlayerBuilder() = default; 
     bool PlayerBuilder::buildMusicWithPlayer(
@@ -5283,7 +5377,9 @@ namespace sidwinder {
         fs::create_directories(playerAsmFile.parent_path());
         fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
         generateHelpfulData(helpfulDataFile, options);
-        if (!createLinkerFile(tempLinkerFile, inputFile, playerAsmFile, options)) {
+        PlayerOptions updatedOptions = options;
+        updatedOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
+        if (!createLinkerFile(tempLinkerFile, inputFile, playerAsmFile, updatedOptions)) {
             return false;
         }
         if (!runAssembler(tempLinkerFile, tempPlayerPrgFile, options.kickAssPath, options.tempDir)) {
@@ -5319,12 +5415,25 @@ namespace sidwinder {
         const fs::path& helpfulDataFile,
         const PlayerOptions& options) {
         if (!emulator_) return false;
+        u8 CIATimerLo = 0;
+        u8 CIATimerHi = 0;
+        cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
+            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
+            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
+            });
         SIDEmulator::EmulationOptions emulOptions;
         emulOptions.frames = 100; 
         emulOptions.registerTrackingEnabled = true; 
         emulOptions.patternDetectionEnabled = true;
         emulOptions.shadowRegisterDetectionEnabled = true; 
         if (emulator_->runEmulation(emulOptions)) {
+            if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
+                const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
+                const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
+                const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
+                const int numCalls = static_cast<int>(freq + 0.5);
+                sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
+            }
             return emulator_->generateHelpfulDataFile(helpfulDataFile.string());
         }
         return false;
@@ -5570,24 +5679,8 @@ namespace sidwinder {
         if (!cpu_ || !sid_) {
             return false;
         }
-        u8 CIATimerLo = 0;
-        u8 CIATimerHi = 0;
-        cpu_->setOnCIAWriteCallback([&](u16 addr, u8 value) {
-            if (addr == MemoryConstants::CIA1_TIMER_LO) CIATimerLo = value;
-            if (addr == MemoryConstants::CIA1_TIMER_HI) CIATimerHi = value;
-            });
         fs::path helpfulDataFile = options.tempDir / "analysis-HelpfulData.asm";
-        if (builder_->generateHelpfulData(helpfulDataFile, options)) {
-            if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
-                const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
-                const double NumCyclesPerFrame = util::ConfigManager::getCyclesPerFrame();
-                const double freq = NumCyclesPerFrame / std::max(1, static_cast<int>(timerValue));
-                const int numCalls = static_cast<int>(freq + 0.5);
-                sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
-            }
-            return true;
-        }
-        return false;
+        return builder_->generateHelpfulData(helpfulDataFile, options);
     }
     fs::path PlayerManager::getPlayerAsmPath(const std::string& playerName) const {
         std::string playerDir = util::ConfigManager::getString("playerDirectory", "SIDPlayers");
@@ -5751,7 +5844,7 @@ namespace sidwinder {
 #include <cstdint>
 #include <filesystem>
 namespace fs = std::filesystem;
-#define SIDwinder_VERSION "SIDwinder 0.2.0"
+#define SIDwinder_VERSION "SIDwinder 0.2.6"
 #define DEFAULT_SID_EMULATION_FRAMES (10 * 60 * 50) 
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
@@ -6561,6 +6654,8 @@ constexpr u16 SID_FLAG_SID_8580 = 0x0020;
 #include <string>
 #include <string_view>
 #include <vector>
+#include <filesystem>
+namespace fs = std::filesystem;
 class CPU6510;
 class SIDLoader {
 public:
@@ -6582,6 +6677,7 @@ public:
         header_.copyright[sizeof(header_.copyright) - 1] = '\0';
     }
     bool loadSID(const std::string& filename);
+    static bool extractPrgFromSid(const fs::path& sidFile, const fs::path& outputPrg);
     u16 getInitAddress() const { return header_.initAddress; }
     u16 getPlayAddress() const { return header_.playAddress; }
     u16 getLoadAddress() const { return header_.loadAddress; }
@@ -6595,13 +6691,13 @@ public:
     bool restoreMemory();
 private:
     bool copyMusicToMemory(const u8* data, u16 size, u16 loadAddr);
-    SIDHeader header_;          
-    u16 dataSize_ = 0;          
-    CPU6510* cpu_ = nullptr;    
-    std::vector<u8> originalMemory_;    
-    u16 originalMemoryBase_ = 0;        
-    u8 numPlayCallsPerFrame_ = 1;       
-    std::vector<u8> memoryBackup_;      
+    SIDHeader header_;
+    u16 dataSize_ = 0;
+    CPU6510* cpu_ = nullptr;
+    std::vector<u8> originalMemory_;
+    u16 originalMemoryBase_ = 0;
+    u8 numPlayCallsPerFrame_ = 1;
+    std::vector<u8> memoryBackup_;
 };
 ```
 
@@ -6653,6 +6749,7 @@ namespace sidwinder {
 #include "SIDFileFormat.h"
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <optional>
 #include <string>
@@ -7089,11 +7186,9 @@ namespace sidwinder {
 #pragma once
 #include "../Common.h"
 #include "../SIDFileFormat.h"
-#include "../SIDEmulator.h"
 #include <filesystem>
 #include <memory>
 #include <string>
-#include <map>
 namespace fs = std::filesystem;
 class CPU6510;
 class SIDLoader;
@@ -7101,55 +7196,23 @@ namespace sidwinder {
     class MusicBuilder {
     public:
         struct BuildOptions {
-            bool includePlayer = true;     
-            std::string playerName = "SimpleRaster";  
-            u16 playerAddress = 0x4000;    
-            bool compress = true;          
-            std::string compressorType = "exomizer";  
-            std::string exomizerPath = "Exomizer.exe";  
-            std::string kickAssPath = "java -jar KickAss.jar -silentMode";  
-            int playCallsPerFrame = 1;     
-            u16 sidLoadAddr = 0x1000;      
-            u16 sidInitAddr = 0x1000;      
-            u16 sidPlayAddr = 0x1003;      
-            std::map<std::string, std::string> userDefinitions;  
-            fs::path tempDir = "temp";     
+            std::string kickAssPath = "java -jar KickAss.jar -silentMode";
+            fs::path tempDir = "temp";
         };
-        MusicBuilder(const CPU6510* cpu, const SIDLoader* sid);
+        MusicBuilder(CPU6510* cpu, SIDLoader* sid);
         bool buildMusic(
             const std::string& basename,
             const fs::path& inputFile,
             const fs::path& outputFile,
-            const BuildOptions& options);
-        bool extractPrgFromSid(
-            const fs::path& sidFile,
-            const fs::path& outputPrg);
-    private:
-        const CPU6510* cpu_;  
-        const SIDLoader* sid_;  
-        std::unique_ptr<SIDEmulator> emulator_; 
-        enum class InputType {
-            SID,  
-            PRG,  
-            ASM,  
-            BIN   
-        };
-        void addUserDefinitions(std::ofstream& file, const BuildOptions& options);
-        bool createLinkerFile(
-            const fs::path& linkerFile,
-            const fs::path& musicFile,
-            const fs::path& playerAsmFile,
             const BuildOptions& options);
         bool runAssembler(
             const fs::path& sourceFile,
             const fs::path& outputFile,
             const std::string& kickAssPath,
             const fs::path& tempDir);
-        bool compressPrg(
-            const fs::path& inputPrg,
-            const fs::path& outputPrg,
-            u16 loadAddress,
-            const BuildOptions& options);
+    private:
+        CPU6510* cpu_;
+        SIDLoader* sid_;
     };
 }
 ```
@@ -7250,7 +7313,7 @@ namespace sidwinder {
     class SIDEmulator;
     class PlayerBuilder {
     public:
-        PlayerBuilder(const CPU6510* cpu, const SIDLoader* sid);
+        PlayerBuilder(CPU6510* cpu, SIDLoader* sid);
         ~PlayerBuilder(); 
         bool buildMusicWithPlayer(
             const std::string& basename,
@@ -7261,8 +7324,8 @@ namespace sidwinder {
             const fs::path& helpfulDataFile,
             const PlayerOptions& options);
     private:
-        const CPU6510* cpu_;
-        const SIDLoader* sid_;
+        CPU6510* cpu_;
+        SIDLoader* sid_;
         std::unique_ptr<SIDEmulator> emulator_;
         bool createLinkerFile(
             const fs::path& linkerFile,
@@ -7317,6 +7380,7 @@ namespace sidwinder {
         SIDLoader* sid_;
         std::unique_ptr<PlayerBuilder> builder_;
         fs::path getPlayerAsmPath(const std::string& playerName) const;
+        bool validatePlayerComponents(const std::string& playerName) const;
     };
 }
 ```

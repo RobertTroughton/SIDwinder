@@ -11,30 +11,26 @@
 namespace sidwinder {
     namespace util {
 
+        // In RelocationUtils.cpp, update relocateSID to pass the current metadata
+
         RelocationResult relocateSID(
             CPU6510* cpu,
             SIDLoader* sid,
             const RelocationParams& params) {
-
             RelocationResult result;
             result.success = false;
-
-            // Validate that both input and output are SID files
             const std::string inExt = getFileExtension(params.inputFile);
             if (inExt != ".sid") {
                 result.message = "Input file must be a SID file (.sid): " + params.inputFile.string();
                 Logger::error(result.message);
                 return result;
             }
-
             const std::string outExt = getFileExtension(params.outputFile);
             if (outExt != ".sid") {
                 result.message = "Output file must be a SID file (.sid): " + params.outputFile.string();
                 Logger::error(result.message);
                 return result;
             }
-
-            // Create temp directory if it doesn't exist
             try {
                 fs::create_directories(params.tempDir);
             }
@@ -43,72 +39,50 @@ namespace sidwinder {
                 Logger::error(result.message);
                 return result;
             }
-
-            // Load the input file
             if (!sid->loadSID(params.inputFile.string())) {
                 result.message = "Failed to load file for relocation: " + params.inputFile.string();
                 Logger::error(result.message);
                 return result;
             }
-
-            // Get original addresses and header
             result.originalLoad = sid->getLoadAddress();
             result.originalInit = sid->getInitAddress();
             result.originalPlay = sid->getPlayAddress();
-
-            // Get the original SID header to preserve its flags and additional SID addresses
             const SIDHeader& originalHeader = sid->getHeader();
             u16 originalFlags = originalHeader.flags;
             u8 secondSIDAddress = originalHeader.secondSIDAddress;
             u8 thirdSIDAddress = originalHeader.thirdSIDAddress;
             u16 version = originalHeader.version;
             u32 speed = originalHeader.speed;
-
-            // Calculate relocated addresses
             result.newLoad = params.relocationAddress;
             result.newInit = result.newLoad + (result.originalInit - result.originalLoad);
             result.newPlay = result.newLoad + (result.originalPlay - result.originalLoad);
-
-            // Create a Disassembler
             Disassembler disassembler(*cpu, *sid);
-
-            // Run emulation to analyze memory access patterns
             const int numFrames = util::ConfigManager::getInt("emulationFrames");
             if (!runSIDEmulation(cpu, sid, numFrames)) {
                 result.message = "Failed to run SID emulation for memory analysis";
                 Logger::error(result.message);
                 return result;
             }
-
-            // For SID output, we need to:
-            // 1. Generate assembly with relocation
-            // 2. Assemble to PRG
-            // 3. Create a SID file with proper header
-
-            // Setup temp files
             const std::string basename = params.inputFile.stem().string();
             const fs::path tempAsmFile = params.tempDir / (basename + "-relocated.asm");
             const fs::path tempPrgFile = params.tempDir / (basename + "-relocated.prg");
-
-            // Generate ASM with relocated addresses
             disassembler.generateAsmFile(
                 tempAsmFile.string(),
                 result.newLoad,
                 result.newInit,
                 result.newPlay,
                 false);
-
-            // Assemble to PRG
             if (!assembleAsmToPrg(tempAsmFile, tempPrgFile, params.kickAssPath, params.tempDir)) {
                 result.message = "Failed to assemble relocated code: " + tempAsmFile.string();
                 Logger::error(result.message);
                 return result;
             }
 
-            // Create SID file from PRG
-            const std::string title = originalHeader.name;
-            const std::string author = originalHeader.author;
-            const std::string copyright = originalHeader.copyright;
+            // Get the current metadata from the SIDLoader (which may have been overridden)
+            const SIDHeader& currentHeader = sid->getHeader();
+            const std::string title = std::string(currentHeader.name);
+            const std::string author = std::string(currentHeader.author);
+            const std::string copyright = std::string(currentHeader.copyright);
 
             if (!createSIDFromPRG(
                 tempPrgFile,
@@ -124,13 +98,9 @@ namespace sidwinder {
                 thirdSIDAddress,
                 version,
                 speed)) {
-
-                // If SID creation fails, fall back to PRG
                 Logger::warning("SID file generation failed. Saving as PRG instead.");
-
                 try {
                     fs::copy_file(tempPrgFile, params.outputFile, fs::copy_options::overwrite_existing);
-
                     result.success = true;
                     result.message = "Relocation complete (saved as PRG).";
                 }
@@ -144,7 +114,6 @@ namespace sidwinder {
                 result.success = true;
                 result.message = "Relocation to SID complete. ";
             }
-
             return result;
         }
 

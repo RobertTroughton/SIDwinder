@@ -23,31 +23,19 @@ namespace sidwinder {
 
     CommandClass CommandLineParser::parse() const {
         CommandClass cmd;
-
-        // Process arguments
         std::vector<std::string> positionalArgs;
-
         size_t i = 0;
         while (i < args_.size()) {
             std::string arg = args_[i++];
-
-            // Skip empty arguments
             if (arg.empty()) {
                 continue;
             }
-
-            // Check if it's an option (starts with '-')
             if (arg[0] == '-') {
-                // Process option with potential parameter
-                std::string option = arg.substr(1);  // Remove leading dash
+                std::string option = arg.substr(1);
                 size_t equalPos = option.find('=');
-
                 if (equalPos != std::string::npos) {
-                    // Option with value using equals sign: -option=value
                     std::string name = option.substr(0, equalPos);
                     std::string value = option.substr(equalPos + 1);
-
-                    // Handle special cases for our simplified options
                     if (name == "player") {
                         cmd.setType(CommandClass::Type::Player);
                         cmd.setParameter("playerName", value);
@@ -59,8 +47,6 @@ namespace sidwinder {
                     else if (name == "trace") {
                         cmd.setType(CommandClass::Type::Trace);
                         cmd.setParameter("tracelog", value);
-
-                        // Determine format based on file extension
                         std::string ext = util::getFileExtension(value);
                         if (ext == ".txt" || ext == ".log") {
                             cmd.setParameter("traceformat", "text");
@@ -72,26 +58,42 @@ namespace sidwinder {
                     else if (name == "log") {
                         cmd.setParameter("logfile", value);
                     }
+                    // Add new SID metadata options
+                    else if (name == "sidname") {
+                        cmd.setParameter("sidname", value);
+                    }
+                    else if (name == "sidauthor") {
+                        cmd.setParameter("sidauthor", value);
+                    }
+                    else if (name == "sidcopyright") {
+                        cmd.setParameter("sidcopyright", value);
+                    }
+                    // Add SID address options
+                    else if (name == "sidloadaddr") {
+                        cmd.setParameter("sidloadaddr", value);
+                    }
+                    else if (name == "sidinitaddr") {
+                        cmd.setParameter("sidinitaddr", value);
+                    }
+                    else if (name == "sidplayaddr") {
+                        cmd.setParameter("sidplayaddr", value);
+                    }
                     else {
-                        // Regular parameter
                         cmd.setParameter(name, value);
                     }
                 }
                 else {
-                    // Handle options without equal sign
                     if (option == "player") {
                         cmd.setType(CommandClass::Type::Player);
                     }
                     else if (option == "relocate") {
                         cmd.setType(CommandClass::Type::Relocate);
-                        // This is now an error case - will be handled later in the app logic
                     }
                     else if (option == "disassemble") {
                         cmd.setType(CommandClass::Type::Disassemble);
                     }
                     else if (option == "trace") {
                         cmd.setType(CommandClass::Type::Trace);
-                        // Default trace file
                         cmd.setParameter("tracelog", "trace.bin");
                         cmd.setParameter("traceformat", "binary");
                     }
@@ -99,82 +101,79 @@ namespace sidwinder {
                         cmd.setType(CommandClass::Type::Help);
                     }
                     else if (option == "log" && i < args_.size() && args_[i][0] != '-') {
-                        // Handle -log filename (old style)
                         cmd.setParameter("logfile", args_[i++]);
                     }
-                    // In CommandLineParser::parse()
-                    // Find this section and replace/enhance it:
                     else {
-                        // Other flag or option with value in next arg
-                        // Check if this option expects a value (not a flag)
                         if (i < args_.size() && args_[i][0] != '-') {
-                            // List of options that expect values
                             static const std::set<std::string> valueOptions = {
                                 "kickass", "input", "title", "author", "copyright",
                                 "sidloadaddr", "sidinitaddr", "sidplayaddr", "playeraddr",
-                                "exomizer", "define"  // Add "define" here
+                                "exomizer", "define", "sidname", "sidauthor", "sidcopyright"  // Added here
                             };
-
                             if (valueOptions.find(option) != valueOptions.end()) {
                                 if (option == "define") {
-                                    // Special handling for define option
                                     std::string defValue = args_[i++];
                                     size_t eqPos = defValue.find('=');
                                     if (eqPos != std::string::npos) {
                                         std::string key = defValue.substr(0, eqPos);
                                         std::string value = defValue.substr(eqPos + 1);
-
-                                        // Remove quotes if present
                                         if (value.length() >= 2) {
                                             if ((value.front() == '"' && value.back() == '"') ||
                                                 (value.front() == '\'' && value.back() == '\'')) {
                                                 value = value.substr(1, value.length() - 2);
                                             }
                                         }
-
                                         cmd.addDefinition(key, value);
                                     }
                                     else {
-                                        // Just a flag definition (true/false)
                                         cmd.addDefinition(defValue, "true");
                                     }
+                                }
+                                else if (option == "sidname") {
+                                    cmd.setParameter("sidname", args_[i++]);
+                                }
+                                else if (option == "sidauthor") {
+                                    cmd.setParameter("sidauthor", args_[i++]);
+                                }
+                                else if (option == "sidcopyright") {
+                                    cmd.setParameter("sidcopyright", args_[i++]);
+                                }
+                                else if (option == "sidloadaddr") {
+                                    cmd.setParameter("sidloadaddr", args_[i++]);
+                                }
+                                else if (option == "sidinitaddr") {
+                                    cmd.setParameter("sidinitaddr", args_[i++]);
+                                }
+                                else if (option == "sidplayaddr") {
+                                    cmd.setParameter("sidplayaddr", args_[i++]);
                                 }
                                 else {
                                     cmd.setParameter(option, args_[i++]);
                                 }
                             }
                             else {
-                                // Flag without value
                                 cmd.setFlag(option);
                             }
                         }
                         else {
-                            // Flag without value
                             cmd.setFlag(option);
                         }
                     }
                 }
             }
             else {
-                // This is a positional argument (input or output file)
                 positionalArgs.push_back(arg);
             }
         }
-
-        // Handle positional arguments (input and output files)
         if (!positionalArgs.empty()) {
             cmd.setInputFile(positionalArgs[0]);
         }
-
         if (positionalArgs.size() >= 2) {
             cmd.setOutputFile(positionalArgs[1]);
         }
-
-        // If no valid command was specified, default to help
         if (cmd.getType() == CommandClass::Type::Unknown) {
             cmd.setType(CommandClass::Type::Help);
         }
-
         return cmd;
     }
 
@@ -186,12 +185,9 @@ namespace sidwinder {
         if (!message.empty()) {
             std::cout << message << std::endl << std::endl;
         }
-
         std::cout << "SIDwinder - C64 SID Music Utility" << std::endl;
         std::cout << "Developed by: Robert Troughton (Raistlin of Genesis Project)" << std::endl;
         std::cout << std::endl;
-
-        // Main usage patterns - updated with new command syntax
         std::cout << "USAGE:" << std::endl;
         std::cout << "  " << programName_ << " -relocate=<address> inputfile.sid outputfile.sid" << std::endl;
         std::cout << "  " << programName_ << " -trace[=<file>] inputfile.sid" << std::endl;
@@ -199,8 +195,6 @@ namespace sidwinder {
         std::cout << "  " << programName_ << " -disassemble inputfile.sid outputfile.asm" << std::endl;
         std::cout << "  " << programName_ << " -help" << std::endl;
         std::cout << std::endl;
-
-        // Command descriptions - updated with new syntax
         std::cout << "COMMANDS:" << std::endl;
         std::cout << "  -relocate=<address>    Relocate a SID file to a new memory address" << std::endl;
         std::cout << "  -trace[=<file>]        Trace SID register writes during emulation" << std::endl;
@@ -208,54 +202,52 @@ namespace sidwinder {
         std::cout << "  -disassemble           Disassemble a SID file to assembly code" << std::endl;
         std::cout << "  -help                  Display this help information" << std::endl;
         std::cout << std::endl;
-
-        // Player command options
         std::cout << "PLAYER OPTIONS:" << std::endl;
         std::cout << "  -player                Use the default player (SimpleRaster)" << std::endl;
         std::cout << "  -player=<type>         Specify player type, e.g.: -player=SimpleBitmap or -player=RaistlinBars" << std::endl;
         std::cout << "  -playeraddr=<address>  Player load address (default: $4000)" << std::endl;
         std::cout << std::endl;
-
-        // Trace command options
         std::cout << "TRACE OPTIONS:" << std::endl;
         std::cout << "  -trace                 Output trace to trace.bin in binary format" << std::endl;
         std::cout << "  -trace=<file>          Specify trace output file" << std::endl;
         std::cout << "                         .bin extension = binary format" << std::endl;
         std::cout << "                         .txt/.log extension = text format" << std::endl;
         std::cout << std::endl;
-
-        // General options
+        std::cout << "SID METADATA OPTIONS:" << std::endl;
+        std::cout << "  -sidname=<name>        Override SID title/name" << std::endl;
+        std::cout << "  -sidauthor=<author>    Override SID author" << std::endl;
+        std::cout << "  -sidcopyright=<text>   Override SID copyright" << std::endl;
+        std::cout << std::endl;
         std::cout << "GENERAL OPTIONS:" << std::endl;
         std::cout << "  -verbose               Enable verbose logging" << std::endl;
         std::cout << "  -force                 Force overwrite of output file" << std::endl;
         std::cout << "  -log=<file>            Log file path (default: SIDwinder.log)" << std::endl;
         std::cout << "  -kickass=<path>        Path to KickAss.jar assembler" << std::endl;
         std::cout << std::endl;
-
-        // Examples - updated with new syntax
         std::cout << "EXAMPLES:" << std::endl;
         std::cout << "  " << programName_ << " -relocate=$2000 music.sid relocated.sid" << std::endl;
         std::cout << "    Relocates music.sid to address $2000 and saves as relocated.sid" << std::endl;
         std::cout << std::endl;
-
         std::cout << "  " << programName_ << " -trace music.sid" << std::endl;
         std::cout << "    Traces SID register writes to trace.bin in binary format" << std::endl;
         std::cout << std::endl;
-
         std::cout << "  " << programName_ << " -trace=music.log music.sid" << std::endl;
         std::cout << "    Traces SID register writes to music.log in text format" << std::endl;
         std::cout << std::endl;
-
         std::cout << "  " << programName_ << " -player music.sid music.prg" << std::endl;
         std::cout << "    Links music.sid with default player to create executable music.prg" << std::endl;
         std::cout << std::endl;
-
         std::cout << "  " << programName_ << " -player=SimpleBitmap music.sid player.prg" << std::endl;
         std::cout << "    Links music.sid with SimpleBitmap player" << std::endl;
         std::cout << std::endl;
-
         std::cout << "  " << programName_ << " -disassemble music.sid music.asm" << std::endl;
         std::cout << "    Disassembles music.sid to assembly code in music.asm" << std::endl;
+        std::cout << std::endl;
+        std::cout << "  " << programName_ << " -player -sidname=\"My Cool Tune\" -sidauthor=\"DJ Awesome\" music.sid player.prg" << std::endl;
+        std::cout << "    Creates player with overridden SID metadata" << std::endl;
+        std::cout << std::endl;
+        std::cout << "  " << programName_ << " -relocate=$3000 -sidcopyright=\"(C) 2025 Me\" music.sid relocated.sid" << std::endl;
+        std::cout << "    Relocates SID with updated copyright information" << std::endl;
         std::cout << std::endl;
     }
 

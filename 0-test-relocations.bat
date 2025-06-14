@@ -60,7 +60,6 @@ goto :eof
 
 :: Process all SID files
 call :relocate "SID/dane-elderscrollers.sid" "Reloc/rel2000-dane-elderscrollers.sid"
-
 call :relocate "SID/trident-cheap.sid" "Reloc/rel2000-trident-cheap.sid"
 call :relocate "SID/larshoff-recovery.sid" "Reloc/rel2000-larshoff-recovery.sid"
 call :relocate "SID/celticdesign-7-3.sid" "Reloc/rel2000-celticdesign-7-3.sid"

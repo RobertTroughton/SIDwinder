@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
  */
 
  // Tool name and version
-#define SIDwinder_VERSION "SIDwinder 0.2.0"
+#define SIDwinder_VERSION "SIDwinder 0.2.6"
 
 #define DEFAULT_SID_EMULATION_FRAMES (10 * 60 * 50) // 10 minutes
 

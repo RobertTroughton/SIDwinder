@@ -39,48 +39,33 @@ namespace sidwinder {
 
     bool CommandProcessor::processFile(const ProcessingOptions& options) {
         try {
-            // Create temp directory if it doesn't exist
             fs::create_directories(options.tempDir);
-
-            // Set up tracing if enabled
             if (options.enableTracing && !options.traceLogPath.empty()) {
                 traceLogger_ = std::make_unique<TraceLogger>(options.traceLogPath, options.traceFormat);
             }
-
-            // Load the input file
             if (!loadInputFile(options)) {
                 return false;
             }
 
-            // Apply any metadata overrides
+            // Apply metadata overrides right after loading - this ensures they're used everywhere
             applySIDMetadataOverrides(options);
 
-            // Determine if we need emulation based on the command type
             bool needsEmulation = false;
-
-            // If output is ASM (disassembly) or SID with relocation, we need emulation
             if (util::isValidASMFile(options.outputFile) ||
                 (util::isValidSIDFile(options.outputFile) && options.hasRelocation)) {
                 needsEmulation = true;
             }
-
-            // If trace is enabled, we need emulation
             if (options.enableTracing) {
                 needsEmulation = true;
             }
-
-            // Analyze the music if needed
             if (needsEmulation) {
                 if (!analyzeMusic(options)) {
                     return false;
                 }
             }
-
-            // Generate the output file
             if (!generateOutput(options)) {
                 return false;
             }
-
             return true;
         }
         catch (const std::exception& e) {
@@ -254,29 +239,56 @@ namespace sidwinder {
     }
 
     bool CommandProcessor::generateSIDOutput(const ProcessingOptions& options) {
-        // Check if relocation is requested
         if (options.hasRelocation) {
-            // Setup parameters for relocation
             util::RelocationParams params;
             params.inputFile = options.inputFile;
             params.outputFile = options.outputFile;
             params.tempDir = options.tempDir;
             params.relocationAddress = options.relocationAddress;
             params.kickAssPath = options.kickAssPath;
-
-            // Perform the relocation
             util::RelocationResult result = util::relocateSID(cpu_.get(), sid_.get(), params);
             return result.success;
         }
         else {
-            // No relocation - just copy the SID file
-            try {
-                fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
-                return true;
+            if (!options.overrideTitle.empty() || !options.overrideAuthor.empty() || !options.overrideCopyright.empty()) {
+                auto sidData = util::readBinaryFile(options.inputFile);
+                if (!sidData) {
+                    util::Logger::error("Failed to read input SID file");
+                    return false;
+                }
+
+                SIDHeader header;
+                std::memcpy(&header, sidData->data(), sizeof(header));
+
+                if (!options.overrideTitle.empty()) {
+                    std::memset(header.name, 0, sizeof(header.name));
+                    std::strncpy(header.name, options.overrideTitle.c_str(), sizeof(header.name) - 1);
+                }
+                if (!options.overrideAuthor.empty()) {
+                    std::memset(header.author, 0, sizeof(header.author));
+                    std::strncpy(header.author, options.overrideAuthor.c_str(), sizeof(header.author) - 1);
+                }
+                if (!options.overrideCopyright.empty()) {
+                    std::memset(header.copyright, 0, sizeof(header.copyright));
+                    std::strncpy(header.copyright, options.overrideCopyright.c_str(), sizeof(header.copyright) - 1);
+                }
+
+                std::vector<u8> newSidData;
+                newSidData.resize(sizeof(header));
+                std::memcpy(newSidData.data(), &header, sizeof(header));
+                newSidData.insert(newSidData.end(), sidData->begin() + sizeof(header), sidData->end());
+
+                return util::writeBinaryFile(options.outputFile, newSidData);
             }
-            catch (const std::exception& e) {
-                util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
-                return false;
+            else {
+                try {
+                    fs::copy_file(options.inputFile, options.outputFile, fs::copy_options::overwrite_existing);
+                    return true;
+                }
+                catch (const std::exception& e) {
+                    util::Logger::error(std::string("Failed to copy SID file: ") + e.what());
+                    return false;
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 # SIDwinder
 
-*SIDwinder 0.2.3 - C64 SID Music File Processor*
+*SIDwinder 0.2.6 - C64 SID Music File Processor*
 
 <p align="center"><img src="SIDwinder.png" alt="SIDwinder Logo" width="1600"/></p>
 
@@ -110,12 +110,16 @@ These options can be used with any command:
 
 ## SID Metadata Options
 
-- `-title=<text>`: Override SID title
-- `-author=<text>`: Override SID author
-- `-copyright=<text>`: Override SID copyright
+Override the metadata stored in SID files:
+
+- `-sidname=<name>`: Override SID title/name
+- `-sidauthor=<author>`: Override SID author
+- `-sidcopyright=<text>`: Override SID copyright
 - `-sidloadaddr=<address>`: Override SID load address
 - `-sidinitaddr=<address>`: Override SID init address
 - `-sidplayaddr=<address>`: Override SID play address
+- 
+These options work with all commands and will update the metadata in the output file (whether it's a relocated SID or when used with the player command).
 
 ## Configuration System
 
@@ -189,7 +193,7 @@ Additional player types may be available in the SIDPlayers directory.
 Some players (like `RaistlinBarsWithLogo`) support custom logos. You can specify a custom logo using the `-define` option:
 
 ```
-SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="Logos/MyLogo.kla" music.sid music.prg
+SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/MyLogo.kla" music.sid music.prg
 ```
 
 The logo should be in Koala format (.kla) and placed in a location accessible from the player directory.
@@ -226,16 +230,34 @@ SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/custom.kla
 SIDwinder -player=RaistlinBars -define BorderColor=$06 -define BackgroundColor=$00 music.sid player.prg
 ```
 
+### Convert SID with custom metadata:
+
+```
+SIDwinder -player -sidname="My Cool Tune" -sidauthor="DJ Awesome" music.sid player.prg
+```
+
 ### Relocate SID to address $2000:
 
 ```
 SIDwinder -relocate=$2000 music.sid relocated.sid
 ```
 
+### Relocate SID with updated metadata:
+
+```
+SIDwinder -relocate=$3000 -sidcopyright="(C) 2025 My Label" music.sid relocated.sid
+```
+
 ### Relocate SID without verification:
 
 ```
 SIDwinder -relocate=$2000 -noverify music.sid relocated.sid
+```
+
+### Update only SID metadata (no relocation):
+
+```
+SIDwinder -sidname="New Title" -sidauthor="New Author" -sidcopyright="New Copyright" original.sid updated.sid
 ```
 
 ### Disassemble SID to assembly:
@@ -308,8 +330,18 @@ In the player code, these would be accessible as:
 .endif
 ```
 
+### Metadata Variables in Players
+
+When creating players, SID metadata is available as KickAss variables:
+- `SIDName`: The song title
+- `SIDAuthor`: The song author
+- `SIDCopyright`: The copyright information
+
+These can be overridden using the `-sidname`, `-sidauthor`, and `-sidcopyright` options.
+
 ## Acknowledgements
 
 - Zagon for Exomizer
 - Mads Nielsen for KickAss assembler
 - Adam Dunkels (Trident), Andy Zeidler (Shine), Burglar and Magnar Harestad for help
+

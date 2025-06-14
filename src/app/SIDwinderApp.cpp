@@ -41,29 +41,25 @@ namespace sidwinder {
     }
 
     void SIDwinderApp::setupCommandLine() {
-        // Commands
         cmdParser_.addFlagDefinition("player", "Link SID music with a player (convert .sid to playable .prg)", "Commands");
         cmdParser_.addFlagDefinition("relocate", "Relocate a SID file to a new address (use -relocate=<address>)", "Commands");
         cmdParser_.addFlagDefinition("disassemble", "Disassemble a SID file to assembly code", "Commands");
         cmdParser_.addFlagDefinition("trace", "Trace SID register writes during emulation", "Commands");
-
-        // General options
         cmdParser_.addOptionDefinition("log", "file", "Log file path", "General", util::ConfigManager::getString("logFile", "SIDwinder.log"));
         cmdParser_.addOptionDefinition("kickass", "path", "Path to KickAss.jar", "General", util::ConfigManager::getKickAssPath());
         cmdParser_.addOptionDefinition("exomizer", "path", "Path to Exomizer", "General", util::ConfigManager::getExomizerPath());
         cmdParser_.addOptionDefinition("define", "key=value", "Add user definition (can be used multiple times)", "Assembly");
+
+        cmdParser_.addOptionDefinition("sidname", "name", "Override SID title/name", "SID Metadata");
+        cmdParser_.addOptionDefinition("sidauthor", "author", "Override SID author", "SID Metadata");
+        cmdParser_.addOptionDefinition("sidcopyright", "text", "Override SID copyright", "SID Metadata");
+
         cmdParser_.addFlagDefinition("verbose", "Enable verbose logging", "General");
         cmdParser_.addFlagDefinition("help", "Display this help message", "General");
         cmdParser_.addFlagDefinition("force", "Force overwrite of output file", "General");
-
-        // Player-specific options
         cmdParser_.addOptionDefinition("playeraddr", "address", "Player load address", "Player", "$4000");
         cmdParser_.addFlagDefinition("nocompress", "Disable compression for PRG output", "Player");
-
-        // Relocation options
         cmdParser_.addFlagDefinition("noverify", "Skip verification after relocation", "Relocation");
-
-        // Examples
         cmdParser_.addExample(
             "SIDwinder -player music.sid music.prg",
             "Links music.sid with the default player to create an executable music.prg");
@@ -88,6 +84,12 @@ namespace sidwinder {
         cmdParser_.addExample(
             "SIDwinder -player=RaistlinBarsWithLogo -define LogoFile=\"Logos/MCH.kla\" music.sid game.prg",
             "Example with different logo for the player");
+        cmdParser_.addExample(
+            "SIDwinder -player -sidname=\"My Cool Tune\" -sidauthor=\"DJ Awesome\" music.sid player.prg",
+            "Creates player with overridden SID metadata");
+        cmdParser_.addExample(
+            "SIDwinder -relocate=$3000 -sidcopyright=\"(C) 2025 Me\" music.sid relocated.sid",
+            "Relocates SID with updated copyright information");
     }
 
     void SIDwinderApp::initializeLogging() {
@@ -125,26 +127,40 @@ namespace sidwinder {
 
     CommandProcessor::ProcessingOptions SIDwinderApp::createProcessingOptions() {
         CommandProcessor::ProcessingOptions options;
-
-        // Basic file options
         options.inputFile = fs::path(command_.getInputFile());
         options.outputFile = fs::path(command_.getOutputFile());
         options.tempDir = fs::path("temp");
-
         try {
             fs::create_directories(options.tempDir);
         }
         catch (const std::exception& e) {
             util::Logger::error(std::string("Failed to create temp directory: ") + e.what());
         }
-
-        // User definitions
         options.userDefinitions = command_.getDefinitions();
-
-        // Assembly options
         options.kickAssPath = command_.getParameter("kickass", util::ConfigManager::getKickAssPath());
 
-        // Handle command-specific options
+        if (command_.hasParameter("sidname")) {
+            options.overrideTitle = command_.getParameter("sidname");
+        }
+        if (command_.hasParameter("sidauthor")) {
+            options.overrideAuthor = command_.getParameter("sidauthor");
+        }
+        if (command_.hasParameter("sidcopyright")) {
+            options.overrideCopyright = command_.getParameter("sidcopyright");
+        }
+        if (command_.hasParameter("sidloadaddr")) {
+            options.overrideLoadAddress = command_.getHexParameter("sidloadaddr", 0);
+            options.hasOverrideLoad = true;
+        }
+        if (command_.hasParameter("sidinitaddr")) {
+            options.overrideInitAddress = command_.getHexParameter("sidinitaddr", 0);
+            options.hasOverrideInit = true;
+        }
+        if (command_.hasParameter("sidplayaddr")) {
+            options.overridePlayAddress = command_.getHexParameter("sidplayaddr", 0);
+            options.hasOverridePlay = true;
+        }
+
         if (command_.getType() == CommandClass::Type::Player) {
             options.includePlayer = true;
             options.playerName = command_.getParameter("playerName", util::ConfigManager::getPlayerName());
@@ -153,23 +169,18 @@ namespace sidwinder {
             options.exomizerPath = command_.getParameter("exomizer", util::ConfigManager::getExomizerPath());
             options.compressorType = util::ConfigManager::getCompressorType();
         }
-
         if (command_.getType() == CommandClass::Type::Relocate) {
             options.relocationAddress = command_.getHexParameter("relocateaddr", 0);
             options.hasRelocation = true;
         }
-
         if (command_.getType() == CommandClass::Type::Trace) {
             options.enableTracing = true;
             options.traceLogPath = command_.getParameter("tracelog", "trace.bin");
             std::string traceFormat = command_.getParameter("traceformat", "binary");
             options.traceFormat = (traceFormat == "text") ? TraceFormat::Text : TraceFormat::Binary;
         }
-
-        // Emulation frames
         options.frames = command_.getIntParameter("frames",
             util::ConfigManager::getInt("emulationFrames", DEFAULT_SID_EMULATION_FRAMES));
-
         return options;
     }
 
