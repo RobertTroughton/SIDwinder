@@ -344,4 +344,3 @@ These can be overridden using the `-sidname`, `-sidauthor`, and `-sidcopyright` 
 - Zagon for Exomizer
 - Mads Nielsen for KickAss assembler
 - Adam Dunkels (Trident), Andy Zeidler (Shine), Burglar and Magnar Harestad for help
-
