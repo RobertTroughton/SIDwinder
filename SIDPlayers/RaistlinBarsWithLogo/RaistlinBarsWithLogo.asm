@@ -28,17 +28,6 @@
 //;
 //; =============================================================================
 
-#if D400_SHADOW && D401_SHADOW && D404_SHADOW && D406_SHADOW && D407_SHADOW && D408_SHADOW && D40B_SHADOW && D40D_SHADOW && D40E_SHADOW && D40F_SHADOW && D412_SHADOW && D414_SHADOW
- {
-	#define USE_INBUILT_SID_REGISTER_MIRRORING
-	.print "Using inbuilt SID register mirrors!"
- }
-#else
- {
-	#define USE_MANUAL_SID_REGISTER_MIRRORING
- }
-#endif
-
 * = PlayerADDR
 
 	jmp Initialize					//; Entry point for the player
@@ -371,61 +360,27 @@ SpectrometerD018:
 
 PlayMusicWithAnalysis: {
 
-	#if USE_MANUAL_SID_REGISTER_MIRRORING
-		//; First playback - normal music playing with state preservation
-		jsr BackupSIDMemory
-		jsr SIDPlay
-		jsr RestoreSIDMemory
+	//; First playback - normal music playing with state preservation
+	jsr BackupSIDMemory
+	jsr SIDPlay
+	jsr RestoreSIDMemory
 
-		//; Second playback - capture SID registers
-		lda $01
-		pha
-		lda #$30
-		sta $01
-		jsr SIDPlay
+	//; Second playback - capture SID registers
+	lda $01
+	pha
+	lda #$30
+	sta $01
+	jsr SIDPlay
 
-		ldy #24
-	!loop:
-		lda $d400, y
-		sta sidRegisterMirror, y
-		dey
-		bpl !loop-
+	ldy #24
+!loop:
+	lda $d400, y
+	sta sidRegisterMirror, y
+	dey
+	bpl !loop-
 
-		pla
-		sta $01
-	#endif // USE_MANUAL_SID_REGISTER_MIRRORING
-
-	#if USE_INBUILT_SID_REGISTER_MIRRORING
-		jsr SIDPlay
-
-		//; todo: we should change all this so that we don't need to do any copying at all
-		lda D400_SHADOW_REGISTER
-		sta sidRegisterMirror + 0 + (0 * 7)
-		lda D401_SHADOW_REGISTER
-		sta sidRegisterMirror + 1 + (0 * 7)
-		lda D404_SHADOW_REGISTER
-		sta sidRegisterMirror + 4 + (0 * 7)
-		lda D406_SHADOW_REGISTER
-		sta sidRegisterMirror + 6 + (0 * 7)
-
-		lda D407_SHADOW_REGISTER
-		sta sidRegisterMirror + 0 + (1 * 7)
-		lda D408_SHADOW_REGISTER
-		sta sidRegisterMirror + 1 + (1 * 7)
-		lda D40B_SHADOW_REGISTER
-		sta sidRegisterMirror + 4 + (1 * 7)
-		lda D40D_SHADOW_REGISTER
-		sta sidRegisterMirror + 6 + (1 * 7)
-
-		lda D40E_SHADOW_REGISTER
-		sta sidRegisterMirror + 0 + (2 * 7)
-		lda D40F_SHADOW_REGISTER
-		sta sidRegisterMirror + 1 + (2 * 7)
-		lda D412_SHADOW_REGISTER
-		sta sidRegisterMirror + 4 + (2 * 7)
-		lda D414_SHADOW_REGISTER
-		sta sidRegisterMirror + 6 + (2 * 7)
-	#endif // USE_INBUILT_SID_REGISTER_MIRRORING
+	pla
+	sta $01
 
 	//; Analyze captured registers
 	jmp AnalyzeSIDRegisters
@@ -1031,10 +986,6 @@ COLOR_COPY_DATA:
 //; =============================================================================
 //; INCLUDES
 //; =============================================================================
-
-#if USE_MANUAL_SID_REGISTER_MIRRORING
-.import source "../INC/MemoryPreservation.asm"
-#endif // USE_MANUAL_SID_REGISTER_MIRRORING
 
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"

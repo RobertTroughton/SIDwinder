@@ -35,7 +35,6 @@ namespace sidwinder {
             int callsPerFrame = 1;                       ///< Calls to play routine per frame
             bool registerTrackingEnabled = false;        ///< Whether to track register write order
             bool patternDetectionEnabled = false;        ///< Whether to detect repeating patterns
-            bool shadowRegisterDetectionEnabled = false;  ///< Whether to detect shadow registers
         };
 
         /**
@@ -76,7 +75,8 @@ namespace sidwinder {
          * @return True if file was successfully created
          */
         bool generateHelpfulDataFile(const std::string& filename) const;
-        bool generateHelpfulDataBlockFile(const std::string& filename) const;
+
+        bool generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
 
     private:
         CPU6510* cpu_;                 ///< CPU instance

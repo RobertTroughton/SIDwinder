@@ -198,7 +198,7 @@ namespace sidwinder {
         return { avgCycles, maxCyclesPerFrame_ };
     }
 
-    bool SIDEmulator::generateHelpfulDataBlockFile(const std::string& filename) const {
+    bool SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
         std::vector<u16> modifiedAddresses;
 
         // Collect all non-SID modified addresses
@@ -210,21 +210,56 @@ namespace sidwinder {
             }
         }
 
-        // Write as binary data block
-        std::vector<u8> dataBlock;
-
-        // Start with count (2 bytes, little-endian)
-        u16 count = static_cast<u16>(modifiedAddresses.size());
-        dataBlock.push_back(count & 0xFF);
-        dataBlock.push_back((count >> 8) & 0xFF);
-
-        // Then addresses (2 bytes each, little-endian)
-        for (u16 addr : modifiedAddresses) {
-            dataBlock.push_back(addr & 0xFF);
-            dataBlock.push_back((addr >> 8) & 0xFF);
+        //; Save Modified Addresses PRG
+        {
+            std::vector<u8> dataBlock;
+            u16 saveAddr = 0xec00;
+            for (u16 addr : modifiedAddresses) {
+                if (addr >= 256)
+                {
+                    dataBlock.push_back(0xAD); //; LDA abs
+                    dataBlock.push_back(addr & 0xFF);
+                    dataBlock.push_back((addr >> 8) & 0xFF);
+                }
+                else
+                {
+                    dataBlock.push_back(0xA5); //; LDA zp
+                    dataBlock.push_back(addr & 0xFF);
+                }
+                dataBlock.push_back(0x8D); //; STA abs
+                dataBlock.push_back(saveAddr & 0xFF);
+                dataBlock.push_back((saveAddr >> 8) & 0xFF);
+                saveAddr++;
+            }
+            dataBlock.push_back(0x60); //; RTS
+            util::writeBinaryFile(saveFilename, dataBlock);
         }
 
-        return util::writeBinaryFile(filename, dataBlock);
+        //; Restore Modified Addresses PRG
+        {
+            std::vector<u8> dataBlock;
+            u16 saveAddr = 0xec00;
+            for (u16 addr : modifiedAddresses) {
+                dataBlock.push_back(0xAD); //; LDA abs
+                dataBlock.push_back(saveAddr & 0xFF);
+                dataBlock.push_back((saveAddr >> 8) & 0xFF);
+                if (addr >= 256)
+                {
+                    dataBlock.push_back(0x8D); //; STA abs
+                    dataBlock.push_back(addr & 0xFF);
+                    dataBlock.push_back((addr >> 8) & 0xFF);
+                }
+                else
+                {
+                    dataBlock.push_back(0x85); //; STA zp
+                    dataBlock.push_back(addr & 0xFF);
+                }
+                saveAddr++;
+            }
+            dataBlock.push_back(0x60); //; RTS
+            util::writeBinaryFile(restoreFilename, dataBlock);
+        }
+
     }
 
     bool SIDEmulator::generateHelpfulDataFile(const std::string& filename) const {

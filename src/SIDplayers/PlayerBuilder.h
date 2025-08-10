@@ -28,7 +28,8 @@ namespace sidwinder {
         // Generate helpful data for player assembly
         bool generateHelpfulData(
             const fs::path& helpfulDataFile,
-            const fs::path& helpfulDataBlockFile,
+            const fs::path& saveModifiedAddressesBINFilename,
+            const fs::path& restoreModifiedAddressesBINFilename,
             const PlayerOptions& options);
 
     private:

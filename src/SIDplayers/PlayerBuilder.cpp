@@ -58,10 +58,12 @@ namespace sidwinder {
 
         // Generate helpful data and analyze play frequency FIRST
         fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
-        fs::path helpfulDataBlockFile = tempDir / (basename + "-HelpfulData.bin");
+
+        fs::path saveModifiedAddressesBINFilename = tempDir / (basename + "-savemodifiedaddresses.bin");
+        fs::path restoreModifiedAddressesBINFilename = tempDir / (basename + "-restoremodifiedaddresses.bin");
 
         // This will analyze the music and update sid_->setNumPlayCallsPerFrame()
-        generateHelpfulData(helpfulDataFile, helpfulDataBlockFile, options);
+        generateHelpfulData(helpfulDataFile, saveModifiedAddressesBINFilename, restoreModifiedAddressesBINFilename, options);
 
         // Now get the updated play calls per frame from the SID loader
         PlayerOptions updatedOptions = options;
@@ -109,7 +111,8 @@ namespace sidwinder {
 
     bool PlayerBuilder::generateHelpfulData(
         const fs::path& helpfulDataFile,
-        const fs::path& helpfulDataBlockFile,
+        const fs::path& saveModifiedAddressesBINFilename,
+        const fs::path& restoreModifiedAddressesBINFilename,
         const PlayerOptions& options) {
 
         if (!emulator_) return false;
@@ -128,7 +131,6 @@ namespace sidwinder {
         emulOptions.frames = 100; // Just need a short run to identify key patterns
         emulOptions.registerTrackingEnabled = true; // Track register write order
         emulOptions.patternDetectionEnabled = true;
-        emulOptions.shadowRegisterDetectionEnabled = true; // Enable shadow register detection
 
         // Run the emulation
         if (emulator_->runEmulation(emulOptions)) {
@@ -141,7 +143,7 @@ namespace sidwinder {
                 sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
             }
 
-            emulator_->generateHelpfulDataBlockFile(helpfulDataBlockFile.string());
+            emulator_->generateSaveAndRestoreModifiedMemoryFiles(saveModifiedAddressesBINFilename.string(), restoreModifiedAddressesBINFilename.string());
 
             // Generate the helpful data file
             return emulator_->generateHelpfulDataFile(helpfulDataFile.string());
@@ -199,16 +201,24 @@ namespace sidwinder {
         file << ".var PlayerADDR = $" << util::wordToHex(options.playerAddress) << "\n";
         file << "\n";
 
-        // Add helpful data include if available
-        std::string basename = musicFile.stem().string();
-        fs::path helpfulDataFile = options.tempDir / (basename + "-HelpfulData.asm");
-        bool hasHelpfulDataFile = fs::exists(helpfulDataFile);
 
-        if (hasHelpfulDataFile) {
-            file << "// Include helpful data for double-buffering and register reordering\n";
-            file << ".import source \"" << helpfulDataFile.string() << "\"\n";
+        // Add save/restore code import if available
+        std::string basename = musicFile.stem().string();
+        fs::path saveModifiedAddressesBINFile = options.tempDir / (basename + "-savemodifiedaddresses.bin");
+        fs::path restoreModifiedAddressesBINFile = options.tempDir / (basename + "-restoremodifiedaddresses.bin");
+        bool hasSaveRestoreFiles = fs::exists(saveModifiedAddressesBINFile) && fs::exists(restoreModifiedAddressesBINFile);
+        
+        if (hasSaveRestoreFiles)
+        {
+            file << ".var backupCode = LoadBinary(\"temp\\Xiny-Laxity-savemodifiedaddresses.bin\")\n";
+            file << "BackupSIDMemory:\n";
+            file << ".fill backupCode.getSize(), backupCode.get(i)\n";
+            file << ".var restoreCode = LoadBinary(\"temp\\Xiny-Laxity-restoremodifiedaddresses.bin\")\n";
+            file << "RestoreSIDMemory:\n";
+            file << ".fill restoreCode.getSize(), restoreCode.get(i)\n";
         }
-        else {
+        else
+        {
             file << "// No helpful data available\n";
             file << ".var SIDModifiedMemoryCount = 0\n";
             file << ".var SIDModifiedMemory = List()\n";
@@ -226,7 +236,7 @@ namespace sidwinder {
                 std::string result;
                 for (unsigned char c : str) {
                     // Keep alphanumeric and basic punctuation, replace others with _
-                    if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '!') {
+                    if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '!' || c == '\'') {
                         result.push_back(c);
                     }
                     else {
