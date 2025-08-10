@@ -94,6 +94,45 @@
             display: none;
         }
 
+        .controls-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 150px;
+        }
+
+        .control-input {
+            padding: 8px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            width: 100px;
+        }
+
+        .control-info {
+            color: #666;
+            font-size: 0.9em;
+            flex: 1;
+        }
+
+        .frame-guide {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
         .info-panels {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -180,6 +219,42 @@
             color: #667eea;
         }
 
+        .register-name {
+            font-size: 0.7em;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .zp-list {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .zp-addresses {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .zp-address {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .zp-summary {
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -238,6 +313,34 @@
                 display: block;
             }
 
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+            .progress-bar.active {
+                display: block;
+            }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
         @media (max-width: 768px) {
             .info-panels {
                 grid-template-columns: 1fr;
@@ -245,6 +348,10 @@
 
             .register-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .zp-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
         }
     </style>
@@ -264,9 +371,24 @@
                 <input type="file" id="fileInput" accept=".sid">
             </div>
 
+            <div class="controls-section">
+                <div class="control-group">
+                    <span class="control-label">Emulation Frames:</span>
+                    <input type="number" id="frameCount" class="control-input" value="3000" min="50" max="100000">
+                    <span class="control-info" id="frameInfo">~1 minute at 50Hz</span>
+                </div>
+                <div class="frame-guide">
+                    50 frames = 1 second PAL | 300 = 6 sec | 3000 = 1 min | 30000 = 10 min
+                </div>
+            </div>
+
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div>Analyzing SID file...</div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
             </div>
 
             <div class="error-message" id="errorMessage"></div>
@@ -342,7 +464,11 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">Zero Page Usage:</span>
-                            <span class="info-value" id="zpUsage">-</span>
+                            <span class="info-value" id="zpUsage" style="font-size: 0.9em;">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Modified Memory:</span>
+                            <span class="info-value" id="modifiedMemory">-</span>
                         </div>
                     </div>
                     <div class="memory-map" id="memoryMap"></div>
@@ -359,7 +485,6 @@
     </div>
 
     <script src="cpu6510.js"></script>
-
     <script>
         // SIDwinder Web Core with WASM CPU emulation
         class SIDAnalyzer {
@@ -367,6 +492,7 @@
                 this.memory = new Uint8Array(65536);
                 this.memoryAccess = new Uint8Array(65536);
                 this.sidRegisters = new Map();
+                this.zpWrites = new Map();  // Track zero page writes
                 this.header = null;
                 this.dataSize = 0;
                 this.wasmModule = null;
@@ -377,44 +503,60 @@
             async initWASM() {
                 try {
                     // Initialize the WASM module
-                    if (typeof CPU6510Module === 'undefined') {
-                        console.warn('CPU6510Module not found, WASM not available');
-                        this.wasmReady = false;
-                        this.initJSEmulation();
-                        return;
-                    }
-
                     this.wasmModule = await CPU6510Module();
 
-                    // Check if module loaded correctly
-                    if (!this.wasmModule || !this.wasmModule._malloc) {
-                        console.warn('WASM module did not load correctly');
-                        this.wasmReady = false;
-                        this.initJSEmulation();
-                        return;
-                    }
+                    // Check if we need to use ccall/cwrap or direct function calls
+                    const useCwrap = typeof this.wasmModule.cwrap === 'function';
 
-                    // Wrap the exported functions for easier use
-                    this.cpu = {
-                        init: this.wasmModule.cwrap('cpu_init', null, []),
-                        loadMemory: this.wasmModule.cwrap('cpu_load_memory', null, ['number', 'number', 'number']),
-                        readMemory: this.wasmModule.cwrap('cpu_read_memory', 'number', ['number']),
-                        writeMemory: this.wasmModule.cwrap('cpu_write_memory', null, ['number', 'number']),
-                        step: this.wasmModule.cwrap('cpu_step', null, []),
-                        executeFunction: this.wasmModule.cwrap('cpu_execute_function', 'number', ['number', 'number']),
-                        getPC: this.wasmModule.cwrap('cpu_get_pc', 'number', []),
-                        setPC: this.wasmModule.cwrap('cpu_set_pc', null, ['number']),
-                        getSP: this.wasmModule.cwrap('cpu_get_sp', 'number', []),
-                        getA: this.wasmModule.cwrap('cpu_get_a', 'number', []),
-                        getX: this.wasmModule.cwrap('cpu_get_x', 'number', []),
-                        getY: this.wasmModule.cwrap('cpu_get_y', 'number', []),
-                        getCycles: this.wasmModule.cwrap('cpu_get_cycles', 'number', []),
-                        getMemoryAccess: this.wasmModule.cwrap('cpu_get_memory_access', 'number', ['number']),
-                        getSidWrites: this.wasmModule.cwrap('cpu_get_sid_writes', 'number', ['number']),
-                        getTotalSidWrites: this.wasmModule.cwrap('cpu_get_total_sid_writes', 'number', []),
-                        setRecordWrites: this.wasmModule.cwrap('cpu_set_record_writes', null, ['number']),
-                        analyzeMemory: this.wasmModule.cwrap('cpu_analyze_memory', null, ['number', 'number', 'number', 'number'])
-                    };
+                    if (useCwrap) {
+                        // Use cwrap for function wrapping
+                        this.cpu = {
+                            init: this.wasmModule.cwrap('cpu_init', null, []),
+                            loadMemory: this.wasmModule.cwrap('cpu_load_memory', null, ['number', 'number', 'number']),
+                            readMemory: this.wasmModule.cwrap('cpu_read_memory', 'number', ['number']),
+                            writeMemory: this.wasmModule.cwrap('cpu_write_memory', null, ['number', 'number']),
+                            step: this.wasmModule.cwrap('cpu_step', null, []),
+                            executeFunction: this.wasmModule.cwrap('cpu_execute_function', 'number', ['number', 'number']),
+                            getPC: this.wasmModule.cwrap('cpu_get_pc', 'number', []),
+                            setPC: this.wasmModule.cwrap('cpu_set_pc', null, ['number']),
+                            getSP: this.wasmModule.cwrap('cpu_get_sp', 'number', []),
+                            getA: this.wasmModule.cwrap('cpu_get_a', 'number', []),
+                            getX: this.wasmModule.cwrap('cpu_get_x', 'number', []),
+                            getY: this.wasmModule.cwrap('cpu_get_y', 'number', []),
+                            getCycles: this.wasmModule.cwrap('cpu_get_cycles', 'number', []),
+                            getMemoryAccess: this.wasmModule.cwrap('cpu_get_memory_access', 'number', ['number']),
+                            getSidWrites: this.wasmModule.cwrap('cpu_get_sid_writes', 'number', ['number']),
+                            getTotalSidWrites: this.wasmModule.cwrap('cpu_get_total_sid_writes', 'number', []),
+                            getZpWrites: this.wasmModule.cwrap('cpu_get_zp_writes', 'number', ['number']),
+                            getTotalZpWrites: this.wasmModule.cwrap('cpu_get_total_zp_writes', 'number', []),
+                            setRecordWrites: this.wasmModule.cwrap('cpu_set_record_writes', null, ['number']),
+                            analyzeMemory: this.wasmModule.cwrap('cpu_analyze_memory', null, ['number', 'number', 'number', 'number'])
+                        };
+                    } else {
+                        // Use direct function calls with underscore prefix
+                        this.cpu = {
+                            init: () => this.wasmModule._cpu_init(),
+                            loadMemory: (addr, ptr, size) => this.wasmModule._cpu_load_memory(addr, ptr, size),
+                            readMemory: (addr) => this.wasmModule._cpu_read_memory(addr),
+                            writeMemory: (addr, val) => this.wasmModule._cpu_write_memory(addr, val),
+                            step: () => this.wasmModule._cpu_step(),
+                            executeFunction: (addr, cycles) => this.wasmModule._cpu_execute_function(addr, cycles),
+                            getPC: () => this.wasmModule._cpu_get_pc(),
+                            setPC: (pc) => this.wasmModule._cpu_set_pc(pc),
+                            getSP: () => this.wasmModule._cpu_get_sp(),
+                            getA: () => this.wasmModule._cpu_get_a(),
+                            getX: () => this.wasmModule._cpu_get_x(),
+                            getY: () => this.wasmModule._cpu_get_y(),
+                            getCycles: () => this.wasmModule._cpu_get_cycles(),
+                            getMemoryAccess: (addr) => this.wasmModule._cpu_get_memory_access(addr),
+                            getSidWrites: (reg) => this.wasmModule._cpu_get_sid_writes(reg),
+                            getTotalSidWrites: () => this.wasmModule._cpu_get_total_sid_writes(),
+                            getZpWrites: (addr) => this.wasmModule._cpu_get_zp_writes(addr),
+                            getTotalZpWrites: () => this.wasmModule._cpu_get_total_zp_writes(),
+                            setRecordWrites: (val) => this.wasmModule._cpu_set_record_writes(val),
+                            analyzeMemory: (start, end, codePtr, dataPtr) => this.wasmModule._cpu_analyze_memory(start, end, codePtr, dataPtr)
+                        };
+                    }
 
                     // Initialize CPU
                     this.cpu.init();
@@ -423,21 +565,7 @@
                 } catch (error) {
                     console.warn('WASM module not available, falling back to JavaScript emulation', error);
                     this.wasmReady = false;
-                    this.initJSEmulation();
                 }
-            }
-
-            initJSEmulation() {
-                // Fallback JavaScript CPU emulation
-                this.jsCpu = {
-                    pc: 0,
-                    sp: 0xFD,
-                    a: 0,
-                    x: 0,
-                    y: 0,
-                    status: 0x24,
-                    cycles: 0
-                };
             }
 
             parseSIDHeader(buffer) {
@@ -493,10 +621,10 @@
                 }
             }
 
-            async emulateInit() {
+            async emulateInit(frameCount, progressCallback) {
                 if (!this.wasmReady || !this.wasmModule) {
                     console.warn('WASM not ready, skipping emulation');
-                    return new Map();
+                    return { sidRegisters: new Map(), zpWrites: new Map() };
                 }
 
                 try {
@@ -507,110 +635,101 @@
                     const dataStart = this.header.loadAddress;
                     const musicData = this.memory.slice(dataStart, dataStart + this.dataSize);
 
-                    console.log(`Loading ${musicData.length} bytes at $${dataStart.toString(16)}`);
+                    console.log(`Loading ${musicData.length} bytes at ${dataStart.toString(16)}`);
 
-                    // Use ccall to load memory directly
+                    // Load memory byte by byte using the wrapped function
+                    // This is safer than trying to use HEAPU8 directly
                     for (let i = 0; i < musicData.length; i++) {
                         this.cpu.writeMemory(dataStart + i, musicData[i]);
                     }
 
                     // Execute init routine
                     console.log('Executing INIT at $' + this.header.initAddress.toString(16));
-                    const initStart = performance.now();
-                    this.cpu.setPC(this.header.initAddress);
                     const success = this.cpu.executeFunction(this.header.initAddress, 100000);
-                    const initTime = performance.now() - initStart;
 
                     if (success) {
-                        console.log(`INIT completed successfully in ${initTime.toFixed(2)}ms`);
-                        // Convert BigInt to Number for display
-                        const initCycles = Number(this.cpu.getCycles());
-                        console.log(`CPU cycles used for INIT: ${initCycles}`);
+                        console.log('INIT completed successfully');
 
                         // Now execute play routine multiple times to gather statistics
                         this.cpu.setRecordWrites(1);
 
-                        const playStart = performance.now();
-                        const framesTotal = 300; // About 6 seconds at 50Hz
+                        const framesTotal = frameCount;
                         console.log(`Executing PLAY at $${this.header.playAddress.toString(16)} for ${framesTotal} frames...`);
 
                         for (let frame = 0; frame < framesTotal; frame++) {
                             this.cpu.executeFunction(this.header.playAddress, 20000);
 
-                            // Log progress every 50 frames
-                            if (frame % 50 === 0 && frame > 0) {
-                                console.log(`  Frame ${frame}/${framesTotal} - SID writes so far: ${this.cpu.getTotalSidWrites()}`);
+                            // Update progress
+                            if (progressCallback && frame % 10 === 0) {
+                                progressCallback(frame, framesTotal);
                             }
                         }
 
-                        const playTime = performance.now() - playStart;
-                        // Convert BigInt to Number
-                        const totalCycles = Number(this.cpu.getCycles());
-
-                        console.log(`PLAY execution completed in ${playTime.toFixed(2)}ms`);
-                        console.log(`Total CPU cycles: ${totalCycles}`);
-                        console.log(`Average cycles per frame: ${Math.floor(totalCycles / framesTotal)}`);
-
                         // Gather SID register statistics
                         const sidRegisters = new Map();
-                        let registerReport = "SID Register Usage:\n";
-
                         for (let reg = 0; reg < 0x20; reg++) {
                             const count = this.cpu.getSidWrites(reg);
                             if (count > 0) {
                                 sidRegisters.set(reg, count);
-                                const regName = this.getSIDRegisterName(reg);
-                                registerReport += `  $D4${reg.toString(16).padStart(2, '0').toUpperCase()} (${regName}): ${count} writes\n`;
                             }
                         }
 
-                        console.log(registerReport);
-                        console.log(`Total SID writes: ${this.cpu.getTotalSidWrites()}`);
-                        console.log(`Average SID writes per frame: ${Math.floor(this.cpu.getTotalSidWrites() / framesTotal)}`);
+                        // Gather zero page statistics using the new tracking functions
+                        const zpWrites = new Map();
+                        for (let addr = 0; addr < 256; addr++) {
+                            const count = this.cpu.getZpWrites ? this.cpu.getZpWrites(addr) : 0;
+                            if (count > 0) {
+                                zpWrites.set(addr, count);
+                            }
+                        }
 
-                        return sidRegisters;
+                        // Count all modified memory (excluding zero page since we track it separately)
+                        let modifiedCount = zpWrites.size;
+                        for (let addr = 256; addr < 65536; addr++) {
+                            const access = this.cpu.getMemoryAccess(addr);
+                            if (access & 0x04) { // Write flag
+                                modifiedCount++;
+                            }
+                        }
+
+                        const totalZpWrites = this.cpu.getTotalZpWrites ? this.cpu.getTotalZpWrites() : zpWrites.size;
+                        console.log(`Total SID writes: ${this.cpu.getTotalSidWrites()}`);
+                        console.log(`Total zero page writes: ${totalZpWrites}`);
+                        console.log(`Zero page locations written: ${zpWrites.size}`);
+                        console.log(`Total memory locations modified: ${modifiedCount}`);
+
+                        return {
+                            sidRegisters,
+                            zpWrites,
+                            modifiedCount: modifiedCount + zpWrites.size
+                        };
                     } else {
                         console.error('INIT routine failed or timed out');
-                        return new Map();
+                        return { sidRegisters: new Map(), zpWrites: new Map(), modifiedCount: 0 };
                     }
                 } catch (error) {
                     console.error('Error during emulation:', error);
-                    return new Map();
+                    return { sidRegisters: new Map(), zpWrites: new Map(), modifiedCount: 0 };
                 }
             }
 
-            // Add this helper function to the SIDAnalyzer class
             getSIDRegisterName(reg) {
                 const names = {
-                    0x00: 'Voice 1 Freq Lo',
-                    0x01: 'Voice 1 Freq Hi',
-                    0x02: 'Voice 1 Pulse Lo',
-                    0x03: 'Voice 1 Pulse Hi',
-                    0x04: 'Voice 1 Control',
-                    0x05: 'Voice 1 AD',
-                    0x06: 'Voice 1 SR',
-                    0x07: 'Voice 2 Freq Lo',
-                    0x08: 'Voice 2 Freq Hi',
-                    0x09: 'Voice 2 Pulse Lo',
-                    0x0A: 'Voice 2 Pulse Hi',
-                    0x0B: 'Voice 2 Control',
-                    0x0C: 'Voice 2 AD',
-                    0x0D: 'Voice 2 SR',
-                    0x0E: 'Voice 3 Freq Lo',
-                    0x0F: 'Voice 3 Freq Hi',
-                    0x10: 'Voice 3 Pulse Lo',
-                    0x11: 'Voice 3 Pulse Hi',
-                    0x12: 'Voice 3 Control',
-                    0x13: 'Voice 3 AD',
-                    0x14: 'Voice 3 SR',
-                    0x15: 'Filter Cutoff Lo',
-                    0x16: 'Filter Cutoff Hi',
-                    0x17: 'Filter Control',
-                    0x18: 'Volume & Filter',
-                    0x19: 'Paddle X',
-                    0x1A: 'Paddle Y',
-                    0x1B: 'Voice 3 Waveform',
-                    0x1C: 'Voice 3 ADSR',
+                    0x00: 'Voice 1 Freq Lo', 0x01: 'Voice 1 Freq Hi',
+                    0x02: 'Voice 1 Pulse Lo', 0x03: 'Voice 1 Pulse Hi',
+                    0x04: 'Voice 1 Control', 0x05: 'Voice 1 AD',
+                    0x06: 'Voice 1 SR', 0x07: 'Voice 2 Freq Lo',
+                    0x08: 'Voice 2 Freq Hi', 0x09: 'Voice 2 Pulse Lo',
+                    0x0A: 'Voice 2 Pulse Hi', 0x0B: 'Voice 2 Control',
+                    0x0C: 'Voice 2 AD', 0x0D: 'Voice 2 SR',
+                    0x0E: 'Voice 3 Freq Lo', 0x0F: 'Voice 3 Freq Hi',
+                    0x10: 'Voice 3 Pulse Lo', 0x11: 'Voice 3 Pulse Hi',
+                    0x12: 'Voice 3 Control', 0x13: 'Voice 3 AD',
+                    0x14: 'Voice 3 SR', 0x15: 'Filter Cutoff Lo',
+                    0x16: 'Filter Cutoff Hi', 0x17: 'Filter Control',
+                    0x18: 'Volume & Filter', 0x19: 'Paddle X',
+                    0x1A: 'Paddle Y', 0x1B: 'Voice 3 Waveform',
+                    0x1C: 'Voice 3 ADSR'
                 };
                 return names[reg] || `Register ${reg}`;
             }
@@ -621,48 +740,46 @@
                 let zpUsage = 0;
 
                 if (this.wasmReady && this.wasmModule && this.cpu && this.cpu.analyzeMemory) {
-                    // Use WASM analysis
-                    const codeBytesPtr = this.wasmModule._malloc(4);
-                    const dataBytesPtr = this.wasmModule._malloc(4);
+                    try {
+                        // Use WASM analysis
+                        const codeBytesPtr = this.wasmModule._malloc(4);
+                        const dataBytesPtr = this.wasmModule._malloc(4);
 
-                    this.cpu.analyzeMemory(
-                        this.header.loadAddress,
-                        this.header.loadAddress + this.dataSize - 1,
-                        codeBytesPtr,
-                        dataBytesPtr
-                    );
+                        this.cpu.analyzeMemory(
+                            this.header.loadAddress,
+                            this.header.loadAddress + this.dataSize - 1,
+                            codeBytesPtr,
+                            dataBytesPtr
+                        );
 
-                    codeBytes = this.wasmModule.getValue(codeBytesPtr, 'i32');
-                    dataBytes = this.wasmModule.getValue(dataBytesPtr, 'i32');
-
-                    this.wasmModule._free(codeBytesPtr);
-                    this.wasmModule._free(dataBytesPtr);
-
-                    // Count zero page usage from WASM memory access
-                    for (let i = 0; i < 256; i++) {
-                        if (this.cpu.getMemoryAccess(i) & 0x06) {  // Read or Write flags
-                            zpUsage++;
+                        // Use getValue if available, otherwise read directly
+                        if (this.wasmModule.getValue) {
+                            codeBytes = this.wasmModule.getValue(codeBytesPtr, 'i32');
+                            dataBytes = this.wasmModule.getValue(dataBytesPtr, 'i32');
+                        } else {
+                            // Read 32-bit integers directly from memory
+                            const view = new Int32Array(this.wasmModule.HEAP32.buffer, codeBytesPtr, 1);
+                            codeBytes = view[0];
+                            const view2 = new Int32Array(this.wasmModule.HEAP32.buffer, dataBytesPtr, 1);
+                            dataBytes = view2[0];
                         }
+
+                        this.wasmModule._free(codeBytesPtr);
+                        this.wasmModule._free(dataBytesPtr);
+
+                        // Count zero page usage from WASM memory access
+                        for (let i = 0; i < 256; i++) {
+                            if (this.cpu.getMemoryAccess(i) & 0x06) {  // Read or Write flags
+                                zpUsage++;
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Error in WASM memory analysis, falling back:', error);
+                        // Fall back to JavaScript analysis
+                        return this.analyzeMemoryFallback();
                     }
                 } else {
-                    // Fallback to simple JavaScript analysis
-                    for (let i = 0; i < 256; i++) {
-                        if (this.memory[i] !== 0) {
-                            zpUsage++;
-                        }
-                    }
-
-                    const startAddr = this.header.loadAddress;
-                    const endAddr = startAddr + this.dataSize;
-
-                    for (let addr = startAddr; addr < endAddr; addr++) {
-                        const byte = this.memory[addr];
-                        if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C].includes(byte)) {
-                            codeBytes++;
-                        } else {
-                            dataBytes++;
-                        }
-                    }
+                    return this.analyzeMemoryFallback();
                 }
 
                 return {
@@ -673,31 +790,37 @@
                 };
             }
 
-            simulateSIDWrites() {
-                // Simulate a simple emulation to detect SID register writes
-                // This is a simplified version - full emulation would be more complex
-                const sidRegisters = new Map();
+            analyzeMemoryFallback() {
+                let codeBytes = 0;
+                let dataBytes = 0;
+                let zpUsage = 0;
 
-                // Look for STA $D4xx instructions (SID register writes)
-                const startAddr = this.header.loadAddress;
-                const endAddr = startAddr + this.dataSize;
-
-                for (let addr = startAddr; addr < endAddr - 2; addr++) {
-                    // STA absolute: 0x8D
-                    if (this.memory[addr] === 0x8D) {
-                        const targetLo = this.memory[addr + 1];
-                        const targetHi = this.memory[addr + 2];
-                        const target = targetLo | (targetHi << 8);
-
-                        // Check if it's a SID register (0xD400-0xD41F)
-                        if (target >= 0xD400 && target <= 0xD41F) {
-                            const register = target & 0x1F;
-                            sidRegisters.set(register, (sidRegisters.get(register) || 0) + 1);
-                        }
+                // Simple JavaScript analysis
+                for (let i = 0; i < 256; i++) {
+                    if (this.memory[i] !== 0) {
+                        zpUsage++;
                     }
                 }
 
-                return sidRegisters;
+                const startAddr = this.header.loadAddress;
+                const endAddr = startAddr + this.dataSize;
+
+                for (let addr = startAddr; addr < endAddr; addr++) {
+                    const byte = this.memory[addr];
+                    // Common 6502 opcodes
+                    if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C].includes(byte)) {
+                        codeBytes++;
+                    } else {
+                        dataBytes++;
+                    }
+                }
+
+                return {
+                    codeBytes,
+                    dataBytes,
+                    zpUsage,
+                    totalSize: this.dataSize
+                };
             }
 
             getClockType() {
@@ -724,14 +847,17 @@
             constructor() {
                 this.analyzer = new SIDAnalyzer();
                 this.initEventListeners();
+                this.updateFrameInfo();
             }
 
             initEventListeners() {
                 const uploadSection = document.getElementById('uploadSection');
                 const fileInput = document.getElementById('fileInput');
+                const frameCountInput = document.getElementById('frameCount');
 
                 uploadSection.addEventListener('click', () => fileInput.click());
                 fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+                frameCountInput.addEventListener('input', () => this.updateFrameInfo());
 
                 // Drag and drop
                 uploadSection.addEventListener('dragover', (e) => {
@@ -751,6 +877,21 @@
                         this.processFile(files[0]);
                     }
                 });
+            }
+
+            updateFrameInfo() {
+                const frameCount = parseInt(document.getElementById('frameCount').value) || 3000;
+                const seconds = frameCount / 50;  // PAL
+                const minutes = seconds / 60;
+
+                let info = '';
+                if (minutes >= 1) {
+                    info = `~${minutes.toFixed(1)} minute${minutes !== 1 ? 's' : ''} at 50Hz`;
+                } else {
+                    info = `~${seconds.toFixed(1)} second${seconds !== 1 ? 's' : ''} at 50Hz`;
+                }
+
+                document.getElementById('frameInfo').textContent = info;
             }
 
             handleFileSelect(event) {
@@ -791,15 +932,22 @@
                         });
                     }
 
+                    // Show progress bar
+                    const progressBar = document.getElementById('progressBar');
+                    const progressFill = document.getElementById('progressFill');
+                    const progressText = document.getElementById('progressText');
+                    progressBar.classList.add('active');
+
                     // Run emulation if WASM is available
-                    let sidRegisters = new Map();
-                    if (this.analyzer.wasmReady) {
-                        console.log('Running CPU emulation...');
-                        sidRegisters = await this.analyzer.emulateInit() || new Map();
-                    } else {
-                        // Fallback to static analysis
-                        sidRegisters = this.analyzer.simulateSIDWrites();
-                    }
+                    const frameCount = parseInt(document.getElementById('frameCount').value) || 3000;
+                    const { sidRegisters, zpWrites, modifiedCount } = await this.analyzer.emulateInit(
+                        frameCount,
+                        (current, total) => {
+                            const percent = (current / total * 100).toFixed(1);
+                            progressFill.style.width = percent + '%';
+                            progressText.textContent = `Frame ${current} / ${total} (${percent}%)`;
+                        }
+                    );
 
                     // Analyze memory
                     const memoryStats = this.analyzer.analyzeMemory();
@@ -807,7 +955,7 @@
                     // Update UI
                     this.updateFileInfo(header);
                     this.updateTechnicalInfo(header);
-                    this.updateMemoryInfo(memoryStats);
+                    this.updateMemoryInfo(memoryStats, modifiedCount, zpWrites);
                     this.updateRegisterInfo(sidRegisters);
 
                     // Show panels
@@ -821,6 +969,7 @@
                     console.error(error);
                 } finally {
                     this.showLoading(false);
+                    document.getElementById('progressBar').classList.remove('active');
                 }
             }
 
@@ -842,10 +991,54 @@
                 document.getElementById('sidModel').textContent = this.analyzer.getSIDModel();
             }
 
-            updateMemoryInfo(stats) {
+            formatZeroPageUsage(zpWrites) {
+                if (zpWrites.size === 0) {
+                    return 'None';
+                }
+
+                // Get sorted list of addresses
+                const addresses = Array.from(zpWrites.keys()).sort((a, b) => a - b);
+
+                // Group consecutive addresses into ranges
+                const groups = [];
+                let currentGroup = { start: addresses[0], end: addresses[0] };
+
+                for (let i = 1; i < addresses.length; i++) {
+                    if (addresses[i] === currentGroup.end + 1) {
+                        // Consecutive address, extend the range
+                        currentGroup.end = addresses[i];
+                    } else {
+                        // Non-consecutive, save current group and start new one
+                        groups.push(currentGroup);
+                        currentGroup = { start: addresses[i], end: addresses[i] };
+                    }
+                }
+                groups.push(currentGroup);
+
+                // Format the groups
+                const formatted = groups.map(group => {
+                    if (group.start === group.end) {
+                        // Single address
+                        return `${group.start.toString(16).toUpperCase().padStart(2, '0')}`;
+                    } else {
+                        // Range of addresses
+                        return `${group.start.toString(16).toUpperCase().padStart(2, '0')}-${group.end.toString(16).toUpperCase().padStart(2, '0')}`;
+                    }
+                });
+
+                // If more than 8 groups, show first 7 and add ellipsis
+                if (formatted.length > 8) {
+                    return formatted.slice(0, 7).join(', ') + ', ...';
+                }
+
+                return formatted.join(', ');
+            }
+
+            updateMemoryInfo(stats, modifiedCount = 0, zpWrites = new Map()) {
                 document.getElementById('codeBytes').textContent = `${stats.codeBytes} bytes`;
                 document.getElementById('dataBytes').textContent = `${stats.dataBytes} bytes`;
-                document.getElementById('zpUsage').textContent = `${stats.zpUsage}/256 bytes`;
+                document.getElementById('zpUsage').textContent = this.formatZeroPageUsage(zpWrites);
+                document.getElementById('modifiedMemory').textContent = modifiedCount ? `${modifiedCount} locations` : 'N/A';
 
                 // Create memory map visualization
                 const memoryMap = document.getElementById('memoryMap');
@@ -853,44 +1046,21 @@
                 const endAddr = startAddr + this.analyzer.dataSize;
 
                 memoryMap.innerHTML = `
-                            <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
-                            <div>Total Size: ${stats.totalSize} bytes</div>
-                            <div style="margin-top: 10px;">
-                                <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
-                                <div style="margin-top: 5px; font-size: 0.8em;">
-                                    <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes / stats.totalSize * 100)}%)</span>
-                                    <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes / stats.totalSize * 100)}%)</span>
-                                </div>
+                        <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
+                        <div>Total Size: ${stats.totalSize} bytes</div>
+                        <div style="margin-top: 10px;">
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
+                            <div style="margin-top: 5px; font-size: 0.8em;">
+                                <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes / stats.totalSize * 100)}%)</span>
+                                <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes / stats.totalSize * 100)}%)</span>
                             </div>
-                        `;
+                        </div>
+                    `;
             }
 
             updateRegisterInfo(sidRegisters) {
                 const registerGrid = document.getElementById('registerGrid');
                 registerGrid.innerHTML = '';
-
-                // Common SID register names
-                const registerNames = {
-                    0x00: 'Voice 1 Freq Lo',
-                    0x01: 'Voice 1 Freq Hi',
-                    0x04: 'Voice 1 Control',
-                    0x05: 'Voice 1 AD',
-                    0x06: 'Voice 1 SR',
-                    0x07: 'Voice 2 Freq Lo',
-                    0x08: 'Voice 2 Freq Hi',
-                    0x0B: 'Voice 2 Control',
-                    0x0C: 'Voice 2 AD',
-                    0x0D: 'Voice 2 SR',
-                    0x0E: 'Voice 3 Freq Lo',
-                    0x0F: 'Voice 3 Freq Hi',
-                    0x12: 'Voice 3 Control',
-                    0x13: 'Voice 3 AD',
-                    0x14: 'Voice 3 SR',
-                    0x15: 'Filter Cutoff Lo',
-                    0x16: 'Filter Cutoff Hi',
-                    0x17: 'Filter Control',
-                    0x18: 'Volume & Filter'
-                };
 
                 // Show top used registers
                 const sortedRegisters = Array.from(sidRegisters.entries())
@@ -901,16 +1071,76 @@
                     const div = document.createElement('div');
                     div.className = 'register-item';
                     div.innerHTML = `
-                                <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
-                                <div class="register-count">${count}</div>
-                                <div style="font-size: 0.7em; color: #888;">${registerNames[reg] || 'Register'}</div>
-                            `;
+                            <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
+                            <div class="register-count">${count}</div>
+                            <div class="register-name">${this.analyzer.getSIDRegisterName(reg)}</div>
+                        `;
                     registerGrid.appendChild(div);
                 });
 
                 if (sortedRegisters.length === 0) {
-                    registerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">No SID writes detected in static analysis</div>';
+                    registerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">No SID writes detected</div>';
                 }
+            }
+
+            updateZeroPageList(zpWrites) {
+                const zpList = document.getElementById('zpList');
+                const zpSummary = document.getElementById('zpSummary');
+                const zpAddresses = document.getElementById('zpAddresses');
+
+                if (zpWrites.size === 0) {
+                    zpSummary.textContent = 'No zero page locations were modified during emulation';
+                    zpAddresses.innerHTML = '';
+                    return;
+                }
+
+                // Get sorted list of addresses
+                const addresses = Array.from(zpWrites.keys()).sort((a, b) => a - b);
+
+                // Create summary text
+                const totalWrites = Array.from(zpWrites.values()).reduce((sum, count) => sum + count, 0);
+                zpSummary.textContent = `${addresses.length} zero page location${addresses.length !== 1 ? 's' : ''} used (${totalWrites} total write${totalWrites !== 1 ? 's' : ''}):`;
+
+                // Group consecutive addresses into ranges
+                const groups = [];
+                let currentGroup = { start: addresses[0], end: addresses[0], writes: [zpWrites.get(addresses[0])] };
+
+                for (let i = 1; i < addresses.length; i++) {
+                    if (addresses[i] === currentGroup.end + 1) {
+                        // Consecutive address, extend the range
+                        currentGroup.end = addresses[i];
+                        currentGroup.writes.push(zpWrites.get(addresses[i]));
+                    } else {
+                        // Non-consecutive, save current group and start new one
+                        groups.push(currentGroup);
+                        currentGroup = { start: addresses[i], end: addresses[i], writes: [zpWrites.get(addresses[i])] };
+                    }
+                }
+                groups.push(currentGroup);
+
+                // Format the groups
+                zpAddresses.innerHTML = '';
+                groups.forEach(group => {
+                    const div = document.createElement('div');
+                    div.className = 'zp-address';
+
+                    let text;
+                    if (group.start === group.end) {
+                        // Single address
+                        text = `${group.start.toString(16).toUpperCase().padStart(2, '0')}`;
+                        const writes = group.writes[0];
+                        div.title = `Address ${group.start.toString(16).toUpperCase().padStart(2, '0')}: ${writes} write${writes !== 1 ? 's' : ''}`;
+                    } else {
+                        // Range of addresses
+                        text = `${group.start.toString(16).toUpperCase().padStart(2, '0')}-${group.end.toString(16).toUpperCase().padStart(2, '0')}`;
+                        const totalWrites = group.writes.reduce((sum, count) => sum + count, 0);
+                        const count = group.end - group.start + 1;
+                        div.title = `Addresses ${group.start.toString(16).toUpperCase().padStart(2, '0')} to ${group.end.toString(16).toUpperCase().padStart(2, '0')} (${count} locations): ${totalWrites} total writes`;
+                    }
+
+                    div.textContent = text;
+                    zpAddresses.appendChild(div);
+                });
             }
 
             showLoading(show) {
