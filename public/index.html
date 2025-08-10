@@ -561,7 +561,6 @@
                     // Initialize CPU
                     this.cpu.init();
                     this.wasmReady = true;
-                    console.log('WASM CPU emulator initialized');
                 } catch (error) {
                     console.warn('WASM module not available, falling back to JavaScript emulation', error);
                     this.wasmReady = false;
@@ -635,8 +634,6 @@
                     const dataStart = this.header.loadAddress;
                     const musicData = this.memory.slice(dataStart, dataStart + this.dataSize);
 
-                    console.log(`Loading ${musicData.length} bytes at ${dataStart.toString(16)}`);
-
                     // Load memory byte by byte using the wrapped function
                     // This is safer than trying to use HEAPU8 directly
                     for (let i = 0; i < musicData.length; i++) {
@@ -644,17 +641,13 @@
                     }
 
                     // Execute init routine
-                    console.log('Executing INIT at $' + this.header.initAddress.toString(16));
                     const success = this.cpu.executeFunction(this.header.initAddress, 100000);
 
                     if (success) {
-                        console.log('INIT completed successfully');
-
                         // Now execute play routine multiple times to gather statistics
                         this.cpu.setRecordWrites(1);
 
                         const framesTotal = frameCount;
-                        console.log(`Executing PLAY at $${this.header.playAddress.toString(16)} for ${framesTotal} frames...`);
 
                         for (let frame = 0; frame < framesTotal; frame++) {
                             this.cpu.executeFunction(this.header.playAddress, 20000);
@@ -693,10 +686,6 @@
                         }
 
                         const totalZpWrites = this.cpu.getTotalZpWrites ? this.cpu.getTotalZpWrites() : zpWrites.size;
-                        console.log(`Total SID writes: ${this.cpu.getTotalSidWrites()}`);
-                        console.log(`Total zero page writes: ${totalZpWrites}`);
-                        console.log(`Zero page locations written: ${zpWrites.size}`);
-                        console.log(`Total memory locations modified: ${modifiedCount}`);
 
                         return {
                             sidRegisters,
@@ -916,7 +905,6 @@
 
                     // Wait for WASM if it's still loading
                     if (!this.analyzer.wasmReady) {
-                        console.log('Waiting for WASM module...');
                         await new Promise(resolve => {
                             const checkWASM = setInterval(() => {
                                 if (this.analyzer.wasmReady) {
