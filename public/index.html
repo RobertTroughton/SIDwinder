@@ -438,8 +438,8 @@
                         <span class="info-value" id="playAddress">-</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Data Size:</span>
-                        <span class="info-value" id="dataSize">-</span>
+                        <span class="info-label">File Size:</span>
+                        <span class="info-value" id="fileSize">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Clock:</span>
@@ -494,7 +494,7 @@
                 this.sidRegisters = new Map();
                 this.zpWrites = new Map();  // Track zero page writes
                 this.header = null;
-                this.dataSize = 0;
+                this.fileSize = 0;
                 this.wasmModule = null;
                 this.wasmReady = false;
                 this.initWASM();
@@ -605,8 +605,8 @@
                 }
 
                 // Load music data into memory
-                this.dataSize = buffer.byteLength - dataStart;
-                const musicData = new Uint8Array(buffer, dataStart, this.dataSize);
+                this.fileSize = buffer.byteLength - dataStart;
+                const musicData = new Uint8Array(buffer, dataStart, this.fileSize);
                 this.loadToMemory(musicData, this.header.loadAddress);
 
                 return this.header;
@@ -632,7 +632,7 @@
 
                     // Load the SID data into WASM memory
                     const dataStart = this.header.loadAddress;
-                    const musicData = this.memory.slice(dataStart, dataStart + this.dataSize);
+                    const musicData = this.memory.slice(dataStart, dataStart + this.fileSize);
 
                     // Load memory byte by byte using the wrapped function
                     // This is safer than trying to use HEAPU8 directly
@@ -736,7 +736,7 @@
 
                         this.cpu.analyzeMemory(
                             this.header.loadAddress,
-                            this.header.loadAddress + this.dataSize - 1,
+                            this.header.loadAddress + this.fileSize - 1,
                             codeBytesPtr,
                             dataBytesPtr
                         );
@@ -775,7 +775,7 @@
                     codeBytes,
                     dataBytes,
                     zpUsage,
-                    totalSize: this.dataSize
+                    totalSize: this.fileSize
                 };
             }
 
@@ -792,7 +792,7 @@
                 }
 
                 const startAddr = this.header.loadAddress;
-                const endAddr = startAddr + this.dataSize;
+                const endAddr = startAddr + this.fileSize;
 
                 for (let addr = startAddr; addr < endAddr; addr++) {
                     const byte = this.memory[addr];
@@ -808,7 +808,7 @@
                     codeBytes,
                     dataBytes,
                     zpUsage,
-                    totalSize: this.dataSize
+                    totalSize: this.fileSize
                 };
             }
 
@@ -950,7 +950,7 @@
                     document.getElementById('infoPanels').classList.add('visible');
 
                     const emulationType = this.analyzer.wasmReady ? 'WASM emulation' : 'static analysis';
-                    this.showSuccess(`Successfully analyzed: ${file.name} (using ${emulationType})`);
+                    this.showSuccess(`Successfully analyzed: ${file.name}`);
 
                 } catch (error) {
                     this.showError(`Error: ${error.message}`);
@@ -974,7 +974,7 @@
                 document.getElementById('loadAddress').textContent = `$${header.loadAddress.toString(16).toUpperCase().padStart(4, '0')}`;
                 document.getElementById('initAddress').textContent = `$${header.initAddress.toString(16).toUpperCase().padStart(4, '0')}`;
                 document.getElementById('playAddress').textContent = `$${header.playAddress.toString(16).toUpperCase().padStart(4, '0')}`;
-                document.getElementById('dataSize').textContent = `${this.analyzer.dataSize} bytes`;
+                document.getElementById('fileSize').textContent = `${this.analyzer.fileSize} bytes`;
                 document.getElementById('clockType').textContent = this.analyzer.getClockType();
                 document.getElementById('sidModel').textContent = this.analyzer.getSIDModel();
             }
@@ -1031,7 +1031,7 @@
                 // Create memory map visualization
                 const memoryMap = document.getElementById('memoryMap');
                 const startAddr = this.analyzer.header.loadAddress;
-                const endAddr = startAddr + this.analyzer.dataSize;
+                const endAddr = startAddr + this.analyzer.fileSize;
 
                 memoryMap.innerHTML = `
                         <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
