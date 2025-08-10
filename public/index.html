@@ -176,23 +176,39 @@
                 cursor: pointer;
                 padding: 2px 6px;
                 border-radius: 4px;
-                transition: background 0.2s;
+                transition: all 0.2s;
+                border: 1px dashed transparent;
+                position: relative;
             }
 
                 .info-value.editable:hover {
                     background: rgba(102, 126, 234, 0.1);
+                    border: 1px dashed #667eea;
                 }
 
-            .info-value.editing {
-                background: white;
-                border: 2px solid #667eea;
-                padding: 4px 8px;
-                outline: none;
-                cursor: text;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                min-width: 200px;
-                display: inline-block;
-            }
+        .edit-icon {
+            display: inline-block;
+            margin-left: 8px;
+            color: #667eea;
+            font-size: 0.9em;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .info-value.editable:hover .edit-icon {
+            opacity: 1;
+        }
+
+        .info-value.editing {
+            background: white;
+            border: 2px solid #667eea;
+            padding: 4px 8px;
+            outline: none;
+            cursor: text;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-width: 200px;
+            display: inline-block;
+        }
 
         .save-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -405,15 +421,15 @@
                     <h2>📄 File Information</h2>
                     <div class="info-row">
                         <span class="info-label">Title:</span>
-                        <span class="info-value editable" id="sidTitle" contenteditable="false">-</span>
+                        <span class="info-value editable" id="sidTitle" contenteditable="false" title="Click to edit">-<span class="edit-icon">✏️</span></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Author:</span>
-                        <span class="info-value editable" id="sidAuthor" contenteditable="false">-</span>
+                        <span class="info-value editable" id="sidAuthor" contenteditable="false" title="Click to edit">-<span class="edit-icon">✏️</span></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Copyright:</span>
-                        <span class="info-value editable" id="sidCopyright" contenteditable="false">-</span>
+                        <span class="info-value editable" id="sidCopyright" contenteditable="false" title="Click to edit">-<span class="edit-icon">✏️</span></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Format:</span>
@@ -927,7 +943,12 @@
             startEditing(field) {
                 field.classList.add('editing');
                 field.contentEditable = 'true';
-                field.dataset.originalValue = field.textContent;
+                // Store original value without the icon
+                const textOnly = field.textContent.replace('✏️', '').trim();
+                field.dataset.originalValue = textOnly;
+
+                // Remove the edit icon while editing
+                field.textContent = textOnly;
 
                 // Select all text
                 const range = document.createRange();
@@ -941,15 +962,23 @@
                 field.classList.remove('editing');
                 field.contentEditable = 'false';
 
+                // Get the text without any icons
+                let text = field.textContent.replace('✏️', '').trim();
+
                 // Limit length to 31 characters (SID format limitation)
-                if (field.textContent.length > 31) {
-                    field.textContent = field.textContent.substring(0, 31);
+                if (text.length > 31) {
+                    text = text.substring(0, 31);
                 }
+
+                // Add the edit icon back
+                field.innerHTML = `${text}<span class="edit-icon">✏️</span>`;
             }
 
             cancelEditing(field) {
-                field.textContent = field.dataset.originalValue || field.textContent;
-                this.stopEditing(field);
+                const originalValue = field.dataset.originalValue || field.textContent.replace('✏️', '').trim();
+                field.innerHTML = `${originalValue}<span class="edit-icon">✏️</span>`;
+                field.classList.remove('editing');
+                field.contentEditable = 'false';
             }
 
             saveSID() {
@@ -958,9 +987,10 @@
                     return;
                 }
 
-                const newTitle = document.getElementById('sidTitle').textContent;
-                const newAuthor = document.getElementById('sidAuthor').textContent;
-                const newCopyright = document.getElementById('sidCopyright').textContent;
+                // Get text content without the edit icons
+                const newTitle = document.getElementById('sidTitle').textContent.replace('✏️', '').trim();
+                const newAuthor = document.getElementById('sidAuthor').textContent.replace('✏️', '').trim();
+                const newCopyright = document.getElementById('sidCopyright').textContent.replace('✏️', '').trim();
 
                 const modifiedBuffer = this.analyzer.createModifiedSID(newTitle, newAuthor, newCopyright);
 
@@ -1080,9 +1110,20 @@
             }
 
             updateFileInfo(header) {
-                document.getElementById('sidTitle').textContent = header.name || 'Unknown';
-                document.getElementById('sidAuthor').textContent = header.author || 'Unknown';
-                document.getElementById('sidCopyright').textContent = header.copyright || 'Unknown';
+                // Update the text content without removing the edit icons
+                const updateFieldWithIcon = (id, text) => {
+                    const field = document.getElementById(id);
+                    if (field.classList.contains('editable')) {
+                        field.innerHTML = `${text}<span class="edit-icon">✏️</span>`;
+                    } else {
+                        field.textContent = text;
+                    }
+                };
+
+                updateFieldWithIcon('sidTitle', header.name || 'Unknown');
+                updateFieldWithIcon('sidAuthor', header.author || 'Unknown');
+                updateFieldWithIcon('sidCopyright', header.copyright || 'Unknown');
+
                 document.getElementById('sidFormat').textContent = header.magicID;
                 document.getElementById('sidVersion').textContent = `v${header.version}`;
                 document.getElementById('sidSongs').textContent = `${header.startSong}/${header.songs}`;
