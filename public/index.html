@@ -94,43 +94,29 @@
             display: none;
         }
 
-        .controls-section {
-            margin: 20px 0;
+        .song-title-section {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            border-radius: 15px;
             padding: 20px;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
         }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
+            .song-title-section.visible {
+                display: block;
+            }
 
-        .control-label {
-            font-weight: 600;
+        .song-title {
+            font-size: 1.5em;
             color: #667eea;
-            min-width: 150px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
 
-        .control-input {
-            padding: 8px;
-            border: 2px solid #667eea;
-            border-radius: 5px;
-            width: 100px;
-        }
-
-        .control-info {
-            color: #666;
-            font-size: 0.9em;
-            flex: 1;
-        }
-
-        .frame-guide {
-            margin-top: 10px;
-            font-size: 0.85em;
-            color: #888;
+        .song-author {
+            font-size: 1.1em;
+            color: #764ba2;
         }
 
         .info-panels {
@@ -186,45 +172,51 @@
             font-family: 'Courier New', monospace;
         }
 
-        .memory-map {
-            margin-top: 20px;
-            padding: 15px;
+        .settings-section {
             background: #f8f9fa;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            max-height: 300px;
-            overflow-y: auto;
+            border-top: 2px solid #e9ecef;
+            padding: 30px 40px;
+            margin-top: 40px;
         }
 
-        .zp-list {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .zp-addresses {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .zp-address {
-            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.95em;
-            font-weight: 600;
+        .settings-title {
             color: #667eea;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
-        .zp-summary {
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 150px;
+        }
+
+        .control-input {
+            padding: 8px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            width: 100px;
+        }
+
+        .control-info {
             color: #666;
             font-size: 0.9em;
+            flex: 1;
+        }
+
+        .frame-guide {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #888;
+            margin-left: 165px;
         }
 
         .loading {
@@ -271,20 +263,6 @@
                 display: block;
             }
 
-        .success-message {
-            background: #51cf6620;
-            border: 1px solid #51cf66;
-            color: #2f9e44;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-        }
-
-            .success-message.visible {
-                display: block;
-            }
-
         .progress-bar {
             width: 100%;
             height: 20px;
@@ -313,13 +291,71 @@
             color: #666;
         }
 
+        /* Modal/Popup styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+            .modal-icon.success {
+                color: #51cf66;
+            }
+
+            .modal-icon.error {
+                color: #ff6b6b;
+            }
+
+        .modal-message {
+            font-size: 1.2em;
+            color: #333;
+        }
+
         @media (max-width: 768px) {
             .info-panels {
                 grid-template-columns: 1fr;
             }
 
-            .zp-grid {
-                grid-template-columns: repeat(4, 1fr);
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .frame-guide {
+                margin-left: 0;
             }
         }
     </style>
@@ -339,15 +375,9 @@
                 <input type="file" id="fileInput" accept=".sid">
             </div>
 
-            <div class="controls-section">
-                <div class="control-group">
-                    <span class="control-label">Emulation Frames:</span>
-                    <input type="number" id="frameCount" class="control-input" value="3000" min="50" max="100000">
-                    <span class="control-info" id="frameInfo">~1 minute at 50Hz</span>
-                </div>
-                <div class="frame-guide">
-                    50 frames = 1 second PAL | 300 = 6 sec | 3000 = 1 min | 30000 = 10 min
-                </div>
+            <div class="song-title-section" id="songTitleSection">
+                <div class="song-title" id="songTitle">-</div>
+                <div class="song-author" id="songAuthor">-</div>
             </div>
 
             <div class="loading" id="loading">
@@ -360,7 +390,6 @@
             </div>
 
             <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
 
             <div class="info-panels" id="infoPanels">
                 <div class="panel">
@@ -426,8 +455,27 @@
                         <span class="info-value" id="sidModel">-</span>
                     </div>
                 </div>
-
             </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-title">⚙️ Analysis Settings</div>
+            <div class="control-group">
+                <span class="control-label">Emulation Frames:</span>
+                <input type="number" id="frameCount" class="control-input" value="30000" min="50" max="100000">
+                <span class="control-info" id="frameInfo">~10 minutes at 50Hz</span>
+            </div>
+            <div class="frame-guide">
+                50 frames = 1 second PAL | 300 = 6 sec | 3000 = 1 min | 30000 = 10 min
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal overlay for success/error messages -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-icon" id="modalIcon">✓</div>
+            <div class="modal-message" id="modalMessage">Success!</div>
         </div>
     </div>
 
@@ -795,7 +843,7 @@
             }
 
             updateFrameInfo() {
-                const frameCount = parseInt(document.getElementById('frameCount').value) || 3000;
+                const frameCount = parseInt(document.getElementById('frameCount').value) || 30000;
                 const seconds = frameCount / 50;  // PAL
                 const minutes = seconds / 60;
 
@@ -818,7 +866,7 @@
 
             async processFile(file) {
                 if (!file.name.toLowerCase().endsWith('.sid')) {
-                    this.showError('Please select a valid SID file');
+                    this.showModal('Please select a valid SID file', false);
                     return;
                 }
 
@@ -853,7 +901,7 @@
                     progressBar.classList.add('active');
 
                     // Run emulation if WASM is available
-                    const frameCount = parseInt(document.getElementById('frameCount').value) || 3000;
+                    const frameCount = parseInt(document.getElementById('frameCount').value) || 30000;
                     const { sidRegisters, zpWrites, modifiedCount } = await this.analyzer.emulateInit(
                         frameCount,
                         (current, total) => {
@@ -870,20 +918,30 @@
                     this.updateFileInfo(header);
                     this.updateTechnicalInfo(header, memoryStats);
                     this.updateZeroPageInfo(zpWrites);
+                    this.updateSongTitle(header);
 
                     // Show panels
                     document.getElementById('infoPanels').classList.add('visible');
+                    document.getElementById('songTitleSection').classList.add('visible');
 
-                    const emulationType = this.analyzer.wasmReady ? 'WASM emulation' : 'static analysis';
-                    this.showSuccess(`Successfully analyzed: ${file.name}`);
+                    // Show success modal
+                    this.showModal(`Successfully analyzed: ${file.name}`, true);
 
                 } catch (error) {
-                    this.showError(`Error: ${error.message}`);
+                    this.showModal(`Error: ${error.message}`, false);
                     console.error(error);
                 } finally {
                     this.showLoading(false);
                     document.getElementById('progressBar').classList.remove('active');
                 }
+            }
+
+            updateSongTitle(header) {
+                const title = header.name || 'Unknown Title';
+                const author = header.author || 'Unknown Author';
+
+                document.getElementById('songTitle').textContent = title;
+                document.getElementById('songAuthor').textContent = author;
             }
 
             updateFileInfo(header) {
@@ -905,12 +963,8 @@
                 document.getElementById('playAddress').textContent = `$${header.playAddress.toString(16).toUpperCase().padStart(4, '0')}`;
                 document.getElementById('memoryRange').textContent = `$${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}`;
 
-                // File size with code/data breakdown
-                let fileSizeText = `${this.analyzer.fileSize} bytes`;
-                if (memoryStats) {
-                    fileSizeText += ` (${memoryStats.codeBytes} code, ${memoryStats.dataBytes} data)`;
-                }
-                document.getElementById('fileSize').textContent = fileSizeText;
+                // File size - simplified without code/data breakdown
+                document.getElementById('fileSize').textContent = `${this.analyzer.fileSize} bytes`;
 
                 document.getElementById('clockType').textContent = this.analyzer.getClockType();
                 document.getElementById('sidModel').textContent = this.analyzer.getSIDModel();
@@ -975,90 +1029,6 @@
                 return result;
             }
 
-            updateMemoryInfo(stats, modifiedCount = 0, zpWrites = new Map()) {
-                document.getElementById('zpUsage').textContent = this.formatZeroPageUsage(zpWrites);
-
-                // Create memory map visualization
-                const memoryMap = document.getElementById('memoryMap');
-                const startAddr = this.analyzer.header.loadAddress;
-                const endAddr = startAddr + this.analyzer.fileSize;
-
-                // Build a detailed memory map with $ prefix for hex values
-                let memoryMapHTML = `
-                            <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
-                            <div>Total Size: ${stats.totalSize} bytes</div>
-                            <div style="margin-top: 15px;">
-                        `;
-
-                // Create a visual memory map with mixed code/data representation
-                const blockSize = Math.max(1, Math.floor(stats.totalSize / 200)); // Aim for ~200 blocks max
-                const blocks = [];
-
-                // Simple heuristic: analyze memory in chunks
-                for (let i = 0; i < stats.totalSize; i += blockSize) {
-                    let codeCount = 0;
-                    let dataCount = 0;
-
-                    for (let j = 0; j < blockSize && (i + j) < stats.totalSize; j++) {
-                        const addr = startAddr + i + j;
-                        const byte = this.analyzer.memory[addr];
-
-                        // Common 6502 opcodes (simplified detection)
-                        if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C, 0xEA, 0x48, 0x68, 0x8A, 0xA8, 0xAA].includes(byte)) {
-                            codeCount++;
-                        } else {
-                            dataCount++;
-                        }
-                    }
-
-                    // Determine block type based on majority
-                    blocks.push(codeCount > dataCount ? 'code' : 'data');
-                }
-
-                // Create the visual bar
-                memoryMapHTML += '<div style="display: flex; height: 30px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">';
-
-                let lastType = null;
-                let runLength = 0;
-
-                for (let i = 0; i < blocks.length; i++) {
-                    if (blocks[i] === lastType) {
-                        runLength++;
-                    } else {
-                        if (lastType !== null) {
-                            const width = (runLength / blocks.length) * 100;
-                            const color = lastType === 'code' ? '#667eea' : '#764ba2';
-                            memoryMapHTML += `<div style="width: ${width}%; background: ${color}; height: 100%;"></div>`;
-                        }
-                        lastType = blocks[i];
-                        runLength = 1;
-                    }
-                }
-
-                // Don't forget the last run
-                if (lastType !== null) {
-                    const width = (runLength / blocks.length) * 100;
-                    const color = lastType === 'code' ? '#667eea' : '#764ba2';
-                    memoryMapHTML += `<div style="width: ${width}%; background: ${color}; height: 100%;"></div>`;
-                }
-
-                memoryMapHTML += '</div>';
-
-                // Add legend
-                const codePercent = Math.round(stats.codeBytes / stats.totalSize * 100);
-                const dataPercent = Math.round(stats.dataBytes / stats.totalSize * 100);
-
-                memoryMapHTML += `
-                            <div style="margin-top: 10px; font-size: 0.85em; display: flex; gap: 20px;">
-                                <span><span style="display: inline-block; width: 12px; height: 12px; background: #667eea; border-radius: 2px; vertical-align: middle;"></span> Code (~${codePercent}%)</span>
-                                <span><span style="display: inline-block; width: 12px; height: 12px; background: #764ba2; border-radius: 2px; vertical-align: middle;"></span> Data (~${dataPercent}%)</span>
-                            </div>
-                        `;
-
-                memoryMapHTML += '</div>';
-                memoryMap.innerHTML = memoryMapHTML;
-            }
-
             showLoading(show) {
                 document.getElementById('loading').classList.toggle('active', show);
             }
@@ -1069,15 +1039,28 @@
                 errorEl.classList.add('visible');
             }
 
-            showSuccess(message) {
-                const successEl = document.getElementById('successMessage');
-                successEl.textContent = message;
-                successEl.classList.add('visible');
+            showModal(message, isSuccess) {
+                const overlay = document.getElementById('modalOverlay');
+                const icon = document.getElementById('modalIcon');
+                const messageEl = document.getElementById('modalMessage');
+
+                // Set content
+                icon.textContent = isSuccess ? '✓' : '✗';
+                icon.className = isSuccess ? 'modal-icon success' : 'modal-icon error';
+                messageEl.textContent = message;
+
+                // Show modal
+                overlay.classList.add('visible');
+
+                // Auto-hide after 2 seconds
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                }, 2000);
             }
 
             hideMessages() {
                 document.getElementById('errorMessage').classList.remove('visible');
-                document.getElementById('successMessage').classList.remove('visible');
+                document.getElementById('songTitleSection').classList.remove('visible');
             }
         }
 
