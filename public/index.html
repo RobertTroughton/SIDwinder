@@ -37,16 +37,16 @@
             text-align: center;
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            }
 
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
+            .header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
 
         .main-content {
             padding: 40px;
@@ -62,16 +62,16 @@
             background: rgba(102, 126, 234, 0.05);
         }
 
-        .upload-section:hover {
-            border-color: #764ba2;
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
+            .upload-section:hover {
+                border-color: #764ba2;
+                background: rgba(102, 126, 234, 0.1);
+                transform: translateY(-2px);
+            }
 
-        .upload-section.dragover {
-            background: rgba(102, 126, 234, 0.2);
-            border-color: #764ba2;
-        }
+            .upload-section.dragover {
+                background: rgba(102, 126, 234, 0.2);
+                border-color: #764ba2;
+            }
 
         .upload-icon {
             font-size: 4em;
@@ -103,9 +103,9 @@
             transition: opacity 0.5s ease;
         }
 
-        .info-panels.visible {
-            opacity: 1;
-        }
+            .info-panels.visible {
+                opacity: 1;
+            }
 
         .panel {
             background: white;
@@ -114,13 +114,13 @@
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .panel h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
-        }
+            .panel h2 {
+                color: #667eea;
+                margin-bottom: 20px;
+                font-size: 1.3em;
+                border-bottom: 2px solid #f0f0f0;
+                padding-bottom: 10px;
+            }
 
         .info-row {
             display: flex;
@@ -129,9 +129,9 @@
             border-bottom: 1px solid #f5f5f5;
         }
 
-        .info-row:last-child {
-            border-bottom: none;
-        }
+            .info-row:last-child {
+                border-bottom: none;
+            }
 
         .info-label {
             font-weight: 600;
@@ -186,9 +186,9 @@
             padding: 20px;
         }
 
-        .loading.active {
-            display: block;
-        }
+            .loading.active {
+                display: block;
+            }
 
         .spinner {
             border: 4px solid #f3f3f3;
@@ -201,8 +201,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .error-message {
@@ -215,9 +220,9 @@
             display: none;
         }
 
-        .error-message.visible {
-            display: block;
-        }
+            .error-message.visible {
+                display: block;
+            }
 
         .success-message {
             background: #51cf6620;
@@ -229,15 +234,15 @@
             display: none;
         }
 
-        .success-message.visible {
-            display: block;
-        }
+            .success-message.visible {
+                display: block;
+            }
 
         @media (max-width: 768px) {
             .info-panels {
                 grid-template-columns: 1fr;
             }
-            
+
             .register-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -250,7 +255,7 @@
             <h1>🎵 SIDwinder Web</h1>
             <p>C64 SID Music Analyzer & Tool Suite</p>
         </div>
-        
+
         <div class="main-content">
             <div class="upload-section" id="uploadSection">
                 <div class="upload-icon">📁</div>
@@ -258,15 +263,15 @@
                 <div class="upload-subtext">or click to browse</div>
                 <input type="file" id="fileInput" accept=".sid">
             </div>
-            
+
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div>Analyzing SID file...</div>
             </div>
-            
+
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
-            
+
             <div class="info-panels" id="infoPanels">
                 <div class="panel">
                     <h2>📄 File Information</h2>
@@ -295,7 +300,7 @@
                         <span class="info-value" id="sidSongs">-</span>
                     </div>
                 </div>
-                
+
                 <div class="panel">
                     <h2>⚙️ Technical Details</h2>
                     <div class="info-row">
@@ -323,7 +328,7 @@
                         <span class="info-value" id="sidModel">-</span>
                     </div>
                 </div>
-                
+
                 <div class="panel">
                     <h2>💾 Memory Analysis</h2>
                     <div id="memoryInfo">
@@ -342,7 +347,7 @@
                     </div>
                     <div class="memory-map" id="memoryMap"></div>
                 </div>
-                
+
                 <div class="panel">
                     <h2>🎛️ SID Register Usage</h2>
                     <div class="register-grid" id="registerGrid">
@@ -353,8 +358,10 @@
         </div>
     </div>
 
+    <script src="cpu6510.js"></script>
+
     <script>
-        // SIDwinder Web Core
+        // SIDwinder Web Core with WASM CPU emulation
         class SIDAnalyzer {
             constructor() {
                 this.memory = new Uint8Array(65536);
@@ -362,12 +369,67 @@
                 this.sidRegisters = new Map();
                 this.header = null;
                 this.dataSize = 0;
-                this.initEmulation();
+                this.wasmModule = null;
+                this.wasmReady = false;
+                this.initWASM();
             }
 
-            initEmulation() {
-                // Initialize 6510 CPU state
-                this.cpu = {
+            async initWASM() {
+                try {
+                    // Initialize the WASM module
+                    if (typeof CPU6510Module === 'undefined') {
+                        console.warn('CPU6510Module not found, WASM not available');
+                        this.wasmReady = false;
+                        this.initJSEmulation();
+                        return;
+                    }
+
+                    this.wasmModule = await CPU6510Module();
+
+                    // Check if module loaded correctly
+                    if (!this.wasmModule || !this.wasmModule._malloc) {
+                        console.warn('WASM module did not load correctly');
+                        this.wasmReady = false;
+                        this.initJSEmulation();
+                        return;
+                    }
+
+                    // Wrap the exported functions for easier use
+                    this.cpu = {
+                        init: this.wasmModule.cwrap('cpu_init', null, []),
+                        loadMemory: this.wasmModule.cwrap('cpu_load_memory', null, ['number', 'number', 'number']),
+                        readMemory: this.wasmModule.cwrap('cpu_read_memory', 'number', ['number']),
+                        writeMemory: this.wasmModule.cwrap('cpu_write_memory', null, ['number', 'number']),
+                        step: this.wasmModule.cwrap('cpu_step', null, []),
+                        executeFunction: this.wasmModule.cwrap('cpu_execute_function', 'number', ['number', 'number']),
+                        getPC: this.wasmModule.cwrap('cpu_get_pc', 'number', []),
+                        setPC: this.wasmModule.cwrap('cpu_set_pc', null, ['number']),
+                        getSP: this.wasmModule.cwrap('cpu_get_sp', 'number', []),
+                        getA: this.wasmModule.cwrap('cpu_get_a', 'number', []),
+                        getX: this.wasmModule.cwrap('cpu_get_x', 'number', []),
+                        getY: this.wasmModule.cwrap('cpu_get_y', 'number', []),
+                        getCycles: this.wasmModule.cwrap('cpu_get_cycles', 'number', []),
+                        getMemoryAccess: this.wasmModule.cwrap('cpu_get_memory_access', 'number', ['number']),
+                        getSidWrites: this.wasmModule.cwrap('cpu_get_sid_writes', 'number', ['number']),
+                        getTotalSidWrites: this.wasmModule.cwrap('cpu_get_total_sid_writes', 'number', []),
+                        setRecordWrites: this.wasmModule.cwrap('cpu_set_record_writes', null, ['number']),
+                        analyzeMemory: this.wasmModule.cwrap('cpu_analyze_memory', null, ['number', 'number', 'number', 'number'])
+                    };
+
+                    // Initialize CPU
+                    this.cpu.init();
+                    this.wasmReady = true;
+                    console.log('WASM CPU emulator initialized');
+                } catch (error) {
+                    console.warn('WASM module not available, falling back to JavaScript emulation', error);
+                    this.wasmReady = false;
+                    this.initJSEmulation();
+                }
+            }
+
+            initJSEmulation() {
+                // Fallback JavaScript CPU emulation
+                this.jsCpu = {
                     pc: 0,
                     sp: 0xFD,
                     a: 0,
@@ -381,7 +443,7 @@
             parseSIDHeader(buffer) {
                 const view = new DataView(buffer);
                 const decoder = new TextDecoder('ascii');
-                
+
                 // Read magic ID
                 const magicID = decoder.decode(new Uint8Array(buffer, 0, 4));
                 if (magicID !== 'PSID' && magicID !== 'RSID') {
@@ -431,30 +493,175 @@
                 }
             }
 
+            async emulateInit() {
+                if (!this.wasmReady || !this.wasmModule) {
+                    console.warn('WASM not ready, skipping emulation');
+                    return new Map();
+                }
+
+                try {
+                    // Reset CPU state
+                    this.cpu.init();
+
+                    // Load the SID data into WASM memory
+                    const dataStart = this.header.loadAddress;
+                    const musicData = this.memory.slice(dataStart, dataStart + this.dataSize);
+
+                    console.log(`Loading ${musicData.length} bytes at $${dataStart.toString(16)}`);
+
+                    // Use ccall to load memory directly
+                    for (let i = 0; i < musicData.length; i++) {
+                        this.cpu.writeMemory(dataStart + i, musicData[i]);
+                    }
+
+                    // Execute init routine
+                    console.log('Executing INIT at $' + this.header.initAddress.toString(16));
+                    const initStart = performance.now();
+                    this.cpu.setPC(this.header.initAddress);
+                    const success = this.cpu.executeFunction(this.header.initAddress, 100000);
+                    const initTime = performance.now() - initStart;
+
+                    if (success) {
+                        console.log(`INIT completed successfully in ${initTime.toFixed(2)}ms`);
+                        // Convert BigInt to Number for display
+                        const initCycles = Number(this.cpu.getCycles());
+                        console.log(`CPU cycles used for INIT: ${initCycles}`);
+
+                        // Now execute play routine multiple times to gather statistics
+                        this.cpu.setRecordWrites(1);
+
+                        const playStart = performance.now();
+                        const framesTotal = 300; // About 6 seconds at 50Hz
+                        console.log(`Executing PLAY at $${this.header.playAddress.toString(16)} for ${framesTotal} frames...`);
+
+                        for (let frame = 0; frame < framesTotal; frame++) {
+                            this.cpu.executeFunction(this.header.playAddress, 20000);
+
+                            // Log progress every 50 frames
+                            if (frame % 50 === 0 && frame > 0) {
+                                console.log(`  Frame ${frame}/${framesTotal} - SID writes so far: ${this.cpu.getTotalSidWrites()}`);
+                            }
+                        }
+
+                        const playTime = performance.now() - playStart;
+                        // Convert BigInt to Number
+                        const totalCycles = Number(this.cpu.getCycles());
+
+                        console.log(`PLAY execution completed in ${playTime.toFixed(2)}ms`);
+                        console.log(`Total CPU cycles: ${totalCycles}`);
+                        console.log(`Average cycles per frame: ${Math.floor(totalCycles / framesTotal)}`);
+
+                        // Gather SID register statistics
+                        const sidRegisters = new Map();
+                        let registerReport = "SID Register Usage:\n";
+
+                        for (let reg = 0; reg < 0x20; reg++) {
+                            const count = this.cpu.getSidWrites(reg);
+                            if (count > 0) {
+                                sidRegisters.set(reg, count);
+                                const regName = this.getSIDRegisterName(reg);
+                                registerReport += `  $D4${reg.toString(16).padStart(2, '0').toUpperCase()} (${regName}): ${count} writes\n`;
+                            }
+                        }
+
+                        console.log(registerReport);
+                        console.log(`Total SID writes: ${this.cpu.getTotalSidWrites()}`);
+                        console.log(`Average SID writes per frame: ${Math.floor(this.cpu.getTotalSidWrites() / framesTotal)}`);
+
+                        return sidRegisters;
+                    } else {
+                        console.error('INIT routine failed or timed out');
+                        return new Map();
+                    }
+                } catch (error) {
+                    console.error('Error during emulation:', error);
+                    return new Map();
+                }
+            }
+
+            // Add this helper function to the SIDAnalyzer class
+            getSIDRegisterName(reg) {
+                const names = {
+                    0x00: 'Voice 1 Freq Lo',
+                    0x01: 'Voice 1 Freq Hi',
+                    0x02: 'Voice 1 Pulse Lo',
+                    0x03: 'Voice 1 Pulse Hi',
+                    0x04: 'Voice 1 Control',
+                    0x05: 'Voice 1 AD',
+                    0x06: 'Voice 1 SR',
+                    0x07: 'Voice 2 Freq Lo',
+                    0x08: 'Voice 2 Freq Hi',
+                    0x09: 'Voice 2 Pulse Lo',
+                    0x0A: 'Voice 2 Pulse Hi',
+                    0x0B: 'Voice 2 Control',
+                    0x0C: 'Voice 2 AD',
+                    0x0D: 'Voice 2 SR',
+                    0x0E: 'Voice 3 Freq Lo',
+                    0x0F: 'Voice 3 Freq Hi',
+                    0x10: 'Voice 3 Pulse Lo',
+                    0x11: 'Voice 3 Pulse Hi',
+                    0x12: 'Voice 3 Control',
+                    0x13: 'Voice 3 AD',
+                    0x14: 'Voice 3 SR',
+                    0x15: 'Filter Cutoff Lo',
+                    0x16: 'Filter Cutoff Hi',
+                    0x17: 'Filter Control',
+                    0x18: 'Volume & Filter',
+                    0x19: 'Paddle X',
+                    0x1A: 'Paddle Y',
+                    0x1B: 'Voice 3 Waveform',
+                    0x1C: 'Voice 3 ADSR',
+                };
+                return names[reg] || `Register ${reg}`;
+            }
+
             analyzeMemory() {
-                // Simple analysis - mark code vs data regions
                 let codeBytes = 0;
                 let dataBytes = 0;
                 let zpUsage = 0;
 
-                // Analyze zero page usage
-                for (let i = 0; i < 256; i++) {
-                    if (this.memory[i] !== 0) {
-                        zpUsage++;
-                    }
-                }
+                if (this.wasmReady && this.wasmModule && this.cpu && this.cpu.analyzeMemory) {
+                    // Use WASM analysis
+                    const codeBytesPtr = this.wasmModule._malloc(4);
+                    const dataBytesPtr = this.wasmModule._malloc(4);
 
-                // Simple heuristic: look for common 6510 opcodes
-                const startAddr = this.header.loadAddress;
-                const endAddr = startAddr + this.dataSize;
-                
-                for (let addr = startAddr; addr < endAddr; addr++) {
-                    const byte = this.memory[addr];
-                    // Common opcodes: LDA, STA, JSR, RTS, etc.
-                    if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C].includes(byte)) {
-                        codeBytes++;
-                    } else {
-                        dataBytes++;
+                    this.cpu.analyzeMemory(
+                        this.header.loadAddress,
+                        this.header.loadAddress + this.dataSize - 1,
+                        codeBytesPtr,
+                        dataBytesPtr
+                    );
+
+                    codeBytes = this.wasmModule.getValue(codeBytesPtr, 'i32');
+                    dataBytes = this.wasmModule.getValue(dataBytesPtr, 'i32');
+
+                    this.wasmModule._free(codeBytesPtr);
+                    this.wasmModule._free(dataBytesPtr);
+
+                    // Count zero page usage from WASM memory access
+                    for (let i = 0; i < 256; i++) {
+                        if (this.cpu.getMemoryAccess(i) & 0x06) {  // Read or Write flags
+                            zpUsage++;
+                        }
+                    }
+                } else {
+                    // Fallback to simple JavaScript analysis
+                    for (let i = 0; i < 256; i++) {
+                        if (this.memory[i] !== 0) {
+                            zpUsage++;
+                        }
+                    }
+
+                    const startAddr = this.header.loadAddress;
+                    const endAddr = startAddr + this.dataSize;
+
+                    for (let addr = startAddr; addr < endAddr; addr++) {
+                        const byte = this.memory[addr];
+                        if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C].includes(byte)) {
+                            codeBytes++;
+                        } else {
+                            dataBytes++;
+                        }
                     }
                 }
 
@@ -470,18 +677,18 @@
                 // Simulate a simple emulation to detect SID register writes
                 // This is a simplified version - full emulation would be more complex
                 const sidRegisters = new Map();
-                
+
                 // Look for STA $D4xx instructions (SID register writes)
                 const startAddr = this.header.loadAddress;
                 const endAddr = startAddr + this.dataSize;
-                
+
                 for (let addr = startAddr; addr < endAddr - 2; addr++) {
                     // STA absolute: 0x8D
                     if (this.memory[addr] === 0x8D) {
                         const targetLo = this.memory[addr + 1];
                         const targetHi = this.memory[addr + 2];
                         const target = targetLo | (targetHi << 8);
-                        
+
                         // Check if it's a SID register (0xD400-0xD41F)
                         if (target >= 0xD400 && target <= 0xD41F) {
                             const register = target & 0x1F;
@@ -489,7 +696,7 @@
                         }
                     }
                 }
-                
+
                 return sidRegisters;
             }
 
@@ -565,25 +772,53 @@
                 try {
                     const buffer = await file.arrayBuffer();
                     const header = this.analyzer.parseSIDHeader(buffer);
-                    
+
+                    // Wait for WASM if it's still loading
+                    if (!this.analyzer.wasmReady) {
+                        console.log('Waiting for WASM module...');
+                        await new Promise(resolve => {
+                            const checkWASM = setInterval(() => {
+                                if (this.analyzer.wasmReady) {
+                                    clearInterval(checkWASM);
+                                    resolve();
+                                }
+                            }, 100);
+                            // Timeout after 5 seconds
+                            setTimeout(() => {
+                                clearInterval(checkWASM);
+                                resolve();
+                            }, 5000);
+                        });
+                    }
+
+                    // Run emulation if WASM is available
+                    let sidRegisters = new Map();
+                    if (this.analyzer.wasmReady) {
+                        console.log('Running CPU emulation...');
+                        sidRegisters = await this.analyzer.emulateInit() || new Map();
+                    } else {
+                        // Fallback to static analysis
+                        sidRegisters = this.analyzer.simulateSIDWrites();
+                    }
+
                     // Analyze memory
                     const memoryStats = this.analyzer.analyzeMemory();
-                    
-                    // Analyze SID register usage
-                    const sidRegisters = this.analyzer.simulateSIDWrites();
-                    
+
                     // Update UI
                     this.updateFileInfo(header);
                     this.updateTechnicalInfo(header);
                     this.updateMemoryInfo(memoryStats);
                     this.updateRegisterInfo(sidRegisters);
-                    
+
                     // Show panels
                     document.getElementById('infoPanels').classList.add('visible');
-                    this.showSuccess(`Successfully analyzed: ${file.name}`);
-                    
+
+                    const emulationType = this.analyzer.wasmReady ? 'WASM emulation' : 'static analysis';
+                    this.showSuccess(`Successfully analyzed: ${file.name} (using ${emulationType})`);
+
                 } catch (error) {
                     this.showError(`Error: ${error.message}`);
+                    console.error(error);
                 } finally {
                     this.showLoading(false);
                 }
@@ -611,29 +846,29 @@
                 document.getElementById('codeBytes').textContent = `${stats.codeBytes} bytes`;
                 document.getElementById('dataBytes').textContent = `${stats.dataBytes} bytes`;
                 document.getElementById('zpUsage').textContent = `${stats.zpUsage}/256 bytes`;
-                
+
                 // Create memory map visualization
                 const memoryMap = document.getElementById('memoryMap');
                 const startAddr = this.analyzer.header.loadAddress;
                 const endAddr = startAddr + this.analyzer.dataSize;
-                
+
                 memoryMap.innerHTML = `
-                    <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
-                    <div>Total Size: ${stats.totalSize} bytes</div>
-                    <div style="margin-top: 10px;">
-                        <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes/stats.totalSize*100)}%, #764ba2 ${(stats.codeBytes/stats.totalSize*100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
-                        <div style="margin-top: 5px; font-size: 0.8em;">
-                            <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes/stats.totalSize*100)}%)</span>
-                            <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes/stats.totalSize*100)}%)</span>
-                        </div>
-                    </div>
-                `;
+                            <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
+                            <div>Total Size: ${stats.totalSize} bytes</div>
+                            <div style="margin-top: 10px;">
+                                <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
+                                <div style="margin-top: 5px; font-size: 0.8em;">
+                                    <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes / stats.totalSize * 100)}%)</span>
+                                    <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes / stats.totalSize * 100)}%)</span>
+                                </div>
+                            </div>
+                        `;
             }
 
             updateRegisterInfo(sidRegisters) {
                 const registerGrid = document.getElementById('registerGrid');
                 registerGrid.innerHTML = '';
-                
+
                 // Common SID register names
                 const registerNames = {
                     0x00: 'Voice 1 Freq Lo',
@@ -656,23 +891,23 @@
                     0x17: 'Filter Control',
                     0x18: 'Volume & Filter'
                 };
-                
+
                 // Show top used registers
                 const sortedRegisters = Array.from(sidRegisters.entries())
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 8);
-                
+
                 sortedRegisters.forEach(([reg, count]) => {
                     const div = document.createElement('div');
                     div.className = 'register-item';
                     div.innerHTML = `
-                        <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
-                        <div class="register-count">${count}</div>
-                        <div style="font-size: 0.7em; color: #888;">${registerNames[reg] || 'Register'}</div>
-                    `;
+                                <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
+                                <div class="register-count">${count}</div>
+                                <div style="font-size: 0.7em; color: #888;">${registerNames[reg] || 'Register'}</div>
+                            `;
                     registerGrid.appendChild(div);
                 });
-                
+
                 if (sortedRegisters.length === 0) {
                     registerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">No SID writes detected in static analysis</div>';
                 }
