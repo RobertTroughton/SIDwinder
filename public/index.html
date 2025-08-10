@@ -161,6 +161,10 @@
                 padding-bottom: 10px;
             }
 
+            .panel.full-width {
+                grid-column: 1 / -1;
+            }
+
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -191,38 +195,6 @@
             font-size: 0.9em;
             max-height: 300px;
             overflow-y: auto;
-        }
-
-        .register-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .register-item {
-            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .register-addr {
-            font-size: 0.8em;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .register-count {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .register-name {
-            font-size: 0.7em;
-            color: #888;
-            margin-top: 3px;
         }
 
         .zp-list {
@@ -346,10 +318,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .register-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
             .zp-grid {
                 grid-template-columns: repeat(4, 1fr);
             }
@@ -438,8 +406,16 @@
                         <span class="info-value" id="playAddress">-</span>
                     </div>
                     <div class="info-row">
+                        <span class="info-label">Memory Range:</span>
+                        <span class="info-value" id="memoryRange">-</span>
+                    </div>
+                    <div class="info-row">
                         <span class="info-label">File Size:</span>
                         <span class="info-value" id="fileSize">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Zero Page Usage:</span>
+                        <span class="info-value" id="zpUsage" style="font-size: 0.9em;">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Clock:</span>
@@ -451,35 +427,6 @@
                     </div>
                 </div>
 
-                <div class="panel">
-                    <h2>💾 Memory Analysis</h2>
-                    <div id="memoryInfo">
-                        <div class="info-row">
-                            <span class="info-label">Code Bytes:</span>
-                            <span class="info-value" id="codeBytes">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Data Bytes:</span>
-                            <span class="info-value" id="dataBytes">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Zero Page Usage:</span>
-                            <span class="info-value" id="zpUsage" style="font-size: 0.9em;">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Modified Memory:</span>
-                            <span class="info-value" id="modifiedMemory">-</span>
-                        </div>
-                    </div>
-                    <div class="memory-map" id="memoryMap"></div>
-                </div>
-
-                <div class="panel">
-                    <h2>🎛️ SID Register Usage</h2>
-                    <div class="register-grid" id="registerGrid">
-                        <!-- Will be populated dynamically -->
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -702,27 +649,6 @@
                 }
             }
 
-            getSIDRegisterName(reg) {
-                const names = {
-                    0x00: 'Voice 1 Freq Lo', 0x01: 'Voice 1 Freq Hi',
-                    0x02: 'Voice 1 Pulse Lo', 0x03: 'Voice 1 Pulse Hi',
-                    0x04: 'Voice 1 Control', 0x05: 'Voice 1 AD',
-                    0x06: 'Voice 1 SR', 0x07: 'Voice 2 Freq Lo',
-                    0x08: 'Voice 2 Freq Hi', 0x09: 'Voice 2 Pulse Lo',
-                    0x0A: 'Voice 2 Pulse Hi', 0x0B: 'Voice 2 Control',
-                    0x0C: 'Voice 2 AD', 0x0D: 'Voice 2 SR',
-                    0x0E: 'Voice 3 Freq Lo', 0x0F: 'Voice 3 Freq Hi',
-                    0x10: 'Voice 3 Pulse Lo', 0x11: 'Voice 3 Pulse Hi',
-                    0x12: 'Voice 3 Control', 0x13: 'Voice 3 AD',
-                    0x14: 'Voice 3 SR', 0x15: 'Filter Cutoff Lo',
-                    0x16: 'Filter Cutoff Hi', 0x17: 'Filter Control',
-                    0x18: 'Volume & Filter', 0x19: 'Paddle X',
-                    0x1A: 'Paddle Y', 0x1B: 'Voice 3 Waveform',
-                    0x1C: 'Voice 3 ADSR'
-                };
-                return names[reg] || `Register ${reg}`;
-            }
-
             analyzeMemory() {
                 let codeBytes = 0;
                 let dataBytes = 0;
@@ -942,9 +868,8 @@
 
                     // Update UI
                     this.updateFileInfo(header);
-                    this.updateTechnicalInfo(header);
-                    this.updateMemoryInfo(memoryStats, modifiedCount, zpWrites);
-                    this.updateRegisterInfo(sidRegisters);
+                    this.updateTechnicalInfo(header, memoryStats);
+                    this.updateZeroPageInfo(zpWrites);
 
                     // Show panels
                     document.getElementById('infoPanels').classList.add('visible');
@@ -970,13 +895,29 @@
                 document.getElementById('sidSongs').textContent = `${header.startSong}/${header.songs}`;
             }
 
-            updateTechnicalInfo(header) {
+            updateTechnicalInfo(header, memoryStats) {
+                const startAddr = header.loadAddress;
+                const endAddr = startAddr + this.analyzer.fileSize - 1;
+
+                // Format addresses with $ prefix
                 document.getElementById('loadAddress').textContent = `$${header.loadAddress.toString(16).toUpperCase().padStart(4, '0')}`;
                 document.getElementById('initAddress').textContent = `$${header.initAddress.toString(16).toUpperCase().padStart(4, '0')}`;
                 document.getElementById('playAddress').textContent = `$${header.playAddress.toString(16).toUpperCase().padStart(4, '0')}`;
-                document.getElementById('fileSize').textContent = `${this.analyzer.fileSize} bytes`;
+                document.getElementById('memoryRange').textContent = `$${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}`;
+
+                // File size with code/data breakdown
+                let fileSizeText = `${this.analyzer.fileSize} bytes`;
+                if (memoryStats) {
+                    fileSizeText += ` (${memoryStats.codeBytes} code, ${memoryStats.dataBytes} data)`;
+                }
+                document.getElementById('fileSize').textContent = fileSizeText;
+
                 document.getElementById('clockType').textContent = this.analyzer.getClockType();
                 document.getElementById('sidModel').textContent = this.analyzer.getSIDModel();
+            }
+
+            updateZeroPageInfo(zpWrites) {
+                document.getElementById('zpUsage').textContent = this.formatZeroPageUsage(zpWrites);
             }
 
             formatZeroPageUsage(zpWrites) {
@@ -1003,7 +944,7 @@
                 }
                 groups.push(currentGroup);
 
-                // Format the groups with $ prefix to indicate hex
+                // Format the groups with $ prefix for hex values
                 const formatted = groups.map(group => {
                     if (group.start === group.end) {
                         // Single address
@@ -1014,121 +955,108 @@
                     }
                 });
 
-                // If more than 8 groups, show first 7 and add ellipsis
-                if (formatted.length > 8) {
-                    return formatted.slice(0, 7).join(', ') + ', ...';
+                // Join all groups and check total length
+                const result = formatted.join(', ');
+
+                // If the string is too long, truncate it intelligently
+                if (result.length > 100) {  // Arbitrary length limit
+                    // Take as many complete entries as fit in ~90 chars
+                    let truncated = '';
+                    for (let i = 0; i < formatted.length; i++) {
+                        const nextPart = (i === 0 ? '' : ', ') + formatted[i];
+                        if (truncated.length + nextPart.length > 90) {
+                            return truncated + ', ...';
+                        }
+                        truncated += nextPart;
+                    }
+                    return truncated + ', ...';
                 }
 
-                return formatted.join(', ');
+                return result;
             }
 
             updateMemoryInfo(stats, modifiedCount = 0, zpWrites = new Map()) {
-                document.getElementById('codeBytes').textContent = `${stats.codeBytes} bytes`;
-                document.getElementById('dataBytes').textContent = `${stats.dataBytes} bytes`;
                 document.getElementById('zpUsage').textContent = this.formatZeroPageUsage(zpWrites);
-                document.getElementById('modifiedMemory').textContent = modifiedCount ? `${modifiedCount} locations` : 'N/A';
 
                 // Create memory map visualization
                 const memoryMap = document.getElementById('memoryMap');
                 const startAddr = this.analyzer.header.loadAddress;
                 const endAddr = startAddr + this.analyzer.fileSize;
 
-                memoryMap.innerHTML = `
-                        <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
-                        <div>Total Size: ${stats.totalSize} bytes</div>
-                        <div style="margin-top: 10px;">
-                            <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 ${(stats.codeBytes / stats.totalSize * 100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
-                            <div style="margin-top: 5px; font-size: 0.8em;">
-                                <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes / stats.totalSize * 100)}%)</span>
-                                <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes / stats.totalSize * 100)}%)</span>
-                            </div>
-                        </div>
-                    `;
-            }
-
-            updateRegisterInfo(sidRegisters) {
-                const registerGrid = document.getElementById('registerGrid');
-                registerGrid.innerHTML = '';
-
-                // Show top used registers
-                const sortedRegisters = Array.from(sidRegisters.entries())
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 8);
-
-                sortedRegisters.forEach(([reg, count]) => {
-                    const div = document.createElement('div');
-                    div.className = 'register-item';
-                    div.innerHTML = `
-                            <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
-                            <div class="register-count">${count}</div>
-                            <div class="register-name">${this.analyzer.getSIDRegisterName(reg)}</div>
+                // Build a detailed memory map with $ prefix for hex values
+                let memoryMapHTML = `
+                            <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
+                            <div>Total Size: ${stats.totalSize} bytes</div>
+                            <div style="margin-top: 15px;">
                         `;
-                    registerGrid.appendChild(div);
-                });
 
-                if (sortedRegisters.length === 0) {
-                    registerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">No SID writes detected</div>';
-                }
-            }
+                // Create a visual memory map with mixed code/data representation
+                const blockSize = Math.max(1, Math.floor(stats.totalSize / 200)); // Aim for ~200 blocks max
+                const blocks = [];
 
-            updateZeroPageList(zpWrites) {
-                const zpList = document.getElementById('zpList');
-                const zpSummary = document.getElementById('zpSummary');
-                const zpAddresses = document.getElementById('zpAddresses');
+                // Simple heuristic: analyze memory in chunks
+                for (let i = 0; i < stats.totalSize; i += blockSize) {
+                    let codeCount = 0;
+                    let dataCount = 0;
 
-                if (zpWrites.size === 0) {
-                    zpSummary.textContent = 'No zero page locations were modified during emulation';
-                    zpAddresses.innerHTML = '';
-                    return;
-                }
+                    for (let j = 0; j < blockSize && (i + j) < stats.totalSize; j++) {
+                        const addr = startAddr + i + j;
+                        const byte = this.analyzer.memory[addr];
 
-                // Get sorted list of addresses
-                const addresses = Array.from(zpWrites.keys()).sort((a, b) => a - b);
-
-                // Create summary text
-                const totalWrites = Array.from(zpWrites.values()).reduce((sum, count) => sum + count, 0);
-                zpSummary.textContent = `${addresses.length} zero page location${addresses.length !== 1 ? 's' : ''} used (${totalWrites} total write${totalWrites !== 1 ? 's' : ''}):`;
-
-                // Group consecutive addresses into ranges
-                const groups = [];
-                let currentGroup = { start: addresses[0], end: addresses[0], writes: [zpWrites.get(addresses[0])] };
-
-                for (let i = 1; i < addresses.length; i++) {
-                    if (addresses[i] === currentGroup.end + 1) {
-                        // Consecutive address, extend the range
-                        currentGroup.end = addresses[i];
-                        currentGroup.writes.push(zpWrites.get(addresses[i]));
-                    } else {
-                        // Non-consecutive, save current group and start new one
-                        groups.push(currentGroup);
-                        currentGroup = { start: addresses[i], end: addresses[i], writes: [zpWrites.get(addresses[i])] };
-                    }
-                }
-                groups.push(currentGroup);
-
-                // Format the groups
-                zpAddresses.innerHTML = '';
-                groups.forEach(group => {
-                    const div = document.createElement('div');
-                    div.className = 'zp-address';
-
-                    let text;
-                    if (group.start === group.end) {
-                        // Single address
-                        text = `${group.start.toString(16).toUpperCase().padStart(2, '0')}`;
-                        const writes = group.writes[0];
-                        div.title = `Address ${group.start.toString(16).toUpperCase().padStart(2, '0')}: ${writes} write${writes !== 1 ? 's' : ''}`;
-                    } else {
-                        // Range of addresses
-                        text = `${group.start.toString(16).toUpperCase().padStart(2, '0')}-${group.end.toString(16).toUpperCase().padStart(2, '0')}`;
-                        const totalWrites = group.writes.reduce((sum, count) => sum + count, 0);
-                        const count = group.end - group.start + 1;
-                        div.title = `Addresses ${group.start.toString(16).toUpperCase().padStart(2, '0')} to ${group.end.toString(16).toUpperCase().padStart(2, '0')} (${count} locations): ${totalWrites} total writes`;
+                        // Common 6502 opcodes (simplified detection)
+                        if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C, 0xEA, 0x48, 0x68, 0x8A, 0xA8, 0xAA].includes(byte)) {
+                            codeCount++;
+                        } else {
+                            dataCount++;
+                        }
                     }
 
-                    div.textContent = text;
-                    zpAddresses.appendChild(div);
-                });
+                    // Determine block type based on majority
+                    blocks.push(codeCount > dataCount ? 'code' : 'data');
+                }
+
+                // Create the visual bar
+                memoryMapHTML += '<div style="display: flex; height: 30px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">';
+
+                let lastType = null;
+                let runLength = 0;
+
+                for (let i = 0; i < blocks.length; i++) {
+                    if (blocks[i] === lastType) {
+                        runLength++;
+                    } else {
+                        if (lastType !== null) {
+                            const width = (runLength / blocks.length) * 100;
+                            const color = lastType === 'code' ? '#667eea' : '#764ba2';
+                            memoryMapHTML += `<div style="width: ${width}%; background: ${color}; height: 100%;"></div>`;
+                        }
+                        lastType = blocks[i];
+                        runLength = 1;
+                    }
+                }
+
+                // Don't forget the last run
+                if (lastType !== null) {
+                    const width = (runLength / blocks.length) * 100;
+                    const color = lastType === 'code' ? '#667eea' : '#764ba2';
+                    memoryMapHTML += `<div style="width: ${width}%; background: ${color}; height: 100%;"></div>`;
+                }
+
+                memoryMapHTML += '</div>';
+
+                // Add legend
+                const codePercent = Math.round(stats.codeBytes / stats.totalSize * 100);
+                const dataPercent = Math.round(stats.dataBytes / stats.totalSize * 100);
+
+                memoryMapHTML += `
+                            <div style="margin-top: 10px; font-size: 0.85em; display: flex; gap: 20px;">
+                                <span><span style="display: inline-block; width: 12px; height: 12px; background: #667eea; border-radius: 2px; vertical-align: middle;"></span> Code (~${codePercent}%)</span>
+                                <span><span style="display: inline-block; width: 12px; height: 12px; background: #764ba2; border-radius: 2px; vertical-align: middle;"></span> Data (~${dataPercent}%)</span>
+                            </div>
+                        `;
+
+                memoryMapHTML += '</div>';
+                memoryMap.innerHTML = memoryMapHTML;
             }
 
             showLoading(show) {
