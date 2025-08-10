@@ -76,6 +76,7 @@ namespace sidwinder {
          * @return True if file was successfully created
          */
         bool generateHelpfulDataFile(const std::string& filename) const;
+        bool generateHelpfulDataBlockFile(const std::string& filename) const;
 
     private:
         CPU6510* cpu_;                 ///< CPU instance

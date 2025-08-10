@@ -58,9 +58,10 @@ namespace sidwinder {
 
         // Generate helpful data and analyze play frequency FIRST
         fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
+        fs::path helpfulDataBlockFile = tempDir / (basename + "-HelpfulData.bin");
 
         // This will analyze the music and update sid_->setNumPlayCallsPerFrame()
-        generateHelpfulData(helpfulDataFile, options);
+        generateHelpfulData(helpfulDataFile, helpfulDataBlockFile, options);
 
         // Now get the updated play calls per frame from the SID loader
         PlayerOptions updatedOptions = options;
@@ -108,6 +109,7 @@ namespace sidwinder {
 
     bool PlayerBuilder::generateHelpfulData(
         const fs::path& helpfulDataFile,
+        const fs::path& helpfulDataBlockFile,
         const PlayerOptions& options) {
 
         if (!emulator_) return false;
@@ -138,6 +140,8 @@ namespace sidwinder {
                 const int numCalls = static_cast<int>(freq + 0.5);
                 sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
             }
+
+            emulator_->generateHelpfulDataBlockFile(helpfulDataBlockFile.string());
 
             // Generate the helpful data file
             return emulator_->generateHelpfulDataFile(helpfulDataFile.string());

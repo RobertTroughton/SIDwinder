@@ -85,7 +85,8 @@ namespace sidwinder {
 
         // Generate helpful data for player optimization
         fs::path helpfulDataFile = options.tempDir / "analysis-HelpfulData.asm";
-        return builder_->generateHelpfulData(helpfulDataFile, options);
+        fs::path helpfulDataBlockFile = options.tempDir / "analysis-HelpfulData.bin";
+        return builder_->generateHelpfulData(helpfulDataFile, helpfulDataBlockFile, options);
     }
 
     fs::path PlayerManager::getPlayerAsmPath(const std::string& playerName) const {

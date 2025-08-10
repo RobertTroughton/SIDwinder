@@ -198,7 +198,37 @@ namespace sidwinder {
         return { avgCycles, maxCyclesPerFrame_ };
     }
 
+    bool SIDEmulator::generateHelpfulDataBlockFile(const std::string& filename) const {
+        std::vector<u16> modifiedAddresses;
+
+        // Collect all non-SID modified addresses
+        auto accessFlags = cpu_->getMemoryAccess();
+        for (u32 addr = 0; addr < 65536; ++addr) {
+            if ((accessFlags[addr] & static_cast<u8>(MemoryAccessFlag::Write)) &&
+                !MemoryConstants::isSID(addr)) {
+                modifiedAddresses.push_back(static_cast<u16>(addr));
+            }
+        }
+
+        // Write as binary data block
+        std::vector<u8> dataBlock;
+
+        // Start with count (2 bytes, little-endian)
+        u16 count = static_cast<u16>(modifiedAddresses.size());
+        dataBlock.push_back(count & 0xFF);
+        dataBlock.push_back((count >> 8) & 0xFF);
+
+        // Then addresses (2 bytes each, little-endian)
+        for (u16 addr : modifiedAddresses) {
+            dataBlock.push_back(addr & 0xFF);
+            dataBlock.push_back((addr >> 8) & 0xFF);
+        }
+
+        return util::writeBinaryFile(filename, dataBlock);
+    }
+
     bool SIDEmulator::generateHelpfulDataFile(const std::string& filename) const {
+
         util::TextFileBuilder builder;
 
         builder.section("SIDwinder Generated Helpful Data")
