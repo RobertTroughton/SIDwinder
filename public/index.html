@@ -172,52 +172,61 @@
             font-family: 'Courier New', monospace;
         }
 
-        .settings-section {
-            background: #f8f9fa;
-            border-top: 2px solid #e9ecef;
-            padding: 30px 40px;
-            margin-top: 40px;
-        }
+            .info-value.editable {
+                cursor: pointer;
+                padding: 2px 6px;
+                border-radius: 4px;
+                transition: background 0.2s;
+            }
 
-        .settings-title {
-            color: #667eea;
-            font-size: 1.2em;
+                .info-value.editable:hover {
+                    background: rgba(102, 126, 234, 0.1);
+                }
+
+            .info-value.editing {
+                background: white;
+                border: 2px solid #667eea;
+                padding: 4px 8px;
+                outline: none;
+                cursor: text;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                min-width: 200px;
+                display: inline-block;
+            }
+
+        .save-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
             font-weight: 600;
-            margin-bottom: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
+            .save-button.visible {
+                display: inline-block;
+            }
+
+            .save-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .save-button:active {
+                transform: translateY(0);
+            }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
         }
 
-        .control-label {
-            font-weight: 600;
-            color: #555;
-            min-width: 150px;
-        }
 
-        .control-input {
-            padding: 8px;
-            border: 2px solid #667eea;
-            border-radius: 5px;
-            width: 100px;
-        }
-
-        .control-info {
-            color: #666;
-            font-size: 0.9em;
-            flex: 1;
-        }
-
-        .frame-guide {
-            margin-top: 10px;
-            font-size: 0.85em;
-            color: #888;
-            margin-left: 165px;
-        }
 
         .loading {
             display: none;
@@ -396,15 +405,15 @@
                     <h2>📄 File Information</h2>
                     <div class="info-row">
                         <span class="info-label">Title:</span>
-                        <span class="info-value" id="sidTitle">-</span>
+                        <span class="info-value editable" id="sidTitle" contenteditable="false">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Author:</span>
-                        <span class="info-value" id="sidAuthor">-</span>
+                        <span class="info-value editable" id="sidAuthor" contenteditable="false">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Copyright:</span>
-                        <span class="info-value" id="sidCopyright">-</span>
+                        <span class="info-value editable" id="sidCopyright" contenteditable="false">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Format:</span>
@@ -456,19 +465,13 @@
                     </div>
                 </div>
             </div>
+
+            <div class="button-container">
+                <button class="save-button" id="saveButton">💾 Save Modified SID</button>
+            </div>
         </div>
 
-        <div class="settings-section">
-            <div class="settings-title">⚙️ Analysis Settings</div>
-            <div class="control-group">
-                <span class="control-label">Emulation Frames:</span>
-                <input type="number" id="frameCount" class="control-input" value="30000" min="50" max="100000">
-                <span class="control-info" id="frameInfo">~10 minutes at 50Hz</span>
-            </div>
-            <div class="frame-guide">
-                50 frames = 1 second PAL | 300 = 6 sec | 3000 = 1 min | 30000 = 10 min
-            </div>
-        </div>
+
     </div>
 
     <!-- Modal overlay for success/error messages -->
@@ -492,6 +495,7 @@
                 this.fileSize = 0;
                 this.wasmModule = null;
                 this.wasmReady = false;
+                this.originalBuffer = null;  // Store the original file buffer for saving
                 this.initWASM();
             }
 
@@ -563,6 +567,9 @@
             }
 
             parseSIDHeader(buffer) {
+                // Store the original buffer for later saving
+                this.originalBuffer = new Uint8Array(buffer);
+
                 const view = new DataView(buffer);
                 const decoder = new TextDecoder('ascii');
 
@@ -795,6 +802,37 @@
                 return 'Unknown';
             }
 
+            // Create a modified SID file with updated metadata
+            createModifiedSID(newTitle, newAuthor, newCopyright) {
+                if (!this.originalBuffer) return null;
+
+                // Clone the original buffer
+                const modifiedBuffer = new Uint8Array(this.originalBuffer);
+
+                // Encode the new strings (max 32 bytes each, null-terminated)
+                const encoder = new TextEncoder();
+
+                // Update title (offset 22, 32 bytes)
+                const titleBytes = encoder.encode(newTitle.substring(0, 31));
+                for (let i = 0; i < 32; i++) {
+                    modifiedBuffer[22 + i] = i < titleBytes.length ? titleBytes[i] : 0;
+                }
+
+                // Update author (offset 54, 32 bytes)
+                const authorBytes = encoder.encode(newAuthor.substring(0, 31));
+                for (let i = 0; i < 32; i++) {
+                    modifiedBuffer[54 + i] = i < authorBytes.length ? authorBytes[i] : 0;
+                }
+
+                // Update copyright (offset 86, 32 bytes)
+                const copyrightBytes = encoder.encode(newCopyright.substring(0, 31));
+                for (let i = 0; i < 32; i++) {
+                    modifiedBuffer[86 + i] = i < copyrightBytes.length ? copyrightBytes[i] : 0;
+                }
+
+                return modifiedBuffer;
+            }
+
             getSIDModel() {
                 if (!this.header || this.header.version < 2) return '6581';
                 const flags = this.header.flags;
@@ -809,18 +847,22 @@
         class UIController {
             constructor() {
                 this.analyzer = new SIDAnalyzer();
+                this.currentFileName = null;
+                this.hasModifications = false;
                 this.initEventListeners();
-                this.updateFrameInfo();
             }
 
             initEventListeners() {
                 const uploadSection = document.getElementById('uploadSection');
                 const fileInput = document.getElementById('fileInput');
-                const frameCountInput = document.getElementById('frameCount');
+                const saveButton = document.getElementById('saveButton');
 
                 uploadSection.addEventListener('click', () => fileInput.click());
                 fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-                frameCountInput.addEventListener('input', () => this.updateFrameInfo());
+                saveButton.addEventListener('click', () => this.saveSID());
+
+                // Make editable fields work
+                this.setupEditableFields();
 
                 // Drag and drop
                 uploadSection.addEventListener('dragover', (e) => {
@@ -842,19 +884,108 @@
                 });
             }
 
-            updateFrameInfo() {
-                const frameCount = parseInt(document.getElementById('frameCount').value) || 30000;
-                const seconds = frameCount / 50;  // PAL
-                const minutes = seconds / 60;
+            setupEditableFields() {
+                const editableFields = ['sidTitle', 'sidAuthor', 'sidCopyright'];
 
-                let info = '';
-                if (minutes >= 1) {
-                    info = `~${minutes.toFixed(1)} minute${minutes !== 1 ? 's' : ''} at 50Hz`;
-                } else {
-                    info = `~${seconds.toFixed(1)} second${seconds !== 1 ? 's' : ''} at 50Hz`;
+                editableFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+
+                    // Click to edit
+                    field.addEventListener('click', () => {
+                        if (!field.classList.contains('editing')) {
+                            this.startEditing(field);
+                        }
+                    });
+
+                    // Handle Enter key to save
+                    field.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.stopEditing(field);
+                        }
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            this.cancelEditing(field);
+                        }
+                    });
+
+                    // Handle blur (clicking outside)
+                    field.addEventListener('blur', () => {
+                        if (field.classList.contains('editing')) {
+                            this.stopEditing(field);
+                        }
+                    });
+
+                    // Track changes
+                    field.addEventListener('input', () => {
+                        this.hasModifications = true;
+                        document.getElementById('saveButton').classList.add('visible');
+                    });
+                });
+            }
+
+            startEditing(field) {
+                field.classList.add('editing');
+                field.contentEditable = 'true';
+                field.dataset.originalValue = field.textContent;
+
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(field);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+
+            stopEditing(field) {
+                field.classList.remove('editing');
+                field.contentEditable = 'false';
+
+                // Limit length to 31 characters (SID format limitation)
+                if (field.textContent.length > 31) {
+                    field.textContent = field.textContent.substring(0, 31);
+                }
+            }
+
+            cancelEditing(field) {
+                field.textContent = field.dataset.originalValue || field.textContent;
+                this.stopEditing(field);
+            }
+
+            saveSID() {
+                if (!this.analyzer.originalBuffer) {
+                    this.showModal('No SID file loaded', false);
+                    return;
                 }
 
-                document.getElementById('frameInfo').textContent = info;
+                const newTitle = document.getElementById('sidTitle').textContent;
+                const newAuthor = document.getElementById('sidAuthor').textContent;
+                const newCopyright = document.getElementById('sidCopyright').textContent;
+
+                const modifiedBuffer = this.analyzer.createModifiedSID(newTitle, newAuthor, newCopyright);
+
+                if (modifiedBuffer) {
+                    // Create a blob and download it
+                    const blob = new Blob([modifiedBuffer], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+
+                    // Generate filename
+                    const baseName = this.currentFileName ?
+                        this.currentFileName.replace('.sid', '') : 'modified';
+                    a.href = url;
+                    a.download = `${baseName}_edited.sid`;
+
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    this.showModal('SID file saved successfully!', true);
+                    this.hasModifications = false;
+                } else {
+                    this.showModal('Failed to save SID file', false);
+                }
             }
 
             handleFileSelect(event) {
@@ -869,6 +1000,10 @@
                     this.showModal('Please select a valid SID file', false);
                     return;
                 }
+
+                this.currentFileName = file.name;
+                this.hasModifications = false;
+                document.getElementById('saveButton').classList.remove('visible');
 
                 this.showLoading(true);
                 this.hideMessages();
@@ -901,7 +1036,7 @@
                     progressBar.classList.add('active');
 
                     // Run emulation if WASM is available
-                    const frameCount = parseInt(document.getElementById('frameCount').value) || 30000;
+                    const frameCount = 30000;  // Fixed at 30,000 frames (10 minutes)
                     const { sidRegisters, zpWrites, modifiedCount } = await this.analyzer.emulateInit(
                         frameCount,
                         (current, total) => {
