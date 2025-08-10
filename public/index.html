@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDwinder Web - C64 SID Music Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .upload-section.dragover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .info-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .info-panels.visible {
+            opacity: 1;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .memory-map {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .register-item {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .register-addr {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .register-count {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ff6b6b20;
+            border: 1px solid #ff6b6b;
+            color: #c92a2a;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        .success-message {
+            background: #51cf6620;
+            border: 1px solid #51cf66;
+            color: #2f9e44;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success-message.visible {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .info-panels {
+                grid-template-columns: 1fr;
+            }
+            
+            .register-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 SIDwinder Web</h1>
+            <p>C64 SID Music Analyzer & Tool Suite</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drop your SID file here</div>
+                <div class="upload-subtext">or click to browse</div>
+                <input type="file" id="fileInput" accept=".sid">
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Analyzing SID file...</div>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            
+            <div class="info-panels" id="infoPanels">
+                <div class="panel">
+                    <h2>📄 File Information</h2>
+                    <div class="info-row">
+                        <span class="info-label">Title:</span>
+                        <span class="info-value" id="sidTitle">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Author:</span>
+                        <span class="info-value" id="sidAuthor">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Copyright:</span>
+                        <span class="info-value" id="sidCopyright">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Format:</span>
+                        <span class="info-value" id="sidFormat">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Version:</span>
+                        <span class="info-value" id="sidVersion">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Songs:</span>
+                        <span class="info-value" id="sidSongs">-</span>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h2>⚙️ Technical Details</h2>
+                    <div class="info-row">
+                        <span class="info-label">Load Address:</span>
+                        <span class="info-value" id="loadAddress">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Init Address:</span>
+                        <span class="info-value" id="initAddress">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Play Address:</span>
+                        <span class="info-value" id="playAddress">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Data Size:</span>
+                        <span class="info-value" id="dataSize">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Clock:</span>
+                        <span class="info-value" id="clockType">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">SID Model:</span>
+                        <span class="info-value" id="sidModel">-</span>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h2>💾 Memory Analysis</h2>
+                    <div id="memoryInfo">
+                        <div class="info-row">
+                            <span class="info-label">Code Bytes:</span>
+                            <span class="info-value" id="codeBytes">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Data Bytes:</span>
+                            <span class="info-value" id="dataBytes">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Zero Page Usage:</span>
+                            <span class="info-value" id="zpUsage">-</span>
+                        </div>
+                    </div>
+                    <div class="memory-map" id="memoryMap"></div>
+                </div>
+                
+                <div class="panel">
+                    <h2>🎛️ SID Register Usage</h2>
+                    <div class="register-grid" id="registerGrid">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SIDwinder Web Core
+        class SIDAnalyzer {
+            constructor() {
+                this.memory = new Uint8Array(65536);
+                this.memoryAccess = new Uint8Array(65536);
+                this.sidRegisters = new Map();
+                this.header = null;
+                this.dataSize = 0;
+                this.initEmulation();
+            }
+
+            initEmulation() {
+                // Initialize 6510 CPU state
+                this.cpu = {
+                    pc: 0,
+                    sp: 0xFD,
+                    a: 0,
+                    x: 0,
+                    y: 0,
+                    status: 0x24,
+                    cycles: 0
+                };
+            }
+
+            parseSIDHeader(buffer) {
+                const view = new DataView(buffer);
+                const decoder = new TextDecoder('ascii');
+                
+                // Read magic ID
+                const magicID = decoder.decode(new Uint8Array(buffer, 0, 4));
+                if (magicID !== 'PSID' && magicID !== 'RSID') {
+                    throw new Error('Invalid SID file format');
+                }
+
+                // Parse header
+                this.header = {
+                    magicID: magicID,
+                    version: view.getUint16(4, false),
+                    dataOffset: view.getUint16(6, false),
+                    loadAddress: view.getUint16(8, false),
+                    initAddress: view.getUint16(10, false),
+                    playAddress: view.getUint16(12, false),
+                    songs: view.getUint16(14, false),
+                    startSong: view.getUint16(16, false),
+                    speed: view.getUint32(18, false),
+                    name: decoder.decode(new Uint8Array(buffer, 22, 32)).replace(/\0/g, ''),
+                    author: decoder.decode(new Uint8Array(buffer, 54, 32)).replace(/\0/g, ''),
+                    copyright: decoder.decode(new Uint8Array(buffer, 86, 32)).replace(/\0/g, ''),
+                    flags: this.header?.version >= 2 ? view.getUint16(118, false) : 0
+                };
+
+                // Handle load address
+                let dataStart = this.header.dataOffset;
+                if (this.header.loadAddress === 0) {
+                    // Load address is in the first two bytes of data
+                    const lo = view.getUint8(dataStart);
+                    const hi = view.getUint8(dataStart + 1);
+                    this.header.loadAddress = lo | (hi << 8);
+                    dataStart += 2;
+                }
+
+                // Load music data into memory
+                this.dataSize = buffer.byteLength - dataStart;
+                const musicData = new Uint8Array(buffer, dataStart, this.dataSize);
+                this.loadToMemory(musicData, this.header.loadAddress);
+
+                return this.header;
+            }
+
+            loadToMemory(data, address) {
+                for (let i = 0; i < data.length; i++) {
+                    if (address + i < 65536) {
+                        this.memory[address + i] = data[i];
+                    }
+                }
+            }
+
+            analyzeMemory() {
+                // Simple analysis - mark code vs data regions
+                let codeBytes = 0;
+                let dataBytes = 0;
+                let zpUsage = 0;
+
+                // Analyze zero page usage
+                for (let i = 0; i < 256; i++) {
+                    if (this.memory[i] !== 0) {
+                        zpUsage++;
+                    }
+                }
+
+                // Simple heuristic: look for common 6510 opcodes
+                const startAddr = this.header.loadAddress;
+                const endAddr = startAddr + this.dataSize;
+                
+                for (let addr = startAddr; addr < endAddr; addr++) {
+                    const byte = this.memory[addr];
+                    // Common opcodes: LDA, STA, JSR, RTS, etc.
+                    if ([0xA9, 0xA5, 0xAD, 0x85, 0x8D, 0x20, 0x60, 0x4C].includes(byte)) {
+                        codeBytes++;
+                    } else {
+                        dataBytes++;
+                    }
+                }
+
+                return {
+                    codeBytes,
+                    dataBytes,
+                    zpUsage,
+                    totalSize: this.dataSize
+                };
+            }
+
+            simulateSIDWrites() {
+                // Simulate a simple emulation to detect SID register writes
+                // This is a simplified version - full emulation would be more complex
+                const sidRegisters = new Map();
+                
+                // Look for STA $D4xx instructions (SID register writes)
+                const startAddr = this.header.loadAddress;
+                const endAddr = startAddr + this.dataSize;
+                
+                for (let addr = startAddr; addr < endAddr - 2; addr++) {
+                    // STA absolute: 0x8D
+                    if (this.memory[addr] === 0x8D) {
+                        const targetLo = this.memory[addr + 1];
+                        const targetHi = this.memory[addr + 2];
+                        const target = targetLo | (targetHi << 8);
+                        
+                        // Check if it's a SID register (0xD400-0xD41F)
+                        if (target >= 0xD400 && target <= 0xD41F) {
+                            const register = target & 0x1F;
+                            sidRegisters.set(register, (sidRegisters.get(register) || 0) + 1);
+                        }
+                    }
+                }
+                
+                return sidRegisters;
+            }
+
+            getClockType() {
+                if (!this.header || this.header.version < 2) return 'PAL';
+                const flags = this.header.flags;
+                if ((flags & 0x0C) === 0x04) return 'PAL';
+                if ((flags & 0x0C) === 0x08) return 'NTSC';
+                if ((flags & 0x0C) === 0x0C) return 'PAL/NTSC';
+                return 'Unknown';
+            }
+
+            getSIDModel() {
+                if (!this.header || this.header.version < 2) return '6581';
+                const flags = this.header.flags;
+                if ((flags & 0x30) === 0x10) return '6581';
+                if ((flags & 0x30) === 0x20) return '8580';
+                if ((flags & 0x30) === 0x30) return '6581/8580';
+                return 'Unknown';
+            }
+        }
+
+        // UI Controller
+        class UIController {
+            constructor() {
+                this.analyzer = new SIDAnalyzer();
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                const uploadSection = document.getElementById('uploadSection');
+                const fileInput = document.getElementById('fileInput');
+
+                uploadSection.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+                // Drag and drop
+                uploadSection.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadSection.classList.add('dragover');
+                });
+
+                uploadSection.addEventListener('dragleave', () => {
+                    uploadSection.classList.remove('dragover');
+                });
+
+                uploadSection.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadSection.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.processFile(files[0]);
+                    }
+                });
+            }
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.processFile(file);
+                }
+            }
+
+            async processFile(file) {
+                if (!file.name.toLowerCase().endsWith('.sid')) {
+                    this.showError('Please select a valid SID file');
+                    return;
+                }
+
+                this.showLoading(true);
+                this.hideMessages();
+
+                try {
+                    const buffer = await file.arrayBuffer();
+                    const header = this.analyzer.parseSIDHeader(buffer);
+                    
+                    // Analyze memory
+                    const memoryStats = this.analyzer.analyzeMemory();
+                    
+                    // Analyze SID register usage
+                    const sidRegisters = this.analyzer.simulateSIDWrites();
+                    
+                    // Update UI
+                    this.updateFileInfo(header);
+                    this.updateTechnicalInfo(header);
+                    this.updateMemoryInfo(memoryStats);
+                    this.updateRegisterInfo(sidRegisters);
+                    
+                    // Show panels
+                    document.getElementById('infoPanels').classList.add('visible');
+                    this.showSuccess(`Successfully analyzed: ${file.name}`);
+                    
+                } catch (error) {
+                    this.showError(`Error: ${error.message}`);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            updateFileInfo(header) {
+                document.getElementById('sidTitle').textContent = header.name || 'Unknown';
+                document.getElementById('sidAuthor').textContent = header.author || 'Unknown';
+                document.getElementById('sidCopyright').textContent = header.copyright || 'Unknown';
+                document.getElementById('sidFormat').textContent = header.magicID;
+                document.getElementById('sidVersion').textContent = `v${header.version}`;
+                document.getElementById('sidSongs').textContent = `${header.startSong}/${header.songs}`;
+            }
+
+            updateTechnicalInfo(header) {
+                document.getElementById('loadAddress').textContent = `$${header.loadAddress.toString(16).toUpperCase().padStart(4, '0')}`;
+                document.getElementById('initAddress').textContent = `$${header.initAddress.toString(16).toUpperCase().padStart(4, '0')}`;
+                document.getElementById('playAddress').textContent = `$${header.playAddress.toString(16).toUpperCase().padStart(4, '0')}`;
+                document.getElementById('dataSize').textContent = `${this.analyzer.dataSize} bytes`;
+                document.getElementById('clockType').textContent = this.analyzer.getClockType();
+                document.getElementById('sidModel').textContent = this.analyzer.getSIDModel();
+            }
+
+            updateMemoryInfo(stats) {
+                document.getElementById('codeBytes').textContent = `${stats.codeBytes} bytes`;
+                document.getElementById('dataBytes').textContent = `${stats.dataBytes} bytes`;
+                document.getElementById('zpUsage').textContent = `${stats.zpUsage}/256 bytes`;
+                
+                // Create memory map visualization
+                const memoryMap = document.getElementById('memoryMap');
+                const startAddr = this.analyzer.header.loadAddress;
+                const endAddr = startAddr + this.analyzer.dataSize;
+                
+                memoryMap.innerHTML = `
+                    <div>Memory Range: $${startAddr.toString(16).toUpperCase().padStart(4, '0')} - $${endAddr.toString(16).toUpperCase().padStart(4, '0')}</div>
+                    <div>Total Size: ${stats.totalSize} bytes</div>
+                    <div style="margin-top: 10px;">
+                        <div style="background: linear-gradient(90deg, #667eea 0%, #667eea ${(stats.codeBytes/stats.totalSize*100)}%, #764ba2 ${(stats.codeBytes/stats.totalSize*100)}%, #764ba2 100%); height: 20px; border-radius: 5px;"></div>
+                        <div style="margin-top: 5px; font-size: 0.8em;">
+                            <span style="color: #667eea;">■ Code (${Math.round(stats.codeBytes/stats.totalSize*100)}%)</span>
+                            <span style="margin-left: 20px; color: #764ba2;">■ Data (${Math.round(stats.dataBytes/stats.totalSize*100)}%)</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateRegisterInfo(sidRegisters) {
+                const registerGrid = document.getElementById('registerGrid');
+                registerGrid.innerHTML = '';
+                
+                // Common SID register names
+                const registerNames = {
+                    0x00: 'Voice 1 Freq Lo',
+                    0x01: 'Voice 1 Freq Hi',
+                    0x04: 'Voice 1 Control',
+                    0x05: 'Voice 1 AD',
+                    0x06: 'Voice 1 SR',
+                    0x07: 'Voice 2 Freq Lo',
+                    0x08: 'Voice 2 Freq Hi',
+                    0x0B: 'Voice 2 Control',
+                    0x0C: 'Voice 2 AD',
+                    0x0D: 'Voice 2 SR',
+                    0x0E: 'Voice 3 Freq Lo',
+                    0x0F: 'Voice 3 Freq Hi',
+                    0x12: 'Voice 3 Control',
+                    0x13: 'Voice 3 AD',
+                    0x14: 'Voice 3 SR',
+                    0x15: 'Filter Cutoff Lo',
+                    0x16: 'Filter Cutoff Hi',
+                    0x17: 'Filter Control',
+                    0x18: 'Volume & Filter'
+                };
+                
+                // Show top used registers
+                const sortedRegisters = Array.from(sidRegisters.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8);
+                
+                sortedRegisters.forEach(([reg, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'register-item';
+                    div.innerHTML = `
+                        <div class="register-addr">$D4${reg.toString(16).toUpperCase().padStart(2, '0')}</div>
+                        <div class="register-count">${count}</div>
+                        <div style="font-size: 0.7em; color: #888;">${registerNames[reg] || 'Register'}</div>
+                    `;
+                    registerGrid.appendChild(div);
+                });
+                
+                if (sortedRegisters.length === 0) {
+                    registerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">No SID writes detected in static analysis</div>';
+                }
+            }
+
+            showLoading(show) {
+                document.getElementById('loading').classList.toggle('active', show);
+            }
+
+            showError(message) {
+                const errorEl = document.getElementById('errorMessage');
+                errorEl.textContent = message;
+                errorEl.classList.add('visible');
+            }
+
+            showSuccess(message) {
+                const successEl = document.getElementById('successMessage');
+                successEl.textContent = message;
+                successEl.classList.add('visible');
+            }
+
+            hideMessages() {
+                document.getElementById('errorMessage').classList.remove('visible');
+                document.getElementById('successMessage').classList.remove('visible');
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new UIController();
+        });
+    </script>
+</body>
+</html>

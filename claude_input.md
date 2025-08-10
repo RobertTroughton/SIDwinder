@@ -386,6 +386,15 @@ namespace sidwinder {
                     else if (name == "sidcopyright") {
                         cmd.setParameter("sidcopyright", value);
                     }
+                    else if (name == "sidloadaddr") {
+                        cmd.setParameter("sidloadaddr", value);
+                    }
+                    else if (name == "sidinitaddr") {
+                        cmd.setParameter("sidinitaddr", value);
+                    }
+                    else if (name == "sidplayaddr") {
+                        cmd.setParameter("sidplayaddr", value);
+                    }
                     else {
                         cmd.setParameter(name, value);
                     }
@@ -445,6 +454,15 @@ namespace sidwinder {
                                 }
                                 else if (option == "sidcopyright") {
                                     cmd.setParameter("sidcopyright", args_[i++]);
+                                }
+                                else if (option == "sidloadaddr") {
+                                    cmd.setParameter("sidloadaddr", args_[i++]);
+                                }
+                                else if (option == "sidinitaddr") {
+                                    cmd.setParameter("sidinitaddr", args_[i++]);
+                                }
+                                else if (option == "sidplayaddr") {
+                                    cmd.setParameter("sidplayaddr", args_[i++]);
                                 }
                                 else {
                                     cmd.setParameter(option, args_[i++]);
@@ -4963,6 +4981,18 @@ namespace sidwinder {
         }
         if (command_.hasParameter("sidcopyright")) {
             options.overrideCopyright = command_.getParameter("sidcopyright");
+        }
+        if (command_.hasParameter("sidloadaddr")) {
+            options.overrideLoadAddress = command_.getHexParameter("sidloadaddr", 0);
+            options.hasOverrideLoad = true;
+        }
+        if (command_.hasParameter("sidinitaddr")) {
+            options.overrideInitAddress = command_.getHexParameter("sidinitaddr", 0);
+            options.hasOverrideInit = true;
+        }
+        if (command_.hasParameter("sidplayaddr")) {
+            options.overridePlayAddress = command_.getHexParameter("sidplayaddr", 0);
+            options.hasOverridePlay = true;
         }
         if (command_.getType() == CommandClass::Type::Player) {
             options.includePlayer = true;
