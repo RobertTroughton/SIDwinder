@@ -210,6 +210,83 @@
             display: inline-block;
         }
 
+        /* Console Section */
+        .console-section {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            display: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+            .console-section.visible {
+                display: block !important;
+            }
+
+        .console-header {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-content {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #f0f0f0;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .console-line {
+            margin: 5px 0;
+            word-wrap: break-word;
+        }
+
+        .console-label {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .console-value {
+            color: #4fc3f7;
+        }
+
+        .console-comment {
+            color: #888;
+            font-style: italic;
+        }
+
+        .copy-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+            .copy-button:hover {
+                background: #764ba2;
+                transform: translateY(-1px);
+            }
+
+            .copy-button:active {
+                transform: translateY(0);
+            }
+
         .save-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -241,8 +318,6 @@
             text-align: center;
             margin-top: 20px;
         }
-
-
 
         .loading {
             display: none;
@@ -374,13 +449,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .control-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .frame-guide {
-                margin-left: 0;
+            .console-content {
+                font-size: 0.8em;
             }
         }
     </style>
@@ -482,12 +552,21 @@
                 </div>
             </div>
 
+            <!-- New Console Section -->
+            <div class="console-section" id="consoleSection">
+                <div class="console-header">
+                    <span>📝 Modified Memory Addresses</span>
+                    <button class="copy-button" id="copyConsoleButton">📋 Copy</button>
+                </div>
+                <div class="console-content" id="consoleContent">
+                    <div class="console-comment"># Waiting for analysis...</div>
+                </div>
+            </div>
+
             <div class="button-container">
                 <button class="save-button" id="saveButton">💾 Save Modified SID</button>
             </div>
         </div>
-
-
     </div>
 
     <!-- Modal overlay for success/error messages -->
@@ -507,6 +586,7 @@
                 this.memoryAccess = new Uint8Array(65536);
                 this.sidRegisters = new Map();
                 this.zpWrites = new Map();  // Track zero page writes
+                this.memoryWrites = new Set(); // Track all memory writes
                 this.header = null;
                 this.fileSize = 0;
                 this.wasmModule = null;
@@ -545,6 +625,7 @@
                             getZpWrites: this.wasmModule.cwrap('cpu_get_zp_writes', 'number', ['number']),
                             getTotalZpWrites: this.wasmModule.cwrap('cpu_get_total_zp_writes', 'number', []),
                             setRecordWrites: this.wasmModule.cwrap('cpu_set_record_writes', null, ['number']),
+                            setTracking: this.wasmModule.cwrap('cpu_set_tracking', null, ['number']),
                             analyzeMemory: this.wasmModule.cwrap('cpu_analyze_memory', null, ['number', 'number', 'number', 'number'])
                         };
                     } else {
@@ -569,6 +650,7 @@
                             getZpWrites: (addr) => this.wasmModule._cpu_get_zp_writes(addr),
                             getTotalZpWrites: () => this.wasmModule._cpu_get_total_zp_writes(),
                             setRecordWrites: (val) => this.wasmModule._cpu_set_record_writes(val),
+                            setTracking: (val) => this.wasmModule._cpu_set_tracking(val),
                             analyzeMemory: (start, end, codePtr, dataPtr) => this.wasmModule._cpu_analyze_memory(start, end, codePtr, dataPtr)
                         };
                     }
@@ -641,21 +723,27 @@
             async emulateInit(frameCount, progressCallback) {
                 if (!this.wasmReady || !this.wasmModule) {
                     console.warn('WASM not ready, skipping emulation');
-                    return { sidRegisters: new Map(), zpWrites: new Map() };
+                    return { sidRegisters: new Map(), zpWrites: new Map(), memoryWrites: new Set() };
                 }
 
                 try {
                     // Reset CPU state
                     this.cpu.init();
 
-                    // Load the SID data into WASM memory
+                    // Load the SID data into WASM memory WITHOUT tracking
                     const dataStart = this.header.loadAddress;
                     const musicData = this.memory.slice(dataStart, dataStart + this.fileSize);
 
-                    // Load memory byte by byte using the wrapped function
-                    // This is safer than trying to use HEAPU8 directly
+                    // Load memory byte by byte using cpu_write_memory (which doesn't track)
                     for (let i = 0; i < musicData.length; i++) {
                         this.cpu.writeMemory(dataStart + i, musicData[i]);
+                    }
+
+                    // Now enable tracking for the actual execution
+                    if (this.cpu.setTracking) {
+                        this.cpu.setTracking(1);
+                    } else {
+                        console.warn('setTracking not available in WASM module');
                     }
 
                     // Execute init routine
@@ -685,7 +773,7 @@
                             }
                         }
 
-                        // Gather zero page statistics using the new tracking functions
+                        // Gather zero page statistics
                         const zpWrites = new Map();
                         for (let addr = 0; addr < 256; addr++) {
                             const count = this.cpu.getZpWrites ? this.cpu.getZpWrites(addr) : 0;
@@ -694,7 +782,24 @@
                             }
                         }
 
-                        // Count all modified memory (excluding zero page since we track it separately)
+                        // Gather all modified memory addresses
+                        const memoryWrites = new Set();
+
+                        // Add zero page writes
+                        for (let [addr, count] of zpWrites) {
+                            memoryWrites.add(addr);
+                        }
+
+                        // Add memory writes within the SID file range
+                        const endAddr = this.header.loadAddress + this.fileSize;
+                        for (let addr = this.header.loadAddress; addr < endAddr; addr++) {
+                            const access = this.cpu.getMemoryAccess(addr);
+                            if (access & 0x04) { // Write flag
+                                memoryWrites.add(addr);
+                            }
+                        }
+
+                        // Count all modified memory
                         let modifiedCount = zpWrites.size;
                         for (let addr = 256; addr < 65536; addr++) {
                             const access = this.cpu.getMemoryAccess(addr);
@@ -703,20 +808,19 @@
                             }
                         }
 
-                        const totalZpWrites = this.cpu.getTotalZpWrites ? this.cpu.getTotalZpWrites() : zpWrites.size;
-
                         return {
                             sidRegisters,
                             zpWrites,
+                            memoryWrites,
                             modifiedCount: modifiedCount + zpWrites.size
                         };
                     } else {
                         console.error('INIT routine failed or timed out');
-                        return { sidRegisters: new Map(), zpWrites: new Map(), modifiedCount: 0 };
+                        return { sidRegisters: new Map(), zpWrites: new Map(), memoryWrites: new Set(), modifiedCount: 0 };
                     }
                 } catch (error) {
                     console.error('Error during emulation:', error);
-                    return { sidRegisters: new Map(), zpWrites: new Map(), modifiedCount: 0 };
+                    return { sidRegisters: new Map(), zpWrites: new Map(), memoryWrites: new Set(), modifiedCount: 0 };
                 }
             }
 
@@ -761,7 +865,6 @@
                         }
                     } catch (error) {
                         console.warn('Error in WASM memory analysis, falling back:', error);
-                        // Fall back to JavaScript analysis
                         return this.analyzeMemoryFallback();
                     }
                 } else {
@@ -865,6 +968,7 @@
                 this.analyzer = new SIDAnalyzer();
                 this.currentFileName = null;
                 this.hasModifications = false;
+                this.memoryWrites = null;
                 this.initEventListeners();
             }
 
@@ -872,10 +976,12 @@
                 const uploadSection = document.getElementById('uploadSection');
                 const fileInput = document.getElementById('fileInput');
                 const saveButton = document.getElementById('saveButton');
+                const copyConsoleButton = document.getElementById('copyConsoleButton');
 
                 uploadSection.addEventListener('click', () => fileInput.click());
                 fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
                 saveButton.addEventListener('click', () => this.saveSID());
+                copyConsoleButton.addEventListener('click', () => this.copyConsoleContent());
 
                 // Make editable fields work
                 this.setupEditableFields();
@@ -1067,7 +1173,7 @@
 
                     // Run emulation if WASM is available
                     const frameCount = 30000;  // Fixed at 30,000 frames (10 minutes)
-                    const { sidRegisters, zpWrites, modifiedCount } = await this.analyzer.emulateInit(
+                    const { sidRegisters, zpWrites, memoryWrites, modifiedCount } = await this.analyzer.emulateInit(
                         frameCount,
                         (current, total) => {
                             const percent = (current / total * 100).toFixed(1);
@@ -1075,6 +1181,8 @@
                             progressText.textContent = `Frame ${current} / ${total} (${percent}%)`;
                         }
                     );
+
+                    this.memoryWrites = memoryWrites;
 
                     // Analyze memory
                     const memoryStats = this.analyzer.analyzeMemory();
@@ -1084,10 +1192,18 @@
                     this.updateTechnicalInfo(header, memoryStats);
                     this.updateZeroPageInfo(zpWrites);
                     this.updateSongTitle(header);
+                    this.updateConsole(memoryWrites, header.loadAddress, header.loadAddress + this.analyzer.fileSize);
 
                     // Show panels
                     document.getElementById('infoPanels').classList.add('visible');
                     document.getElementById('songTitleSection').classList.add('visible');
+
+                    // Make sure console section is visible
+                    const consoleSection = document.getElementById('consoleSection');
+                    if (consoleSection) {
+                        consoleSection.classList.add('visible');
+                        consoleSection.style.display = 'block'; // Force display
+                    }
 
                     // Show success modal
                     this.showModal(`Successfully analyzed: ${file.name}`, true);
@@ -1098,6 +1214,76 @@
                 } finally {
                     this.showLoading(false);
                     document.getElementById('progressBar').classList.remove('active');
+                }
+            }
+
+            updateConsole(memoryWrites, startAddr, endAddr) {
+                const consoleContent = document.getElementById('consoleContent');
+
+                if (!memoryWrites || memoryWrites.size === 0) {
+                    consoleContent.innerHTML = '<div class="console-comment"># No modified memory found</div>';
+                    return;
+                }
+
+                // Separate zero page and SID range addresses
+                const zpAddresses = [];
+                const sidRangeAddresses = [];
+
+                for (let addr of memoryWrites) {
+                    if (addr < 256) {
+                        zpAddresses.push(addr);
+                    } else if (addr >= startAddr && addr < endAddr) {
+                        sidRangeAddresses.push(addr);
+                    }
+                }
+
+                // Sort addresses
+                zpAddresses.sort((a, b) => a - b);
+                sidRangeAddresses.sort((a, b) => a - b);
+
+                // Build console output
+                let html = '';
+
+                if (sidRangeAddresses.length > 0) {
+                    html += '<div class="console-line">';
+                    html += '<span class="console-comment"># SID Memory Range Modified:</span>';
+                    html += '</div>';
+                    html += '<div class="console-line">';
+                    html += '<span class="console-value">';
+                    html += sidRangeAddresses.map(addr => `$${addr.toString(16).toUpperCase().padStart(4, '0')}`).join(', ');
+                    html += '</span>';
+                    html += '</div>';
+                    html += '<div class="console-line">&nbsp;</div>';
+                }
+
+                const allAddresses = [...zpAddresses, ...sidRangeAddresses];
+
+                // Add summary
+                html += '<div class="console-line">&nbsp;</div>';
+                html += '<div class="console-line">';
+                html += `<span class="console-comment"># Total: ${allAddresses.length} addresses modified</span>`;
+                html += '</div>';
+
+                consoleContent.innerHTML = html;
+            }
+
+            copyConsoleContent() {
+                const allAddressesList = document.getElementById('allAddressesList');
+                if (allAddressesList) {
+                    const text = allAddressesList.textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.showModal('Addresses copied to clipboard!', true);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        // Fallback method
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showModal('Addresses copied to clipboard!', true);
+                    });
                 }
             }
 
@@ -1237,6 +1423,7 @@
             hideMessages() {
                 document.getElementById('errorMessage').classList.remove('visible');
                 document.getElementById('songTitleSection').classList.remove('visible');
+                document.getElementById('consoleSection').classList.remove('visible');
             }
         }
 

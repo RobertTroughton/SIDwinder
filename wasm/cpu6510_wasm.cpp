@@ -58,6 +58,9 @@ extern "C" {
         // For pattern detection
         std::vector<uint16_t> writeSequence;
         bool recordWrites;
+
+        // Flag to enable/disable tracking (so we can load without tracking)
+        bool trackingEnabled;
     } cpu;
 
     // Helper function to read 16-bit address from memory
@@ -80,6 +83,7 @@ extern "C" {
         cpu.totalSidWrites = 0;
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
+        cpu.trackingEnabled = false;  // Start with tracking disabled
 
         memset(cpu.memory, 0, sizeof(cpu.memory));
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
@@ -90,63 +94,62 @@ extern "C" {
         cpu.writeSequence.clear();
     }
 
-    // Load data into memory
+    // Enable or disable tracking
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_set_tracking(bool enabled) {
+        cpu.trackingEnabled = enabled;
+    }
+
+    // Load data into memory WITHOUT tracking
     EMSCRIPTEN_KEEPALIVE
         void cpu_load_memory(uint16_t address, uint8_t* data, uint16_t size) {
         if (address + size <= 65536) {
             memcpy(&cpu.memory[address], data, size);
+            // Note: No tracking here - this is just loading the initial data
         }
     }
 
     // Read memory (for internal use and tracking)
     EMSCRIPTEN_KEEPALIVE
         uint8_t cpu_read_memory(uint16_t address) {
-        cpu.memoryAccess[address] |= MEM_READ;
+        if (cpu.trackingEnabled) {
+            cpu.memoryAccess[address] |= MEM_READ;
+        }
         return cpu.memory[address];
     }
 
-    // Write memory with full tracking
+    // Write memory - only used for initial loading, not tracked
     EMSCRIPTEN_KEEPALIVE
         void cpu_write_memory(uint16_t address, uint8_t value) {
         cpu.memory[address] = value;
-        cpu.memoryAccess[address] |= MEM_WRITE;
-        cpu.lastWritePC[address] = cpu.pc;
-
-        // Track zero page writes
-        if (address < 256) {
-            cpu.zpWrites[address]++;
-            cpu.totalZpWrites++;
-        }
-
-        // Track SID writes
-        if (address >= 0xD400 && address <= 0xD41F) {
-            uint8_t reg = address & 0x1F;
-            cpu.sidWrites[reg]++;
-            cpu.totalSidWrites++;
-
-            if (cpu.recordWrites) {
-                cpu.writeSequence.push_back(address);
-            }
-        }
+        // Don't track this - it's only for initial setup
     }
 
-    // Internal memory write (used by instructions)
+    // Internal memory write (used by instructions) - THIS is what we track
     void write_memory_internal(uint16_t address, uint8_t value) {
         cpu.memory[address] = value;
-        cpu.memoryAccess[address] |= MEM_WRITE;
-        cpu.lastWritePC[address] = cpu.pc;
 
-        // Track zero page writes
-        if (address < 256) {
-            cpu.zpWrites[address]++;
-            cpu.totalZpWrites++;
-        }
+        // Only track if tracking is enabled
+        if (cpu.trackingEnabled) {
+            cpu.memoryAccess[address] |= MEM_WRITE;
+            cpu.lastWritePC[address] = cpu.pc;
 
-        // Track SID writes
-        if (address >= 0xD400 && address <= 0xD41F) {
-            uint8_t reg = address & 0x1F;
-            cpu.sidWrites[reg]++;
-            cpu.totalSidWrites++;
+            // Track zero page writes
+            if (address < 256) {
+                cpu.zpWrites[address]++;
+                cpu.totalZpWrites++;
+            }
+
+            // Track SID writes
+            if (address >= 0xD400 && address <= 0xD41F) {
+                uint8_t reg = address & 0x1F;
+                cpu.sidWrites[reg]++;
+                cpu.totalSidWrites++;
+
+                if (cpu.recordWrites) {
+                    cpu.writeSequence.push_back(address);
+                }
+            }
         }
     }
 
@@ -185,7 +188,10 @@ extern "C" {
         void cpu_step() {
         uint16_t pc = cpu.pc;
         uint8_t opcode = cpu.memory[pc++];
-        cpu.memoryAccess[cpu.pc] |= MEM_EXECUTE | MEM_OPCODE;
+
+        if (cpu.trackingEnabled) {
+            cpu.memoryAccess[cpu.pc] |= MEM_EXECUTE | MEM_OPCODE;
+        }
 
         // Simplified instruction execution - implement core instructions
         switch (opcode) {
@@ -200,7 +206,9 @@ extern "C" {
         {
             uint8_t zp = cpu.memory[pc++];
             cpu.a = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 3;
         }
@@ -210,7 +218,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc);
             cpu.a = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 4;
         }
@@ -220,7 +230,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc) + cpu.x;
             cpu.a = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 4;
         }
@@ -230,7 +242,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc) + cpu.y;
             cpu.a = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 4;
         }
@@ -240,7 +254,9 @@ extern "C" {
         {
             uint8_t zp = (cpu.memory[pc++] + cpu.x) & 0xFF;
             cpu.a = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 4;
         }
@@ -251,7 +267,9 @@ extern "C" {
             uint8_t zp = (cpu.memory[pc++] + cpu.x) & 0xFF;
             uint16_t addr = cpu.memory[zp] | (cpu.memory[(zp + 1) & 0xFF] << 8);
             cpu.a = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 6;
         }
@@ -262,7 +280,9 @@ extern "C" {
             uint8_t zp = cpu.memory[pc++];
             uint16_t addr = (cpu.memory[zp] | (cpu.memory[(zp + 1) & 0xFF] << 8)) + cpu.y;
             cpu.a = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.a);
             cpu.cycles += 5;
         }
@@ -388,7 +408,9 @@ extern "C" {
         {
             uint8_t zp = cpu.memory[pc++];
             cpu.x = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.x);
             cpu.cycles += 3;
         }
@@ -398,7 +420,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc);
             cpu.x = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.x);
             cpu.cycles += 4;
         }
@@ -408,7 +432,9 @@ extern "C" {
         {
             uint8_t zp = (cpu.memory[pc++] + cpu.y) & 0xFF;
             cpu.x = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.x);
             cpu.cycles += 4;
         }
@@ -418,7 +444,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc) + cpu.y;
             cpu.x = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.x);
             cpu.cycles += 4;
         }
@@ -435,7 +463,9 @@ extern "C" {
         {
             uint8_t zp = cpu.memory[pc++];
             cpu.y = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.y);
             cpu.cycles += 3;
         }
@@ -445,7 +475,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc);
             cpu.y = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.y);
             cpu.cycles += 4;
         }
@@ -455,7 +487,9 @@ extern "C" {
         {
             uint8_t zp = (cpu.memory[pc++] + cpu.x) & 0xFF;
             cpu.y = cpu.memory[zp];
-            cpu.memoryAccess[zp] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[zp] |= MEM_READ;
+            }
             set_zn_flags(cpu.y);
             cpu.cycles += 4;
         }
@@ -465,7 +499,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc) + cpu.x;
             cpu.y = cpu.memory[addr];
-            cpu.memoryAccess[addr] |= MEM_READ;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_READ;
+            }
             set_zn_flags(cpu.y);
             cpu.cycles += 4;
         }
@@ -595,7 +631,9 @@ extern "C" {
             push((pc - 1) >> 8);
             push((pc - 1) & 0xFF);
             pc = addr;
-            cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            }
             cpu.cycles += 6;
         }
         break;
@@ -614,7 +652,9 @@ extern "C" {
         {
             uint16_t addr = read_word(pc);
             pc = addr;
-            cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            }
             cpu.cycles += 3;
         }
         break;
@@ -631,7 +671,9 @@ extern "C" {
                 addr = cpu.memory[ptr] | (cpu.memory[ptr + 1] << 8);
             }
             pc = addr;
-            cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            if (cpu.trackingEnabled) {
+                cpu.memoryAccess[addr] |= MEM_JUMP_TARGET;
+            }
             cpu.cycles += 5;
         }
         break;
