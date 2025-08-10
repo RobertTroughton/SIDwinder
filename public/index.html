@@ -1015,14 +1015,14 @@
                 }
                 groups.push(currentGroup);
 
-                // Format the groups
+                // Format the groups with $ prefix to indicate hex
                 const formatted = groups.map(group => {
                     if (group.start === group.end) {
                         // Single address
-                        return `${group.start.toString(16).toUpperCase().padStart(2, '0')}`;
+                        return `$${group.start.toString(16).toUpperCase().padStart(2, '0')}`;
                     } else {
                         // Range of addresses
-                        return `${group.start.toString(16).toUpperCase().padStart(2, '0')}-${group.end.toString(16).toUpperCase().padStart(2, '0')}`;
+                        return `$${group.start.toString(16).toUpperCase().padStart(2, '0')}-$${group.end.toString(16).toUpperCase().padStart(2, '0')}`;
                     }
                 });
 
