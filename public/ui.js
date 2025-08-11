@@ -7,6 +7,7 @@ class UIController {
         this.hasModifications = false;
         this.analysisResults = null;
         this.prgExporter = null;
+        this.sidHeader = null; // Store the SID header info
         this.elements = this.cacheElements();
         this.initEventListeners();
         this.initExportSection();
@@ -17,7 +18,6 @@ class UIController {
             uploadSection: document.getElementById('uploadSection'),
             fileInput: document.getElementById('fileInput'),
             saveButton: document.getElementById('saveButton'),
-            copyConsoleButton: document.getElementById('copyConsoleButton'),
             songTitleSection: document.getElementById('songTitleSection'),
             songTitle: document.getElementById('songTitle'),
             songAuthor: document.getElementById('songAuthor'),
@@ -27,8 +27,6 @@ class UIController {
             progressText: document.getElementById('progressText'),
             errorMessage: document.getElementById('errorMessage'),
             infoPanels: document.getElementById('infoPanels'),
-            consoleSection: document.getElementById('consoleSection'),
-            consoleContent: document.getElementById('consoleContent'),
             modalOverlay: document.getElementById('modalOverlay'),
             modalIcon: document.getElementById('modalIcon'),
             modalMessage: document.getElementById('modalMessage'),
@@ -50,9 +48,8 @@ class UIController {
             sidModel: document.getElementById('sidModel'),
             // Export section elements
             exportSection: document.getElementById('exportSection'),
-            sidAddress: document.getElementById('sidAddress'),
             visualizerType: document.getElementById('visualizerType'),
-            includeData: document.getElementById('includeData'),
+            autoRun: document.getElementById('autoRun'),
             exportSIDButton: document.getElementById('exportSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
             exportStatus: document.getElementById('exportStatus')
@@ -74,11 +71,6 @@ class UIController {
             this.saveSID();
         });
 
-        // Copy button
-        this.elements.copyConsoleButton.addEventListener('click', () => {
-            this.copyConsoleContent();
-        });
-
         // Drag and drop
         this.setupDragAndDrop();
 
@@ -87,12 +79,8 @@ class UIController {
     }
 
     initExportSection() {
-        // Initialize PRG exporter when analyzer is ready
-        if (this.analyzer) {
-            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-            // Make analyzer globally accessible for debugging
-            window.currentAnalyzer = this.analyzer;
-        }
+        // Wait for PRG builder to be available
+        // The PRG exporter will be initialized when a file is loaded
 
         // Add export button event listeners
         if (this.elements.exportSIDButton) {
@@ -104,12 +92,6 @@ class UIController {
         if (this.elements.exportPRGButton) {
             this.elements.exportPRGButton.addEventListener('click', () => {
                 this.exportPRGWithVisualizer();
-            });
-        }
-
-        if (this.elements.exportBasicPRGButton) {
-            this.elements.exportBasicPRGButton.addEventListener('click', () => {
-                this.exportBasicPRG();
             });
         }
     }
@@ -238,6 +220,7 @@ class UIController {
 
             // Load SID file
             const header = await this.analyzer.loadSID(buffer);
+            this.sidHeader = header; // Store the header for later use
 
             // Update UI with header info
             this.updateFileInfo(header);
@@ -264,13 +247,11 @@ class UIController {
             this.analyzer.analysisResults = this.analysisResults;
 
             // Update UI with analysis results
-            this.updateConsole(this.analysisResults);
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
 
             // Show panels
             this.elements.infoPanels.classList.add('visible');
             this.elements.songTitleSection.classList.add('visible');
-            this.elements.consoleSection.classList.add('visible');
 
             // Show export section
             this.showExportSection();
@@ -290,10 +271,23 @@ class UIController {
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.add('visible');
 
-            // Initialize PRG exporter if not done
+            // Initialize PRG exporter now that we have analyzer ready
             if (!this.prgExporter && this.analyzer) {
-                this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-                window.currentAnalyzer = this.analyzer;
+                // Check if SIDwinderPRGExporter is available
+                if (typeof SIDwinderPRGExporter !== 'undefined') {
+                    this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+                    window.currentAnalyzer = this.analyzer;
+                } else {
+                    console.error('SIDwinderPRGExporter not loaded yet');
+                    // Try again after a short delay
+                    setTimeout(() => {
+                        if (typeof SIDwinderPRGExporter !== 'undefined' && !this.prgExporter) {
+                            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+                            window.currentAnalyzer = this.analyzer;
+                            console.log('PRG exporter initialized after delay');
+                        }
+                    }, 500);
+                }
             }
         }
     }
@@ -362,66 +356,6 @@ class UIController {
         this.elements.zpUsage.textContent = formatted.join(', ');
     }
 
-    updateConsole(results) {
-        if (!results || !results.modifiedAddresses) {
-            this.elements.consoleContent.innerHTML =
-                '<div class="console-comment"># No modified memory found</div>';
-            return;
-        }
-
-        const addresses = results.modifiedAddresses;
-        const zpAddresses = addresses.filter(addr => addr < 256);
-        const mainAddresses = addresses.filter(addr => addr >= 256);
-
-        let html = '';
-
-        if (mainAddresses.length > 0) {
-            html += '<div class="console-line">';
-            html += '<span class="console-comment"># Memory Range Modified:</span>';
-            html += '</div>';
-            html += '<div class="console-line">';
-            html += '<span class="console-value">';
-            html += mainAddresses.map(addr => this.formatHex(addr, 4)).join(', ');
-            html += '</span>';
-            html += '</div>';
-        }
-
-        if (zpAddresses.length > 0) {
-            html += '<div class="console-line">&nbsp;</div>';
-            html += '<div class="console-line">';
-            html += '<span class="console-comment"># Zero Page Modified:</span>';
-            html += '</div>';
-            html += '<div class="console-line">';
-            html += '<span class="console-value">';
-            html += zpAddresses.map(addr => this.formatHex(addr, 2)).join(', ');
-            html += '</span>';
-            html += '</div>';
-        }
-
-        html += '<div class="console-line">&nbsp;</div>';
-        html += '<div class="console-line">';
-        html += `<span class="console-comment"># Total: ${addresses.length} addresses modified</span>`;
-        html += '</div>';
-
-        this.elements.consoleContent.innerHTML = html;
-    }
-
-    copyConsoleContent() {
-        const text = this.elements.consoleContent.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-            this.showModal('Addresses copied to clipboard!', true);
-        }).catch(err => {
-            // Fallback
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            this.showModal('Addresses copied to clipboard!', true);
-        });
-    }
-
     // Export functions
     exportModifiedSID() {
         const modifiedData = this.analyzer.createModifiedSID();
@@ -439,14 +373,28 @@ class UIController {
     }
 
     async exportPRGWithVisualizer() {
+        // Check if PRG exporter is available
         if (!this.prgExporter) {
-            this.showExportStatus('PRG exporter not initialized', 'error');
+            if (typeof SIDwinderPRGExporter === 'undefined') {
+                this.showExportStatus('PRG builder not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            // Try to initialize it now
+            if (this.analyzer) {
+                this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+            } else {
+                this.showExportStatus('Analyzer not ready. Please reload the SID file.', 'error');
+                return;
+            }
+        }
+
+        if (!this.sidHeader) {
+            this.showExportStatus('No SID file loaded', 'error');
             return;
         }
 
         const visualizerType = this.elements.visualizerType.value;
-        const includeData = this.elements.includeData.checked;
-        const sidAddress = this.parseAddress(this.elements.sidAddress.value);
+        const autoRun = this.elements.autoRun.checked;
 
         if (visualizerType === 'none') {
             this.showExportStatus('Please select a visualizer type', 'error');
@@ -459,13 +407,16 @@ class UIController {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
 
+            // Use the actual SID addresses from the loaded file
             const options = {
-                sidLoadAddress: sidAddress,
-                dataFile: includeData ? 'prg/data.bin' : null,
-                dataLoadAddress: 0x4000,
+                sidLoadAddress: this.sidHeader.loadAddress,  // Use actual load address
+                sidInitAddress: this.sidHeader.initAddress,  // Use actual init address
+                sidPlayAddress: this.sidHeader.playAddress,  // Use actual play address
+                dataLoadAddress: 0x4000,  // Fixed data block location at $4000
                 visualizerFile: `prg/${visualizerType}.bin`,
                 visualizerLoadAddress: 0x4100,
-                includeData: includeData
+                includeData: true,  // Always include data
+                addBASICStub: autoRun
             };
 
             const prgData = await this.prgExporter.createPRG(options);
@@ -478,33 +429,6 @@ class UIController {
                 `Range: ${this.formatHex(info.lowestAddress, 4)} - ${this.formatHex(info.highestAddress, 4)}`,
                 'success'
             );
-
-        } catch (error) {
-            console.error('Export error:', error);
-            this.showExportStatus(`Export failed: ${error.message}`, 'error');
-        }
-    }
-
-    async exportBasicPRG() {
-        if (!this.prgExporter) {
-            this.showExportStatus('PRG exporter not initialized', 'error');
-            return;
-        }
-
-        try {
-            const sidAddress = this.parseAddress(this.elements.sidAddress.value);
-            const baseName = this.currentFileName ?
-                this.currentFileName.replace('.sid', '') : 'output';
-
-            // Build simple PRG with just SID
-            const builder = new PRGBuilder();
-            const sidInfo = this.prgExporter.extractSIDMusicData();
-            builder.addComponent(sidInfo.data, sidAddress || sidInfo.loadAddress, 'SID Music');
-
-            const prgData = builder.build();
-            this.downloadFile(prgData, `${baseName}.prg`);
-
-            this.showExportStatus('Basic PRG exported successfully!', 'success');
 
         } catch (error) {
             console.error('Export error:', error);
@@ -579,7 +503,6 @@ class UIController {
     hideMessages() {
         this.elements.errorMessage.classList.remove('visible');
         this.elements.songTitleSection.classList.remove('visible');
-        this.elements.consoleSection.classList.remove('visible');
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.remove('visible');
         }
@@ -588,5 +511,35 @@ class UIController {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new UIController();
+    console.log('DOM loaded, waiting for scripts...');
+
+    // Wait a moment for all scripts to load
+    setTimeout(() => {
+        console.log('Checking for required components...');
+        console.log('SIDAnalyzer available:', typeof SIDAnalyzer !== 'undefined');
+        console.log('PRGBuilder available:', typeof PRGBuilder !== 'undefined');
+        console.log('SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
+
+        // Check if required classes are available
+        if (typeof SIDAnalyzer === 'undefined') {
+            console.error('SIDAnalyzer not loaded');
+            alert('Error: Core components not loaded. Please refresh the page.');
+            return;
+        }
+
+        if (typeof SIDwinderPRGExporter === 'undefined') {
+            console.error('WARNING: SIDwinderPRGExporter not loaded yet');
+            // Try to wait a bit longer
+            setTimeout(() => {
+                console.log('Retrying... SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
+                if (typeof SIDwinderPRGExporter === 'undefined') {
+                    console.error('ERROR: SIDwinderPRGExporter still not available after waiting');
+                }
+            }, 1000);
+        }
+
+        // Initialize the UI controller anyway
+        console.log('Initializing UI Controller...');
+        window.uiController = new UIController();
+    }, 100);
 });

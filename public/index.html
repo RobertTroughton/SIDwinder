@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIDwinder Web - C64 SID Music Analyzer</title>
+    <title>SIDwinder - C64 SID Music Linker</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 SIDwinder Web</h1>
-            <p>C64 SID Music Analyzer & Tool Suite</p>
+            <h1>🎵 SIDwinder 🎵<br />!PREVIEW! (use at your own risk)</h1>
+            <p>C64 SID Analyzer, Linker & Tool Suite</p>
         </div>
 
         <div class="main-content">
@@ -119,27 +119,11 @@
                 </div>
             </div>
 
-            <!-- Console Section -->
-            <div class="console-section" id="consoleSection">
-                <div class="console-header">
-                    <span>📝 Modified Memory Addresses</span>
-                    <button class="copy-button" id="copyConsoleButton">📋 Copy</button>
-                </div>
-                <div class="console-content" id="consoleContent">
-                    <div class="console-comment"># Waiting for analysis...</div>
-                </div>
-            </div>
-
             <!-- Export Section -->
             <div class="export-section" id="exportSection">
                 <h2>📦 Export Options</h2>
 
                 <div class="export-options">
-                    <div class="export-option">
-                        <label for="sidAddress">SID Load Address:</label>
-                        <input type="text" id="sidAddress" value="$1000" placeholder="$1000">
-                    </div>
-
                     <div class="export-option">
                         <label for="visualizerType">Visualizer Type:</label>
                         <select id="visualizerType">
@@ -151,8 +135,8 @@
                     </div>
 
                     <div class="export-option">
-                        <label for="includeData">Include Data Section:</label>
-                        <input type="checkbox" id="includeData" checked>
+                        <label for="autoRun">Make Self-Running (BASIC Stub):</label>
+                        <input type="checkbox" id="autoRun" checked>
                     </div>
                 </div>
 
@@ -184,10 +168,19 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts - Load order is important -->
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
     <script src="prg-builder.js"></script>
+    <!-- Add a small delay before loading UI to ensure other scripts are ready -->
+    <script>
+        console.log('All script tags loaded, waiting before UI init...');
+        // Check what's available right now
+        setTimeout(function () {
+            console.log('Before UI load - PRGBuilder available:', typeof PRGBuilder !== 'undefined');
+            console.log('Before UI load - SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
+        }, 50);
+    </script>
     <script src="ui.js"></script>
 </body>
 </html>
