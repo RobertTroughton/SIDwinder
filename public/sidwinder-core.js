@@ -5,6 +5,7 @@ class SIDAnalyzer {
         this.wasmModule = null;
         this.wasmReady = false;
         this.api = null;
+        this.Module = null; // Store the module instance
         this.initPromise = this.initWASM();
     }
 
@@ -12,31 +13,45 @@ class SIDAnalyzer {
         try {
             console.log('Initializing WASM module...');
 
-            // Initialize the WASM module
-            this.wasmModule = await SIDwinderModule();
+            // Initialize the WASM module - store the actual module instance
+            this.Module = await SIDwinderModule();
+            this.wasmModule = this.Module;
 
-            console.log('WASM module loaded, creating API...');
+            console.log('WASM module loaded, checking memory arrays...');
+            console.log('Module properties:', Object.keys(this.Module));
 
-            // Create API wrapper
+            // Check if memory arrays are available
+            if (!this.Module.HEAPU8) {
+                console.error('HEAPU8 not found in module');
+                throw new Error('WASM memory arrays not available');
+            }
+
+            console.log('Creating API wrapper...');
+
+            // Create API wrapper using the Module instance
             this.api = {
                 // SID functions
-                sid_init: this.wasmModule.cwrap('sid_init', null, []),
-                sid_load: this.wasmModule.cwrap('sid_load', 'number', ['number', 'number']),
-                sid_analyze: this.wasmModule.cwrap('sid_analyze', 'number', ['number', 'number']),
-                sid_get_header_string: this.wasmModule.cwrap('sid_get_header_string', 'string', ['number']),
-                sid_get_header_value: this.wasmModule.cwrap('sid_get_header_value', 'number', ['number']),
-                sid_set_header_string: this.wasmModule.cwrap('sid_set_header_string', null, ['number', 'string']),
-                sid_create_modified: this.wasmModule.cwrap('sid_create_modified', 'number', ['number']),
-                sid_get_modified_count: this.wasmModule.cwrap('sid_get_modified_count', 'number', []),
-                sid_get_modified_address: this.wasmModule.cwrap('sid_get_modified_address', 'number', ['number']),
-                sid_get_zp_count: this.wasmModule.cwrap('sid_get_zp_count', 'number', []),
-                sid_get_zp_address: this.wasmModule.cwrap('sid_get_zp_address', 'number', ['number']),
-                sid_get_code_bytes: this.wasmModule.cwrap('sid_get_code_bytes', 'number', []),
-                sid_get_data_bytes: this.wasmModule.cwrap('sid_get_data_bytes', 'number', []),
-                sid_get_sid_writes: this.wasmModule.cwrap('sid_get_sid_writes', 'number', ['number']),
-                sid_get_clock_type: this.wasmModule.cwrap('sid_get_clock_type', 'string', []),
-                sid_get_sid_model: this.wasmModule.cwrap('sid_get_sid_model', 'string', []),
-                sid_cleanup: this.wasmModule.cwrap('sid_cleanup', null, [])
+                sid_init: this.Module.cwrap('sid_init', null, []),
+                sid_load: this.Module.cwrap('sid_load', 'number', ['number', 'number']),
+                sid_analyze: this.Module.cwrap('sid_analyze', 'number', ['number', 'number']),
+                sid_get_header_string: this.Module.cwrap('sid_get_header_string', 'string', ['number']),
+                sid_get_header_value: this.Module.cwrap('sid_get_header_value', 'number', ['number']),
+                sid_set_header_string: this.Module.cwrap('sid_set_header_string', null, ['number', 'string']),
+                sid_create_modified: this.Module.cwrap('sid_create_modified', 'number', ['number']),
+                sid_get_modified_count: this.Module.cwrap('sid_get_modified_count', 'number', []),
+                sid_get_modified_address: this.Module.cwrap('sid_get_modified_address', 'number', ['number']),
+                sid_get_zp_count: this.Module.cwrap('sid_get_zp_count', 'number', []),
+                sid_get_zp_address: this.Module.cwrap('sid_get_zp_address', 'number', ['number']),
+                sid_get_code_bytes: this.Module.cwrap('sid_get_code_bytes', 'number', []),
+                sid_get_data_bytes: this.Module.cwrap('sid_get_data_bytes', 'number', []),
+                sid_get_sid_writes: this.Module.cwrap('sid_get_sid_writes', 'number', ['number']),
+                sid_get_clock_type: this.Module.cwrap('sid_get_clock_type', 'string', []),
+                sid_get_sid_model: this.Module.cwrap('sid_get_sid_model', 'string', []),
+                sid_cleanup: this.Module.cwrap('sid_cleanup', null, []),
+
+                // Memory management - use direct module references
+                malloc: (size) => this.Module._malloc(size),
+                free: (ptr) => this.Module._free(ptr)
             };
 
             // Initialize SID processor
@@ -69,18 +84,30 @@ class SIDAnalyzer {
             throw new Error('WASM module not ready');
         }
 
-        // Ensure module is fully initialized
-        if (!this.wasmModule || !this.wasmModule.HEAPU8) {
-            throw new Error('WASM module not properly initialized');
+        // Double-check that Module and its memory are available
+        if (!this.Module) {
+            throw new Error('WASM Module not available');
+        }
+
+        if (!this.Module.HEAPU8) {
+            console.error('Available Module properties:', Object.keys(this.Module));
+            throw new Error('WASM memory (HEAPU8) not available - module may not be properly initialized');
         }
 
         // Allocate memory in WASM heap
         const data = new Uint8Array(arrayBuffer);
-        const ptr = this.wasmModule._malloc(data.length);
+        let ptr = null;
 
         try {
-            // Copy data to WASM heap
-            this.wasmModule.HEAPU8.set(data, ptr);
+            // Use the Module's malloc directly
+            ptr = this.api.malloc(data.length);
+
+            if (!ptr) {
+                throw new Error('Failed to allocate memory in WASM heap');
+            }
+
+            // Copy data to WASM heap using the Module's HEAPU8
+            this.Module.HEAPU8.set(data, ptr);
 
             // Load SID file
             const result = this.api.sid_load(ptr, data.length);
@@ -114,9 +141,14 @@ class SIDAnalyzer {
                 sidModel: this.api.sid_get_sid_model()
             };
 
+        } catch (error) {
+            console.error('Error in loadSID:', error);
+            throw error;
         } finally {
             // Free allocated memory
-            this.wasmModule._free(ptr);
+            if (ptr !== null) {
+                this.api.free(ptr);
+            }
         }
     }
 
@@ -216,13 +248,13 @@ class SIDAnalyzer {
     }
 
     createModifiedSID() {
-        if (!this.wasmReady) {
+        if (!this.wasmReady || !this.Module) {
             console.error('WASM not ready, cannot create modified SID');
             return null;
         }
 
         // Allocate space for size output
-        const sizePtr = this.wasmModule._malloc(4);
+        const sizePtr = this.api.malloc(4);
 
         try {
             // Create modified SID
@@ -233,20 +265,20 @@ class SIDAnalyzer {
                 return null;
             }
 
-            // Get size
-            const size = this.wasmModule.HEAP32[sizePtr >> 2];
+            // Get size using Module's HEAP32
+            const size = this.Module.HEAP32[sizePtr >> 2];
 
             if (size <= 0 || size > 65536) {
                 console.error(`Invalid SID size: ${size}`);
                 return null;
             }
 
-            // Copy data from WASM heap
+            // Copy data from WASM heap using Module's HEAPU8
             const data = new Uint8Array(size);
-            data.set(this.wasmModule.HEAPU8.subarray(dataPtr, dataPtr + size));
+            data.set(this.Module.HEAPU8.subarray(dataPtr, dataPtr + size));
 
             // Free the data pointer (allocated in WASM)
-            this.wasmModule._free(dataPtr);
+            this.api.free(dataPtr);
 
             return data;
 
@@ -255,7 +287,7 @@ class SIDAnalyzer {
             return null;
         } finally {
             // Free size pointer
-            this.wasmModule._free(sizePtr);
+            this.api.free(sizePtr);
         }
     }
 
