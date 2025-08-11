@@ -1,4 +1,4 @@
-﻿// ui.js - UI Controller for SIDwinder Web
+﻿// ui.js - UI Controller for SIDwinder Web with PRG Export
 
 class UIController {
     constructor() {
@@ -6,8 +6,10 @@ class UIController {
         this.currentFileName = null;
         this.hasModifications = false;
         this.analysisResults = null;
+        this.prgExporter = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
+        this.initExportSection();
     }
 
     cacheElements() {
@@ -45,7 +47,15 @@ class UIController {
             fileSize: document.getElementById('fileSize'),
             zpUsage: document.getElementById('zpUsage'),
             clockType: document.getElementById('clockType'),
-            sidModel: document.getElementById('sidModel')
+            sidModel: document.getElementById('sidModel'),
+            // Export section elements
+            exportSection: document.getElementById('exportSection'),
+            sidAddress: document.getElementById('sidAddress'),
+            visualizerType: document.getElementById('visualizerType'),
+            includeData: document.getElementById('includeData'),
+            exportSIDButton: document.getElementById('exportSIDButton'),
+            exportPRGButton: document.getElementById('exportPRGButton'),
+            exportStatus: document.getElementById('exportStatus')
         };
     }
 
@@ -59,7 +69,7 @@ class UIController {
             this.handleFileSelect(e);
         });
 
-        // Save button
+        // Save button (original)
         this.elements.saveButton.addEventListener('click', () => {
             this.saveSID();
         });
@@ -74,6 +84,34 @@ class UIController {
 
         // Editable fields
         this.setupEditableFields();
+    }
+
+    initExportSection() {
+        // Initialize PRG exporter when analyzer is ready
+        if (this.analyzer) {
+            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+            // Make analyzer globally accessible for debugging
+            window.currentAnalyzer = this.analyzer;
+        }
+
+        // Add export button event listeners
+        if (this.elements.exportSIDButton) {
+            this.elements.exportSIDButton.addEventListener('click', () => {
+                this.exportModifiedSID();
+            });
+        }
+
+        if (this.elements.exportPRGButton) {
+            this.elements.exportPRGButton.addEventListener('click', () => {
+                this.exportPRGWithVisualizer();
+            });
+        }
+
+        if (this.elements.exportBasicPRGButton) {
+            this.elements.exportBasicPRGButton.addEventListener('click', () => {
+                this.exportBasicPRG();
+            });
+        }
     }
 
     setupDragAndDrop() {
@@ -222,6 +260,9 @@ class UIController {
                 }
             });
 
+            // Store analysis results in the analyzer for PRG builder to access
+            this.analyzer.analysisResults = this.analysisResults;
+
             // Update UI with analysis results
             this.updateConsole(this.analysisResults);
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
@@ -231,6 +272,9 @@ class UIController {
             this.elements.songTitleSection.classList.add('visible');
             this.elements.consoleSection.classList.add('visible');
 
+            // Show export section
+            this.showExportSection();
+
             this.showModal(`Successfully analyzed: ${file.name}`, true);
 
         } catch (error) {
@@ -239,6 +283,18 @@ class UIController {
         } finally {
             this.showLoading(false);
             this.elements.progressBar.classList.remove('active');
+        }
+    }
+
+    showExportSection() {
+        if (this.elements.exportSection) {
+            this.elements.exportSection.classList.add('visible');
+
+            // Initialize PRG exporter if not done
+            if (!this.prgExporter && this.analyzer) {
+                this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+                window.currentAnalyzer = this.analyzer;
+            }
         }
     }
 
@@ -366,31 +422,138 @@ class UIController {
         });
     }
 
-    saveSID() {
+    // Export functions
+    exportModifiedSID() {
         const modifiedData = this.analyzer.createModifiedSID();
 
         if (!modifiedData) {
-            this.showModal('Failed to create modified SID', false);
+            this.showExportStatus('Failed to create modified SID', 'error');
             return;
         }
 
-        // Create blob and download
-        const blob = new Blob([modifiedData], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-
         const baseName = this.currentFileName ?
             this.currentFileName.replace('.sid', '') : 'modified';
-        a.href = url;
-        a.download = `${baseName}_edited.sid`;
 
+        this.downloadFile(modifiedData, `${baseName}_edited.sid`);
+        this.showExportStatus('SID file exported successfully!', 'success');
+    }
+
+    async exportPRGWithVisualizer() {
+        if (!this.prgExporter) {
+            this.showExportStatus('PRG exporter not initialized', 'error');
+            return;
+        }
+
+        const visualizerType = this.elements.visualizerType.value;
+        const includeData = this.elements.includeData.checked;
+        const sidAddress = this.parseAddress(this.elements.sidAddress.value);
+
+        if (visualizerType === 'none') {
+            this.showExportStatus('Please select a visualizer type', 'error');
+            return;
+        }
+
+        this.showExportStatus('Building PRG file...', 'info');
+
+        try {
+            const baseName = this.currentFileName ?
+                this.currentFileName.replace('.sid', '') : 'output';
+
+            const options = {
+                sidLoadAddress: sidAddress,
+                dataFile: includeData ? 'prg/data.bin' : null,
+                dataLoadAddress: 0x4000,
+                visualizerFile: `prg/${visualizerType}.bin`,
+                visualizerLoadAddress: 0x4100,
+                includeData: includeData
+            };
+
+            const prgData = await this.prgExporter.createPRG(options);
+            this.downloadFile(prgData, `${baseName}_${visualizerType}.prg`);
+
+            const info = this.prgExporter.builder.getInfo();
+            const sizeKB = (prgData.length / 1024).toFixed(2);
+            this.showExportStatus(
+                `PRG exported successfully! Size: ${sizeKB}KB, ` +
+                `Range: ${this.formatHex(info.lowestAddress, 4)} - ${this.formatHex(info.highestAddress, 4)}`,
+                'success'
+            );
+
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showExportStatus(`Export failed: ${error.message}`, 'error');
+        }
+    }
+
+    async exportBasicPRG() {
+        if (!this.prgExporter) {
+            this.showExportStatus('PRG exporter not initialized', 'error');
+            return;
+        }
+
+        try {
+            const sidAddress = this.parseAddress(this.elements.sidAddress.value);
+            const baseName = this.currentFileName ?
+                this.currentFileName.replace('.sid', '') : 'output';
+
+            // Build simple PRG with just SID
+            const builder = new PRGBuilder();
+            const sidInfo = this.prgExporter.extractSIDMusicData();
+            builder.addComponent(sidInfo.data, sidAddress || sidInfo.loadAddress, 'SID Music');
+
+            const prgData = builder.build();
+            this.downloadFile(prgData, `${baseName}.prg`);
+
+            this.showExportStatus('Basic PRG exported successfully!', 'success');
+
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showExportStatus(`Export failed: ${error.message}`, 'error');
+        }
+    }
+
+    saveSID() {
+        // This is the original save button functionality
+        this.exportModifiedSID();
+        this.hasModifications = false;
+    }
+
+    // Helper functions
+    downloadFile(data, filename) {
+        const blob = new Blob([data], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
 
-        this.showModal('SID file saved successfully!', true);
-        this.hasModifications = false;
+    parseAddress(str) {
+        str = str.trim();
+        if (str.startsWith('$')) {
+            return parseInt(str.substring(1), 16);
+        } else if (str.startsWith('0x')) {
+            return parseInt(str.substring(2), 16);
+        } else {
+            return parseInt(str, 10);
+        }
+    }
+
+    showExportStatus(message, type) {
+        const status = this.elements.exportStatus;
+        if (status) {
+            status.textContent = message;
+            status.className = `export-status visible ${type}`;
+
+            if (type !== 'info') {
+                setTimeout(() => {
+                    status.classList.remove('visible');
+                }, 5000);
+            }
+        }
     }
 
     formatHex(value, digits) {
@@ -417,6 +580,9 @@ class UIController {
         this.elements.errorMessage.classList.remove('visible');
         this.elements.songTitleSection.classList.remove('visible');
         this.elements.consoleSection.classList.remove('visible');
+        if (this.elements.exportSection) {
+            this.elements.exportSection.classList.remove('visible');
+        }
     }
 }
 

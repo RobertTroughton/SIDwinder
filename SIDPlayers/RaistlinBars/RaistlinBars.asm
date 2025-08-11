@@ -28,9 +28,18 @@
 //;
 //; =============================================================================
 
-* = PlayerADDR
+* = $4100
 
-	jmp Initialize					//; Entry point for the player
+.var NumCallsPerFrame = 1
+
+.var MainAddress = * - $100
+.var SIDInit = MainAddress + 0
+.var SIDPlay = MainAddress + 3
+.var BackupSIDMemory = MainAddress + 6
+.var RestoreSIDMemory = MainAddress + 9
+.var SongName = MainAddress + 16
+.var ArtistName = MainAddress + 16 + 32
+
 
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
@@ -50,11 +59,11 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK = 3						//; $C000-$FFFF
+.const VIC_BANK = 1						//; $4000-$7FFF
 .const VIC_BANK_ADDRESS = VIC_BANK * $4000
-.const SCREEN_0_OFFSET = 12				//; $F000
-.const SCREEN_1_OFFSET = 13				//; $F400
-.const CHARSET_OFFSET = 7				//; $F800
+.const SCREEN_0_OFFSET = 12				//; $7000
+.const SCREEN_1_OFFSET = 13				//; $7400
+.const CHARSET_OFFSET = 7				//; $7800
 .const SPRITE_BASE_INDEX = $80
 
 //; Calculated addresses
@@ -85,10 +94,6 @@
 
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
-
-//; Song metadata
-.var SONG_TITLE_LENGTH = min(SIDName.size(), 40)
-.var ARTIST_NAME_LENGTH = min(SIDAuthor.size(), 40)
 
 //; =============================================================================
 //; INITIALIZATION
@@ -778,46 +783,34 @@ ClearScreens: {
 }
 
 DisplaySongInfo: {
-	//; Setup title colors
-	ldx #79
+	ldy #31
+
 !loop:
-	lda #$01							//; White for title
-	sta $d800 + (SONG_TITLE_LINE * 40), x
-	lda #$0f							//; Light gray for artist
-	sta $d800 + (ARTIST_NAME_LINE * 40), x
-	dex
+
+	//; Song Title
+	lda SongName, y
+	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	ora #$80
+	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	lda #$01
+	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
+	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+
+	//; Artist Name
+	lda ArtistName, y
+	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
+	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
+	ora #$80
+	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
+	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
+	lda #$0f
+	sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
+	sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
+
+	dey
 	bpl !loop-
-
-	//; Display song title
-	ldy #0
-!titleLoop:
-	lda songTitle, y
-	beq !titleDone+
-	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	ora #$80							//; Reversed for second line
-	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + ((40 - SONG_TITLE_LENGTH) / 2), y
-	iny
-	cpy #40
-	bne !titleLoop-
-!titleDone:
-
-	//; Display artist name
-	ldy #0
-!artistLoop:
-	lda artistName, y
-	beq !artistDone+
-	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	ora #$80							//; Reversed for second line
-	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + ((40 - ARTIST_NAME_LENGTH) / 2), y
-	iny
-	cpy #40
-	bne !artistLoop-
-!artistDone:
-	rts
 }
 
 InitializeColors: {
@@ -971,15 +964,6 @@ barCharacterMap:
 //; =============================================================================
 
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
-
-//; =============================================================================
-//; DATA SECTION - Song Information
-//; =============================================================================
-
-songTitle:					.text SIDName.substring(0, SONG_TITLE_LENGTH)
-							.byte 0
-artistName:					.text SIDAuthor.substring(0, ARTIST_NAME_LENGTH)
-							.byte 0
 
 //; =============================================================================
 //; DATA SECTION - Raster Line Timing

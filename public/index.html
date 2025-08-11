@@ -130,7 +130,46 @@
                 </div>
             </div>
 
-            <!-- Save Button -->
+            <!-- Export Section -->
+            <div class="export-section" id="exportSection">
+                <h2>📦 Export Options</h2>
+
+                <div class="export-options">
+                    <div class="export-option">
+                        <label for="sidAddress">SID Load Address:</label>
+                        <input type="text" id="sidAddress" value="$1000" placeholder="$1000">
+                    </div>
+
+                    <div class="export-option">
+                        <label for="visualizerType">Visualizer Type:</label>
+                        <select id="visualizerType">
+                            <option value="RaistlinBars">Raistlin Bars</option>
+                            <option value="SimpleBitmap">Simple Bitmap</option>
+                            <option value="SimpleRaster">Simple Raster</option>
+                            <option value="none">No Visualizer</option>
+                        </select>
+                    </div>
+
+                    <div class="export-option">
+                        <label for="includeData">Include Data Section:</label>
+                        <input type="checkbox" id="includeData" checked>
+                    </div>
+                </div>
+
+                <div class="export-buttons">
+                    <button class="export-button" id="exportSIDButton">
+                        💾 Export Modified SID
+                    </button>
+
+                    <button class="export-button" id="exportPRGButton">
+                        🎮 Export PRG with Visualizer
+                    </button>
+                </div>
+
+                <div class="export-status" id="exportStatus"></div>
+            </div>
+
+            <!-- Save Button (keeping original for backwards compatibility) -->
             <div class="button-container">
                 <button class="save-button" id="saveButton">💾 Save Modified SID</button>
             </div>
@@ -148,6 +187,7 @@
     <!-- Scripts -->
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
+    <script src="prg-builder.js"></script>
     <script src="ui.js"></script>
 </body>
 </html>
