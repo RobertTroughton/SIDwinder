@@ -2240,6 +2240,62 @@ namespace sidwinder {
         const u64 avgCycles = framesExecuted_ > 0 ? totalCycles_ / framesExecuted_ : 0;
         return { avgCycles, maxCyclesPerFrame_ };
     }
+    bool SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
+        std::vector<u16> modifiedAddresses;
+        auto accessFlags = cpu_->getMemoryAccess();
+        for (u32 addr = 0; addr < 65536; ++addr) {
+            if ((accessFlags[addr] & static_cast<u8>(MemoryAccessFlag::Write)) &&
+                !MemoryConstants::isSID(addr)) {
+                modifiedAddresses.push_back(static_cast<u16>(addr));
+            }
+        }
+        {
+            std::vector<u8> dataBlock;
+            u16 saveAddr = 0xec00;
+            for (u16 addr : modifiedAddresses) {
+                if (addr >= 256)
+                {
+                    dataBlock.push_back(0xAD); 
+                    dataBlock.push_back(addr & 0xFF);
+                    dataBlock.push_back((addr >> 8) & 0xFF);
+                }
+                else
+                {
+                    dataBlock.push_back(0xA5); 
+                    dataBlock.push_back(addr & 0xFF);
+                }
+                dataBlock.push_back(0x8D); 
+                dataBlock.push_back(saveAddr & 0xFF);
+                dataBlock.push_back((saveAddr >> 8) & 0xFF);
+                saveAddr++;
+            }
+            dataBlock.push_back(0x60); 
+            util::writeBinaryFile(saveFilename, dataBlock);
+        }
+        {
+            std::vector<u8> dataBlock;
+            u16 saveAddr = 0xec00;
+            for (u16 addr : modifiedAddresses) {
+                dataBlock.push_back(0xAD); 
+                dataBlock.push_back(saveAddr & 0xFF);
+                dataBlock.push_back((saveAddr >> 8) & 0xFF);
+                if (addr >= 256)
+                {
+                    dataBlock.push_back(0x8D); 
+                    dataBlock.push_back(addr & 0xFF);
+                    dataBlock.push_back((addr >> 8) & 0xFF);
+                }
+                else
+                {
+                    dataBlock.push_back(0x85); 
+                    dataBlock.push_back(addr & 0xFF);
+                }
+                saveAddr++;
+            }
+            dataBlock.push_back(0x60); 
+            util::writeBinaryFile(restoreFilename, dataBlock);
+        }
+    }
     bool SIDEmulator::generateHelpfulDataFile(const std::string& filename) const {
         util::TextFileBuilder builder;
         builder.section("SIDwinder Generated Helpful Data")
@@ -5406,7 +5462,9 @@ namespace sidwinder {
         fs::path playerAsmFile = options.playerDirectory / playerToUse / (playerToUse + ".asm");
         fs::create_directories(playerAsmFile.parent_path());
         fs::path helpfulDataFile = tempDir / (basename + "-HelpfulData.asm");
-        generateHelpfulData(helpfulDataFile, options);
+        fs::path saveModifiedAddressesBINFilename = tempDir / (basename + "-savemodifiedaddresses.bin");
+        fs::path restoreModifiedAddressesBINFilename = tempDir / (basename + "-restoremodifiedaddresses.bin");
+        generateHelpfulData(helpfulDataFile, saveModifiedAddressesBINFilename, restoreModifiedAddressesBINFilename, options);
         PlayerOptions updatedOptions = options;
         updatedOptions.playCallsPerFrame = sid_->getNumPlayCallsPerFrame();
         if (!createLinkerFile(tempLinkerFile, inputFile, playerAsmFile, updatedOptions)) {
@@ -5443,6 +5501,8 @@ namespace sidwinder {
     }
     bool PlayerBuilder::generateHelpfulData(
         const fs::path& helpfulDataFile,
+        const fs::path& saveModifiedAddressesBINFilename,
+        const fs::path& restoreModifiedAddressesBINFilename,
         const PlayerOptions& options) {
         if (!emulator_) return false;
         u8 CIATimerLo = 0;
@@ -5455,7 +5515,6 @@ namespace sidwinder {
         emulOptions.frames = 100; 
         emulOptions.registerTrackingEnabled = true; 
         emulOptions.patternDetectionEnabled = true;
-        emulOptions.shadowRegisterDetectionEnabled = true; 
         if (emulator_->runEmulation(emulOptions)) {
             if ((CIATimerLo != 0) || (CIATimerHi != 0)) {
                 const u16 timerValue = CIATimerLo | (CIATimerHi << 8);
@@ -5464,6 +5523,7 @@ namespace sidwinder {
                 const int numCalls = static_cast<int>(freq + 0.5);
                 sid_->setNumPlayCallsPerFrame(std::clamp(numCalls, 1, 16));
             }
+            emulator_->generateSaveAndRestoreModifiedMemoryFiles(saveModifiedAddressesBINFilename.string(), restoreModifiedAddressesBINFilename.string());
             return emulator_->generateHelpfulDataFile(helpfulDataFile.string());
         }
         return false;
@@ -5507,13 +5567,20 @@ namespace sidwinder {
         file << ".var PlayerADDR = $" << util::wordToHex(options.playerAddress) << "\n";
         file << "\n";
         std::string basename = musicFile.stem().string();
-        fs::path helpfulDataFile = options.tempDir / (basename + "-HelpfulData.asm");
-        bool hasHelpfulDataFile = fs::exists(helpfulDataFile);
-        if (hasHelpfulDataFile) {
-            file << "
-            file << ".import source \"" << helpfulDataFile.string() << "\"\n";
+        fs::path saveModifiedAddressesBINFile = options.tempDir / (basename + "-savemodifiedaddresses.bin");
+        fs::path restoreModifiedAddressesBINFile = options.tempDir / (basename + "-restoremodifiedaddresses.bin");
+        bool hasSaveRestoreFiles = fs::exists(saveModifiedAddressesBINFile) && fs::exists(restoreModifiedAddressesBINFile);
+        if (hasSaveRestoreFiles)
+        {
+            file << ".var backupCode = LoadBinary(\"temp\\Xiny-Laxity-savemodifiedaddresses.bin\")\n";
+            file << "BackupSIDMemory:\n";
+            file << ".fill backupCode.getSize(), backupCode.get(i)\n";
+            file << ".var restoreCode = LoadBinary(\"temp\\Xiny-Laxity-restoremodifiedaddresses.bin\")\n";
+            file << "RestoreSIDMemory:\n";
+            file << ".fill restoreCode.getSize(), restoreCode.get(i)\n";
         }
-        else {
+        else
+        {
             file << "
             file << ".var SIDModifiedMemoryCount = 0\n";
             file << ".var SIDModifiedMemory = List()\n";
@@ -5526,11 +5593,13 @@ namespace sidwinder {
             auto cleanString = [](const std::string& str) {
                 std::string result;
                 for (unsigned char c : str) {
-                    if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '!') {
+                    if (std::isalnum(static_cast<unsigned char>(c)) || std::string(" -_!'").find(c) != std::string::npos)
+                    {
                         result.push_back(c);
                     }
-                    else {
-                        result.push_back('_');
+                    else
+                    {
+                        result.push_back(' ');
                     }
                 }
                 return result;
@@ -5710,7 +5779,9 @@ namespace sidwinder {
             return false;
         }
         fs::path helpfulDataFile = options.tempDir / "analysis-HelpfulData.asm";
-        return builder_->generateHelpfulData(helpfulDataFile, options);
+        fs::path saveModifiedAddressesBINFilename = options.tempDir / "savemodifiedaddresses.bin";
+        fs::path restoreModifiedAddressesBINFilename = options.tempDir / "restoremodifiedaddresses.bin";
+        return builder_->generateHelpfulData(helpfulDataFile, saveModifiedAddressesBINFilename, restoreModifiedAddressesBINFilename, options);
     }
     fs::path PlayerManager::getPlayerAsmPath(const std::string& playerName) const {
         std::string playerDir = util::ConfigManager::getString("playerDirectory", "SIDPlayers");
@@ -6606,7 +6677,6 @@ namespace sidwinder {
             int callsPerFrame = 1;                       
             bool registerTrackingEnabled = false;        
             bool patternDetectionEnabled = false;        
-            bool shadowRegisterDetectionEnabled = false;  
         };
         SIDEmulator(CPU6510* cpu, SIDLoader* sid);
         bool runEmulation(const EmulationOptions& options);
@@ -6614,6 +6684,7 @@ namespace sidwinder {
         const SIDWriteTracker& getWriteTracker() const { return writeTracker_; }
         const SIDPatternFinder& getPatternFinder() const { return patternFinder_; }
         bool generateHelpfulDataFile(const std::string& filename) const;
+        bool generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
     private:
         CPU6510* cpu_;                 
         SIDLoader* sid_;               
@@ -7352,6 +7423,8 @@ namespace sidwinder {
             const PlayerOptions& options);
         bool generateHelpfulData(
             const fs::path& helpfulDataFile,
+            const fs::path& saveModifiedAddressesBINFilename,
+            const fs::path& restoreModifiedAddressesBINFilename,
             const PlayerOptions& options);
     private:
         CPU6510* cpu_;

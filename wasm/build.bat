@@ -1,9 +1,9 @@
 @echo off
-REM Build script for CPU6510 WASM module on Windows
+REM Build script for SIDwinder WASM modules on Windows
 REM Requires Emscripten SDK (emsdk) to be installed
 REM Assumes this script is in a "wasm" folder and outputs to "../public"
 
-echo Building CPU6510 WASM module for Windows...
+echo Building SIDwinder WASM modules for Windows...
 echo.
 
 REM Set up paths
@@ -32,22 +32,26 @@ echo Activating Emscripten environment...
 call "%EMSDK_PATH%\emsdk_env.bat"
 
 echo.
-echo Compiling WASM module...
+echo Compiling SIDwinder WASM module with CPU emulator and SID processor...
 echo Output directory: %OUTPUT_DIR%
 echo.
 
-REM Compile with optimizations and export necessary functions
-REM Output directly to the public folder
-call emcc cpu6510_wasm.cpp ^
+REM Compile both cpu6510_wasm.cpp and sid_processor.cpp together
+REM This creates a single WASM module with all functionality
+call emcc cpu6510_wasm.cpp sid_processor.cpp ^
     -O3 ^
     -s WASM=1 ^
-    -s EXPORTED_FUNCTIONS="['_cpu_init','_cpu_load_memory','_cpu_read_memory','_cpu_write_memory','_cpu_step','_cpu_execute_function','_cpu_get_pc','_cpu_set_pc','_cpu_get_sp','_cpu_get_a','_cpu_get_x','_cpu_get_y','_cpu_get_cycles','_cpu_get_memory_access','_cpu_get_sid_writes','_cpu_get_total_sid_writes','_cpu_get_zp_writes','_cpu_get_total_zp_writes','_cpu_set_record_writes','_cpu_set_tracking','_cpu_get_write_sequence_length','_cpu_get_write_sequence_item','_cpu_analyze_memory','_cpu_get_last_write_pc','_allocate_memory','_free_memory','_malloc','_free']" ^
-    -s EXPORTED_RUNTIME_METHODS="['ccall','cwrap','getValue','setValue']" ^
+    -s EXPORTED_FUNCTIONS="['_cpu_init','_cpu_load_memory','_cpu_read_memory','_cpu_write_memory','_cpu_step','_cpu_execute_function','_cpu_get_pc','_cpu_set_pc','_cpu_get_sp','_cpu_get_a','_cpu_get_x','_cpu_get_y','_cpu_get_cycles','_cpu_get_memory_access','_cpu_get_sid_writes','_cpu_get_total_sid_writes','_cpu_get_zp_writes','_cpu_get_total_zp_writes','_cpu_set_record_writes','_cpu_set_tracking','_cpu_get_write_sequence_length','_cpu_get_write_sequence_item','_cpu_analyze_memory','_cpu_get_last_write_pc','_sid_init','_sid_load','_sid_analyze','_sid_get_header_string','_sid_get_header_value','_sid_set_header_string','_sid_create_modified','_sid_get_modified_count','_sid_get_modified_address','_sid_get_zp_count','_sid_get_zp_address','_sid_get_code_bytes','_sid_get_data_bytes','_sid_get_sid_writes','_sid_get_clock_type','_sid_get_sid_model','_sid_cleanup','_allocate_memory','_free_memory','_malloc','_free']" ^
+    -s EXPORTED_RUNTIME_METHODS="['ccall','cwrap','getValue','setValue','HEAP8','HEAP16','HEAP32','HEAPU8','HEAPU16','HEAPU32','HEAPF32','HEAPF64']" ^
     -s MODULARIZE=1 ^
-    -s EXPORT_NAME="CPU6510Module" ^
+    -s EXPORT_NAME="SIDwinderModule" ^
     -s ALLOW_MEMORY_GROWTH=1 ^
-    -s TOTAL_MEMORY=16777216 ^
-    -o "%OUTPUT_DIR%\cpu6510.js"
+    -s INITIAL_MEMORY=16777216 ^
+    -s MAXIMUM_MEMORY=67108864 ^
+    -s NO_EXIT_RUNTIME=1 ^
+    -s ENVIRONMENT="web" ^
+    -s SINGLE_FILE=0 ^
+    -o "%OUTPUT_DIR%\sidwinder.js"
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -65,17 +69,16 @@ echo Build successful!
 echo ========================================
 echo.
 echo Generated files in %OUTPUT_DIR%:
-echo   - cpu6510.js   (JavaScript glue code)
-echo   - cpu6510.wasm (WebAssembly module)
+echo   - sidwinder.js   (JavaScript glue code)
+echo   - sidwinder.wasm (WebAssembly module)
 echo.
 
-REM Optional: List the actual files with sizes
+REM List the actual files with sizes
 echo File details:
-dir /B "%OUTPUT_DIR%\cpu6510.*"
+dir /B "%OUTPUT_DIR%\sidwinder.*"
 echo.
 
-REM Optional: Copy any additional files needed
-REM For example, if you have the HTML file in the wasm folder:
+REM Copy web files to public folder if they exist in wasm folder
 if exist "index.html" (
     echo Copying index.html to public folder...
     copy /Y "index.html" "%OUTPUT_DIR%\" >nul
@@ -84,16 +87,33 @@ if exist "index.html" (
     )
 )
 
-REM Optional: Copy opcodes.h if needed for reference
-if exist "opcodes.h" (
-    REM echo Copying opcodes.h to public folder...
-    REM copy /Y "opcodes.h" "%OUTPUT_DIR%\" >nul
-    echo   - opcodes.h (kept in wasm folder)
+if exist "styles.css" (
+    echo Copying styles.css to public folder...
+    copy /Y "styles.css" "%OUTPUT_DIR%\" >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo   - styles.css copied successfully
+    )
+)
+
+if exist "sidwinder-core.js" (
+    echo Copying sidwinder-core.js to public folder...
+    copy /Y "sidwinder-core.js" "%OUTPUT_DIR%\" >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo   - sidwinder-core.js copied successfully
+    )
+)
+
+if exist "ui.js" (
+    echo Copying ui.js to public folder...
+    copy /Y "ui.js" "%OUTPUT_DIR%\" >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo   - ui.js copied successfully
+    )
 )
 
 echo.
 echo Build process completed!
-echo You can now test the application by opening %OUTPUT_DIR%\index.html
+echo You can now test the application by serving the %OUTPUT_DIR% folder
 echo.
 
 pause

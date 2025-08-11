@@ -236,11 +236,13 @@ namespace sidwinder {
                 std::string result;
                 for (unsigned char c : str) {
                     // Keep alphanumeric and basic punctuation, replace others with _
-                    if (std::isalnum(c) || c == ' ' || c == '-' || c == '_' || c == '!' || c == '\'') {
+                    if (std::isalnum(static_cast<unsigned char>(c)) || std::string(" -_!'").find(c) != std::string::npos)
+                    {
                         result.push_back(c);
                     }
-                    else {
-                        result.push_back('_');
+                    else
+                    {
+                        result.push_back(' ');
                     }
                 }
                 return result;
