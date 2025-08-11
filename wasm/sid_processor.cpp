@@ -7,30 +7,57 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <string>
 #include "opcodes.h"  // Use the existing opcodes.h
+
+// Helper function to clean a string from the SID header (C++ function, not exported)
+static std::string cleanSIDString(const char* str, size_t maxLen) {
+    std::string result;
+    result.reserve(maxLen);
+
+    for (size_t i = 0; i < maxLen; i++) {
+        if (str[i] == '\0') {
+            break; // Stop at null terminator
+        }
+        // Only include printable ASCII characters
+        if (str[i] >= 32 && str[i] <= 126) {
+            result.push_back(str[i]);
+        }
+    }
+
+    // Remove trailing spaces
+    while (!result.empty() && result.back() == ' ') {
+        result.pop_back();
+    }
+
+    return result;
+}
 
 extern "C" {
 
     // SID Header structure matching the original format
+    // CRITICAL: Must be packed to match file format exactly
+#pragma pack(push, 1)
     struct SIDHeader {
-        char magicID[4];     // 'PSID' or 'RSID'
-        uint16_t version;
-        uint16_t dataOffset;
-        uint16_t loadAddress;
-        uint16_t initAddress;
-        uint16_t playAddress;
-        uint16_t songs;
-        uint16_t startSong;
-        uint32_t speed;
-        char name[32];
-        char author[32];
-        char copyright[32];
-        uint16_t flags;      // Version 2+ only
-        uint8_t startPage;   // Version 2+ only
-        uint8_t pageLength;  // Version 2+ only
-        uint8_t secondSIDAddress; // Version 3+ only
-        uint8_t thirdSIDAddress;  // Version 4+ only
+        char magicID[4];     // 'PSID' or 'RSID'  // Offset 0x00
+        uint16_t version;                          // Offset 0x04
+        uint16_t dataOffset;                       // Offset 0x06
+        uint16_t loadAddress;                      // Offset 0x08
+        uint16_t initAddress;                      // Offset 0x0A
+        uint16_t playAddress;                      // Offset 0x0C
+        uint16_t songs;                            // Offset 0x0E
+        uint16_t startSong;                        // Offset 0x10
+        uint32_t speed;                            // Offset 0x12 (NOT aligned!)
+        char name[32];                             // Offset 0x16
+        char author[32];                           // Offset 0x36
+        char copyright[32];                        // Offset 0x56
+        uint16_t flags;      // Version 2+ only    // Offset 0x76
+        uint8_t startPage;   // Version 2+ only    // Offset 0x78
+        uint8_t pageLength;  // Version 2+ only    // Offset 0x79
+        uint8_t secondSIDAddress; // Version 3+    // Offset 0x7A
+        uint8_t thirdSIDAddress;  // Version 4+    // Offset 0x7B
     };
+#pragma pack(pop)
 
     // Analysis results structure
     struct AnalysisResults {
@@ -59,6 +86,12 @@ extern "C" {
         uint32_t dataStart;
         AnalysisResults analysis;
         bool isLoaded;
+
+        // Store cleaned strings separately
+        std::string cleanName;
+        std::string cleanAuthor;
+        std::string cleanCopyright;
+        std::string cleanMagicID;
     } sidState;
 
     // External CPU functions (from cpu6510_wasm.cpp)
@@ -95,6 +128,12 @@ extern "C" {
         sidState.dataStart = 0;
         sidState.isLoaded = false;
 
+        // Clear strings
+        sidState.cleanName.clear();
+        sidState.cleanAuthor.clear();
+        sidState.cleanCopyright.clear();
+        sidState.cleanMagicID.clear();
+
         // Clear analysis results (C++ objects will be properly initialized)
         sidState.analysis.modifiedAddresses.clear();
         sidState.analysis.zeroPageUsed.clear();
@@ -111,21 +150,24 @@ extern "C" {
     // Load and parse SID file
     EMSCRIPTEN_KEEPALIVE
         int sid_load(uint8_t* data, uint32_t size) {
-        if (size < sizeof(SIDHeader)) {
-            return -1; // File too small
+        // Verify the header size is what we expect (124 bytes for v2+, 120 for v1)
+        if (size < 120) {
+            return -1; // File too small for even v1 header
         }
 
         // Copy header
         memcpy(&sidState.header, data, sizeof(SIDHeader));
 
+        // Clean and store the magic ID (4 characters, no null terminator in file)
+        sidState.cleanMagicID = std::string(sidState.header.magicID, 4);
+
         // Check magic ID
-        if (memcmp(sidState.header.magicID, "PSID", 4) != 0 &&
-            memcmp(sidState.header.magicID, "RSID", 4) != 0) {
+        if (sidState.cleanMagicID != "PSID" && sidState.cleanMagicID != "RSID") {
             return -2; // Invalid magic ID
         }
 
         // RSID not supported
-        if (memcmp(sidState.header.magicID, "RSID", 4) == 0) {
+        if (sidState.cleanMagicID == "RSID") {
             return -3; // RSID not supported
         }
 
@@ -147,6 +189,17 @@ extern "C" {
         if (sidState.header.version < 1 || sidState.header.version > 4) {
             return -4; // Unsupported version
         }
+
+        // Verify expected data offset
+        uint16_t expectedOffset = (sidState.header.version == 1) ? 0x76 : 0x7C;
+        if (sidState.header.dataOffset != expectedOffset) {
+            // Log warning but continue
+        }
+
+        // Clean and store the strings
+        sidState.cleanName = cleanSIDString(sidState.header.name, 32);
+        sidState.cleanAuthor = cleanSIDString(sidState.header.author, 32);
+        sidState.cleanCopyright = cleanSIDString(sidState.header.copyright, 32);
 
         // Handle load address
         sidState.dataStart = sidState.header.dataOffset;
@@ -236,6 +289,7 @@ extern "C" {
         // Gather analysis results
 
         // Modified addresses
+        uint32_t musicSize_analysis = sidState.fileSize - sidState.dataStart;
         for (uint32_t addr = 0; addr < 65536; addr++) {
             uint8_t access = cpu_get_memory_access(addr);
             if (access & 0x04) { // Write flag
@@ -248,7 +302,7 @@ extern "C" {
 
             // Code vs data
             if (addr >= sidState.header.loadAddress &&
-                addr < sidState.header.loadAddress + musicSize) {
+                addr < sidState.header.loadAddress + musicSize_analysis) {
                 if (access & 0x01) { // Execute flag
                     sidState.analysis.codeBytes++;
                 }
@@ -272,10 +326,10 @@ extern "C" {
         if (!sidState.isLoaded) return "";
 
         switch (field) {
-        case 0: return sidState.header.name;
-        case 1: return sidState.header.author;
-        case 2: return sidState.header.copyright;
-        case 3: return sidState.header.magicID;
+        case 0: return sidState.cleanName.c_str();
+        case 1: return sidState.cleanAuthor.c_str();
+        case 2: return sidState.cleanCopyright.c_str();
+        case 3: return sidState.cleanMagicID.c_str();
         default: return "";
         }
     }
@@ -303,16 +357,34 @@ extern "C" {
         if (!sidState.isLoaded) return;
 
         char* target = nullptr;
+        std::string* cleanTarget = nullptr;
+
         switch (field) {
-        case 0: target = sidState.header.name; break;
-        case 1: target = sidState.header.author; break;
-        case 2: target = sidState.header.copyright; break;
-        default: return;
+        case 0:
+            target = sidState.header.name;
+            cleanTarget = &sidState.cleanName;
+            break;
+        case 1:
+            target = sidState.header.author;
+            cleanTarget = &sidState.cleanAuthor;
+            break;
+        case 2:
+            target = sidState.header.copyright;
+            cleanTarget = &sidState.cleanCopyright;
+            break;
+        default:
+            return;
         }
 
-        if (target) {
+        if (target && cleanTarget) {
+            // Clear the buffer
             memset(target, 0, 32);
+
+            // Copy the new value (up to 31 chars to leave room for null terminator)
             strncpy(target, value, 31);
+
+            // Update the clean version
+            *cleanTarget = cleanSIDString(target, 32);
         }
     }
 
@@ -438,6 +510,10 @@ extern "C" {
             sidState.fileBuffer = nullptr;
         }
         sidState.isLoaded = false;
+        sidState.cleanName.clear();
+        sidState.cleanAuthor.clear();
+        sidState.cleanCopyright.clear();
+        sidState.cleanMagicID.clear();
     }
 
 } // extern "C"
