@@ -26,7 +26,13 @@
 //;
 //; =============================================================================
 
-* = PlayerADDR
+* = $4100
+
+.var NumCallsPerFrame = 1
+
+.var MainAddress = * - $100
+.var SIDInit = MainAddress + 0
+.var SIDPlay = MainAddress + 3
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
