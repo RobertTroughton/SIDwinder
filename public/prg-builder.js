@@ -272,32 +272,6 @@ class SIDwinderPRGExporter {
         };
     }
 
-    generateBASICStub(sysAddress) {
-        const addrStr = sysAddress.toString();
-        const basic = [];
-
-        const lineLength = 2 + 2 + 1 + addrStr.length + 1;
-        const nextLine = 0x0801 + lineLength;
-
-        basic.push(nextLine & 0xFF);
-        basic.push((nextLine >> 8) & 0xFF);
-        basic.push(0x0A);
-        basic.push(0x00);
-        basic.push(0x9E);
-
-        for (let i = 0; i < addrStr.length; i++) {
-            basic.push(addrStr.charCodeAt(i));
-        }
-
-        basic.push(0x00);
-        basic.push(0x00);
-        basic.push(0x00);
-
-        return new Uint8Array(basic);
-    }
-
-    // Updated prg-builder.js - modify the existing createPRG method
-
     async createPRG(options = {}) {
         const {
             sidLoadAddress = null,
@@ -307,8 +281,7 @@ class SIDwinderPRGExporter {
             visualizerFile = 'prg/RaistlinBars.bin',
             visualizerLoadAddress = 0x4100,
             includeData = true,
-            addBASICStub = true,
-            useCompression = false  // Add compression option
+            useCompression = false
         } = options;
 
         try {
@@ -321,12 +294,6 @@ class SIDwinderPRGExporter {
             const actualPlayAddress = sidPlayAddress || sidInfo.playAddress || (actualSidAddress + 3);
 
             const header = await this.analyzer.loadSID(this.analyzer.createModifiedSID());
-
-            // For compressed PRGs, we don't add a BASIC stub (the decompressor has its own)
-            if (addBASICStub && !useCompression) {
-                const basicStub = this.generateBASICStub(visualizerLoadAddress);
-                this.builder.addComponent(basicStub, 0x0801, 'BASIC Stub');
-            }
 
             // Add SID music
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');

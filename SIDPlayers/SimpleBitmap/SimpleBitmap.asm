@@ -75,6 +75,8 @@ InitIRQ: {
     sta $d021                           //; Black background
 
     //; Initialize the music
+	tax
+	tay
     jsr SIDInit
 
     //; Ensure stable timing

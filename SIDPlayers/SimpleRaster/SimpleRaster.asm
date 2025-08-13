@@ -54,6 +54,8 @@ InitIRQ: {
     sta $d020                           //; Black border
 
     //; Initialize the music
+	tax
+	tay
     jsr SIDInit
 
     //; Ensure we're at a stable position

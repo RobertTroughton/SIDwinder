@@ -12,6 +12,8 @@ InitIRQ:
 	lda #$00
 	sta $d011
 	sta $d020
+	tax
+	tay
     jsr SIDInit
 
     jsr VSync

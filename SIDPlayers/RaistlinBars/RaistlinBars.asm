@@ -840,6 +840,8 @@ SetupMusic: {
 
 	//; Initialize player
 	lda #$00
+	tax
+	tay
 	jmp SIDInit
 }
 

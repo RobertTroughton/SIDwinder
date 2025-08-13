@@ -50,7 +50,7 @@ class UIController {
             // Export section elements
             exportSection: document.getElementById('exportSection'),
             visualizerType: document.getElementById('visualizerType'),
-            autoRun: document.getElementById('autoRun'),
+
             useCompression: document.getElementById('useCompression'),
             exportModifiedSIDButton: document.getElementById('exportModifiedSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
@@ -433,7 +433,6 @@ class UIController {
         }
 
         const visualizerType = this.elements.visualizerType.value;
-        const autoRun = this.elements.autoRun.checked;
         const useCompression = this.elements.useCompression ? this.elements.useCompression.checked : false;
 
         if (visualizerType === 'none') {
@@ -456,7 +455,6 @@ class UIController {
                 visualizerFile: `prg/${visualizerType}.bin`,
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
-                addBASICStub: autoRun && !useCompression,
                 useCompression: useCompression
             };
 
