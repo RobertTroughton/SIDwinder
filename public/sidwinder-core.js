@@ -11,23 +11,16 @@ class SIDAnalyzer {
 
     async initWASM() {
         try {
-            console.log('Initializing WASM module...');
-
             // Initialize the WASM module - store globally for RLE compressor
             this.Module = await SIDwinderModule();
             this.wasmModule = this.Module;
             window.SIDwinderModule = this.Module; // Make available globally
-
-            console.log('WASM module loaded, checking memory arrays...');
-            console.log('Module properties:', Object.keys(this.Module));
 
             // Check if memory arrays are available
             if (!this.Module.HEAPU8) {
                 console.error('HEAPU8 not found in module');
                 throw new Error('WASM memory arrays not available');
             }
-
-            console.log('Creating API wrapper...');
 
             // Create API wrapper using the Module instance
             this.api = {
@@ -59,7 +52,6 @@ class SIDAnalyzer {
             this.api.sid_init();
             this.wasmReady = true;
 
-            console.log('WASM initialization complete');
             return true;
 
         } catch (error) {
@@ -329,12 +321,6 @@ class RLECompressor {
         try {
             // Copy data to WASM heap
             this.Module.HEAPU8.set(data, dataPtr);
-
-            if (this.Module._rle_set_logging) {
-                this.Module._rle_set_logging(1);
-            } else {
-                console.warn('rle_set_logging not available');
-            }
 
             // Compress
             const resultPtr = this.api.rle_compress_prg(

@@ -285,7 +285,6 @@ class UIController {
                         if (typeof SIDwinderPRGExporter !== 'undefined' && !this.prgExporter) {
                             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
                             window.currentAnalyzer = this.analyzer;
-                            console.log('PRG exporter initialized after delay');
                         }
                     }, 500);
                 }
@@ -519,15 +518,9 @@ class UIController {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, waiting for scripts...');
 
     // Wait a moment for all scripts to load
     setTimeout(() => {
-        console.log('Checking for required components...');
-        console.log('SIDAnalyzer available:', typeof SIDAnalyzer !== 'undefined');
-        console.log('PRGBuilder available:', typeof PRGBuilder !== 'undefined');
-        console.log('SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
-
         // Check if required classes are available
         if (typeof SIDAnalyzer === 'undefined') {
             console.error('SIDAnalyzer not loaded');
@@ -539,7 +532,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('WARNING: SIDwinderPRGExporter not loaded yet');
             // Try to wait a bit longer
             setTimeout(() => {
-                console.log('Retrying... SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
                 if (typeof SIDwinderPRGExporter === 'undefined') {
                     console.error('ERROR: SIDwinderPRGExporter still not available after waiting');
                 }
@@ -547,7 +539,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Initialize the UI controller anyway
-        console.log('Initializing UI Controller...');
         window.uiController = new UIController();
     }, 100);
 });

@@ -1,4 +1,4 @@
-// rle_compressor.cpp - RLE compression for SIDwinder with detailed logging
+// rle_compressor.cpp - RLE compression for SIDwinder
 // Compile with the other WASM modules
 
 #include <emscripten/emscripten.h>
@@ -15,7 +15,6 @@ extern "C" {
         std::vector<uint8_t> compressed;
         uint32_t originalSize;
         uint32_t compressedSize;
-        bool enableLogging;
 
         // Compression parameters
         static const uint32_t MIN_REPEAT_LENGTH = 8;  // Minimum bytes needed for repeat encoding
@@ -58,91 +57,12 @@ extern "C" {
     // Global RLE compressor instance
     RLECompressor rleCompressor;
 
-    // JavaScript callback for logging
-    typedef void (*LogCallback)(const char*);
-    LogCallback jsLogCallback = nullptr;
-
-    // Set JavaScript logging callback
-    EMSCRIPTEN_KEEPALIVE
-        void rle_set_log_callback(LogCallback callback) {
-        jsLogCallback = callback;
-    }
-
-    // Helper function to log to console
-    void log_message(const char* format, ...) {
-        if (!rleCompressor.enableLogging) return;
-
-        char buffer[512];
-        va_list args;
-        va_start(args, format);
-        vsnprintf(buffer, sizeof(buffer), format, args);
-        va_end(args);
-
-        // Use printf which Emscripten redirects to console
-        printf("[RLE] %s\n", buffer);
-    }
-
-
-
     // Initialize RLE compressor
     EMSCRIPTEN_KEEPALIVE
         void rle_init() {
         rleCompressor.compressed.clear();
         rleCompressor.originalSize = 0;
         rleCompressor.compressedSize = 0;
-        rleCompressor.enableLogging = true;  // Enable logging by default
-    }
-
-    // Enable/disable logging
-    EMSCRIPTEN_KEEPALIVE
-        void rle_set_logging(int enable) {
-        rleCompressor.enableLogging = (enable != 0);
-
-        // Test log to confirm it's working
-        if (rleCompressor.enableLogging) {
-            printf("[RLE] Logging enabled\n");
-            EM_ASM({
-                console.log('[RLE] Logging enabled via EM_ASM');
-                });
-        }
-        else {
-            printf("[RLE] Logging disabled\n");
-        }
-    }
-
-    // Test function to verify logging works
-    EMSCRIPTEN_KEEPALIVE
-        void rle_test_logging() {
-        printf("[RLE] Test: printf logging\n");
-
-        EM_ASM({
-            console.log('[RLE] Test: EM_ASM logging');
-            });
-
-        bool oldState = rleCompressor.enableLogging;
-        rleCompressor.enableLogging = true;
-        log_message("Test: log_message with state=%d", oldState);
-        rleCompressor.enableLogging = oldState;
-    }
-
-    // Helper function to log hex data
-    void log_hex_data(const char* prefix, const uint8_t* data, uint32_t size, uint32_t maxBytes = 16) {
-        if (!rleCompressor.enableLogging) return;
-
-        char buffer[512];
-        char* p = buffer;
-        p += sprintf(p, "%s: ", prefix);
-
-        uint32_t bytesToShow = size > maxBytes ? maxBytes : size;
-        for (uint32_t i = 0; i < bytesToShow; i++) {
-            p += sprintf(p, "%02X ", data[i]);
-        }
-
-        if (size > maxBytes) {
-            p += sprintf(p, "... (%u bytes total)", size);
-        }
-
-        log_message("%s", buffer);
     }
 
     // Helper function to add a run to compressed data
@@ -165,18 +85,12 @@ extern "C" {
         if (isRepeat) {
             // For repeat runs, just add the single value
             rleCompressor.compressed.push_back(data[0]);
-
-            log_message("Block %u @ 0x%04X, Len 0x%04X, REPEAT 0x%02X",
-                blockNum, inputOffset, length, data[0]);
         }
         else {
             // For non-repeat runs, add all values
             for (uint16_t i = 0; i < length; i++) {
                 rleCompressor.compressed.push_back(data[i]);
             }
-
-            log_message("Block %u @ 0x%04X, Len 0x%04X, LITERAL",
-                blockNum, inputOffset, length);
         }
     }
 
@@ -187,20 +101,6 @@ extern "C" {
             uint16_t executeAddress,
             uint32_t* outSize) {
         rle_init();
-
-        log_message("========================================");
-        log_message("RLE Compression Start");
-        log_message("========================================");
-        log_message("Input size: %u bytes", size);
-        log_message("Uncompressed start address: $%04X", uncompressedStart);
-        log_message("Execute address: $%04X", executeAddress);
-        log_message("Repeat threshold: %u bytes minimum", RLECompressor::MIN_REPEAT_LENGTH);
-        log_message("Decompressor stub: $%04X-$%04X (%u bytes)",
-            RLECompressor::stubLoadAddress,
-            RLECompressor::stubEndAddress,
-            RLECompressor::stubSize);
-        log_message("Compressed data will start at: $%04X", RLECompressor::compressedDataStart);
-        log_message("");
 
         // We'll build the compressed data first
         std::vector<uint8_t> tempCompressed;
@@ -258,22 +158,11 @@ extern "C" {
         }
 
         // Add terminator (0x00, 0x00)
-        log_message("");
-        log_message("Adding terminator: 0x00 0x00 at offset 0x%04X",
-            rleCompressor.compressed.size());
         rleCompressor.compressed.push_back(0x00);
         rleCompressor.compressed.push_back(0x00);
 
         // Calculate compressed end address
         uint16_t compressedEnd = RLECompressor::compressedDataStart + rleCompressor.compressed.size();
-
-        log_message("");
-        log_message("Compression complete:");
-        log_message("  Total blocks: %u", blockCount);
-        log_message("  Compressed data size: %u bytes", rleCompressor.compressed.size());
-        log_message("  Compressed data range: $%04X-$%04X",
-            RLECompressor::compressedDataStart,
-            compressedEnd - 1);
 
         // Now build the final output with stub + compressed data
         std::vector<uint8_t> finalOutput;
@@ -284,21 +173,6 @@ extern "C" {
             RLECompressor::decompressorStub + RLECompressor::stubSize);
 
         // Patch the stub with our values
-        log_message("");
-        log_message("Patching decompressor stub:");
-        log_message("  Uncompressed start: $%04X (bytes: %02X %02X)",
-            uncompressedStart,
-            uncompressedStart & 0xFF,
-            (uncompressedStart >> 8) & 0xFF);
-        log_message("  Compressed end: $%04X (bytes: %02X %02X)",
-            compressedEnd,
-            compressedEnd & 0xFF,
-            (compressedEnd >> 8) & 0xFF);
-        log_message("  Execute address: $%04X (bytes: %02X %02X)",
-            executeAddress,
-            executeAddress & 0xFF,
-            (executeAddress >> 8) & 0xFF);
-
         finalOutput[RLECompressor::offset_UncompressedStart_Lo] = uncompressedStart & 0xFF;
         finalOutput[RLECompressor::offset_UncompressedStart_Hi] = (uncompressedStart >> 8) & 0xFF;
         finalOutput[RLECompressor::offset_CompressedEnd_Lo] = compressedEnd & 0xFF;
@@ -320,14 +194,6 @@ extern "C" {
         // Store statistics
         rleCompressor.originalSize = size;
         rleCompressor.compressedSize = finalOutput.size();
-
-        log_message("");
-        log_message("Final output:");
-        log_message("  Total size: %u bytes", finalOutput.size());
-        log_message("  Compression ratio: %.2f%%",
-            (float)finalOutput.size() / (float)size * 100.0f);
-        log_message("  Space saved: %d bytes", (int)size - (int)finalOutput.size());
-        log_message("========================================");
 
         return output;
     }

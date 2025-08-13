@@ -177,15 +177,6 @@
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
     <script src="prg-builder.js"></script>
-    <!-- Add a small delay before loading UI to ensure other scripts are ready -->
-    <script>
-        console.log('All script tags loaded, waiting before UI init...');
-        // Check what's available right now
-        setTimeout(function () {
-            console.log('Before UI load - PRGBuilder available:', typeof PRGBuilder !== 'undefined');
-            console.log('Before UI load - SIDwinderPRGExporter available:', typeof SIDwinderPRGExporter !== 'undefined');
-        }, 50);
-    </script>
     <script src="ui.js"></script>
 </body>
 </html>

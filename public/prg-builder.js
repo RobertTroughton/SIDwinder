@@ -1,8 +1,6 @@
 // prg-builder.js - PRG file builder for SIDwinder Web
 // This module creates C64 PRG files combining SID music, data, and visualizer
 
-console.log('PRG Builder script loading...');
-
 class PRGBuilder {
     constructor() {
         this.components = [];
@@ -24,8 +22,6 @@ class PRGBuilder {
 
         this.lowestAddress = Math.min(this.lowestAddress, loadAddress);
         this.highestAddress = Math.max(this.highestAddress, loadAddress + data.length - 1);
-
-        console.log(`Added component: ${name} at $${loadAddress.toString(16).toUpperCase().padStart(4, '0')}, size: ${data.length} bytes`);
     }
 
     build() {
@@ -52,7 +48,6 @@ class PRGBuilder {
             }
         }
 
-        console.log(`Total PRG size: ${totalSize} bytes`);
         return prgData;
     }
 
@@ -101,8 +96,6 @@ class SIDwinderPRGExporter {
             })
             .sort((a, b) => a - b);
 
-        console.log(`Save routine: ${filtered.length} addresses to save`);
-
         for (const addr of filtered) {
             if (addr < 256) {
                 code.push(0xA5);
@@ -134,8 +127,6 @@ class SIDwinderPRGExporter {
                 return true;
             })
             .sort((a, b) => a - b);
-
-        console.log(`Restore routine: ${filtered.length} addresses to restore`);
 
         for (const addr of filtered) {
             code.push(0xAD);
@@ -193,7 +184,6 @@ class SIDwinderPRGExporter {
             data[0x30 + i] = authorBytes[i];
         }
 
-        console.log('Data block created at $4000');
         return data;
     }
 
@@ -269,7 +259,6 @@ class SIDwinderPRGExporter {
         if (musicData.length >= 2) {
             const firstTwo = (musicData[0] | (musicData[1] << 8));
             if (firstTwo === loadAddress) {
-                console.log('Skipping embedded load address in music data');
                 return {
                     data: musicData.slice(2),
                     loadAddress: loadAddress
@@ -304,7 +293,6 @@ class SIDwinderPRGExporter {
         basic.push(0x00);
         basic.push(0x00);
 
-        console.log(`BASIC stub: SYS ${sysAddress}`);
         return new Uint8Array(basic);
     }
 
@@ -326,20 +314,16 @@ class SIDwinderPRGExporter {
         try {
             this.builder.clear();
 
-            console.log('Extracting SID music data...');
             const sidInfo = this.extractSIDMusicData();
 
             const actualSidAddress = sidLoadAddress || sidInfo.loadAddress;
             const actualInitAddress = sidInitAddress || sidInfo.initAddress || actualSidAddress;
             const actualPlayAddress = sidPlayAddress || sidInfo.playAddress || (actualSidAddress + 3);
 
-            console.log(`SID addresses - Load: $${actualSidAddress.toString(16)}, Init: $${actualInitAddress.toString(16)}, Play: $${actualPlayAddress.toString(16)}`);
-
             const header = await this.analyzer.loadSID(this.analyzer.createModifiedSID());
 
             // For compressed PRGs, we don't add a BASIC stub (the decompressor has its own)
             if (addBASICStub && !useCompression) {
-                console.log('Adding BASIC stub...');
                 const basicStub = this.generateBASICStub(visualizerLoadAddress);
                 this.builder.addComponent(basicStub, 0x0801, 'BASIC Stub');
             }
@@ -350,7 +334,6 @@ class SIDwinderPRGExporter {
             // Add visualizer
             let nextAvailableAddress = visualizerLoadAddress;
             if (visualizerFile && visualizerFile !== 'none') {
-                console.log(`Loading ${visualizerFile}...`);
                 const visualizerBytes = await this.loadBinaryFile(visualizerFile);
                 this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
                 nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
@@ -383,7 +366,6 @@ class SIDwinderPRGExporter {
             }
 
             // Add data block at $4000
-            console.log('Generating data block at $4000...');
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -397,19 +379,15 @@ class SIDwinderPRGExporter {
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
 
             // Build PRG
-            console.log('Building PRG file...');
             const prgData = this.builder.build();
 
             const info = this.builder.getInfo();
-            console.log('PRG Structure:', info);
 
             this.saveRoutineAddress = saveRoutineAddr;
             this.restoreRoutineAddress = restoreRoutineAddr;
 
             // Apply compression if requested
             if (useCompression) {
-                console.log('Applying RLE compression...');
-
                 // Check if RLE compressor is available
                 if (!window.SIDwinderModule) {
                     console.warn('WASM module not available for compression, returning uncompressed');
@@ -434,13 +412,10 @@ class SIDwinderPRGExporter {
                         executeAddress
                     );
 
-                    console.log(`Compression stats: ${compressed.stats.originalSize} -> ${compressed.stats.compressedSize} (${(compressed.stats.ratio * 100).toFixed(1)}%)`);
-
                     return compressed.data;
 
                 } catch (error) {
                     console.error('Compression failed:', error);
-                    console.log('Returning uncompressed PRG');
                     return prgData;
                 }
             }
@@ -457,4 +432,3 @@ class SIDwinderPRGExporter {
 // Export globally
 window.PRGBuilder = PRGBuilder;
 window.SIDwinderPRGExporter = SIDwinderPRGExporter;
-console.log('PRG Builder loaded successfully!');
