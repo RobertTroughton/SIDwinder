@@ -308,6 +308,8 @@ class SIDwinderPRGExporter {
         return new Uint8Array(basic);
     }
 
+    // Updated prg-builder.js - modify the existing createPRG method
+
     async createPRG(options = {}) {
         const {
             sidLoadAddress = null,
@@ -317,7 +319,8 @@ class SIDwinderPRGExporter {
             visualizerFile = 'prg/RaistlinBars.bin',
             visualizerLoadAddress = 0x4100,
             includeData = true,
-            addBASICStub = true
+            addBASICStub = true,
+            useCompression = false  // Add compression option
         } = options;
 
         try {
@@ -334,14 +337,17 @@ class SIDwinderPRGExporter {
 
             const header = await this.analyzer.loadSID(this.analyzer.createModifiedSID());
 
-            if (addBASICStub) {
+            // For compressed PRGs, we don't add a BASIC stub (the decompressor has its own)
+            if (addBASICStub && !useCompression) {
                 console.log('Adding BASIC stub...');
                 const basicStub = this.generateBASICStub(visualizerLoadAddress);
                 this.builder.addComponent(basicStub, 0x0801, 'BASIC Stub');
             }
 
+            // Add SID music
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');
 
+            // Add visualizer
             let nextAvailableAddress = visualizerLoadAddress;
             if (visualizerFile && visualizerFile !== 'none') {
                 console.log(`Loading ${visualizerFile}...`);
@@ -350,6 +356,7 @@ class SIDwinderPRGExporter {
                 nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
             }
 
+            // Add save/restore routines
             let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
             let restoreRoutineAddr = saveRoutineAddr;
 
@@ -375,6 +382,7 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
             }
 
+            // Add data block at $4000
             console.log('Generating data block at $4000...');
             const dataBlock = this.generateDataBlock(
                 {
@@ -388,6 +396,7 @@ class SIDwinderPRGExporter {
             );
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
 
+            // Build PRG
             console.log('Building PRG file...');
             const prgData = this.builder.build();
 
@@ -396,6 +405,45 @@ class SIDwinderPRGExporter {
 
             this.saveRoutineAddress = saveRoutineAddr;
             this.restoreRoutineAddress = restoreRoutineAddr;
+
+            // Apply compression if requested
+            if (useCompression) {
+                console.log('Applying RLE compression...');
+
+                // Check if RLE compressor is available
+                if (!window.SIDwinderModule) {
+                    console.warn('WASM module not available for compression, returning uncompressed');
+                    return prgData;
+                }
+
+                try {
+                    // Create RLE compressor instance
+                    const rleCompressor = new RLECompressor(window.SIDwinderModule);
+
+                    // Remove the load address (first 2 bytes) for compression
+                    const prgWithoutLoadAddr = prgData.slice(2);
+
+                    // The uncompressed start is the original load address
+                    const uncompressedStart = this.builder.lowestAddress;
+                    const executeAddress = visualizerLoadAddress;
+
+                    // Compress
+                    const compressed = rleCompressor.compressPRG(
+                        prgWithoutLoadAddr,
+                        uncompressedStart,
+                        executeAddress
+                    );
+
+                    console.log(`Compression stats: ${compressed.stats.originalSize} -> ${compressed.stats.compressedSize} (${(compressed.stats.ratio * 100).toFixed(1)}%)`);
+
+                    return compressed.data;
+
+                } catch (error) {
+                    console.error('Compression failed:', error);
+                    console.log('Returning uncompressed PRG');
+                    return prgData;
+                }
+            }
 
             return prgData;
 

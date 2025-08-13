@@ -50,6 +50,7 @@ class UIController {
             exportSection: document.getElementById('exportSection'),
             visualizerType: document.getElementById('visualizerType'),
             autoRun: document.getElementById('autoRun'),
+            useCompression: document.getElementById('useCompression'),
             exportSIDButton: document.getElementById('exportSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
             exportStatus: document.getElementById('exportStatus')
@@ -372,6 +373,8 @@ class UIController {
         this.showExportStatus('SID file exported successfully!', 'success');
     }
 
+    // In ui.js, update exportPRGWithVisualizer
+
     async exportPRGWithVisualizer() {
         // Check if PRG exporter is available
         if (!this.prgExporter) {
@@ -395,6 +398,7 @@ class UIController {
 
         const visualizerType = this.elements.visualizerType.value;
         const autoRun = this.elements.autoRun.checked;
+        const useCompression = this.elements.useCompression ? this.elements.useCompression.checked : false;
 
         if (visualizerType === 'none') {
             this.showExportStatus('Please select a visualizer type', 'error');
@@ -409,26 +413,30 @@ class UIController {
 
             // Use the actual SID addresses from the loaded file
             const options = {
-                sidLoadAddress: this.sidHeader.loadAddress,  // Use actual load address
-                sidInitAddress: this.sidHeader.initAddress,  // Use actual init address
-                sidPlayAddress: this.sidHeader.playAddress,  // Use actual play address
-                dataLoadAddress: 0x4000,  // Fixed data block location at $4000
+                sidLoadAddress: this.sidHeader.loadAddress,
+                sidInitAddress: this.sidHeader.initAddress,
+                sidPlayAddress: this.sidHeader.playAddress,
+                dataLoadAddress: 0x4000,
                 visualizerFile: `prg/${visualizerType}.bin`,
                 visualizerLoadAddress: 0x4100,
-                includeData: true,  // Always include data
-                addBASICStub: autoRun
+                includeData: true,
+                addBASICStub: autoRun && !useCompression,  // No BASIC stub for compressed
+                useCompression: useCompression
             };
 
             const prgData = await this.prgExporter.createPRG(options);
-            this.downloadFile(prgData, `${baseName}_${visualizerType}.prg`);
 
-            const info = this.prgExporter.builder.getInfo();
+            const suffix = useCompression ? '_compressed' : '';
+            this.downloadFile(prgData, `${baseName}_${visualizerType}${suffix}.prg`);
+
             const sizeKB = (prgData.length / 1024).toFixed(2);
-            this.showExportStatus(
-                `PRG exported successfully! Size: ${sizeKB}KB, ` +
-                `Range: ${this.formatHex(info.lowestAddress, 4)} - ${this.formatHex(info.highestAddress, 4)}`,
-                'success'
-            );
+            let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;
+
+            if (useCompression) {
+                statusMsg += ' (RLE compressed)';
+            }
+
+            this.showExportStatus(statusMsg, 'success');
 
         } catch (error) {
             console.error('Export error:', error);
