@@ -16,7 +16,7 @@
         <div class="main-content">
             <!-- File Upload Section -->
             <div class="upload-section" id="uploadSection">
-                <div class="upload-icon">📁</div>
+                <div class="upload-icon">📂</div>
                 <div class="upload-text">Drop your SID file here</div>
                 <div class="upload-subtext">or click to browse</div>
                 <input type="file" id="fileInput" accept=".sid">
@@ -41,86 +41,96 @@
             <!-- Error Message -->
             <div class="error-message" id="errorMessage"></div>
 
-            <!-- Information Panels -->
-            <div class="info-panels" id="infoPanels">
-                <!-- File Information Panel -->
-                <div class="panel">
-                    <h2>📄 File Information</h2>
-                    <div class="info-row">
-                        <span class="info-label">Title:</span>
-                        <span class="info-value editable" id="sidTitle" data-field="title" title="Click to edit">
-                            <span class="text">-</span>
-                            <span class="edit-icon">✏️</span>
-                        </span>
+            <!-- Information Section (File Info + Technical Details) -->
+            <div class="section-group info-section" id="infoSection">
+                <div class="info-panels" id="infoPanels">
+                    <!-- File Information Panel -->
+                    <div class="panel">
+                        <h2>📄 File Information</h2>
+                        <div class="info-row">
+                            <span class="info-label">Title:</span>
+                            <span class="info-value editable" id="sidTitle" data-field="title" title="Click to edit">
+                                <span class="text">-</span>
+                                <span class="edit-icon">✏️</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Author:</span>
+                            <span class="info-value editable" id="sidAuthor" data-field="author" title="Click to edit">
+                                <span class="text">-</span>
+                                <span class="edit-icon">✏️</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Copyright:</span>
+                            <span class="info-value editable" id="sidCopyright" data-field="copyright" title="Click to edit">
+                                <span class="text">-</span>
+                                <span class="edit-icon">✏️</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Format:</span>
+                            <span class="info-value" id="sidFormat">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value" id="sidVersion">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Songs:</span>
+                            <span class="info-value" id="sidSongs">-</span>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Author:</span>
-                        <span class="info-value editable" id="sidAuthor" data-field="author" title="Click to edit">
-                            <span class="text">-</span>
-                            <span class="edit-icon">✏️</span>
-                        </span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Copyright:</span>
-                        <span class="info-value editable" id="sidCopyright" data-field="copyright" title="Click to edit">
-                            <span class="text">-</span>
-                            <span class="edit-icon">✏️</span>
-                        </span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Format:</span>
-                        <span class="info-value" id="sidFormat">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Version:</span>
-                        <span class="info-value" id="sidVersion">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Songs:</span>
-                        <span class="info-value" id="sidSongs">-</span>
+
+                    <!-- Technical Details Panel -->
+                    <div class="panel">
+                        <h2>⚙️ Technical Details</h2>
+                        <div class="info-row">
+                            <span class="info-label">Load Address:</span>
+                            <span class="info-value" id="loadAddress">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Init Address:</span>
+                            <span class="info-value" id="initAddress">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Play Address:</span>
+                            <span class="info-value" id="playAddress">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Memory Range:</span>
+                            <span class="info-value" id="memoryRange">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">File Size:</span>
+                            <span class="info-value" id="fileSize">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Zero Page Usage:</span>
+                            <span class="info-value" id="zpUsage">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Clock:</span>
+                            <span class="info-value" id="clockType">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">SID Model:</span>
+                            <span class="info-value" id="sidModel">-</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Technical Details Panel -->
-                <div class="panel">
-                    <h2>⚙️ Technical Details</h2>
-                    <div class="info-row">
-                        <span class="info-label">Load Address:</span>
-                        <span class="info-value" id="loadAddress">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Init Address:</span>
-                        <span class="info-value" id="initAddress">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Play Address:</span>
-                        <span class="info-value" id="playAddress">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Memory Range:</span>
-                        <span class="info-value" id="memoryRange">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">File Size:</span>
-                        <span class="info-value" id="fileSize">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Zero Page Usage:</span>
-                        <span class="info-value" id="zpUsage">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Clock:</span>
-                        <span class="info-value" id="clockType">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">SID Model:</span>
-                        <span class="info-value" id="sidModel">-</span>
-                    </div>
+                <!-- Export Modified SID Button (moved here) -->
+                <div class="export-modified-container">
+                    <button class="export-button" id="exportModifiedSIDButton" disabled>
+                        💾 Export Modified SID
+                    </button>
+                    <div class="export-hint" id="exportHint">Edit the metadata above to enable export</div>
                 </div>
             </div>
 
             <!-- Export Section -->
-            <div class="export-section" id="exportSection">
+            <div class="section-group export-section" id="exportSection">
                 <h2>📦 Export Options</h2>
 
                 <div class="export-options">
@@ -146,10 +156,6 @@
                 </div>
 
                 <div class="export-buttons">
-                    <button class="export-button" id="exportSIDButton">
-                        💾 Export Modified SID
-                    </button>
-
                     <button class="export-button" id="exportPRGButton">
                         🎮 Export PRG with Visualizer
                     </button>
@@ -157,18 +163,13 @@
 
                 <div class="export-status" id="exportStatus"></div>
             </div>
-
-            <!-- Save Button (keeping original for backwards compatibility) -->
-            <div class="button-container">
-                <button class="save-button" id="saveButton">💾 Save Modified SID</button>
-            </div>
         </div>
     </div>
 
     <!-- Modal Overlay -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
-            <div class="modal-icon" id="modalIcon">✓</div>
+            <div class="modal-icon" id="modalIcon">✔</div>
             <div class="modal-message" id="modalMessage">Success!</div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-﻿// ui.js - UI Controller for SIDwinder Web with PRG Export
+﻿// ui.js - UI Controller for SIDwinder Web with Updated Export
 
 class UIController {
     constructor() {
@@ -7,7 +7,8 @@ class UIController {
         this.hasModifications = false;
         this.analysisResults = null;
         this.prgExporter = null;
-        this.sidHeader = null; // Store the SID header info
+        this.sidHeader = null;
+        this.originalMetadata = {}; // Store original metadata for comparison
         this.elements = this.cacheElements();
         this.initEventListeners();
         this.initExportSection();
@@ -17,7 +18,6 @@ class UIController {
         return {
             uploadSection: document.getElementById('uploadSection'),
             fileInput: document.getElementById('fileInput'),
-            saveButton: document.getElementById('saveButton'),
             songTitleSection: document.getElementById('songTitleSection'),
             songTitle: document.getElementById('songTitle'),
             songAuthor: document.getElementById('songAuthor'),
@@ -26,6 +26,7 @@ class UIController {
             progressFill: document.getElementById('progressFill'),
             progressText: document.getElementById('progressText'),
             errorMessage: document.getElementById('errorMessage'),
+            infoSection: document.getElementById('infoSection'),
             infoPanels: document.getElementById('infoPanels'),
             modalOverlay: document.getElementById('modalOverlay'),
             modalIcon: document.getElementById('modalIcon'),
@@ -51,9 +52,10 @@ class UIController {
             visualizerType: document.getElementById('visualizerType'),
             autoRun: document.getElementById('autoRun'),
             useCompression: document.getElementById('useCompression'),
-            exportSIDButton: document.getElementById('exportSIDButton'),
+            exportModifiedSIDButton: document.getElementById('exportModifiedSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
-            exportStatus: document.getElementById('exportStatus')
+            exportStatus: document.getElementById('exportStatus'),
+            exportHint: document.getElementById('exportHint')
         };
     }
 
@@ -67,9 +69,9 @@ class UIController {
             this.handleFileSelect(e);
         });
 
-        // Save button (original)
-        this.elements.saveButton.addEventListener('click', () => {
-            this.saveSID();
+        // Export modified SID button
+        this.elements.exportModifiedSIDButton.addEventListener('click', () => {
+            this.exportModifiedSID();
         });
 
         // Drag and drop
@@ -80,16 +82,7 @@ class UIController {
     }
 
     initExportSection() {
-        // Wait for PRG builder to be available
-        // The PRG exporter will be initialized when a file is loaded
-
         // Add export button event listeners
-        if (this.elements.exportSIDButton) {
-            this.elements.exportSIDButton.addEventListener('click', () => {
-                this.exportModifiedSID();
-            });
-        }
-
         if (this.elements.exportPRGButton) {
             this.elements.exportPRGButton.addEventListener('click', () => {
                 this.exportPRGWithVisualizer();
@@ -144,11 +137,6 @@ class UIController {
                     this.stopEditing(field);
                 }
             });
-
-            field.addEventListener('input', () => {
-                this.hasModifications = true;
-                this.elements.saveButton.classList.add('visible');
-            });
         });
     }
 
@@ -185,7 +173,15 @@ class UIController {
 
         // Update in WASM
         const fieldName = field.dataset.field;
-        this.analyzer.updateMetadata(fieldName, text);
+
+        // Convert field name to match what the analyzer expects
+        let analyzerFieldName = fieldName;
+        if (fieldName === 'title') analyzerFieldName = 'name';
+
+        this.analyzer.updateMetadata(analyzerFieldName, text);
+
+        // Check if modifications were made
+        this.checkForModifications();
     }
 
     cancelEditing(field) {
@@ -193,6 +189,28 @@ class UIController {
         textSpan.textContent = field.dataset.originalValue || '';
         field.classList.remove('editing');
         textSpan.contentEditable = 'false';
+    }
+
+    checkForModifications() {
+        // Compare current values with original
+        const currentTitle = this.elements.sidTitle.querySelector('.text').textContent.trim();
+        const currentAuthor = this.elements.sidAuthor.querySelector('.text').textContent.trim();
+        const currentCopyright = this.elements.sidCopyright.querySelector('.text').textContent.trim();
+
+        const hasChanges =
+            currentTitle !== this.originalMetadata.title ||
+            currentAuthor !== this.originalMetadata.author ||
+            currentCopyright !== this.originalMetadata.copyright;
+
+        this.hasModifications = hasChanges;
+
+        // Enable/disable export button
+        this.elements.exportModifiedSIDButton.disabled = !hasChanges;
+
+        // Show/hide hint
+        if (this.elements.exportHint) {
+            this.elements.exportHint.style.display = hasChanges ? 'none' : 'block';
+        }
     }
 
     async handleFileSelect(event) {
@@ -210,7 +228,7 @@ class UIController {
 
         this.currentFileName = file.name;
         this.hasModifications = false;
-        this.elements.saveButton.classList.remove('visible');
+        this.elements.exportModifiedSIDButton.disabled = true;
 
         this.showLoading(true);
         this.hideMessages();
@@ -221,7 +239,14 @@ class UIController {
 
             // Load SID file
             const header = await this.analyzer.loadSID(buffer);
-            this.sidHeader = header; // Store the header for later use
+            this.sidHeader = header;
+
+            // Store original metadata
+            this.originalMetadata = {
+                title: header.name || '',
+                author: header.author || '',
+                copyright: header.copyright || ''
+            };
 
             // Update UI with header info
             this.updateFileInfo(header);
@@ -251,7 +276,7 @@ class UIController {
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
 
             // Show panels
-            this.elements.infoPanels.classList.add('visible');
+            this.elements.infoSection.classList.add('visible');
             this.elements.songTitleSection.classList.add('visible');
 
             // Show export section
@@ -370,9 +395,21 @@ class UIController {
 
         this.downloadFile(modifiedData, `${baseName}_edited.sid`);
         this.showExportStatus('SID file exported successfully!', 'success');
-    }
 
-    // In ui.js, update exportPRGWithVisualizer
+        // Update the original metadata to reflect the saved state
+        this.originalMetadata = {
+            title: this.elements.sidTitle.querySelector('.text').textContent.trim(),
+            author: this.elements.sidAuthor.querySelector('.text').textContent.trim(),
+            copyright: this.elements.sidCopyright.querySelector('.text').textContent.trim()
+        };
+
+        // Reset modification state
+        this.hasModifications = false;
+        this.elements.exportModifiedSIDButton.disabled = true;
+        if (this.elements.exportHint) {
+            this.elements.exportHint.style.display = 'block';
+        }
+    }
 
     async exportPRGWithVisualizer() {
         // Check if PRG exporter is available
@@ -419,7 +456,7 @@ class UIController {
                 visualizerFile: `prg/${visualizerType}.bin`,
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
-                addBASICStub: autoRun && !useCompression,  // No BASIC stub for compressed
+                addBASICStub: autoRun && !useCompression,
                 useCompression: useCompression
             };
 
@@ -443,12 +480,6 @@ class UIController {
         }
     }
 
-    saveSID() {
-        // This is the original save button functionality
-        this.exportModifiedSID();
-        this.hasModifications = false;
-    }
-
     // Helper functions
     downloadFile(data, filename) {
         const blob = new Blob([data], { type: 'application/octet-stream' });
@@ -460,17 +491,6 @@ class UIController {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
-
-    parseAddress(str) {
-        str = str.trim();
-        if (str.startsWith('$')) {
-            return parseInt(str.substring(1), 16);
-        } else if (str.startsWith('0x')) {
-            return parseInt(str.substring(2), 16);
-        } else {
-            return parseInt(str, 10);
-        }
     }
 
     showExportStatus(message, type) {
@@ -513,12 +533,14 @@ class UIController {
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.remove('visible');
         }
+        if (this.elements.infoSection) {
+            this.elements.infoSection.classList.remove('visible');
+        }
     }
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-
     // Wait a moment for all scripts to load
     setTimeout(() => {
         // Check if required classes are available

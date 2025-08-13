@@ -396,17 +396,23 @@ extern "C" {
             return nullptr;
         }
 
-        // Create new buffer
         uint8_t* newBuffer = (uint8_t*)malloc(sidState.fileSize);
         memcpy(newBuffer, sidState.fileBuffer, sidState.fileSize);
 
-        // Update header in the new buffer with fixed endianness
         SIDHeader tempHeader = sidState.header;
 
-        // Fix endianness back for file format
+        uint16_t originalLoadAddress = swap16(*(uint16_t*)&sidState.fileBuffer[0x08]);
+
         tempHeader.version = swap16(tempHeader.version);
         tempHeader.dataOffset = swap16(tempHeader.dataOffset);
-        tempHeader.loadAddress = swap16(tempHeader.loadAddress);
+
+        if (originalLoadAddress == 0x0000) {
+            tempHeader.loadAddress = 0x0000;
+        }
+        else {
+            tempHeader.loadAddress = swap16(tempHeader.loadAddress);
+        }
+
         tempHeader.initAddress = swap16(tempHeader.initAddress);
         tempHeader.playAddress = swap16(tempHeader.playAddress);
         tempHeader.songs = swap16(tempHeader.songs);
@@ -416,7 +422,6 @@ extern "C" {
             tempHeader.flags = swap16(tempHeader.flags);
         }
 
-        // Copy updated header
         memcpy(newBuffer, &tempHeader, sizeof(SIDHeader));
 
         *outSize = sidState.fileSize;

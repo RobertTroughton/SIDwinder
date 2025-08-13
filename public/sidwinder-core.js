@@ -227,7 +227,7 @@ class SIDAnalyzer {
         }
 
         const fields = {
-            'title': 0,
+            'name': 0,
             'author': 1,
             'copyright': 2
         };
