@@ -23,8 +23,7 @@ extern "C" {
         static const uint8_t decompressorStub[253];
         static const uint16_t stubSize = 253;
         static const uint16_t stubLoadAddress = 0x0801;
-        static const uint16_t stubEndAddress = 0x08EF;
-        static const uint16_t compressedDataStart = 0x08F0;
+        static const uint16_t compressedDataStart = stubLoadAddress + stubSize;
 
         // Offsets for patching values into stub
         static const uint16_t offset_UncompressedStart_Lo = 0x19 + 2;

@@ -421,14 +421,15 @@ class UIController {
 
     createFileInput(config) {
         const div = document.createElement('div');
-        div.className = 'export-option file-input-option';
+        div.className = 'file-input-option';
         div.innerHTML = `
-            <label for="${config.id}">${config.label}:</label>
+        <label for="${config.id}">${config.label}:</label>
+        <div class="file-input-controls">
             <div class="file-input-wrapper">
                 <input type="file" id="${config.id}" accept="${config.accept}" 
                        data-config='${JSON.stringify(config)}' style="display: none;">
                 <button type="button" class="file-select-button" id="${config.id}-button">
-                    Choose File
+                    Choose
                 </button>
                 <span class="file-name" id="${config.id}-name">
                     ${config.default ? 'Using default' : 'No file selected'}
@@ -438,7 +439,8 @@ class UIController {
                         ✕
                     </button>` : ''}
             </div>
-            ${config.description ? `<small class="input-hint">${config.description}</small>` : ''}
+            ${config.description ? `<div class="input-hint">${config.description}</div>` : ''}
+        </div>
         `;
 
         const fileInput = div.querySelector('input[type="file"]');
@@ -484,17 +486,31 @@ class UIController {
 
         if (config.type === 'select') {
             div.innerHTML = `
-                <label for="${config.id}">${config.label}:</label>
-                <select id="${config.id}">
-                    ${config.values.map(v =>
+            <label for="${config.id}">${config.label}:</label>
+            <select id="${config.id}">
+                ${config.values.map(v =>
                 `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
-                            ${v.label}
-                        </option>`
+                        ${v.label}
+                    </option>`
             ).join('')}
-                </select>
-            `;
+            </select>
+        `;
+        } else if (config.type === 'number') {
+            // Create the number input HTML
+            const html = `
+            <label for="${config.id}">${config.label}:</label>
+            <div class="number-input-wrapper">
+                <input type="number" 
+                       id="${config.id}" 
+                       value="${config.default || 0}" 
+                       min="${config.min || 0}" 
+                       max="${config.max || 255}"
+                       data-config='${JSON.stringify(config)}'>
+                ${config.description ? `<span class="input-description">${config.description}</span>` : ''}
+            </div>
+        `;
+            div.innerHTML = html;
         }
-        // Add other option types as needed
 
         return div;
     }

@@ -319,6 +319,38 @@ class SIDwinderPRGExporter {
         return additionalComponents;
     }
 
+    async processVisualizerOptions(visualizerType) {
+        const config = new VisualizerConfig();
+        const vizConfig = await config.loadConfig(visualizerType);
+
+        if (!vizConfig || !vizConfig.options) {
+            return [];
+        }
+
+        const optionComponents = [];
+
+        for (const optionConfig of vizConfig.options) {
+            const element = document.getElementById(optionConfig.id);
+            if (element && optionConfig.memory) {
+                let value = parseInt(element.value) || optionConfig.default || 0;
+
+                console.log(`Processing option ${optionConfig.id}: value=${value}, address=${optionConfig.memory.targetAddress}`);
+
+                // Create a single-byte component for this option
+                const data = new Uint8Array(optionConfig.memory.size || 1);
+                data[0] = value & 0xFF; // Ensure it's a byte
+
+                optionComponents.push({
+                    data: data,
+                    loadAddress: parseInt(optionConfig.memory.targetAddress),
+                    name: `option_${optionConfig.id}`
+                });
+            }
+        }
+
+        return optionComponents;
+    }
+
     async createPRG(options = {}) {
         const {
             sidLoadAddress = null,
@@ -358,6 +390,13 @@ class SIDwinderPRGExporter {
             const additionalComponents = await this.processVisualizerInputs(visualizerName);
 
             for (const component of additionalComponents) {
+                this.builder.addComponent(component.data, component.loadAddress, component.name);
+            }
+
+            // Process visualizer options (like border color) - THIS IS THE KEY PART
+            const optionComponents = await this.processVisualizerOptions(visualizerName);
+
+            for (const component of optionComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 

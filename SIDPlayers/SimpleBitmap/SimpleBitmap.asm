@@ -56,14 +56,8 @@
 .const BitmapMAPData                    = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const BitmapCOLData                    = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 .const BitmapSCRData                    = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
-
-//; =============================================================================
-//; EXTERNAL RESOURCES
-//; =============================================================================
-
-.var file_bitmap = LoadBinary("../../Bitmaps/default.kla", BF_KOALA)
-
-.var logo_BGColor = file_bitmap.getBackgroundColor()
+.const BorderColour     			    = $5bfe
+.const BitmapScreenColour			    = $5bff
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -115,7 +109,7 @@ InitIRQ: {
     iny
     bne !loop-
 
-	lda #logo_BGColor
+	lda BitmapScreenColour
     sta $d021
 
     //; ==========================================================================
@@ -139,6 +133,9 @@ InitIRQ: {
 
     //; Wait for stable position before enabling display
     jsr VSync
+
+    lda BorderColour
+    sta $d020
 
     //; Configure first raster position
     ldx #0
@@ -252,20 +249,6 @@ JustPlayMusic:
 .var FrameHeight = 312 // TODO: NTSC!
 D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
 D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
-
-//; =============================================================================
-//; BITMAP DATA SEGMENTS
-//; =============================================================================
-//; These are placed at specific memory locations for VIC-II access
-
-* = BitmapMAPData "Bitmap MAP"
-	.fill file_bitmap.getBitmapSize(), file_bitmap.getBitmap(i)
-
-* = BitmapSCRData "Bitmap SCR"
-	.fill file_bitmap.getScreenRamSize(), file_bitmap.getScreenRam(i)
-
-* = BitmapCOLData "Bitmap COL"
-	.fill file_bitmap.getColorRamSize(), file_bitmap.getColorRam(i)
 
 //; =============================================================================
 //; END OF FILE
