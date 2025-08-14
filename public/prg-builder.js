@@ -272,6 +272,53 @@ class SIDwinderPRGExporter {
         };
     }
 
+    async processVisualizerInputs(visualizerType) {
+        const config = new VisualizerConfig();
+        const vizConfig = await config.loadConfig(visualizerType);
+
+        if (!vizConfig || !vizConfig.inputs) {
+            return []; // No additional inputs needed
+        }
+
+        const additionalComponents = [];
+
+        for (const inputConfig of vizConfig.inputs) {
+            const inputElement = document.getElementById(inputConfig.id);
+            let fileData = null;
+
+            if (inputElement && inputElement.files.length > 0) {
+                // User selected a file
+                const file = inputElement.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                fileData = new Uint8Array(arrayBuffer);
+            } else if (inputConfig.default) {
+                // Use default file
+                fileData = await config.loadDefaultFile(inputConfig.default);
+            }
+
+            if (fileData && inputConfig.memory) {
+                // Validate file size (if it's a Koala file)
+                if (inputConfig.id === 'koala' && !config.validateFileSize(fileData)) {
+                    throw new Error(`Invalid Koala file size: ${fileData.length} bytes`);
+                }
+
+                // Extract memory regions
+                const regions = config.extractMemoryRegions(fileData, inputConfig.memory);
+
+                // Add each region as a component
+                for (const region of regions) {
+                    additionalComponents.push({
+                        data: region.data,
+                        loadAddress: region.targetAddress,
+                        name: `${inputConfig.id}_${region.name}`
+                    });
+                }
+            }
+        }
+
+        return additionalComponents;
+    }
+
     async createPRG(options = {}) {
         const {
             sidLoadAddress = null,
@@ -304,6 +351,14 @@ class SIDwinderPRGExporter {
                 const visualizerBytes = await this.loadBinaryFile(visualizerFile);
                 this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
                 nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
+            }
+
+            // Process additional visualizer inputs
+            const visualizerName = options.visualizerFile.replace('prg/', '').replace('.bin', '');
+            const additionalComponents = await this.processVisualizerInputs(visualizerName);
+
+            for (const component of additionalComponents) {
+                this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
             // Add save/restore routines

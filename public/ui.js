@@ -1,4 +1,4 @@
-﻿// ui.js - UI Controller for SIDwinder Web with Updated Export
+﻿// ui.js - UI Controller for SIDwinder Web with Visual Visualizer Selection
 
 class UIController {
     constructor() {
@@ -9,9 +9,10 @@ class UIController {
         this.prgExporter = null;
         this.sidHeader = null;
         this.originalMetadata = {}; // Store original metadata for comparison
+        this.selectedVisualizer = null;
+        this.visualizerConfig = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
-        this.initExportSection();
     }
 
     cacheElements() {
@@ -49,8 +50,8 @@ class UIController {
             sidModel: document.getElementById('sidModel'),
             // Export section elements
             exportSection: document.getElementById('exportSection'),
-            visualizerType: document.getElementById('visualizerType'),
-
+            visualizerGrid: document.getElementById('visualizerGrid'),
+            visualizerOptions: document.getElementById('visualizerOptions'),
             useCompression: document.getElementById('useCompression'),
             exportModifiedSIDButton: document.getElementById('exportModifiedSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
@@ -74,20 +75,16 @@ class UIController {
             this.exportModifiedSID();
         });
 
+        // Export PRG button
+        this.elements.exportPRGButton.addEventListener('click', () => {
+            this.exportPRGWithVisualizer();
+        });
+
         // Drag and drop
         this.setupDragAndDrop();
 
         // Editable fields
         this.setupEditableFields();
-    }
-
-    initExportSection() {
-        // Add export button event listeners
-        if (this.elements.exportPRGButton) {
-            this.elements.exportPRGButton.addEventListener('click', () => {
-                this.exportPRGWithVisualizer();
-            });
-        }
     }
 
     setupDragAndDrop() {
@@ -297,6 +294,9 @@ class UIController {
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.add('visible');
 
+            // Initialize visualizer selection
+            this.initVisualizerSelection();
+
             // Initialize PRG exporter now that we have analyzer ready
             if (!this.prgExporter && this.analyzer) {
                 // Check if SIDwinderPRGExporter is available
@@ -315,6 +315,188 @@ class UIController {
                 }
             }
         }
+    }
+
+    initVisualizerSelection() {
+        this.selectedVisualizer = null;
+        this.visualizerConfig = new VisualizerConfig();
+        this.buildVisualizerGrid();
+    }
+
+    buildVisualizerGrid() {
+        const grid = document.getElementById('visualizerGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        for (const viz of VISUALIZERS) {
+            const card = this.createVisualizerCard(viz);
+            grid.appendChild(card);
+        }
+    }
+
+    createVisualizerCard(visualizer) {
+        const card = document.createElement('div');
+        card.className = 'visualizer-card';
+        card.dataset.id = visualizer.id;
+
+        card.innerHTML = `
+            <div class="visualizer-preview">
+                <img src="${visualizer.preview}" alt="${visualizer.name}" 
+                     onerror="this.src='previews/default.png'">
+            </div>
+            <div class="visualizer-info">
+                <h3>${visualizer.name}</h3>
+                <p>${visualizer.description}</p>
+            </div>
+            <div class="visualizer-selected-badge">✓ Selected</div>
+        `;
+
+        card.addEventListener('click', () => {
+            this.selectVisualizer(visualizer);
+        });
+
+        return card;
+    }
+
+    selectVisualizer(visualizer) {
+        // Update visual selection
+        const cards = document.querySelectorAll('.visualizer-card');
+        cards.forEach(card => {
+            card.classList.toggle('selected', card.dataset.id === visualizer.id);
+        });
+
+        this.selectedVisualizer = visualizer;
+
+        // Enable export button
+        this.elements.exportPRGButton.disabled = false;
+
+        // Load and show options for this visualizer
+        this.loadVisualizerOptions(visualizer);
+    }
+
+    async loadVisualizerOptions(visualizer) {
+        const optionsContainer = document.getElementById('visualizerOptions');
+
+        // Clear any existing options
+        optionsContainer.innerHTML = '';
+
+        if (!visualizer.config) {
+            // No config means no extra options
+            optionsContainer.style.display = 'none';
+            return;
+        }
+
+        // Load config
+        const config = await this.visualizerConfig.loadConfig(visualizer.id);
+        if (!config || (!config.inputs && !config.options)) {
+            optionsContainer.style.display = 'none';
+            return;
+        }
+
+        // Show container
+        optionsContainer.style.display = 'block';
+
+        // Create options title
+        const title = document.createElement('h3');
+        title.textContent = `${visualizer.name} Options`;
+        optionsContainer.appendChild(title);
+
+        // Add file inputs
+        if (config.inputs) {
+            for (const input of config.inputs) {
+                const inputEl = this.createFileInput(input);
+                optionsContainer.appendChild(inputEl);
+            }
+        }
+
+        // Add other options
+        if (config.options) {
+            for (const option of config.options) {
+                const optionEl = this.createOption(option);
+                optionsContainer.appendChild(optionEl);
+            }
+        }
+    }
+
+    createFileInput(config) {
+        const div = document.createElement('div');
+        div.className = 'export-option file-input-option';
+        div.innerHTML = `
+            <label for="${config.id}">${config.label}:</label>
+            <div class="file-input-wrapper">
+                <input type="file" id="${config.id}" accept="${config.accept}" 
+                       data-config='${JSON.stringify(config)}' style="display: none;">
+                <button type="button" class="file-select-button" id="${config.id}-button">
+                    Choose File
+                </button>
+                <span class="file-name" id="${config.id}-name">
+                    ${config.default ? 'Using default' : 'No file selected'}
+                </span>
+                ${config.default ?
+                `<button type="button" class="file-clear-button" id="${config.id}-clear" style="display: none;">
+                        ✕
+                    </button>` : ''}
+            </div>
+            ${config.description ? `<small class="input-hint">${config.description}</small>` : ''}
+        `;
+
+        const fileInput = div.querySelector('input[type="file"]');
+        const fileName = div.querySelector('.file-name');
+        const selectButton = div.querySelector('.file-select-button');
+        const clearButton = div.querySelector('.file-clear-button');
+
+        // Click button to open file dialog
+        selectButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = e.target.files[0].name;
+                if (clearButton) {
+                    clearButton.style.display = 'inline-block';
+                }
+            } else {
+                fileName.textContent = config.default ? 'Using default' : 'No file selected';
+                if (clearButton) {
+                    clearButton.style.display = 'none';
+                }
+            }
+        });
+
+        // Clear button to revert to default
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                fileInput.value = '';
+                fileName.textContent = 'Using default';
+                clearButton.style.display = 'none';
+            });
+        }
+
+        return div;
+    }
+
+    createOption(config) {
+        const div = document.createElement('div');
+        div.className = 'export-option';
+
+        if (config.type === 'select') {
+            div.innerHTML = `
+                <label for="${config.id}">${config.label}:</label>
+                <select id="${config.id}">
+                    ${config.values.map(v =>
+                `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
+                            ${v.label}
+                        </option>`
+            ).join('')}
+                </select>
+            `;
+        }
+        // Add other option types as needed
+
+        return div;
     }
 
     updateFileInfo(header) {
@@ -412,6 +594,11 @@ class UIController {
     }
 
     async exportPRGWithVisualizer() {
+        if (!this.selectedVisualizer) {
+            this.showExportStatus('Please select a visualizer', 'error');
+            return;
+        }
+
         // Check if PRG exporter is available
         if (!this.prgExporter) {
             if (typeof SIDwinderPRGExporter === 'undefined') {
@@ -432,13 +619,7 @@ class UIController {
             return;
         }
 
-        const visualizerType = this.elements.visualizerType.value;
         const useCompression = this.elements.useCompression ? this.elements.useCompression.checked : false;
-
-        if (visualizerType === 'none') {
-            this.showExportStatus('Please select a visualizer type', 'error');
-            return;
-        }
 
         this.showExportStatus('Building PRG file...', 'info');
 
@@ -452,7 +633,7 @@ class UIController {
                 sidInitAddress: this.sidHeader.initAddress,
                 sidPlayAddress: this.sidHeader.playAddress,
                 dataLoadAddress: 0x4000,
-                visualizerFile: `prg/${visualizerType}.bin`,
+                visualizerFile: this.selectedVisualizer.binary,
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
                 useCompression: useCompression
@@ -461,7 +642,7 @@ class UIController {
             const prgData = await this.prgExporter.createPRG(options);
 
             const suffix = useCompression ? '_compressed' : '';
-            this.downloadFile(prgData, `${baseName}_${visualizerType}${suffix}.prg`);
+            this.downloadFile(prgData, `${baseName}_${this.selectedVisualizer.id}${suffix}.prg`);
 
             const sizeKB = (prgData.length / 1024).toFixed(2);
             let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;

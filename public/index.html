@@ -131,28 +131,30 @@
 
             <!-- Export Section -->
             <div class="section-group export-section" id="exportSection">
-                <h2>📦 Export Options</h2>
+                <h2>🎮 Choose Your Visualizer</h2>
 
-                <div class="export-options">
-                    <div class="export-option">
-                        <label for="visualizerType">Visualizer Type:</label>
-                        <select id="visualizerType">
-                            <option value="RaistlinBars">Raistlin Bars</option>
-                            <option value="SimpleBitmap">Simple Bitmap</option>
-                            <option value="SimpleRaster">Simple Raster</option>
-                            <option value="none">No Visualizer</option>
-                        </select>
-                    </div>
-
-                    <div class="export-option">
-                        <label for="useCompression">Use RLE Compression:</label>
-                        <input type="checkbox" id="useCompression" checked>
-                    </div>
+                <!-- Visualizer Grid -->
+                <div class="visualizer-grid" id="visualizerGrid">
+                    <!-- Cards will be dynamically added here -->
                 </div>
 
+                <!-- Dynamic Options Container -->
+                <div class="visualizer-options" id="visualizerOptions" style="display: none;">
+                    <!-- Options will be dynamically added based on selected visualizer -->
+                </div>
+
+                <!-- Compression Option -->
+                <div class="export-option compression-option">
+                    <label for="useCompression">
+                        <input type="checkbox" id="useCompression" checked>
+                        Use RLE Compression
+                    </label>
+                </div>
+
+                <!-- Export Button -->
                 <div class="export-buttons">
-                    <button class="export-button" id="exportPRGButton">
-                        🎮 Export PRG with Visualizer
+                    <button class="export-button" id="exportPRGButton" disabled>
+                        🎮 Export PRG
                     </button>
                 </div>
 
@@ -174,5 +176,8 @@
     <script src="sidwinder-core.js"></script>
     <script src="prg-builder.js"></script>
     <script src="ui.js"></script>
+    <script src="visualizer-registry.js"></script>
+    <script src="visualizer-configs.js"></script>
+
 </body>
 </html>

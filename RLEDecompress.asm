@@ -139,11 +139,15 @@ literals_loop:
 	bne !skip+
 	inc ZP_RLE_DstPtr + 1
 !skip:
-	dec ZP_RLE_CurrentBlockSizePtr + 0
-	bne literals_loop
+	ldx ZP_RLE_CurrentBlockSizePtr + 0
+	bne !skip+
 	dec ZP_RLE_CurrentBlockSizePtr + 1
-	bpl literals_loop
-	bmi grab_next_block
+!skip:
+	dec ZP_RLE_CurrentBlockSizePtr + 0
+	lda ZP_RLE_CurrentBlockSizePtr + 0
+	ora ZP_RLE_CurrentBlockSizePtr + 1
+	bne literals_loop
+	beq grab_next_block
 
 do_repeats:
 	lda (ZP_RLE_SrcPtr), y
@@ -157,10 +161,14 @@ repeats_loop:
 	bne !skip+
 	inc ZP_RLE_DstPtr + 1
 !skip:
+	ldx ZP_RLE_CurrentBlockSizePtr + 0
+	bne !skip+
+	dec ZP_RLE_CurrentBlockSizePtr + 1
+!skip:
 	dec ZP_RLE_CurrentBlockSizePtr + 0
 	bne repeats_loop
-	dec ZP_RLE_CurrentBlockSizePtr + 1
-	bpl repeats_loop
-	bmi grab_next_block
+	ldx ZP_RLE_CurrentBlockSizePtr + 1
+	bne repeats_loop
+	beq grab_next_block
 
 rledecompress_code_end:

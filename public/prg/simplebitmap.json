@@ -1,0 +1,41 @@
+{
+  "name": "Simple Bitmap",
+  "version": "1.0",
+  "inputs": [
+    {
+      "id": "koala",
+      "label": "Koala Image",
+      "type": "file",
+      "accept": ".koa,.kla",
+      "required": false,
+      "default": "prg/default-logo.kla",
+      "description": "C64 Koala format image (10001 bytes)",
+      "memory": [
+        {
+          "name": "bitmap",
+          "sourceOffset": "0x0002",
+          "targetAddress": "0x6000",
+          "size": "0x1F40"
+        },
+        {
+          "name": "screen",
+          "sourceOffset": "0x1F42",
+          "targetAddress": "0x5C00",
+          "size": "0x03E8"
+        },
+        {
+          "name": "color",
+          "sourceOffset": "0x232A",
+          "targetAddress": "0x5800",
+          "size": "0x03E8"
+        },
+        {
+          "name": "background",
+          "sourceOffset": "0x2712", 
+          "targetAddress": "0x4FFF",
+          "size": "0x0001"
+        }
+      ]
+    }
+  ]
+}

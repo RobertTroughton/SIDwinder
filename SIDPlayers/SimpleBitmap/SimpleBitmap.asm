@@ -47,7 +47,7 @@
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
 .const BITMAP_BANK                      = 1                                             //; $6000-7fff
 .const COLOUR_BANK                      = 6 //; temp store - to be copied to $d800      //; $5800-5bff
-.const SCREEN_BANK                      = 7                                             //; %5c00-5fff
+.const SCREEN_BANK                      = 7                                             //; $5c00-5fff
 
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
