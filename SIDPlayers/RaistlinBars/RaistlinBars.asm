@@ -40,7 +40,6 @@
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 
-
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
@@ -59,12 +58,12 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK = 1						//; $4000-$7FFF
-.const VIC_BANK_ADDRESS = VIC_BANK * $4000
-.const SCREEN_0_OFFSET = 12				//; $7000
-.const SCREEN_1_OFFSET = 13				//; $7400
-.const CHARSET_OFFSET = 7				//; $7800
-.const SPRITE_BASE_INDEX = $80
+.const VIC_BANK							= 1					//; $4000-$7FFF
+.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
+.const SCREEN_0_OFFSET					= 6					//; $5800
+.const SCREEN_1_OFFSET					= 7					//; $5C00
+.const CHARSET_OFFSET					= 4					//; $6000
+.const SPRITE_BASE_INDEX				= $a0				//; $6800-69ff for water sprites
 
 //; Calculated addresses
 .const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
@@ -925,9 +924,6 @@ sidRegisterMirror:			.fill 32, 0
 //; DATA SECTION - Calculations
 //; =============================================================================
 
-.align 128
-div16:						.fill 128, i / 16.0
-div16mul3:					.fill 128, (3 * i) / 16.0
 multiply64Table:			.fill 4, i * 64
 
 //; Color tables
@@ -955,7 +951,6 @@ heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 //; DATA SECTION - Display Mapping
 //; =============================================================================
 
-	.align 256
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
@@ -981,6 +976,10 @@ D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsP
 
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
+
+.align 128
+div16:						.fill 128, i / 16.0
+div16mul3:					.fill 128, (3 * i) / 16.0
 
 .align 256
 .import source "../INC/FreqTable.asm"
