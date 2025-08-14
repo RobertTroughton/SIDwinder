@@ -95,8 +95,8 @@
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
 
-.const BorderColour     			    = $5bfe
-.const BitmapScreenColour			    = $5bff
+.const BorderColour     			    = $4dfe
+.const BitmapScreenColour			    = $4dff
 
 
 //; =============================================================================
