@@ -28,7 +28,7 @@
 //;
 //; =============================================================================
 
-* = $4100
+* = $4100 "Main Code"
 
 .var NumCallsPerFrame = 1
 
@@ -58,34 +58,34 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK							= 1					//; $4000-$7FFF
+.const VIC_BANK							= 1 //; $4000-$7FFF
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
-.const SCREEN_0_OFFSET					= 6					//; $5800
-.const SCREEN_1_OFFSET					= 7					//; $5C00
-.const CHARSET_OFFSET					= 4					//; $6000
-.const SPRITE_BASE_INDEX				= $a0				//; $6800-69ff for water sprites
+.const SCREEN0_BANK						= 6 //; $5800
+.const SCREEN1_BANK						= 7 //; $5C00
+.const CHARSET_BANK						= 4 //; $6000
+.const SPRITE_BASE_INDEX				= $a0 //; $6800-69ff for water sprites
 
 //; Calculated addresses
-.const SCREEN_0_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_0_OFFSET * $400)
-.const SCREEN_1_ADDRESS = VIC_BANK_ADDRESS + (SCREEN_1_OFFSET * $400)
-.const CHARSET_ADDRESS = VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
-.const SPRITES_ADDRESS = VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
-.const SPRITE_POINTERS_0 = SCREEN_0_ADDRESS + $3F8
-.const SPRITE_POINTERS_1 = SCREEN_1_ADDRESS + $3F8
+.const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
+.const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
+.const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
+.const SPRITES_ADDRESS					= VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
+.const SPRITE_POINTERS_0				= SCREEN0_ADDRESS + $3F8
+.const SPRITE_POINTERS_1				= SCREEN1_ADDRESS + $3F8
 
 //; VIC register values
-.const D018_VALUE_0 = (SCREEN_0_OFFSET * 16) + (CHARSET_OFFSET * 2)
-.const D018_VALUE_1 = (SCREEN_1_OFFSET * 16) + (CHARSET_OFFSET * 2)
+.const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
+.const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 
 //; Calculated bar values
-.const MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1
-.const WATER_REFLECTION_HEIGHT = BOTTOM_SPECTRUM_HEIGHT * 8
-.const MAIN_BAR_OFFSET = MAX_BAR_HEIGHT - 8
-.const REFLECTION_OFFSET = WATER_REFLECTION_HEIGHT - 7
+.const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
+.const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 
 //; Color palette configuration
-.const NUM_COLOR_PALETTES = 3
-.const COLORS_PER_PALETTE = 8
+.const NUM_COLOR_PALETTES				= 3
+.const COLORS_PER_PALETTE				= 8
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
@@ -609,7 +609,7 @@ RenderToScreen0: {
 	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
 	//; Draw reflection
@@ -621,7 +621,7 @@ RenderToScreen0: {
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		adc #10
-		sta SCREEN_0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -644,7 +644,7 @@ RenderToScreen1: {
 	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
 	//; Draw reflection
@@ -656,7 +656,7 @@ RenderToScreen1: {
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		adc #20
-		sta SCREEN_1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -764,14 +764,14 @@ ClearScreens: {
 	ldx #$00
 	lda #$20							//; Space character
 !loop:
-	sta SCREEN_0_ADDRESS + $000, x
-	sta SCREEN_0_ADDRESS + $100, x
-	sta SCREEN_0_ADDRESS + $200, x
-	sta SCREEN_0_ADDRESS + $300, x
-	sta SCREEN_1_ADDRESS + $000, x
-	sta SCREEN_1_ADDRESS + $100, x
-	sta SCREEN_1_ADDRESS + $200, x
-	sta SCREEN_1_ADDRESS + $300, x
+	sta SCREEN0_ADDRESS + $000, x
+	sta SCREEN0_ADDRESS + $100, x
+	sta SCREEN0_ADDRESS + $200, x
+	sta SCREEN0_ADDRESS + $300, x
+	sta SCREEN1_ADDRESS + $000, x
+	sta SCREEN1_ADDRESS + $100, x
+	sta SCREEN1_ADDRESS + $200, x
+	sta SCREEN1_ADDRESS + $300, x
 	sta $d800 + $000, x
 	sta $d800 + $100, x
 	sta $d800 + $200, x
@@ -788,28 +788,30 @@ DisplaySongInfo: {
 
 	//; Song Title
 	lda SongName, y
-	sta SCREEN_0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
-	sta SCREEN_1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	sta SCREEN0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	sta SCREEN1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
 	ora #$80
-	sta SCREEN_0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	sta SCREEN_1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	lda #$01
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 
 	//; Artist Name
 	lda ArtistName, y
-	sta SCREEN_0_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
-	sta SCREEN_1_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
+	sta SCREEN0_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
+	sta SCREEN1_ADDRESS + (ARTIST_NAME_LINE * 40) + 4, y
 	ora #$80
-	sta SCREEN_0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
-	sta SCREEN_1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
+	sta SCREEN0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
+	sta SCREEN1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	lda #$0f
 	sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
 	sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 
 	dey
 	bpl !loop-
+
+	rts
 }
 
 InitializeColors: {
@@ -857,7 +859,7 @@ VICConfigStart:
 	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 5 X,Y
 	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 6 X,Y
 	.byte $00, REFLECTION_SPRITES_YVAL	//; Sprite 7 X,Y
-	.byte $60							//; Sprite X MSB
+	.byte $00							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
@@ -999,7 +1001,6 @@ div16mul3:					.fill 128, (3 * i) / 16.0
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-
 //; First, the chars for the main bar
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $7C
@@ -1035,6 +1036,12 @@ div16mul3:					.fill 128, (3 * i) / 16.0
 	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
 	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+
+* = SCREEN0_ADDRESS "Screen 0"
+	.fill $400, $00
+
+* = SCREEN1_ADDRESS "Screen 1"
+	.fill $400, $00
 
 //; =============================================================================
 //; END OF FILE

@@ -32,7 +32,7 @@
 //;
 //; =============================================================================
 
-* = $4100
+* = $4100 "Main Code"
 
 .var MainAddress = * - $100
 .var SIDInit = MainAddress + 0
@@ -53,11 +53,11 @@
 .const DD02Value                        = 60 + VIC_BANK
 .const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
 
-.const BitmapMAPData                    = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const BITMAP_ADDRESS                   = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const BitmapCOLData                    = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
-.const BitmapSCRData                    = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
-.const BorderColour     			    = $5bfe
-.const BitmapScreenColour			    = $5bff
+.const SCREEN_ADDRESS                   = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
+.const BorderColour                     = $5bfe
+.const BitmapScreenColour               = $5bff
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -249,6 +249,14 @@ JustPlayMusic:
 .var FrameHeight = 312 // TODO: NTSC!
 D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
 D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
+
+* = SCREEN_ADDRESS "Screen"
+	.fill $400, $00
+
+* = BITMAP_ADDRESS "Bitmap"
+	.fill $2000, $00
+
+
 
 //; =============================================================================
 //; END OF FILE
