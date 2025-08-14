@@ -32,27 +32,38 @@
 //;
 //; =============================================================================
 
-* = PlayerADDR
+* = $4100
+
+.var MainAddress = * - $100
+.var SIDInit = MainAddress + 0
+.var SIDPlay = MainAddress + 3
+.var BackupSIDMemory = MainAddress + 6
+.var RestoreSIDMemory = MainAddress + 9
+.var SongName = MainAddress + 16
+.var ArtistName = MainAddress + 16 + 32
+.var NumCallsPerFrame = 1
+
+.const VIC_BANK                         = 1
+.const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
+.const BITMAP_BANK                      = 1                                             //; $6000-7fff
+.const COLOUR_BANK                      = 6 //; temp store - to be copied to $d800      //; $5800-5bff
+.const SCREEN_BANK                      = 7                                             //; %5c00-5fff
+
+.const DD00Value                        = 3 - VIC_BANK
+.const DD02Value                        = 60 + VIC_BANK
+.const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
+
+.const BitmapMAPData                    = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const BitmapCOLData                    = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
+.const BitmapSCRData                    = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
 //; =============================================================================
 
-#if USERDEFINES_KoalaFile
-.var file_bitmap = LoadBinary(KoalaFile, BF_KOALA)
-#else
 .var file_bitmap = LoadBinary("../../Bitmaps/default.kla", BF_KOALA)
-#endif
 
 .var logo_BGColor = file_bitmap.getBackgroundColor()
-
-//; =============================================================================
-//; MEMORY LAYOUT CONFIGURATION
-//; =============================================================================
-
-.const BitmapMAPData = $a000           //; Bitmap data location (8K)
-.const BitmapCOLData = $8800           //; Color RAM source data
-.const BitmapSCRData = $8c00           //; Screen RAM data
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -138,14 +149,14 @@ InitIRQ: {
     //; ==========================================================================
 
     //; Set VIC bank (bank 0: $0000-$3FFF)
-    lda #$01                            //; Select VIC bank 0
+    lda #DD00Value
     sta $dd00
-    lda #$3e                            //; Configure CIA data direction
+    lda #DD02Value
     sta $dd02
 
     //; Configure VIC memory pointers
-    lda #$38                            //; Screen at $0C00, bitmap at $2000
-    sta $d018                           //; (relative to VIC bank)
+    lda #D018Value
+    sta $d018
 
     //; Set display mode
     lda #$18                            //; Multicolor mode on
