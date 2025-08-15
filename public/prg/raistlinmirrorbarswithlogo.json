@@ -1,0 +1,56 @@
+{
+  "name": "Raistlin Bars With Logo",
+  "version": "1.0",
+  "inputs": [
+    {
+      "id": "koala",
+      "label": "Koala Image",
+      "type": "file",
+      "accept": ".koa,.kla",
+      "required": false,
+      "default": "prg/default-logo.kla",
+      "description": "C64 Koala format image (10001 bytes)",
+      "memory": [
+        {
+          "name": "bitmap",
+          "sourceOffset": "0x0002",
+          "targetAddress": "0x6000",
+          "size": "0xC80"
+        },
+        {
+          "name": "screen",
+          "sourceOffset": "0x1F42",
+          "targetAddress": "0x5000",
+          "size": "0x0190"
+        },
+        {
+          "name": "color",
+          "sourceOffset": "0x232A",
+          "targetAddress": "0x5400",
+          "size": "0x0190"
+        },
+        {
+          "name": "background",
+          "sourceOffset": "0x2712",
+          "targetAddress": "0x57FF",
+          "size": "0x0001"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "id": "borderColor",
+      "label": "Border Color",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 15,
+      "description": "$00-$0F",
+      "memory": {
+        "targetAddress": "0x57FE",
+        "size": 1
+      }
+    }
+  ]
+}

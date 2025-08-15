@@ -20,10 +20,18 @@ const VISUALIZERS = [
     {
         id: 'RaistlinMirrorBars',
         name: 'Raistlin Mirror Bars',
-        description: 'Spectrometer bars - mirrored',
+        description: 'Spectrometer mirrored bars',
         preview: 'prg/raistlinmirrorbars.png',
         binary: 'prg/raistlinmirrorbars.bin',
         config: 'prg/raistlinmirrorbars.json'
+    },
+    {
+        id: 'RaistlinMirrorBarsWithLogo',
+        name: 'Raistlin Mirror Bars With Logo',
+        description: 'Spectrometer mirrored bars below an 80px tall logo',
+        preview: 'prg/raistlinmirrorbarswithlogo.png',
+        binary: 'prg/raistlinmirrorbarswithlogo.bin',
+        config: 'prg/raistlinmirrorbarswithlogo.json'
     },
     {
         id: 'SimpleBitmap',

@@ -148,7 +148,6 @@ Initialize: {
 	//; Initialize music
 	jsr SetupMusic
 
-	//; Wait for stable raster before enabling display
 	bit $d011
 	bpl *-3
 	bit $d011

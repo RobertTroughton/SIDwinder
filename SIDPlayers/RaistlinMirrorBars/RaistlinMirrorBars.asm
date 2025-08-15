@@ -837,7 +837,6 @@ heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 //; DATA SECTION - Display Mapping
 //; =============================================================================
 
-	.align 256
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
