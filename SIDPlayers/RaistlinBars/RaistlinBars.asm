@@ -44,25 +44,24 @@
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
 
-.const NUM_FREQUENCY_BARS = 40
+.const NUM_FREQUENCY_BARS				= 40
 
-//; Display layout
-.const TOP_SPECTRUM_HEIGHT = 16
-.const BOTTOM_SPECTRUM_HEIGHT = 3
+.const TOP_SPECTRUM_HEIGHT				= 16
+.const BOTTOM_SPECTRUM_HEIGHT			= 3
 
-.const SONG_TITLE_LINE = 0
-.const ARTIST_NAME_LINE = 23
-.const SPECTRUM_START_LINE = 3
-.const REFLECTION_SPRITES_YVAL = 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
+.const SONG_TITLE_LINE					= 0
+.const ARTIST_NAME_LINE					= 23
+.const SPECTRUM_START_LINE				= 3
+.const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 .eval setSeed(55378008)
 
 //; Memory configuration
 .const VIC_BANK							= 1 //; $4000-$7FFF
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
-.const SCREEN0_BANK						= 6 //; $5800
-.const SCREEN1_BANK						= 7 //; $5C00
-.const CHARSET_BANK						= 4 //; $6000
+.const SCREEN0_BANK						= 6 //; $5800-$5BFF
+.const SCREEN1_BANK						= 7 //; $5C00-$5FFF
+.const CHARSET_BANK						= 4 //; $6000-$67FF
 .const SPRITE_BASE_INDEX				= $a0 //; $6800-69ff for water sprites
 
 //; Calculated addresses
@@ -479,7 +478,7 @@ AnalyzeSIDRegisters: {
 		bcc !skipVoice+
 
 		sta barHeights, x
-		lda #0
+		lda #$00
 		sta barHeightsLo, x
 		lda #voice
 		sta barVoiceMap, x
@@ -979,12 +978,12 @@ D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsP
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
 
+.align 256
+.import source "../INC/FreqTable.asm"
+
 .align 128
 div16:						.fill 128, i / 16.0
 div16mul3:					.fill 128, (3 * i) / 16.0
-
-.align 256
-.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; SPRITE DATA

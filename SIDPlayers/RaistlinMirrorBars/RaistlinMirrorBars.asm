@@ -40,17 +40,14 @@
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 
-	jmp Initialize					//; Entry point for the player
-
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
 
-//; Display layout
 .const NUM_FREQUENCY_BARS				= 40
 
-.const TOP_SPECTRUM_HEIGHT				= 9 //; In character rows
-.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2 //; Mirrored display
+.const TOP_SPECTRUM_HEIGHT				= 9
+.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
@@ -817,9 +814,6 @@ sidRegisterMirror:			.fill 32, 0
 //; DATA SECTION - Calculations
 //; =============================================================================
 
-.align 128
-div16:						.fill 128, i / 16.0
-div16mul3:					.fill 128, (3 * i) / 16.0
 multiply64Table:			.fill 4, i * 64
 
 //; =============================================================================
@@ -866,6 +860,10 @@ D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsP
 
 .align 256
 .import source "../INC/FreqTable.asm"
+
+.align 128
+div16:						.fill 128, i / 16.0
+div16mul3:					.fill 128, (3 * i) / 16.0
 
 //; =============================================================================
 //; CHARSET DATA

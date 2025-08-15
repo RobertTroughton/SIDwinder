@@ -449,7 +449,7 @@ AnalyzeSIDRegisters: {
 		bcc !skipVoice+
 
 		sta barHeights, x
-		lda #0
+		lda #$00
 		sta barHeightsLo, x
 		lda #voice
 		sta barVoiceMap, x
@@ -916,12 +916,12 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
 
+.align 256
+.import source "../INC/FreqTable.asm"
+
 .align 128
 div16:						.fill 128, i / 16.0
 div16mul3:					.fill 128, (3 * i) / 16.0
-
-.align 256
-.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; SPRITE DATA
