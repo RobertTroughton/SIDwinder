@@ -76,6 +76,7 @@ class SIDwinderPRGExporter {
     constructor(analyzer) {
         this.analyzer = analyzer;
         this.builder = new PRGBuilder();
+        this.compressorManager = new CompressorManager();
         this.saveRoutineAddress = 0;
         this.restoreRoutineAddress = 0;
     }
@@ -360,7 +361,7 @@ class SIDwinderPRGExporter {
             visualizerFile = 'prg/RaistlinBars.bin',
             visualizerLoadAddress = 0x4100,
             includeData = true,
-            useCompression = false
+            compressionType = 'tscrunch'  // Changed from useCompression boolean
         } = options;
 
         try {
@@ -393,14 +394,14 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Process visualizer options (like border color) - THIS IS THE KEY PART
+            // Process visualizer options (like border color)
             const optionComponents = await this.processVisualizerOptions(visualizerName);
 
             for (const component of optionComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Add save/restore routines
+            // Add save/restore routines - THIS IS THE IMPORTANT PART YOU MENTIONED
             let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
             let restoreRoutineAddr = saveRoutineAddr;
 
@@ -444,39 +445,43 @@ class SIDwinderPRGExporter {
 
             const info = this.builder.getInfo();
 
+            // IMPORTANT: Store these for later use
             this.saveRoutineAddress = saveRoutineAddr;
             this.restoreRoutineAddress = restoreRoutineAddr;
 
-            // Apply compression if requested
-            if (useCompression) {
-                // Check if RLE compressor is available
-                if (!window.SIDwinderModule) {
-                    console.warn('WASM module not available for compression, returning uncompressed');
-                    return prgData;
-                }
-
+            // Apply compression if requested - ONLY THIS PART CHANGES
+            if (compressionType !== 'none') {
                 try {
-                    // Create RLE compressor instance
-                    const rleCompressor = new RLECompressor(window.SIDwinderModule);
+                    // Initialize compressor manager if not already done
+                    if (!this.compressorManager) {
+                        this.compressorManager = new CompressorManager();
+                    }
 
-                    // Remove the load address (first 2 bytes) for compression
-                    const prgWithoutLoadAddr = prgData.slice(2);
+                    // Check if selected compressor is available
+                    if (!this.compressorManager.isAvailable(compressionType)) {
+                        console.warn(`${compressionType} compressor not available, returning uncompressed`);
+                        return prgData;
+                    }
 
-                    // The uncompressed start is the original load address
                     const uncompressedStart = this.builder.lowestAddress;
                     const executeAddress = visualizerLoadAddress;
 
-                    // Compress
-                    const compressed = rleCompressor.compressPRG(
-                        prgWithoutLoadAddr,
+                    // Compress with selected method
+                    const result = await this.compressorManager.compress(
+                        prgData,
+                        compressionType,
                         uncompressedStart,
                         executeAddress
                     );
 
-                    return compressed.data;
+                    const result_ratio = result.compressedSize / result.originalSize;
+                    console.log(`${compressionType.toUpperCase()} compression: ${result.originalSize} -> ${result.compressedSize} bytes (${(result_ratio * 100).toFixed(1)}%)`);
+
+                    return result.data;
 
                 } catch (error) {
-                    console.error('Compression failed:', error);
+                    console.error(`${compressionType} compression failed:`, error);
+                    // Fall back to uncompressed
                     return prgData;
                 }
             }

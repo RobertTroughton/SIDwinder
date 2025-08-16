@@ -52,7 +52,7 @@ class UIController {
             exportSection: document.getElementById('exportSection'),
             visualizerGrid: document.getElementById('visualizerGrid'),
             visualizerOptions: document.getElementById('visualizerOptions'),
-            useCompression: document.getElementById('useCompression'),
+            compressionType: document.getElementById('compressionType'),
             exportModifiedSIDButton: document.getElementById('exportModifiedSIDButton'),
             exportPRGButton: document.getElementById('exportPRGButton'),
             exportStatus: document.getElementById('exportStatus'),
@@ -635,7 +635,9 @@ class UIController {
             return;
         }
 
-        const useCompression = this.elements.useCompression ? this.elements.useCompression.checked : false;
+        // Get the selected compression type
+        const compressionType = this.elements.compressionType ?
+            this.elements.compressionType.value : 'tscrunch';
 
         this.showExportStatus('Building PRG file...', 'info');
 
@@ -652,19 +654,32 @@ class UIController {
                 visualizerFile: this.selectedVisualizer.binary,
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
-                useCompression: useCompression
+                compressionType: compressionType  // Make sure this is passed!
             };
 
             const prgData = await this.prgExporter.createPRG(options);
 
-            const suffix = useCompression ? '_compressed' : '';
+            // Generate filename suffix based on compression
+            let suffix = '';
+            switch (compressionType) {
+                case 'none':
+                    suffix = '';
+                    break;
+                case 'rle':
+                    suffix = '_rle';
+                    break;
+                case 'tscrunch':
+                    suffix = '_tscrunched';
+                    break;
+            }
+
             this.downloadFile(prgData, `${baseName}_${this.selectedVisualizer.id}${suffix}.prg`);
 
             const sizeKB = (prgData.length / 1024).toFixed(2);
             let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;
 
-            if (useCompression) {
-                statusMsg += ' (RLE compressed)';
+            if (compressionType !== 'none') {
+                statusMsg += ` (${compressionType.toUpperCase()} compressed)`;
             }
 
             this.showExportStatus(statusMsg, 'success');

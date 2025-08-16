@@ -69,8 +69,7 @@ extern "C" {
     void add_run(bool isRepeat, uint16_t length, const uint8_t* data, uint32_t blockNum, uint32_t inputOffset) {
         if (length == 0) return;
 
-        printf("RLE_%d: %04X, %s, %04X\n",
-            blockNum, inputOffset, isRepeat ? "rep" : "lit", length);
+//;        printf("RLE_%d: %04X, %s, %04X\n", blockNum, inputOffset, isRepeat ? "rep" : "lit", length);
 
         uint32_t startSize = rleCompressor.compressed.size();
 

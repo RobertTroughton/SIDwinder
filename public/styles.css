@@ -766,3 +766,25 @@ body {
         margin-left: 0;
     }
 }
+
+/* Compression Select */
+.compression-option select {
+    padding: 5px 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    background: white;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 200px;
+}
+
+    .compression-option select:hover {
+        border-color: #667eea;
+    }
+
+    .compression-option select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }

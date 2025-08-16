@@ -145,10 +145,12 @@
 
                 <!-- Compression Option -->
                 <div class="export-option compression-option">
-                    <label for="useCompression">
-                        <input type="checkbox" id="useCompression" checked>
-                        Use RLE Compression
-                    </label>
+                    <label for="compressionType">Compression:</label>
+                    <select id="compressionType">
+                        <option value="none">None</option>
+                        <option value="rle">RLE</option>
+                        <option value="tscrunch" selected>TSCrunch (recommended)</option>
+                    </select>
                 </div>
 
                 <!-- Export Button -->
@@ -171,13 +173,88 @@
         </div>
     </div>
 
-    <!-- Scripts - Load order is important -->
+    <!-- Load TSCrunch as ES module -->
+    <script type="module">
+        import { Cruncher, createSFX } from './lib/index.js';
+
+        // Buffer polyfill for browser
+        if (typeof Buffer === 'undefined') {
+            window.Buffer = {
+                from: function (data) {
+                    if (data instanceof Uint8Array) return data;
+                    if (Array.isArray(data)) return new Uint8Array(data);
+                    return new Uint8Array(0);
+                }
+            };
+        }
+
+        // Make TSCrunch available globally
+        window.TSCrunch = {
+            compress: function (data, options = {}) {
+                const {
+                    prg = true,
+                    sfx = true,
+                    sfxMode = 0,
+                    jumpAddress = 0x1000,
+                    blank = false,
+                    inplace = false
+                } = options;
+
+                // Convert data to array if needed
+                const dataArray = Array.from(data);
+
+                // Handle PRG format (skip load address)
+                let sourceData = dataArray;
+                let loadAddress = 0x0801;
+
+                if (prg && dataArray.length >= 2) {
+                    loadAddress = dataArray[0] | (dataArray[1] << 8);
+                    sourceData = dataArray.slice(2);
+                }
+
+                // Create cruncher
+                const cruncher = new Cruncher(sourceData);
+
+                // Compress
+                cruncher.ocrunch({
+                    inplace: inplace,
+                    verbose: false,
+                    sfxMode: sfx
+                });
+
+                // Get compressed data
+                let compressed = cruncher.crunched;
+
+                // Create SFX if requested
+                if (sfx) {
+                    compressed = Array.from(createSFX(Buffer.from(compressed), {
+                        jumpAddress: jumpAddress,
+                        decrunchAddress: loadAddress,
+                        optimalRun: cruncher.optimalRun,
+                        sfxMode: sfxMode,
+                        blank: blank
+                    }));
+                }
+
+                // The SFX already has the load address from createSFX
+                // Don't add it again!
+                return new Uint8Array(compressed);
+            }
+        };
+
+        // Signal that TSCrunch is ready
+        window.dispatchEvent(new Event('tscrunch-ready'));
+    </script>
+
+    <!-- Regular scripts -->
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
+    <script src="compressor-manager.js"></script>
     <script src="prg-builder.js"></script>
     <script src="ui.js"></script>
     <script src="visualizer-registry.js"></script>
     <script src="visualizer-configs.js"></script>
+
 
 </body>
 </html>
