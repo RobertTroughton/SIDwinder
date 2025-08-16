@@ -11,7 +11,6 @@ class SIDAnalyzer {
 
     async initWASM() {
         try {
-            // Initialize the WASM module - store globally for RLE compressor
             this.Module = await SIDwinderModule();
             this.wasmModule = this.Module;
             window.SIDwinderModule = this.Module; // Make available globally
@@ -293,76 +292,3 @@ class SIDAnalyzer {
 
 // Export for use in other modules
 window.SIDAnalyzer = SIDAnalyzer;
-
-
-// RLE Compression wrapper
-class RLECompressor {
-    constructor(module) {
-        this.Module = module;
-
-        // Create API wrapper for RLE functions
-        this.api = {
-            rle_init: module.cwrap('rle_init', null, []),
-            rle_compress_prg: module.cwrap('rle_compress_prg', 'number', ['number', 'number', 'number', 'number', 'number']),
-            rle_get_original_size: module.cwrap('rle_get_original_size', 'number', []),
-            rle_get_compressed_size: module.cwrap('rle_get_compressed_size', 'number', []),
-            rle_get_compression_ratio: module.cwrap('rle_get_compression_ratio', 'number', [])
-        };
-
-        // Initialize
-        this.api.rle_init();
-    }
-
-    compressPRG(data, uncompressedStart, executeAddress) {
-        // Allocate memory for input data
-        const dataPtr = this.Module._malloc(data.length);
-        const sizePtr = this.Module._malloc(4);
-
-        try {
-            // Copy data to WASM heap
-            this.Module.HEAPU8.set(data, dataPtr);
-
-            // Compress
-            const resultPtr = this.api.rle_compress_prg(
-                dataPtr,
-                data.length,
-                uncompressedStart,
-                executeAddress,
-                sizePtr
-            );
-
-            if (!resultPtr) {
-                throw new Error('RLE compression failed');
-            }
-
-            // Get compressed size
-            const compressedSize = this.Module.HEAP32[sizePtr >> 2];
-
-            // Copy compressed data
-            const compressedData = new Uint8Array(compressedSize);
-            compressedData.set(this.Module.HEAPU8.subarray(resultPtr, resultPtr + compressedSize));
-
-            // Free result
-            this.Module._free(resultPtr);
-
-            // Get statistics
-            const stats = {
-                originalSize: this.api.rle_get_original_size(),
-                compressedSize: this.api.rle_get_compressed_size(),
-                ratio: this.api.rle_get_compression_ratio()
-            };
-
-            return {
-                data: compressedData,
-                stats: stats
-            };
-
-        } finally {
-            this.Module._free(dataPtr);
-            this.Module._free(sizePtr);
-        }
-    }
-}
-
-// Export RLE compressor
-window.RLECompressor = RLECompressor;

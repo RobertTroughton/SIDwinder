@@ -665,9 +665,6 @@ class UIController {
                 case 'none':
                     suffix = '';
                     break;
-                case 'rle':
-                    suffix = '_rle';
-                    break;
                 case 'tscrunch':
                     suffix = '_tscrunched';
                     break;

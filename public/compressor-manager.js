@@ -3,7 +3,6 @@ class CompressorManager {
     constructor() {
         this.compressors = {
             'none': null,
-            'rle': null,
             'tscrunch': null
         };
 
@@ -12,15 +11,6 @@ class CompressorManager {
     }
 
     async initializeCompressors() {
-        // RLE Compressor (from WASM)
-        if (window.SIDwinderModule) {
-            try {
-                this.compressors.rle = new RLECompressor(window.SIDwinderModule);
-            } catch (error) {
-                console.warn('RLE compressor initialization failed:', error);
-            }
-        }
-
         // Wait for TSCrunch to be ready
         if (!window.TSCrunch) {
             await new Promise(resolve => {
