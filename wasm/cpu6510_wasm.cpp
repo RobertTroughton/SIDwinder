@@ -183,6 +183,66 @@ extern "C" {
         set_flag(FLAG_NEGATIVE, (value & 0x80) != 0);
     }
 
+    // === Addressing & micro-helpers =============================================
+    inline uint8_t rd(uint16_t addr) {
+        if (cpu.trackingEnabled) cpu.memoryAccess[addr] |= MEM_READ;
+        return cpu.memory[addr];
+    }
+    inline bool page_crossed(uint16_t a, uint16_t b) { return (a & 0xFF00) != (b & 0xFF00); }
+
+    struct EA { uint16_t addr; bool cross; };
+
+    inline EA ea_abs(uint16_t& pc) { uint16_t base = read_word(pc); return { base, false }; }
+    inline EA ea_absx(uint16_t& pc) { uint16_t base = read_word(pc); uint16_t a = base + cpu.x; return { a, page_crossed(base,a) }; }
+    inline EA ea_absy(uint16_t& pc) { uint16_t base = read_word(pc); uint16_t a = base + cpu.y; return { a, page_crossed(base,a) }; }
+    inline EA ea_zp(uint16_t& pc) { uint8_t z = cpu.memory[pc++]; return { z, false }; }
+    inline EA ea_zpx(uint16_t& pc) { uint8_t z = (cpu.memory[pc++] + cpu.x) & 0xFF; return { z, false }; }
+    inline EA ea_zpy(uint16_t& pc) { uint8_t z = (cpu.memory[pc++] + cpu.y) & 0xFF; return { z, false }; }
+    inline EA ea_indx(uint16_t& pc) { uint8_t z = (cpu.memory[pc++] + cpu.x) & 0xFF; uint16_t a = rd(z) | (rd((z + 1) & 0xFF) << 8); return { a, false }; }
+    inline EA ea_indy(uint16_t& pc) { uint8_t z = cpu.memory[pc++]; uint16_t b = rd(z) | (rd((z + 1) & 0xFF) << 8); uint16_t a = b + cpu.y; return { a, page_crossed(b,a) }; }
+
+    inline void add(uint8_t c) { cpu.cycles += c; }
+    inline void add_read(uint8_t base, bool cross) { cpu.cycles += base + (cross ? 1 : 0); }
+
+    inline void do_cmp(uint8_t reg, uint8_t v) {
+        uint8_t r = reg - v;
+        set_flag(FLAG_CARRY, reg >= v);
+        set_zn_flags(r);
+    }
+    inline void do_adc(uint8_t v) { // binary mode (matches your current core)
+        uint16_t r = uint16_t(cpu.a) + v + (test_flag(FLAG_CARRY) ? 1 : 0);
+        set_flag(FLAG_CARRY, r > 0xFF);
+        set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (v ^ r) & 0x80) != 0);
+        cpu.a = uint8_t(r);
+        set_zn_flags(cpu.a);
+    }
+    inline void do_sbc(uint8_t v) { // binary mode (matches your current core)
+        uint16_t r = uint16_t(cpu.a) - v - (test_flag(FLAG_CARRY) ? 0 : 1);
+        set_flag(FLAG_CARRY, r < 0x100);
+        set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (~v ^ r) & 0x80) != 0);
+        cpu.a = uint8_t(r);
+        set_zn_flags(cpu.a);
+    }
+
+    // RMW helpers (memory)
+    inline void do_asl_mem(uint16_t a) { uint8_t v = rd(a); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(a, v); set_zn_flags(v); }
+    inline void do_lsr_mem(uint16_t a) { uint8_t v = rd(a); set_flag(FLAG_CARRY, v & 0x01); v >>= 1; write_memory_internal(a, v); set_zn_flags(v); }
+    inline void do_rol_mem(uint16_t a) { uint8_t v = rd(a); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(a, v); set_zn_flags(v); }
+    inline void do_ror_mem(uint16_t a) { uint8_t v = rd(a); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x01); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(a, v); set_zn_flags(v); }
+
+    // Unofficial convenience
+    inline void do_lax(uint8_t v) { cpu.a = v; cpu.x = v; set_zn_flags(v); }
+
+    // Branch helper (+1 taken, +1 if taken crosses page)
+    inline void branch_if(bool cond, uint16_t& pc) {
+        int8_t off = (int8_t)cpu.memory[pc++];
+        if (!cond) { add(2); return; }
+        uint16_t old = pc; pc = uint16_t(pc + off);
+        add(3);
+        if (page_crossed(old, pc)) add(1);
+    }
+    // =============================================================================
+
     // Execute one instruction
     EMSCRIPTEN_KEEPALIVE
         void cpu_step() {
@@ -226,29 +286,12 @@ extern "C" {
         }
         break;
 
-        case 0xBD: // LDA absolute,X
-        {
-            uint16_t addr = read_word(pc) + cpu.x;
-            cpu.a = cpu.memory[addr];
-            if (cpu.trackingEnabled) {
-                cpu.memoryAccess[addr] |= MEM_READ;
-            }
-            set_zn_flags(cpu.a);
-            cpu.cycles += 4;
-        }
-        break;
+        case 0xBD: /* LDA abs,X */ { auto e = ea_absx(pc); cpu.a = rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0xB9: /* LDA abs,Y */ { auto e = ea_absy(pc); cpu.a = rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0xB1: /* LDA (ind),Y */ { auto e = ea_indy(pc); cpu.a = rd(e.addr); set_zn_flags(cpu.a); add_read(5, e.cross); } break;
+        case 0xBE: /* LDX abs,Y */ { auto e = ea_absy(pc); cpu.x = rd(e.addr); set_zn_flags(cpu.x); add_read(4, e.cross); } break;
+        case 0xBC: /* LDY abs,X */ { auto e = ea_absx(pc); cpu.y = rd(e.addr); set_zn_flags(cpu.y); add_read(4, e.cross); } break;
 
-        case 0xB9: // LDA absolute,Y
-        {
-            uint16_t addr = read_word(pc) + cpu.y;
-            cpu.a = cpu.memory[addr];
-            if (cpu.trackingEnabled) {
-                cpu.memoryAccess[addr] |= MEM_READ;
-            }
-            set_zn_flags(cpu.a);
-            cpu.cycles += 4;
-        }
-        break;
 
         case 0xB5: // LDA zero page,X
         {
@@ -272,19 +315,6 @@ extern "C" {
             }
             set_zn_flags(cpu.a);
             cpu.cycles += 6;
-        }
-        break;
-
-        case 0xB1: // LDA (indirect),Y
-        {
-            uint8_t zp = cpu.memory[pc++];
-            uint16_t addr = (cpu.memory[zp] | (cpu.memory[(zp + 1) & 0xFF] << 8)) + cpu.y;
-            cpu.a = cpu.memory[addr];
-            if (cpu.trackingEnabled) {
-                cpu.memoryAccess[addr] |= MEM_READ;
-            }
-            set_zn_flags(cpu.a);
-            cpu.cycles += 5;
         }
         break;
 
@@ -440,18 +470,6 @@ extern "C" {
         }
         break;
 
-        case 0xBE: // LDX absolute,Y
-        {
-            uint16_t addr = read_word(pc) + cpu.y;
-            cpu.x = cpu.memory[addr];
-            if (cpu.trackingEnabled) {
-                cpu.memoryAccess[addr] |= MEM_READ;
-            }
-            set_zn_flags(cpu.x);
-            cpu.cycles += 4;
-        }
-        break;
-
         // LDY
         case 0xA0: // LDY immediate
             cpu.y = cpu.memory[pc++];
@@ -489,18 +507,6 @@ extern "C" {
             cpu.y = cpu.memory[zp];
             if (cpu.trackingEnabled) {
                 cpu.memoryAccess[zp] |= MEM_READ;
-            }
-            set_zn_flags(cpu.y);
-            cpu.cycles += 4;
-        }
-        break;
-
-        case 0xBC: // LDY absolute,X
-        {
-            uint16_t addr = read_word(pc) + cpu.x;
-            cpu.y = cpu.memory[addr];
-            if (cpu.trackingEnabled) {
-                cpu.memoryAccess[addr] |= MEM_READ;
             }
             set_zn_flags(cpu.y);
             cpu.cycles += 4;
@@ -678,110 +684,15 @@ extern "C" {
         }
         break;
 
-        // Branches
-        case 0xF0: // BEQ
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (test_flag(FLAG_ZERO)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
+        case 0xF0: /* BEQ */ { branch_if(test_flag(FLAG_ZERO), pc); } break;
+        case 0xD0: /* BNE */ { branch_if(!test_flag(FLAG_ZERO), pc); } break;
+        case 0xB0: /* BCS */ { branch_if(test_flag(FLAG_CARRY), pc); } break;
+        case 0x90: /* BCC */ { branch_if(!test_flag(FLAG_CARRY), pc); } break;
+        case 0x30: /* BMI */ { branch_if(test_flag(FLAG_NEGATIVE), pc); } break;
+        case 0x10: /* BPL */ { branch_if(!test_flag(FLAG_NEGATIVE), pc); } break;
+        case 0x50: /* BVC */ { branch_if(!test_flag(FLAG_OVERFLOW), pc); } break;
+        case 0x70: /* BVS */ { branch_if(test_flag(FLAG_OVERFLOW), pc); } break;
 
-        case 0xD0: // BNE
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (!test_flag(FLAG_ZERO)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0xB0: // BCS
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (test_flag(FLAG_CARRY)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0x90: // BCC
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (!test_flag(FLAG_CARRY)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0x30: // BMI
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (test_flag(FLAG_NEGATIVE)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0x10: // BPL
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (!test_flag(FLAG_NEGATIVE)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0x50: // BVC
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (!test_flag(FLAG_OVERFLOW)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
-
-        case 0x70: // BVS
-        {
-            int8_t offset = (int8_t)cpu.memory[pc++];
-            if (test_flag(FLAG_OVERFLOW)) {
-                pc += offset;
-                cpu.cycles += 3;
-            }
-            else {
-                cpu.cycles += 2;
-            }
-        }
-        break;
 
         // INC/DEC registers
         case 0xE8: // INX
@@ -1170,6 +1081,140 @@ extern "C" {
             pc = pop() | (pop() << 8);
             cpu.cycles += 6;
             break;
+
+        //; AND
+        case 0x2D: { auto e = ea_abs(pc);  cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x3D: { auto e = ea_absx(pc); cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x39: { auto e = ea_absy(pc); cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x35: { auto e = ea_zpx(pc);  cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x21: { auto e = ea_indx(pc); cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add(6); } break;
+        case 0x31: { auto e = ea_indy(pc); cpu.a &= rd(e.addr); set_zn_flags(cpu.a); add_read(5, e.cross); } break;
+
+        //; ORA
+        case 0x0D: { auto e = ea_abs(pc);  cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x1D: { auto e = ea_absx(pc); cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x19: { auto e = ea_absy(pc); cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x15: { auto e = ea_zpx(pc);  cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x01: { auto e = ea_indx(pc); cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add(6); } break;
+        case 0x11: { auto e = ea_indy(pc); cpu.a |= rd(e.addr); set_zn_flags(cpu.a); add_read(5, e.cross); } break;
+
+        //; EOR
+        case 0x4D: { auto e = ea_abs(pc);  cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x5D: { auto e = ea_absx(pc); cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x59: { auto e = ea_absy(pc); cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add_read(4, e.cross); } break;
+        case 0x55: { auto e = ea_zpx(pc);  cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add(4); } break;
+        case 0x41: { auto e = ea_indx(pc); cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add(6); } break;
+        case 0x51: { auto e = ea_indy(pc); cpu.a ^= rd(e.addr); set_zn_flags(cpu.a); add_read(5, e.cross); } break;
+
+		//; ADC
+        case 0x6D: { auto e = ea_abs(pc);  do_adc(rd(e.addr)); add(4); } break;
+        case 0x7D: { auto e = ea_absx(pc); do_adc(rd(e.addr)); add_read(4, e.cross); } break;
+        case 0x79: { auto e = ea_absy(pc); do_adc(rd(e.addr)); add_read(4, e.cross); } break;
+        case 0x75: { auto e = ea_zpx(pc);  do_adc(rd(e.addr)); add(4); } break;
+        case 0x61: { auto e = ea_indx(pc); do_adc(rd(e.addr)); add(6); } break;
+        case 0x71: { auto e = ea_indy(pc); do_adc(rd(e.addr)); add_read(5, e.cross); } break;
+
+        //; SBC
+        case 0xED: { auto e = ea_abs(pc);  do_sbc(rd(e.addr)); add(4); } break;
+        case 0xFD: { auto e = ea_absx(pc); do_sbc(rd(e.addr)); add_read(4, e.cross); } break;
+        case 0xF9: { auto e = ea_absy(pc); do_sbc(rd(e.addr)); add_read(4, e.cross); } break;
+        case 0xF5: { auto e = ea_zpx(pc);  do_sbc(rd(e.addr)); add(4); } break;
+        case 0xE1: { auto e = ea_indx(pc); do_sbc(rd(e.addr)); add(6); } break;
+        case 0xF1: { auto e = ea_indy(pc); do_sbc(rd(e.addr)); add_read(5, e.cross); } break;
+
+        // CMP
+        case 0xD5: { auto e = ea_zpx(pc);  do_cmp(cpu.a, rd(e.addr)); add(4); } break; // zp,X
+        case 0xDD: { auto e = ea_absx(pc); do_cmp(cpu.a, rd(e.addr)); add_read(4, e.cross); } break; // abs,X
+        case 0xD9: { auto e = ea_absy(pc); do_cmp(cpu.a, rd(e.addr)); add_read(4, e.cross); } break; // abs,Y
+        case 0xC1: { auto e = ea_indx(pc); do_cmp(cpu.a, rd(e.addr)); add(6); } break; // (ind,X)
+        case 0xD1: { auto e = ea_indy(pc); do_cmp(cpu.a, rd(e.addr)); add_read(5, e.cross); } break; // (ind),Y
+        case 0xEC: { auto e = ea_abs(pc); do_cmp(cpu.x, rd(e.addr)); add(4); } break;
+        case 0xCC: { auto e = ea_abs(pc); do_cmp(cpu.y, rd(e.addr)); add(4); } break;
+
+        // ASL
+        case 0x0E: { auto e = ea_abs(pc);  do_asl_mem(e.addr); add(6); } break;
+        case 0x1E: { auto e = ea_absx(pc); do_asl_mem(e.addr); add(7); } break;
+        case 0x16: { auto e = ea_zpx(pc);  do_asl_mem(e.addr); add(6); } break;
+
+        // LSR
+        case 0x4E: { auto e = ea_abs(pc);  do_lsr_mem(e.addr); add(6); } break;
+        case 0x5E: { auto e = ea_absx(pc); do_lsr_mem(e.addr); add(7); } break;
+        case 0x56: { auto e = ea_zpx(pc);  do_lsr_mem(e.addr); add(6); } break;
+
+        // ROL
+        case 0x2E: { auto e = ea_abs(pc);  do_rol_mem(e.addr); add(6); } break;
+        case 0x3E: { auto e = ea_absx(pc); do_rol_mem(e.addr); add(7); } break;
+        case 0x36: { auto e = ea_zpx(pc);  do_rol_mem(e.addr); add(6); } break;
+
+        // ROR
+        case 0x6E: { auto e = ea_abs(pc);  do_ror_mem(e.addr); add(6); } break;
+        case 0x7E: { auto e = ea_absx(pc); do_ror_mem(e.addr); add(7); } break;
+        case 0x76: { auto e = ea_zpx(pc);  do_ror_mem(e.addr); add(6); } break;
+
+            // LAX (A,X) loads
+        case 0xA7: { auto e = ea_zp(pc);  do_lax(rd(e.addr)); add(3); } break;
+        case 0xB7: { auto e = ea_zpy(pc); do_lax(rd(e.addr)); add(4); } break;
+        case 0xAF: { auto e = ea_abs(pc); do_lax(rd(e.addr)); add(4); } break;
+        case 0xBF: { auto e = ea_absy(pc); do_lax(rd(e.addr)); add_read(4, e.cross); } break;
+        case 0xA3: { auto e = ea_indx(pc); do_lax(rd(e.addr)); add(6); } break;
+        case 0xB3: { auto e = ea_indy(pc); do_lax(rd(e.addr)); add_read(5, e.cross); } break;
+
+            // SAX (store A&X)
+        case 0x87: { auto e = ea_zp(pc);  write_memory_internal(e.addr, cpu.a & cpu.x); add(3); } break;
+        case 0x97: { auto e = ea_zpy(pc); write_memory_internal(e.addr, cpu.a & cpu.x); add(4); } break;
+        case 0x8F: { auto e = ea_abs(pc); write_memory_internal(e.addr, cpu.a & cpu.x); add(4); } break;
+        case 0x83: { auto e = ea_indx(pc); write_memory_internal(e.addr, cpu.a & cpu.x); add(6); } break;
+
+            // DCP (DEC + CMP)
+        case 0xC7: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(5); } break;
+        case 0xD7: { auto e = ea_zpx(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(6); } break;
+        case 0xCF: { auto e = ea_abs(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(6); } break;
+        case 0xDF: { auto e = ea_absx(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(7); } break;
+        case 0xDB: { auto e = ea_absy(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(7); } break;
+        case 0xC3: { auto e = ea_indx(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(8); } break;
+        case 0xD3: { auto e = ea_indy(pc); uint8_t v = rd(e.addr) - 1; write_memory_internal(e.addr, v); do_cmp(cpu.a, v); add(8); } break;
+
+            // ISC/ISB (INC + SBC)
+        case 0xE7: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(5); } break;
+        case 0xF7: { auto e = ea_zpx(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(6); } break;
+        case 0xEF: { auto e = ea_abs(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(6); } break;
+        case 0xFF: { auto e = ea_absx(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(7); } break;
+        case 0xFB: { auto e = ea_absy(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(7); } break;
+        case 0xE3: { auto e = ea_indx(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(8); } break;
+        case 0xF3: { auto e = ea_indy(pc); uint8_t v = rd(e.addr) + 1; write_memory_internal(e.addr, v); do_sbc(v); add(8); } break;
+
+        // SLO (ASL + ORA)
+        case 0x07: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(5); } break;
+            // ... similarly: 0x17,0x0F,0x1F,0x1B,0x03,0x13
+
+        // RLA (ROL + AND)
+        case 0x27: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(5); } break;
+            // ... similarly: 0x37,0x2F,0x3F,0x3B,0x23,0x33
+
+        // SRE (LSR + EOR)
+        case 0x47: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(5); } break;
+            // ... similarly: 0x57,0x4F,0x5F,0x5B,0x43,0x53
+
+        // RRA (ROR + ADC)
+        case 0x67: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(5); } break;
+            // ... similarly: 0x77,0x6F,0x7F,0x7B,0x63,0x73
+
+        // ANC (AND #imm; C = bit7)
+        case 0x0B: case 0x2B: { uint8_t v = cpu.memory[pc++]; cpu.a &= v; set_zn_flags(cpu.a); set_flag(FLAG_CARRY, cpu.a & 0x80); add(2); } break;
+        
+        // ALR (AND #imm then LSR A)
+        case 0x4B: { uint8_t v = cpu.memory[pc++]; cpu.a &= v; set_flag(FLAG_CARRY, cpu.a & 1); cpu.a >>= 1; set_zn_flags(cpu.a); add(2); } break;
+        
+        // ARR (AND #imm then ROR A) – simplified flags
+        case 0x6B: { uint8_t v = cpu.memory[pc++]; uint8_t t = cpu.a & v; bool c = test_flag(FLAG_CARRY); cpu.a = (t >> 1) | (c ? 0x80 : 0); set_zn_flags(cpu.a); set_flag(FLAG_CARRY, (cpu.a & 0x40) != 0); set_flag(FLAG_OVERFLOW, ((cpu.a ^ (cpu.a << 1)) & 0x40) != 0); add(2); } break;
+
+        // AXS/SBX (X=(A&X)-imm)
+        case 0xCB: { uint8_t i = cpu.memory[pc++]; uint8_t t = (cpu.a & cpu.x); uint16_t r = uint16_t(t) - i; set_flag(FLAG_CARRY, r < 0x100); cpu.x = uint8_t(r); set_zn_flags(cpu.x); add(2); } break;
+
+        // KIL/JAM (halt): keep CPU on this opcode
+        case 0x02: case 0x12: case 0x22: case 0x32: case 0x42: case 0x52:
+        case 0x62: case 0x72: case 0x92: case 0xB2: case 0xD2: case 0xF2:
+        { pc--; add(2); } break;
 
         default:
             // For unimplemented opcodes, try to guess the size from the opcode table
