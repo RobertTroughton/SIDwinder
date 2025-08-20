@@ -453,7 +453,7 @@ UpdateBarDecay: {
 	//; Target is higher - move up quickly
 	lda barHeights, x
 	clc
-	adc #32
+	adc #8
 	cmp targetBarHeights, x
 	bcc !storeHeight+
 	lda targetBarHeights, x		//; Don't overshoot
@@ -463,7 +463,7 @@ UpdateBarDecay: {
 	//; Target is lower - move down slowly
 	lda barHeights, x
 	sec
-	sbc #8
+	sbc #2
 	cmp targetBarHeights, x
 	bcs !storeHeight+
 	lda targetBarHeights, x		//; Don't undershoot
