@@ -3,59 +3,57 @@
 class VisualizerConfig {
     constructor() {
         this.configs = new Map();
-        this.loadedFiles = new Map(); // Cache loaded config files
     }
 
-    async loadConfig(visualizerName) {
-        // Check cache first
-        if (this.configs.has(visualizerName)) {
-            return this.configs.get(visualizerName);
+    async loadConfig(visualizerId) {
+        const visualizer = VISUALIZERS.find(v => v.id === visualizerId);
+        if (!visualizer || !visualizer.config) {
+            return null;
         }
 
         try {
-            const response = await fetch(`prg/${visualizerName}.json`);
+            const response = await fetch(visualizer.config);
             if (!response.ok) {
-                // No config file means simple visualizer with no extra inputs
+                console.warn(`Could not load config for ${visualizerId}`);
                 return null;
             }
 
             const config = await response.json();
-            this.configs.set(visualizerName, config);
-            return config;
 
+            // Add maxCallsPerFrame from config or use default
+            if (config.maxCallsPerFrame !== undefined) {
+                visualizer.maxCallsPerFrame = config.maxCallsPerFrame;
+            }
+
+            return config;
         } catch (error) {
-            console.log(`No config for ${visualizerName}, using defaults`);
+            console.error(`Error loading config for ${visualizerId}:`, error);
             return null;
         }
     }
 
-    async loadDefaultFile(url) {
+    async loadDefaultFile(filename) {
         try {
-            const response = await fetch(url);
+            const response = await fetch(filename);
             if (!response.ok) {
-                throw new Error(`Failed to load default file: ${url}`);
+                console.warn(`Could not load default file: ${filename}`);
+                return null;
             }
             const arrayBuffer = await response.arrayBuffer();
             return new Uint8Array(arrayBuffer);
         } catch (error) {
-            console.warn(`Could not load default file ${url}:`, error);
+            console.error(`Error loading default file ${filename}:`, error);
             return null;
         }
-    }
-
-    validateFileSize(file, expectedSizes) {
-        // Koala files are typically 10001 or 10003 bytes
-        const validSizes = expectedSizes || [10001, 10003];
-        return validSizes.includes(file.length);
     }
 
     extractMemoryRegions(fileData, memoryConfig) {
         const regions = [];
 
         for (const region of memoryConfig) {
-            const offset = parseInt(region.sourceOffset);
-            const size = parseInt(region.size);
-            const targetAddr = parseInt(region.targetAddress);
+            const offset = parseInt(region.sourceOffset, 16);
+            const size = parseInt(region.size, 16);
+            const targetAddr = parseInt(region.targetAddress, 16);
 
             if (offset + size > fileData.length) {
                 throw new Error(`Invalid region ${region.name}: exceeds file size`);

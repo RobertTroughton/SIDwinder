@@ -1,4 +1,5 @@
 {
   "name": "Basic Raster Bar",
+  "maxCallsPerFrame": 6,
   "version": "1.0"
 }

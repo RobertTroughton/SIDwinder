@@ -7,6 +7,7 @@ const VISUALIZERS = [
         description: 'Spectrometer bars',
         preview: 'prg/raistlinbars.png',
         binary: 'prg/raistlinbars.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/raistlinbars.json'
     },
     {
@@ -15,6 +16,7 @@ const VISUALIZERS = [
         description: 'Spectrumeter bars below an 80px tall logo',
         preview: 'prg/raistlinbarswithlogo.png',
         binary: 'prg/raistlinbarswithlogo.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/raistlinbarswithlogo.json'
     },
     {
@@ -23,6 +25,7 @@ const VISUALIZERS = [
         description: 'Spectrometer mirrored bars',
         preview: 'prg/raistlinmirrorbars.png',
         binary: 'prg/raistlinmirrorbars.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/raistlinmirrorbars.json'
     },
     {
@@ -31,6 +34,7 @@ const VISUALIZERS = [
         description: 'Spectrometer mirrored bars below an 80px tall logo',
         preview: 'prg/raistlinmirrorbarswithlogo.png',
         binary: 'prg/raistlinmirrorbarswithlogo.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/raistlinmirrorbarswithlogo.json'
     },
     {
@@ -39,6 +43,7 @@ const VISUALIZERS = [
         description: 'Full-screen bitmap',
         preview: 'prg/simplebitmap.png',
         binary: 'prg/simplebitmap.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/simplebitmap.json'
     },
     {
@@ -47,6 +52,7 @@ const VISUALIZERS = [
         description: 'Minimal rasterbar effect',
         preview: 'prg/simpleraster.png',
         binary: 'prg/simpleraster.bin',
+        maxCallsPerFrame: 1,
         config: 'prg/simpleraster.json'
     }
 ];

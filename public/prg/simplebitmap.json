@@ -1,5 +1,6 @@
 {
   "name": "Simple Bitmap",
+  "maxCallsPerFrame": 6,
   "version": "1.0",
   "inputs": [
     {

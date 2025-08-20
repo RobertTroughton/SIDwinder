@@ -150,8 +150,15 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame) {
+    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame, maxCallsPerFrame) {
         const data = new Uint8Array(0x50);
+
+        // Apply the maximum calls per frame limit if specified
+        let effectiveCallsPerFrame = numCallsPerFrame;
+        if (maxCallsPerFrame !== null && numCallsPerFrame > maxCallsPerFrame) {
+            console.warn(`SID requires ${numCallsPerFrame} calls per frame, but visualizer supports max ${maxCallsPerFrame}. Limiting to ${maxCallsPerFrame}.`);
+            effectiveCallsPerFrame = maxCallsPerFrame;
+        }
 
         // JMP SIDInit at $4000
         data[0] = 0x4C;
@@ -173,11 +180,9 @@ class SIDwinderPRGExporter {
         data[10] = restoreRoutineAddr & 0xFF;
         data[11] = (restoreRoutineAddr >> 8) & 0xFF;
 
-        data[0x0C] = numCallsPerFrame & 0xFF;
+        data[0x0C] = effectiveCallsPerFrame & 0xFF;
         data[0x0D] = 0x00; // BorderColour
         data[0x0E] = 0x00; // BitmapScreenColour
-
-        console.warn(`${data[0x0c]} calls per frame`);
 
         // SID Name at $4010-$402F
         const nameBytes = this.stringToPETSCII(name, 32);
@@ -280,6 +285,7 @@ class SIDwinderPRGExporter {
     }
 
     async processVisualizerInputs(visualizerType) {
+
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
@@ -304,11 +310,6 @@ class SIDwinderPRGExporter {
             }
 
             if (fileData && inputConfig.memory) {
-                // Validate file size (if it's a Koala file)
-                if (inputConfig.id === 'koala' && !config.validateFileSize(fileData)) {
-                    throw new Error(`Invalid Koala file size: ${fileData.length} bytes`);
-                }
-
                 // Extract memory regions
                 const regions = config.extractMemoryRegions(fileData, inputConfig.memory);
 
@@ -341,8 +342,6 @@ class SIDwinderPRGExporter {
             if (element && optionConfig.memory) {
                 let value = parseInt(element.value) || optionConfig.default || 0;
 
-                console.log(`Processing option ${optionConfig.id}: value=${value}, address=${optionConfig.memory.targetAddress}`);
-
                 // Create a single-byte component for this option
                 const data = new Uint8Array(optionConfig.memory.size || 1);
                 data[0] = value & 0xFF; // Ensure it's a byte
@@ -367,7 +366,9 @@ class SIDwinderPRGExporter {
             visualizerFile = 'prg/RaistlinBars.bin',
             visualizerLoadAddress = 0x4100,
             includeData = true,
-            compressionType = 'tscrunch'  // Changed from useCompression boolean
+            compressionType = 'tscrunch',
+            maxCallsPerFrame = null,
+            visualizerId = null
         } = options;
 
         try {
@@ -393,21 +394,24 @@ class SIDwinderPRGExporter {
             }
 
             // Process additional visualizer inputs
-            const visualizerName = options.visualizerFile.replace('prg/', '').replace('.bin', '');
+            // Use the visualizerId if provided, otherwise try to extract from filename
+            const visualizerName = options.visualizerId ||
+                options.visualizerFile.replace('prg/', '').replace('.bin', '').toLowerCase();
+
             const additionalComponents = await this.processVisualizerInputs(visualizerName);
 
             for (const component of additionalComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Process visualizer options (like border color)
+            // Process visualizer options
             const optionComponents = await this.processVisualizerOptions(visualizerName);
 
             for (const component of optionComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Add save/restore routines - THIS IS THE IMPORTANT PART YOU MENTIONED
+            // Add save/restore routines
             let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
             let restoreRoutineAddr = saveRoutineAddr;
 
@@ -435,6 +439,7 @@ class SIDwinderPRGExporter {
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
+            // Make sure maxCallsPerFrame is passed from options
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -444,7 +449,8 @@ class SIDwinderPRGExporter {
                 restoreRoutineAddr,
                 header.name || 'Unknown',
                 header.author || 'Unknown',
-                numCallsPerFrame
+                numCallsPerFrame,
+                options.maxCallsPerFrame  // Use from options, not from local variable
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
@@ -454,19 +460,17 @@ class SIDwinderPRGExporter {
 
             const info = this.builder.getInfo();
 
-            // IMPORTANT: Store these for later use
+            // Store these for later use
             this.saveRoutineAddress = saveRoutineAddr;
             this.restoreRoutineAddress = restoreRoutineAddr;
 
-            // Apply compression if requested - ONLY THIS PART CHANGES
+            // Apply compression if requested
             if (compressionType !== 'none') {
                 try {
-                    // Initialize compressor manager if not already done
                     if (!this.compressorManager) {
                         this.compressorManager = new CompressorManager();
                     }
 
-                    // Check if selected compressor is available
                     if (!this.compressorManager.isAvailable(compressionType)) {
                         console.warn(`${compressionType} compressor not available, returning uncompressed`);
                         return prgData;
@@ -475,7 +479,6 @@ class SIDwinderPRGExporter {
                     const uncompressedStart = this.builder.lowestAddress;
                     const executeAddress = visualizerLoadAddress;
 
-                    // Compress with selected method
                     const result = await this.compressorManager.compress(
                         prgData,
                         compressionType,
@@ -490,7 +493,6 @@ class SIDwinderPRGExporter {
 
                 } catch (error) {
                     console.error(`${compressionType} compression failed:`, error);
-                    // Fall back to uncompressed
                     return prgData;
                 }
             }

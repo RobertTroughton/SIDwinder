@@ -1,5 +1,6 @@
 {
   "name": "Raistlin Bars With Logo",
+  "maxCallsPerFrame": 1,
   "version": "1.0",
   "inputs": [
     {

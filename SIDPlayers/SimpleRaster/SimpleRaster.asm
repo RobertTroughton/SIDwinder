@@ -138,9 +138,13 @@ JustPlayMusic:
     stx callCount + 1                   //; Store updated counter
 
     //; Visual CPU usage indicator
-    inc $d020                           //; Flash border during playback
+    lda $d020
+    eor #$08
+    sta $d020
     jsr SIDPlay                         //; Call the music player
-    dec $d020                           //; Restore border color
+    lda $d020
+    eor #$08
+    sta $d020
 
     //; Set up next interrupt
     ldx callCount + 1

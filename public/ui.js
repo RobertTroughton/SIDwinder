@@ -296,6 +296,13 @@ class UIController {
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.add('visible');
 
+            // Update the header to show calls per frame info
+            const header = this.elements.exportSection.querySelector('h2');
+            if (header && this.analysisResults) {
+                const calls = this.analysisResults.numCallsPerFrame || 1;
+                header.innerHTML = `🎮 Choose Your Visualizer <span style="font-size: 0.8em; color: #666;">(This SID requires ${calls} call${calls > 1 ? 's' : ''}/frame)</span>`;
+            }
+
             // Initialize visualizer selection
             this.initVisualizerSelection();
 
@@ -319,10 +326,29 @@ class UIController {
         }
     }
 
-    initVisualizerSelection() {
+    async initVisualizerSelection() {
         this.selectedVisualizer = null;
         this.visualizerConfig = new VisualizerConfig();
+        await this.loadAllVisualizerConfigs();
         this.buildVisualizerGrid();
+    }
+
+    async loadAllVisualizerConfigs() {
+        // Load configs for all visualizers to get their maxCallsPerFrame values
+        for (const viz of VISUALIZERS) {
+            if (viz.config) {
+                try {
+                    const config = await this.visualizerConfig.loadConfig(viz.id);
+                    if (config && config.maxCallsPerFrame !== undefined) {
+                        viz.maxCallsPerFrame = config.maxCallsPerFrame;
+                    }
+                    // Make sure we're not overwriting the config
+                    viz.configData = config; // Store the full config
+                } catch (error) {
+                    console.warn(`Could not load config for ${viz.id}:`, error);
+                }
+            }
+        }
     }
 
     buildVisualizerGrid() {
@@ -342,21 +368,35 @@ class UIController {
         card.className = 'visualizer-card';
         card.dataset.id = visualizer.id;
 
-        card.innerHTML = `
-            <div class="visualizer-preview">
-                <img src="${visualizer.preview}" alt="${visualizer.name}" 
-                     onerror="this.src='previews/default.png'">
-            </div>
-            <div class="visualizer-info">
-                <h3>${visualizer.name}</h3>
-                <p>${visualizer.description}</p>
-            </div>
-            <div class="visualizer-selected-badge">✓ Selected</div>
-        `;
+        // Check if this visualizer can handle the required calls per frame
+        const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
+        const maxCalls = visualizer.maxCallsPerFrame || Infinity;
+        const isDisabled = requiredCalls > maxCalls;
 
-        card.addEventListener('click', () => {
-            this.selectVisualizer(visualizer);
-        });
+        if (isDisabled) {
+            card.classList.add('disabled');
+        }
+
+        const disabledMessage = isDisabled ?
+            `Requires max ${maxCalls} call${maxCalls > 1 ? 's' : ''}/frame` : '';
+
+        card.innerHTML = `
+        <div class="visualizer-preview">
+            <img src="${visualizer.preview}" alt="${visualizer.name}" 
+                 onerror="this.src='previews/default.png'">
+        </div>
+        <div class="visualizer-info" ${isDisabled ? `data-reason="${disabledMessage}"` : ''}>
+            <h3>${visualizer.name}</h3>
+            <p>${visualizer.description}</p>
+        </div>
+        <div class="visualizer-selected-badge">✓ Selected</div>
+    `;
+
+        if (!isDisabled) {
+            card.addEventListener('click', () => {
+                this.selectVisualizer(visualizer);
+            });
+        }
 
         return card;
     }
@@ -654,7 +694,9 @@ class UIController {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
 
-            // Use the actual SID addresses from the loaded file
+            // Get the max calls per frame for the selected visualizer
+            const maxCallsPerFrame = this.selectedVisualizer.maxCallsPerFrame || null;
+
             const options = {
                 sidLoadAddress: this.sidHeader.loadAddress,
                 sidInitAddress: this.sidHeader.initAddress,
@@ -663,7 +705,9 @@ class UIController {
                 visualizerFile: this.selectedVisualizer.binary,
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
-                compressionType: compressionType  // Make sure this is passed!
+                compressionType: compressionType,
+                maxCallsPerFrame: maxCallsPerFrame,
+                visualizerId: this.selectedVisualizer.id
             };
 
             const prgData = await this.prgExporter.createPRG(options);

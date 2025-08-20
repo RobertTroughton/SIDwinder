@@ -788,3 +788,30 @@ body {
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+
+.visualizer-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(70%);
+}
+
+    .visualizer-card.disabled:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: #e0e0e0;
+    }
+
+    .visualizer-card.disabled .visualizer-info {
+        position: relative;
+    }
+
+        .visualizer-card.disabled .visualizer-info::after {
+            content: attr(data-reason);
+            position: absolute;
+            bottom: 5px;
+            left: 15px;
+            right: 15px;
+            font-size: 0.8em;
+            color: #ff6b6b;
+            font-weight: 600;
+        }
