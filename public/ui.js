@@ -300,7 +300,7 @@ class UIController {
             const header = this.elements.exportSection.querySelector('h2');
             if (header && this.analysisResults) {
                 const calls = this.analysisResults.numCallsPerFrame || 1;
-                header.innerHTML = `🎮 Choose Your Visualizer <span style="font-size: 0.8em; color: #666;">(This SID requires ${calls} call${calls > 1 ? 's' : ''}/frame)</span>`;
+                header.innerHTML = `🎮 Choose Your Visualizer <span style="font-size: 0.8em; color: #666;"></span>`;
             }
 
             // Initialize visualizer selection
@@ -357,7 +357,50 @@ class UIController {
 
         grid.innerHTML = '';
 
+        const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
+
+        // Separate visualizers into compatible and incompatible
+        const compatible = [];
+        const incompatible = [];
+
         for (const viz of VISUALIZERS) {
+            const maxCalls = viz.maxCallsPerFrame || Infinity;
+            if (requiredCalls <= maxCalls) {
+                compatible.push(viz);
+            } else {
+                incompatible.push(viz);
+            }
+        }
+
+        // Sort each group by name
+        compatible.sort((a, b) => a.name.localeCompare(b.name));
+        incompatible.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Add compatible visualizers
+        for (const viz of compatible) {
+            const card = this.createVisualizerCard(viz);
+            grid.appendChild(card);
+        }
+
+        // Add separator if there are both compatible and incompatible visualizers
+        if (compatible.length > 0 && incompatible.length > 0) {
+            const separator = document.createElement('div');
+            separator.className = 'visualizer-separator';
+            separator.innerHTML = '<span>Incompatible with this SID (requires fewer calls/frame)</span>';
+            separator.style.cssText = `
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+            border-top: 1px dashed #333;
+            margin: 10px 0;
+        `;
+            grid.appendChild(separator);
+        }
+
+        // Add incompatible visualizers
+        for (const viz of incompatible) {
             const card = this.createVisualizerCard(viz);
             grid.appendChild(card);
         }
