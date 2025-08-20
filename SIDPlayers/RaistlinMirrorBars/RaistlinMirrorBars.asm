@@ -426,14 +426,7 @@ AnalyzeSIDRegisters: {
 		lsr
 		tay
 		lda sustainToHeight, y
-
-		//; Update bar if higher than current
-		cmp barHeights, x
-		bcc !skipVoice+
-
-		sta barHeights, x
-		lda #$00
-		sta barHeightsLo, x
+		sta targetBarHeights, x
 		lda #voice
 		sta barVoiceMap, x
 
@@ -447,9 +440,49 @@ AnalyzeSIDRegisters: {
 //; =============================================================================
 
 UpdateBarDecay: {
-	//; Apply decay to each bar based on its voice's release rate
+	//; Apply decay and interpolation to each bar
 	ldx #NUM_FREQUENCY_BARS - 1
 !loop:
+	//; Check if we have a new target
+	lda targetBarHeights, x
+	beq !justDecay+
+	
+	//; We have a target - interpolate towards it
+	cmp barHeights, x
+	beq !clearTarget+			//; Already at target
+	bcc !moveDown+				//; Target is lower
+	
+	//; Target is higher - move up quickly
+	lda barHeights, x
+	clc
+	adc #32
+	cmp targetBarHeights, x
+	bcc !storeHeight+
+	lda targetBarHeights, x		//; Don't overshoot
+	jmp !storeHeight+
+	
+!moveDown:
+	//; Target is lower - move down slowly
+	lda barHeights, x
+	sec
+	sbc #8
+	cmp targetBarHeights, x
+	bcs !storeHeight+
+	lda targetBarHeights, x		//; Don't undershoot
+	
+!storeHeight:
+	sta barHeights, x
+	lda #$00
+	sta barHeightsLo, x
+	
+!clearTarget:
+	//; Clear target once reached
+	lda #$00
+	sta targetBarHeights, x
+	jmp !next+
+	
+!justDecay:
+	//; No target - apply normal decay
 	ldy barVoiceMap, x
 
 	//; 16-bit subtraction for smooth decay
@@ -467,6 +500,7 @@ UpdateBarDecay: {
 !positive:
 	sta barHeights, x
 
+!next:
 	dex
 	bpl !loop-
 	rts
@@ -837,6 +871,7 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 barHeightsLo:				.fill NUM_FREQUENCY_BARS, 0
 barVoiceMap:				.fill NUM_FREQUENCY_BARS, 0
+targetBarHeights:			.fill NUM_FREQUENCY_BARS, 0
 
 previousHeightsScreen0:		.fill NUM_FREQUENCY_BARS, 255
 previousHeightsScreen1:		.fill NUM_FREQUENCY_BARS, 255

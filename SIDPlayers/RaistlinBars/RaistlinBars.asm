@@ -465,8 +465,6 @@ AnalyzeSIDRegisters: {
 		lsr
 		tay
 		lda sustainToHeight, y
-
-		//; Store target height instead of directly updating
 		sta targetBarHeights, x
 		lda #voice
 		sta barVoiceMap, x
