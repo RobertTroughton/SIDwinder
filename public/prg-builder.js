@@ -150,7 +150,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author) {
+    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame) {
         const data = new Uint8Array(0x50);
 
         // JMP SIDInit at $4000
@@ -176,6 +176,8 @@ class SIDwinderPRGExporter {
         data[0x0C] = numCallsPerFrame & 0xFF;
         data[0x0D] = 0x00; // BorderColour
         data[0x0E] = 0x00; // BitmapScreenColour
+
+        console.warn(`${data[0x0c]} calls per frame`);
 
         // SID Name at $4010-$402F
         const nameBytes = this.stringToPETSCII(name, 32);
