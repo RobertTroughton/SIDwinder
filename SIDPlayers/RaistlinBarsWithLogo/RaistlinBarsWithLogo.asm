@@ -30,13 +30,14 @@
 
 * = $4100 "Main Code"
 
-.var NumCallsPerFrame = 1
-
 .var MainAddress = * - $100
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
+//;.var NumCallsPerFrame = MainAddress + 12
+.var BorderColour = MainAddress + 13
+.var BitmapScreenColour = MainAddress + 14
 .var SongName = MainAddress + 16
 
 	jmp Initialize					//; Entry point for the player
@@ -72,13 +73,14 @@
 .const SPRITE_BASE_INDEX				= $38 //; $4E00-4FFF
 
 //; Calculated addresses
-.const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
-.const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
+.const BITMAP_SCR0_DATA					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
+.const BITMAP_SCR1_DATA					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
+.const BITMAP_COL_DATA					= BITMAP_SCR1_DATA //; on load, we have the COL data in the SCR1 data
 .const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
-.const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const BITMAP_MAP_DATA					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const SPRITES_ADDRESS					= VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
-.const SPRITE_POINTERS_0				= SCREEN0_ADDRESS + $3F8
-.const SPRITE_POINTERS_1				= SCREEN1_ADDRESS + $3F8
+.const SPRITE_POINTERS_0				= BITMAP_SCR0_DATA + $3F8
+.const SPRITE_POINTERS_1				= BITMAP_SCR1_DATA + $3F8
 
 //; VIC register values
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
@@ -94,10 +96,6 @@
 //; Color palette configuration
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
-
-.const BorderColour     			    = $4dfe
-.const BitmapScreenColour			    = $4dff
-
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
@@ -576,7 +574,7 @@ RenderToScreen0: {
 	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta BITMAP_SCR0_DATA + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
 	//; Draw reflection
@@ -587,7 +585,7 @@ RenderToScreen0: {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		clc
 		adc #10
-		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta BITMAP_SCR0_DATA + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -609,7 +607,7 @@ RenderToScreen1: {
 	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta BITMAP_SCR1_DATA + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
 	//; Draw reflection
@@ -620,7 +618,7 @@ RenderToScreen1: {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		clc
 		adc #20
-		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta BITMAP_SCR1_DATA + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -727,9 +725,9 @@ DrawScreens: {
 
 	ldy #00
 !loop:
-	lda SCREEN1_ADDRESS + (0 * 200), y
+	lda BITMAP_COL_DATA + (0 * 200), y
 	sta $d800 + (0 * 200), y
-	lda SCREEN1_ADDRESS + (1 * 200), y
+	lda BITMAP_COL_DATA + (1 * 200), y
 	sta $d800 + (1 * 200), y
 	lda #$00
 	sta $d800 + (2 * 200), y
@@ -744,11 +742,11 @@ DrawScreens: {
 !loop:
 	//; Song Title
 	lda SongName, y
-	sta SCREEN0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
-	sta SCREEN1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	sta BITMAP_SCR0_DATA + (SONG_TITLE_LINE * 40) + 4, y
+	sta BITMAP_SCR1_DATA + (SONG_TITLE_LINE * 40) + 4, y
 	ora #$80
-	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta BITMAP_SCR0_DATA + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta BITMAP_SCR1_DATA + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	lda #$01
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
@@ -973,13 +971,13 @@ div16mul3:					.fill 128, (3 * i) / 16.0
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
 	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
 
-* = SCREEN0_ADDRESS "Screen 0"
+* = BITMAP_SCR0_DATA "Screen 0"
 	.fill $400, $00
 
-* = SCREEN1_ADDRESS "Screen 1"
+* = BITMAP_SCR1_DATA "Screen 1"
 	.fill $400, $00
 
-* = BITMAP_ADDRESS "Bitmap"
+* = BITMAP_MAP_DATA "Bitmap"
 	.fill $2000, $00
 
 //; =============================================================================

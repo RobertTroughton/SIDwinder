@@ -30,13 +30,14 @@
 
 * = $4100 "Main Code"
 
-.var NumCallsPerFrame = 1
-
 .var MainAddress = * - $100
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
+.var NumCallsPerFrame = MainAddress + 12
+//;.var BorderColour = MainAddress + 13
+//;.var BitmapScreenColour = MainAddress + 14
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 
@@ -112,6 +113,7 @@ Initialize: {
 	jsr InitializeVIC
 	jsr ClearScreens
 	jsr DisplaySongInfo
+	jsr init_D011_D012_values
 
 	ldy #$00
 	lda #$00
@@ -212,12 +214,9 @@ SetupInterrupts: {
 	sta $ffff
 
 	//; Setup raster interrupt
-	lda D012_Values
-	sta $d012
-	lda $d011
-	and #$7f
-	ora D011_Values
-	sta $d011
+
+	ldx #$00
+	jsr set_d011_and_d012
 
 	//; Enable raster interrupts
 	lda #$01
@@ -315,19 +314,14 @@ MusicOnlyIRQ: {
 NextIRQ: {
 	ldx #$00						//; Self-modified
 	inx
-	cpx #NumCallsPerFrame
+	cpx NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:
 	stx NextIRQ + 1
 
 	//; Set next raster position
-	lda D012_Values, x
-	sta $d012
-	lda $d011
-	and #$7f
-	ora D011_Values, x
-	sta $d011
+	jsr set_d011_and_d012
 
 	//; Set appropriate IRQ vector
 	cpx #$00
@@ -735,6 +729,58 @@ SetupMusic: {
 	jmp SIDInit
 }
 
+init_D011_D012_values:
+	ldx NumCallsPerFrame
+	lda D011_Values_Lookup_Lo, x
+	sta d011_values_ptr + 1
+	lda D011_Values_Lookup_Hi, x
+	sta d011_values_ptr + 2
+	lda D012_Values_Lookup_Lo, x
+	sta d012_values_ptr + 1
+	lda D012_Values_Lookup_Hi, x
+	sta d012_values_ptr + 2
+	rts
+
+set_d011_and_d012:
+d011_values_ptr:
+	lda $abcd, x
+	sta $d012
+	lda $d011
+	and #$7f
+ora_D011_value:
+d012_values_ptr:
+	ora $abcd, x
+	sta $d011
+	rts
+
+//; =============================================================================
+//; DATA SECTION - Raster Line Timing
+//; =============================================================================
+
+.var FrameHeight = 312 // TODO: NTSC!
+
+D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
+D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
+D011_Values_2Calls: .fill 2, (>(mod(250 + ((FrameHeight * i) / 2), 312))) * $80
+D012_Values_2Calls: .fill 2, (<(mod(250 + ((FrameHeight * i) / 2), 312)))
+D011_Values_3Calls: .fill 3, (>(mod(250 + ((FrameHeight * i) / 3), 312))) * $80
+D012_Values_3Calls: .fill 3, (<(mod(250 + ((FrameHeight * i) / 3), 312)))
+D011_Values_4Calls: .fill 4, (>(mod(250 + ((FrameHeight * i) / 4), 312))) * $80
+D012_Values_4Calls: .fill 4, (<(mod(250 + ((FrameHeight * i) / 4), 312)))
+D011_Values_5Calls: .fill 5, (>(mod(250 + ((FrameHeight * i) / 5), 312))) * $80
+D012_Values_5Calls: .fill 5, (<(mod(250 + ((FrameHeight * i) / 5), 312)))
+D011_Values_6Calls: .fill 6, (>(mod(250 + ((FrameHeight * i) / 6), 312))) * $80
+D012_Values_6Calls: .fill 6, (<(mod(250 + ((FrameHeight * i) / 6), 312)))
+D011_Values_7Calls: .fill 7, (>(mod(250 + ((FrameHeight * i) / 7), 312))) * $80
+D012_Values_7Calls: .fill 7, (<(mod(250 + ((FrameHeight * i) / 7), 312)))
+D011_Values_8Calls: .fill 8, (>(mod(250 + ((FrameHeight * i) / 8), 312))) * $80
+D012_Values_8Calls: .fill 8, (<(mod(250 + ((FrameHeight * i) / 8), 312)))
+
+D011_Values_Lookup_Lo: .byte <D011_Values_1Call, <D011_Values_2Calls, <D011_Values_3Calls, <D011_Values_4Calls, <D011_Values_5Calls, <D011_Values_6Calls, <D011_Values_7Calls, <D011_Values_8Calls
+D011_Values_Lookup_Hi: .byte >D011_Values_1Call, >D011_Values_2Calls, >D011_Values_3Calls, >D011_Values_4Calls, >D011_Values_5Calls, >D011_Values_6Calls, >D011_Values_7Calls, >D011_Values_8Calls
+D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_2Calls, <D012_Values_3Calls, <D012_Values_4Calls, <D012_Values_5Calls, <D012_Values_6Calls, <D012_Values_7Calls, <D012_Values_8Calls
+D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
+
 //; =============================================================================
 //; DATA SECTION - VIC Configuration
 //; =============================================================================
@@ -841,14 +887,6 @@ heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 barCharacterMap:
 	.fill 8, 225 + i
 	.fill MAX_BAR_HEIGHT, 233
-
-//; =============================================================================
-//; DATA SECTION - Raster Line Timing
-//; =============================================================================
-
-.var FrameHeight = 312 // TODO: NTSC!
-D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
-D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
 
 //; =============================================================================
 //; INCLUDES

@@ -39,9 +39,11 @@
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
+.var NumCallsPerFrame = MainAddress + 12
+.var BorderColour = MainAddress + 13
+.var BitmapScreenColour = MainAddress + 14
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
-.var NumCallsPerFrame = 1
 
 .const VIC_BANK                         = 1
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
@@ -53,11 +55,9 @@
 .const DD02Value                        = 60 + VIC_BANK
 .const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
 
-.const BITMAP_ADDRESS                   = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
-.const BitmapCOLData                    = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
-.const SCREEN_ADDRESS                   = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
-.const BorderColour                     = $5bfe
-.const BitmapScreenColour               = $5bff
+.const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
+.const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -90,22 +90,19 @@ InitIRQ: {
     //; Disable NMI interrupts
     jsr NMIFix
 
+    jsr init_D011_D012_values
+
     //; ==========================================================================
     //; COLOR RAM INITIALIZATION
     //; ==========================================================================
-    //; Copy color data to hardware color RAM at $D800
 
     ldy #$00
 !loop:
-    //; Unrolled loop for faster color RAM initialization
-    lda BitmapCOLData + (0 * 256), y   //; Copy first page
-    sta $d800         + (0 * 256), y
-    lda BitmapCOLData + (1 * 256), y   //; Copy second page
-    sta $d800         + (1 * 256), y
-    lda BitmapCOLData + (2 * 256), y   //; Copy third page
-    sta $d800         + (2 * 256), y
-    lda BitmapCOLData + (3 * 256), y   //; Copy fourth page (partial)
-    sta $d800         + (3 * 256), y
+    .for (var i = 0; i < 4; i++)
+    {
+        lda BITMAP_COLOUR_DATA + (i * 256), y
+        sta $d800 + (i * 256), y
+    }
     iny
     bne !loop-
 
@@ -139,7 +136,7 @@ InitIRQ: {
 
     //; Configure first raster position
     ldx #0
-    jsr SetNextRaster
+    jsr set_d011_and_d012
 
     //; ==========================================================================
     //; VIC-II BITMAP MODE CONFIGURATION
@@ -189,23 +186,6 @@ VSync: {
 }
 
 //; =============================================================================
-//; RASTER POSITION SETUP
-//; =============================================================================
-//; Sets up the next raster interrupt position based on the current call index
-//; Input: X = interrupt index (0 to NumCallsPerFrame-1)
-//; Registers: Corrupts A
-
-SetNextRaster: {
-    lda D012_Values, x                  //; Get raster line low byte
-    sta $d012
-    lda $d011                           //; Get current VIC control register
-    and #$7f                            //; Clear raster high bit
-    ora D011_Values, x                  //; Set raster high bit if needed
-    sta $d011
-    rts
-}
-
-//; =============================================================================
 //; MAIN MUSIC INTERRUPT HANDLER
 //; =============================================================================
 //; Handles music playback for multi-speed tunes
@@ -216,7 +196,7 @@ MusicIRQ: {
 callCount:
     ldx #0                              //; Self-modifying counter
     inx
-    cpx #NumCallsPerFrame
+    cpx NumCallsPerFrame
     bne JustPlayMusic
     ldx #0                              //; Reset counter at frame boundary
 
@@ -228,12 +208,64 @@ JustPlayMusic:
 
     //; Set up next interrupt
     ldx callCount + 1
-    jsr SetNextRaster
+    jsr set_d011_and_d012
 
     //; Acknowledge interrupt
     asl $d019                           //; Clear raster interrupt flag
     rti
 }
+
+init_D011_D012_values:
+	ldx NumCallsPerFrame
+	lda D011_Values_Lookup_Lo, x
+	sta d011_values_ptr + 1
+	lda D011_Values_Lookup_Hi, x
+	sta d011_values_ptr + 2
+	lda D012_Values_Lookup_Lo, x
+	sta d012_values_ptr + 1
+	lda D012_Values_Lookup_Hi, x
+	sta d012_values_ptr + 2
+	rts
+
+set_d011_and_d012:
+d011_values_ptr:
+	lda $abcd, x
+	sta $d012
+	lda $d011
+	and #$7f
+ora_D011_value:
+d012_values_ptr:
+	ora $abcd, x
+	sta $d011
+	rts
+
+//; =============================================================================
+//; DATA SECTION - Raster Line Timing
+//; =============================================================================
+
+.var FrameHeight = 312 // TODO: NTSC!
+
+D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
+D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
+D011_Values_2Calls: .fill 2, (>(mod(250 + ((FrameHeight * i) / 2), 312))) * $80
+D012_Values_2Calls: .fill 2, (<(mod(250 + ((FrameHeight * i) / 2), 312)))
+D011_Values_3Calls: .fill 3, (>(mod(250 + ((FrameHeight * i) / 3), 312))) * $80
+D012_Values_3Calls: .fill 3, (<(mod(250 + ((FrameHeight * i) / 3), 312)))
+D011_Values_4Calls: .fill 4, (>(mod(250 + ((FrameHeight * i) / 4), 312))) * $80
+D012_Values_4Calls: .fill 4, (<(mod(250 + ((FrameHeight * i) / 4), 312)))
+D011_Values_5Calls: .fill 5, (>(mod(250 + ((FrameHeight * i) / 5), 312))) * $80
+D012_Values_5Calls: .fill 5, (<(mod(250 + ((FrameHeight * i) / 5), 312)))
+D011_Values_6Calls: .fill 6, (>(mod(250 + ((FrameHeight * i) / 6), 312))) * $80
+D012_Values_6Calls: .fill 6, (<(mod(250 + ((FrameHeight * i) / 6), 312)))
+D011_Values_7Calls: .fill 7, (>(mod(250 + ((FrameHeight * i) / 7), 312))) * $80
+D012_Values_7Calls: .fill 7, (<(mod(250 + ((FrameHeight * i) / 7), 312)))
+D011_Values_8Calls: .fill 8, (>(mod(250 + ((FrameHeight * i) / 8), 312))) * $80
+D012_Values_8Calls: .fill 8, (<(mod(250 + ((FrameHeight * i) / 8), 312)))
+
+D011_Values_Lookup_Lo: .byte <D011_Values_1Call, <D011_Values_2Calls, <D011_Values_3Calls, <D011_Values_4Calls, <D011_Values_5Calls, <D011_Values_6Calls, <D011_Values_7Calls, <D011_Values_8Calls
+D011_Values_Lookup_Hi: .byte >D011_Values_1Call, >D011_Values_2Calls, >D011_Values_3Calls, >D011_Values_4Calls, >D011_Values_5Calls, >D011_Values_6Calls, >D011_Values_7Calls, >D011_Values_8Calls
+D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_2Calls, <D012_Values_3Calls, <D012_Values_4Calls, <D012_Values_5Calls, <D012_Values_6Calls, <D012_Values_7Calls, <D012_Values_8Calls
+D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
 
 //; =============================================================================
 //; INCLUDES
@@ -243,19 +275,17 @@ JustPlayMusic:
 .import source "../INC/NMIFix.asm"           //; NMI interrupt protection
 
 //; =============================================================================
-//; DATA SECTION - Raster Line Timing
+//; DATA SECTION - Placeholder screen and bitmap data
 //; =============================================================================
 
-.var FrameHeight = 312 // TODO: NTSC!
-D011_Values: .fill NumCallsPerFrame, (>(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312))) * $80
-D012_Values: .fill NumCallsPerFrame, (<(mod(250 + ((FrameHeight * i) / NumCallsPerFrame), 312)))
-
-* = SCREEN_ADDRESS "Screen"
-	.fill $400, $00
-
-* = BITMAP_ADDRESS "Bitmap"
+* = BITMAP_MAP_DATA "Bitmap MAP Data"
 	.fill $2000, $00
 
+* = BITMAP_SCREEN_DATA "Bitmap SCR Data"
+	.fill $400, $00
+
+* = BITMAP_COLOUR_DATA "Bitmap COL Data"
+	.fill $400, $00
 
 
 //; =============================================================================

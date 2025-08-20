@@ -44,7 +44,7 @@ const VISUALIZERS = [
     {
         id: 'SimpleRaster',
         name: 'Simple Raster',
-        description: 'Minimal raster timing effect',
+        description: 'Minimal rasterbar effect',
         preview: 'prg/simpleraster.png',
         binary: 'prg/simpleraster.bin',
         config: 'prg/simpleraster.json'

@@ -76,6 +76,11 @@ extern "C" {
         bool hasPattern;
         uint32_t patternPeriod;
         uint32_t initFrames;
+
+		// Timing analysis
+        uint8_t numCallsPerFrame;
+        uint16_t ciaTimerValue;
+        bool ciaTimerDetected;
     };
 
     // Global state
@@ -251,6 +256,10 @@ extern "C" {
         sidState.analysis.codeBytes = 0;
         sidState.analysis.dataBytes = 0;
 
+        uint8_t ciaTimerLo = 0;
+        uint8_t ciaTimerHi = 0;
+        bool ciaTimerSet = false;
+
         // Reset CPU and reload data
         cpu_init();
         cpu_set_tracking(false);
@@ -315,6 +324,39 @@ extern "C" {
         // SID register usage
         for (int reg = 0; reg < 32; reg++) {
             sidState.analysis.sidRegisterWrites[reg] = cpu_get_sid_writes(reg);
+        }
+
+		// timing analysis
+        extern uint8_t cpu_get_cia_timer_lo();
+        extern uint8_t cpu_get_cia_timer_hi();
+        extern bool cpu_get_cia_timer_written();
+
+        if (cpu_get_cia_timer_written()) {
+            uint8_t ciaTimerLo = cpu_get_cia_timer_lo();
+            uint8_t ciaTimerHi = cpu_get_cia_timer_hi();
+
+            if (ciaTimerLo != 0 || ciaTimerHi != 0) {
+                uint16_t timerValue = ciaTimerLo | (ciaTimerHi << 8);
+                // PAL: 312 lines * 63 cycles = 19656 cycles per frame
+                // NTSC: 263 lines * 65 cycles = 17095 cycles per frame
+                double cyclesPerFrame = 19656.0; // Default PAL
+/*                if (strcmp(sid_get_clock_type(), "NTSC") == 0) {
+                    cyclesPerFrame = 17095.0;
+                }*/
+
+                double freq = cyclesPerFrame / timerValue;
+                sidState.analysis.numCallsPerFrame = (uint8_t)std::min(16, std::max(1, (int)(freq + 0.5)));
+                sidState.analysis.ciaTimerValue = timerValue;
+                sidState.analysis.ciaTimerDetected = true;
+            }
+            else {
+                sidState.analysis.numCallsPerFrame = 1;
+                sidState.analysis.ciaTimerDetected = false;
+            }
+        }
+        else {
+            sidState.analysis.numCallsPerFrame = 1;
+            sidState.analysis.ciaTimerDetected = false;
         }
 
         return 0; // Success
@@ -505,6 +547,21 @@ extern "C" {
         if ((flags & 0x30) == 0x20) return "8580";
         if ((flags & 0x30) == 0x30) return "6581/8580";
         return "Unknown";
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint8_t sid_get_num_calls_per_frame() {
+        return sidState.analysis.numCallsPerFrame;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        bool sid_get_cia_timer_detected() {
+        return sidState.analysis.ciaTimerDetected;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint16_t sid_get_cia_timer_value() {
+        return sidState.analysis.ciaTimerValue;
     }
 
     // Clean up

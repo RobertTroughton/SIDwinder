@@ -41,6 +41,10 @@ extern "C" {
         uint8_t status;
         uint64_t cycles;
 
+        uint8_t ciaTimerLo;
+        uint8_t ciaTimerHi;
+        bool ciaTimerWritten;
+
         uint8_t memory[65536];
         uint8_t memoryAccess[65536];
 
@@ -80,10 +84,15 @@ extern "C" {
         cpu.y = 0;
         cpu.status = FLAG_INTERRUPT | FLAG_UNUSED;
         cpu.cycles = 0;
+
+        cpu.ciaTimerLo = 0;
+        cpu.ciaTimerHi = 0;
+        cpu.ciaTimerWritten = false;
+
         cpu.totalSidWrites = 0;
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
-        cpu.trackingEnabled = false;  // Start with tracking disabled
+        cpu.trackingEnabled = false;
 
         memset(cpu.memory, 0, sizeof(cpu.memory));
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
@@ -149,6 +158,16 @@ extern "C" {
                 if (cpu.recordWrites) {
                     cpu.writeSequence.push_back(address);
                 }
+            }
+
+			// Track CIA timer writes
+            if (address == 0xDC04) {
+                cpu.ciaTimerLo = value;
+                cpu.ciaTimerWritten = true;
+            }
+            else if (address == 0xDC05) {
+                cpu.ciaTimerHi = value;
+                cpu.ciaTimerWritten = true;
             }
         }
     }
@@ -1281,6 +1300,21 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
         uint8_t cpu_get_y() { return cpu.y; }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint8_t cpu_get_cia_timer_lo() {
+        return cpu.ciaTimerLo;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint8_t cpu_get_cia_timer_hi() {
+        return cpu.ciaTimerHi;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        bool cpu_get_cia_timer_written() {
+        return cpu.ciaTimerWritten;
+    }
 
     EMSCRIPTEN_KEEPALIVE
         uint64_t cpu_get_cycles() { return cpu.cycles; }

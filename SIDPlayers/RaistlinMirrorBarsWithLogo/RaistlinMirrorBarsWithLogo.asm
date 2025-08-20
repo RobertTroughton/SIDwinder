@@ -29,13 +29,14 @@
 
 * = $4100 "Main Code"
 
-.var NumCallsPerFrame = 1
-
 .var MainAddress = * - $100
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
+//;.var NumCallsPerFrame = MainAddress + 12
+.var BorderColour = MainAddress + 13
+.var BitmapScreenColour = MainAddress + 14
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 
@@ -80,9 +81,6 @@
 //; Color palette configuration
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
-
-.const BorderColour     			    = $57fe
-.const BitmapScreenColour			    = $57ff
 
 //; =============================================================================
 //; EXTERNAL RESOURCES

@@ -32,7 +32,7 @@
         {
           "name": "background",
           "sourceOffset": "0x2712",
-          "targetAddress": "0x4DFF",
+          "targetAddress": "0x400E",
           "size": "0x0001"
         }
       ]
@@ -48,7 +48,7 @@
       "max": 15,
       "description": "$00-$0F",
       "memory": {
-        "targetAddress": "0x4DFE",
+        "targetAddress": "0x400D",
         "size": 1
       }
     }

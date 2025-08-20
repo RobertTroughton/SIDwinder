@@ -272,6 +272,8 @@ class UIController {
             // Update UI with analysis results
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
 
+            this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
+
             // Show panels
             this.elements.infoSection.classList.add('visible');
             this.elements.songTitleSection.classList.add('visible');
@@ -577,6 +579,13 @@ class UIController {
         });
 
         this.elements.zpUsage.textContent = formatted.join(', ');
+    }
+
+    updateNumCallsPerFrame(numCalls) {
+        const element = document.getElementById('numCallsPerFrame');
+        if (element) {
+            element.textContent = numCalls || '1';
+        }
     }
 
     // Export functions

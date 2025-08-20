@@ -173,6 +173,10 @@ class SIDwinderPRGExporter {
         data[10] = restoreRoutineAddr & 0xFF;
         data[11] = (restoreRoutineAddr >> 8) & 0xFF;
 
+        data[0x0C] = numCallsPerFrame & 0xFF;
+        data[0x0D] = 0x00; // BorderColour
+        data[0x0E] = 0x00; // BitmapScreenColour
+
         // SID Name at $4010-$402F
         const nameBytes = this.stringToPETSCII(name, 32);
         for (let i = 0; i < 32; i++) {
@@ -427,7 +431,8 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
             }
 
-            // Add data block at $4000
+            const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
+
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -436,8 +441,10 @@ class SIDwinderPRGExporter {
                 saveRoutineAddr,
                 restoreRoutineAddr,
                 header.name || 'Unknown',
-                header.author || 'Unknown'
+                header.author || 'Unknown',
+                numCallsPerFrame
             );
+
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
 
             // Build PRG

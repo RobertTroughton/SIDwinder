@@ -40,6 +40,9 @@ class SIDAnalyzer {
                 sid_get_sid_writes: this.Module.cwrap('sid_get_sid_writes', 'number', ['number']),
                 sid_get_clock_type: this.Module.cwrap('sid_get_clock_type', 'string', []),
                 sid_get_sid_model: this.Module.cwrap('sid_get_sid_model', 'string', []),
+                sid_get_num_calls_per_frame: this.Module.cwrap('sid_get_num_calls_per_frame', 'number', []),
+                sid_get_cia_timer_detected: this.Module.cwrap('sid_get_cia_timer_detected', 'number', []),
+                sid_get_cia_timer_value: this.Module.cwrap('sid_get_cia_timer_value', 'number', []),
                 sid_cleanup: this.Module.cwrap('sid_cleanup', null, []),
 
                 // Memory management - use direct module references
@@ -204,14 +207,20 @@ class SIDAnalyzer {
                 progressCallback(frameCount, frameCount);
             }
 
+            const numCallsPerFrame = this.api.sid_get_num_calls_per_frame();
+            const ciaTimerDetected = this.api.sid_get_cia_timer_detected() ? true : false;
+            const ciaTimerValue = this.api.sid_get_cia_timer_value();
+
             return {
                 modifiedAddresses,
                 zpAddresses,
                 sidWrites,
                 codeBytes: this.api.sid_get_code_bytes(),
-                dataBytes: this.api.sid_get_data_bytes()
+                dataBytes: this.api.sid_get_data_bytes(),
+                numCallsPerFrame,
+                ciaTimerDetected,
+                ciaTimerValue
             };
-
         } finally {
             if (progressInterval) {
                 clearInterval(progressInterval);
