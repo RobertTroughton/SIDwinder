@@ -228,13 +228,13 @@ init_D011_D012_values:
 	rts
 
 set_d011_and_d012:
-d011_values_ptr:
+d012_values_ptr:
 	lda $abcd, x
 	sta $d012
 	lda $d011
 	and #$7f
 ora_D011_value:
-d012_values_ptr:
+d011_values_ptr:
 	ora $abcd, x
 	sta $d011
 	rts
