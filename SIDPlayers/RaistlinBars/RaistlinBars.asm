@@ -353,7 +353,7 @@ NextIRQ: {
 
 NextIRQLdx: ldx #$00						//; Self-modified
 	inx
-	cpx #NumCallsPerFrame
+	cpx NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:

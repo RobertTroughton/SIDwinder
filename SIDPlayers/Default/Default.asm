@@ -61,7 +61,7 @@ MusicIRQ:
 callCount:
     ldx #0
     inx
-    cpx #NumCallsPerFrame
+    cpx NumCallsPerFrame
     bne JustPlayMusic
 
 ColChangeFrame:
