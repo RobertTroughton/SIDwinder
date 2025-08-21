@@ -17,7 +17,7 @@
 //; - 40 frequency bars with 96-pixel resolution (48 pixels per half)
 //; - Real-time SID register analysis without affecting playback
 //; - Mirrored bar display for symmetrical visualization
-//; - Dynamic color cycling with multiple palettes
+//; - Static color gradient with height-based brightness
 //; - Double-buffered display for flicker-free animation
 //;
 //; TECHNICAL APPROACH:
@@ -64,7 +64,7 @@
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 4 //; $5000-$53FF
 .const SCREEN1_BANK						= 5 //; $5400-$57FF
-.const CHARSET_BANK						= 3 //; $5800-5FFFF
+.const CHARSET_BANK						= 3 //; $5800-$5FFF
 
 //; Calculated addresses
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
@@ -78,10 +78,6 @@
 //; Calculated bar values
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
-
-//; Color palette configuration
-.const NUM_COLOR_PALETTES				= 3
-.const COLORS_PER_PALETTE				= 8
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
@@ -199,9 +195,6 @@ InitializeVIC: {
 	dex
 	bpl !loop-
 
-	//; Initialize color palette
-	jsr InitializeColors
-
 	rts
 }
 
@@ -257,7 +250,6 @@ MainIRQ: {
 
 	//; Update bar animations
 	jsr UpdateBarDecay
-	jsr UpdateColors
 
 	//; Play music and analyze
 	jsr PlayMusicWithAnalysis
@@ -400,8 +392,7 @@ AnalyzeSIDRegisters: {
 
 	!lowFreq:
 		//; Low frequency lookup
-		ldx sidRegisterMirror + (voice * 7) + 0		//; Frequency low
-		txa
+		lda sidRegisterMirror + (voice * 7) + 0		//; Frequency low
 		lsr
 		lsr
 		ora multiply64Table, y
@@ -540,14 +531,30 @@ ApplySmoothing: {
 //; =============================================================================
 
 RenderBars: {
-	//; Update colors first
+	//; Update colors based on height only
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
 	bmi !colorsDone+
 
+	//; Get bar height
 	ldx smoothedHeights, y
-	lda heightToColor, x
+	
+	//; Look up color from height table
+	//; Use frame counter to create flicker effect
+	lda frameCounter
+	and #$03				//; 0-3 for selecting which of 4 entries
+	sta tempFlicker
+	
+	//; Calculate table index: height + (frameCounter & 3)
+	txa
+	clc
+	adc tempFlicker
+	tax
+	
+	//; Get color from table
+	lda heightColorTable, x
+	
 	cmp previousColors, y
 	beq !colorLoop-
 	sta previousColors, y
@@ -571,6 +578,8 @@ RenderBars: {
 	//; Render to screen 1
 	jmp RenderToScreen1
 }
+
+tempFlicker: .byte 0
 
 //; Screen-specific rendering routines
 RenderToScreen0: {
@@ -623,57 +632,6 @@ RenderToScreen1: {
 		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + (TOTAL_SPECTRUM_HEIGHT - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-}
-
-//; =============================================================================
-//; COLOR MANAGEMENT
-//; =============================================================================
-
-UpdateColors: {
-	//; Update color cycling on 256-frame boundaries
-	lda frameCounter
-	bne !done+
-
-	inc frame256Counter
-	lda #$00
-	sta colorUpdateIndex
-
-	//; Cycle to next palette
-	ldx currentPalette
-	inx
-	cpx #NUM_COLOR_PALETTES
-	bne !setPalette+
-	ldx #$00
-!setPalette:
-	stx currentPalette
-
-	//; Update palette pointers
-	lda colorPalettesLo, x
-	sta !readColor+ + 1
-	lda colorPalettesHi, x
-	sta !readColor+ + 2
-
-!done:
-	//; Gradual color update
-	ldx colorUpdateIndex
-	bmi !exit+
-
-	lda #$0b							//; Default color
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-!readColor:
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-
-	inc colorUpdateIndex
-	lda colorUpdateIndex
-	cmp #MAX_BAR_HEIGHT + 5
-	bne !exit+
-	lda #$ff
-	sta colorUpdateIndex
-!exit:
-	rts
 }
 
 //; =============================================================================
@@ -731,22 +689,6 @@ DisplaySongInfo: {
 	dey
 	bpl !loop-
 
-	rts
-}
-
-InitializeColors: {
-	//; Initialize bar colors
-	ldx #0
-!loop:
-	lda #$0b							//; Default cyan
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inx
-	cpx #MAX_BAR_HEIGHT + 5
-	bne !loop-
 	rts
 }
 
@@ -863,8 +805,6 @@ visualizationUpdateFlag:	.byte $00
 frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
@@ -901,21 +841,24 @@ sidRegisterMirror:			.fill 32, 0
 multiply64Table:			.fill 4, i * 64
 
 //; =============================================================================
-//; DATA SECTION - Color Palettes
+//; DATA SECTION - Height-Based Color Table
 //; =============================================================================
 
-colorPalettes:
-	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01		//; Purple/pink
-	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01		//; Blue/cyan
-	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01		//; Red/orange
-
-colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
-colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
-
-heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
-
-heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
+//; Color table based on bar height with flickering transitions
+//; MAX_BAR_HEIGHT = 71 (TOP_SPECTRUM_HEIGHT * 8 - 1 = 9 * 8 - 1)
+//; We'll use groups of 4 entries for each height range
+heightColorTable:
+	.fill 5, $0B
+	.fill 5, $09
+	.fill 5, $02
+	.fill 5, $06
+	.fill 5, $08
+	.fill 5, $04
+	.fill 5, $05
+	.fill 5, $0E
+	.fill 5, $0A
+	.fill 5, $0D
+	.fill 32, $01
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
@@ -969,6 +912,12 @@ div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
 	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
 	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+
+* = SCREEN0_ADDRESS "Screen 0"
+	.fill $400, $00
+
+* = SCREEN1_ADDRESS "Screen 1"
+	.fill $400, $00
 
 //; =============================================================================
 //; END OF FILE

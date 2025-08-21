@@ -8,15 +8,18 @@
 //;
 //; DESCRIPTION:
 //; ------------
-//; RaistlinBars creates a real-time spectrum analyzer that visualizes C64 SID
-//; music. It captures the frequency and envelope data from the SID chip and
-//; transforms it into animated bars that dance to the music, complete with
-//; dynamic color cycling.
+//; RaistlinMirrorBarsWithLogo creates a real-time spectrum analyzer that visualizes C64 
+//; SID music with a mirrored effect. It captures frequency and envelope data 
+//; from the SID chip and transforms it into animated bars that dance to the 
+//; music, with bars reflected vertically for a symmetrical display. Plus, in includes a
+//; logo at the top of the screen.
 //;
 //; KEY FEATURES:
-//; - 40 frequency bars with 80-pixel resolution
+//; - 40 frequency bars with 96-pixel resolution (48 pixels per half)
 //; - Real-time SID register analysis without affecting playback
-//; - Dynamic color cycling with multiple palettes
+//; - Mirrored bar display for symmetrical visualization
+//; - Static color gradient with height-based brightness
+
 //; - Double-buffered display for flicker-free animation
 //;
 //; TECHNICAL APPROACH:
@@ -44,11 +47,12 @@
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
 
-//; Display layout
 .const NUM_FREQUENCY_BARS				= 40
 
 .const LOGO_HEIGHT						= 10
+
 .const TOP_SPECTRUM_HEIGHT				= 6
+.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
 .const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
@@ -61,29 +65,25 @@
 //; Memory configuration
 .const VIC_BANK							= 1 //; $4000-$7FFF
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
-.const SCREEN0_BANK					= 4 //; $5000-53FF
-.const SCREEN1_BANK					= 5 //; $5400-57E7
-.const CHARSET_OFFSET					= 3 //; $5800-5FFF
-.const BITMAP_OFFSET					= 1 //; $6000-7F3F
+.const SCREEN0_BANK						= 4 //; $5000-$53FF
+.const SCREEN1_BANK						= 5 //; $5400-$57FF
+.const CHARSET_BANK						= 3 //; $5800-$5FFF
+.const BITMAP_BANK						= 1 //; $6000-$7F3F
 
 //; Calculated addresses
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
 .const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
-.const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_OFFSET * $800)
-.const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_OFFSET * $2000)
+.const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
+.const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 
 //; VIC register values
-.const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_OFFSET * 2)
-.const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_OFFSET * 2)
-.const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_OFFSET * 8)
+.const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
+.const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
+.const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_BANK * 8)
 
 //; Calculated bar values
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
-
-//; Color palette configuration
-.const NUM_COLOR_PALETTES				= 3
-.const COLORS_PER_PALETTE				= 8
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
@@ -205,9 +205,6 @@ InitializeVIC: {
 !skip:
 	dex
 	bpl !loop-
-
-	//; Initialize color palette
-	jsr InitializeColors
 
 	rts
 }
@@ -385,8 +382,8 @@ AnalyzeSIDRegisters: {
 		//; Check if voice is active
 		lda sidRegisterMirror + (voice * 7) + 4		//; Control register
 		bmi !skipVoice+									//; Skip if noise
-//;		and #$01										//; Check gate
-//;		beq !skipVoice+
+		and #$01										//; Check gate
+		beq !skipVoice+
 
 		//; Get frequency and map to bar position
 		ldy sidRegisterMirror + (voice * 7) + 1		//; Frequency high
@@ -538,20 +535,36 @@ ApplySmoothing: {
 //; =============================================================================
 
 RenderBars: {
-	//; Update colors first
+	//; Update colors based on height only
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
 	bmi !colorsDone+
 
+	//; Get bar height
 	ldx smoothedHeights, y
-	lda heightToColor, x
+	
+	//; Look up color from height table
+	//; Use frame counter to create flicker effect
+	lda frameCounter
+	and #$03				//; 0-3 for selecting which of 4 entries
+	sta tempFlicker
+	
+	//; Calculate table index: height + (frameCounter & 3)
+	txa
+	clc
+	adc tempFlicker
+	tax
+	
+	//; Get color from table
+	lda heightColorTable, x
+	
 	cmp previousColors, y
 	beq !colorLoop-
 	sta previousColors, y
 
-	//; Update main bars
-	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT * 2; line++) {
+	//; Update main bars - both halves
+	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !colorLoop-
@@ -569,6 +582,8 @@ RenderBars: {
 	//; Render to screen 1
 	jmp RenderToScreen1
 }
+
+tempFlicker: .byte 0
 
 //; Screen-specific rendering routines
 RenderToScreen0: {
@@ -592,7 +607,7 @@ RenderToScreen0: {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
 		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 		adc #10
-		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + (TOP_SPECTRUM_HEIGHT * 2 - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + (TOTAL_SPECTRUM_HEIGHT - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
 }
@@ -621,57 +636,6 @@ RenderToScreen1: {
 		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + (TOP_SPECTRUM_HEIGHT * 2 - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-}
-
-//; =============================================================================
-//; COLOR MANAGEMENT
-//; =============================================================================
-
-UpdateColors: {
-	//; Update color cycling on 256-frame boundaries
-	lda frameCounter
-	bne !done+
-
-	inc frame256Counter
-	lda #$00
-	sta colorUpdateIndex
-
-	//; Cycle to next palette
-	ldx currentPalette
-	inx
-	cpx #NUM_COLOR_PALETTES
-	bne !setPalette+
-	ldx #$00
-!setPalette:
-	stx currentPalette
-
-	//; Update palette pointers
-	lda colorPalettesLo, x
-	sta !readColor+ + 1
-	lda colorPalettesHi, x
-	sta !readColor+ + 2
-
-!done:
-	//; Gradual color update
-	ldx colorUpdateIndex
-	bmi !exit+
-
-	lda #$0b							//; Default color
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-!readColor:
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-
-	inc colorUpdateIndex
-	lda colorUpdateIndex
-	cmp #MAX_BAR_HEIGHT + 5
-	bne !exit+
-	lda #$ff
-	sta colorUpdateIndex
-!exit:
-	rts
 }
 
 //; =============================================================================
@@ -710,22 +674,6 @@ DrawScreens: {
 	dey
 	bpl !loop-
 
-	rts
-}
-
-InitializeColors: {
-	//; Initialize bar colors
-	ldx #0
-!loop:
-	lda #$0b							//; Default cyan
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inx
-	cpx #MAX_BAR_HEIGHT + 5
-	bne !loop-
 	rts
 }
 
@@ -827,26 +775,25 @@ sidRegisterMirror:			.fill 32, 0
 
 multiply64Table:			.fill 4, i * 64
 
-//; Color tables
-darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
-							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
-
 //; =============================================================================
-//; DATA SECTION - Color Palettes
+//; DATA SECTION - Height-Based Color Table
 //; =============================================================================
 
-colorPalettes:
-	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01		//; Purple/pink
-	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01		//; Blue/cyan
-	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01		//; Red/orange
-
-colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
-colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
-
-heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
-
-heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
+//; Color table based on bar height with flickering transitions
+//; MAX_BAR_HEIGHT = 71 (TOP_SPECTRUM_HEIGHT * 8 - 1 = 9 * 8 - 1)
+//; We'll use groups of 4 entries for each height range
+heightColorTable:
+	.fill 3, $0B
+	.fill 3, $09
+	.fill 3, $02
+	.fill 3, $06
+	.fill 3, $08
+	.fill 3, $04
+	.fill 3, $05
+	.fill 3, $0E
+	.fill 3, $0A
+	.fill 3, $0D
+	.fill 32, $01
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
