@@ -85,6 +85,52 @@ class UIController {
 
         // Editable fields
         this.setupEditableFields();
+
+        // Initialize the UI in "attract mode"
+        this.initializeAttractMode();
+    }
+
+    initializeAttractMode() {
+        // Set all info fields to placeholder values
+        this.elements.sidTitle.querySelector('.text').textContent = 'Song Title';
+        this.elements.sidAuthor.querySelector('.text').textContent = 'Artist Name';
+        this.elements.sidCopyright.querySelector('.text').textContent = 'Copyright Info';
+
+        this.elements.sidFormat.textContent = 'PSID';
+        this.elements.sidVersion.textContent = 'v2';
+        this.elements.sidSongs.textContent = '1/1';
+
+        this.elements.loadAddress.textContent = '$1000';
+        this.elements.initAddress.textContent = '$1000';
+        this.elements.playAddress.textContent = '$1003';
+        this.elements.memoryRange.textContent = '$1000 - $2FFF';
+        this.elements.fileSize.textContent = '8192 bytes';
+        this.elements.zpUsage.textContent = '$02-$FF';
+        this.elements.clockType.textContent = 'PAL';
+        this.elements.sidModel.textContent = 'MOS 6581';
+
+        const numCallsElement = document.getElementById('numCallsPerFrame');
+        if (numCallsElement) {
+            numCallsElement.textContent = '1';
+        }
+
+        // Initialize visualizer grid with disabled state
+        this.buildAttractModeVisualizerGrid();
+    }
+
+    buildAttractModeVisualizerGrid() {
+        const grid = document.getElementById('visualizerGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        // Show all visualizers in disabled state
+        for (const viz of VISUALIZERS) {
+            const card = this.createVisualizerCard(viz);
+            card.classList.add('disabled');
+            card.style.pointerEvents = 'none';
+            grid.appendChild(card);
+        }
     }
 
     setupDragAndDrop() {
@@ -313,8 +359,10 @@ class UIController {
 
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
 
-            // Show panels
+            // Show panels - remove disabled state and add visible
+            this.elements.infoSection.classList.remove('disabled');
             this.elements.infoSection.classList.add('visible');
+            this.elements.songTitleSection.classList.remove('disabled');
             this.elements.songTitleSection.classList.add('visible');
 
             // Show export section
@@ -333,6 +381,8 @@ class UIController {
 
     showExportSection() {
         if (this.elements.exportSection) {
+            // Remove disabled state and add visible
+            this.elements.exportSection.classList.remove('disabled');
             this.elements.exportSection.classList.add('visible');
 
             // Update the header to show calls per frame info
@@ -871,13 +921,23 @@ class UIController {
 
     hideMessages() {
         this.elements.errorMessage.classList.remove('visible');
+
+        // Don't hide sections, just disable them
         this.elements.songTitleSection.classList.remove('visible');
+        this.elements.songTitleSection.classList.add('disabled');
+
         if (this.elements.exportSection) {
             this.elements.exportSection.classList.remove('visible');
+            this.elements.exportSection.classList.add('disabled');
         }
+
         if (this.elements.infoSection) {
             this.elements.infoSection.classList.remove('visible');
+            this.elements.infoSection.classList.add('disabled');
         }
+
+        // Reset to attract mode
+        this.initializeAttractMode();
     }
 }
 

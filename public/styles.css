@@ -62,19 +62,32 @@ body {
     transition: all 0.3s ease;
 }
 
-    .section-group:hover {
+    .section-group:hover:not(.disabled) {
         border-color: rgba(102, 126, 234, 0.25);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     }
 
+    .section-group.disabled {
+        cursor: not-allowed;
+        user-select: none;
+    }
+
 /* Info Section */
 .info-section {
-    opacity: 0;
-    transition: opacity 0.5s ease;
+    opacity: 1;
+    transition: all 0.5s ease;
 }
+
+    .info-section.disabled {
+        opacity: 0.5;
+        filter: grayscale(50%);
+        pointer-events: none;
+    }
 
     .info-section.visible {
         opacity: 1;
+        filter: none;
+        pointer-events: auto;
     }
 
 /* Upload Section */
@@ -86,18 +99,45 @@ body {
     transition: all 0.3s ease;
     cursor: pointer;
     background: rgba(102, 126, 234, 0.05);
+    position: relative;
+    overflow: hidden;
 }
 
-    .upload-section:hover {
-        border-color: #764ba2;
-        background: rgba(102, 126, 234, 0.1);
-        transform: translateY(-2px);
+    /* Subtle pulsing animation for attract mode */
+    .upload-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+        pointer-events: none;
     }
 
-    .upload-section.dragover {
-        background: rgba(102, 126, 234, 0.2);
-        border-color: #764ba2;
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0;
     }
+
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.upload-section:hover {
+    border-color: #764ba2;
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.upload-section.dragover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: #764ba2;
+}
 
 .upload-icon {
     font-size: 4em;
@@ -127,11 +167,19 @@ body {
     padding: 20px;
     margin: 20px 0;
     text-align: center;
-    display: none;
+    display: block;
+    transition: all 0.5s ease;
 }
+
+    .song-title-section.disabled {
+        opacity: 0.5;
+        filter: grayscale(50%);
+    }
 
     .song-title-section.visible {
         display: block;
+        opacity: 1;
+        filter: none;
     }
 
 .song-title {
@@ -159,19 +207,25 @@ body {
     border-radius: 15px;
     padding: 25px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
-    .panel h2 {
-        color: #667eea;
-        margin-bottom: 20px;
-        font-size: 1.3em;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 10px;
-    }
+.disabled .panel {
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
 
-    .panel.full-width {
-        grid-column: 1 / -1;
-    }
+.panel h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.panel.full-width {
+    grid-column: 1 / -1;
+}
 
 /* Information Rows */
 .info-row {
@@ -254,11 +308,22 @@ body {
 
 /* Export Section */
 .export-section {
-    display: none;
+    display: block;
+    opacity: 1;
+    transition: all 0.5s ease;
 }
+
+    .export-section.disabled {
+        opacity: 0.5;
+        filter: grayscale(50%);
+        pointer-events: none;
+    }
 
     .export-section.visible {
         display: block;
+        opacity: 1;
+        filter: none;
+        pointer-events: auto;
     }
 
     .export-section h2 {
@@ -267,6 +332,13 @@ body {
         font-size: 1.3em;
         border-bottom: 2px solid rgba(102, 126, 234, 0.2);
         padding-bottom: 10px;
+    }
+
+    .export-section.disabled h2::after {
+        content: ' (Load a SID file to enable)';
+        font-size: 0.8em;
+        color: #999;
+        font-weight: normal;
     }
 
 /* Visualizer Grid */
@@ -535,9 +607,15 @@ body {
         background: linear-gradient(135deg, #999 0%, #777 100%);
     }
 
-    .export-button:active:not(:disabled) {
-        transform: translateY(0);
-    }
+/* When in disabled section, make buttons look more disabled */
+.disabled .export-button:not(:disabled) {
+    opacity: 0.7;
+    background: linear-gradient(135deg, #999 0%, #777 100%);
+}
+
+.export-button:active:not(:disabled) {
+    transform: translateY(0);
+}
 
 #exportModifiedSIDButton {
     width: auto;
@@ -815,3 +893,14 @@ body {
             color: #ff6b6b;
             font-weight: 600;
         }
+
+/* Attract mode specific styling */
+.disabled .visualizer-card {
+    opacity: 0.6;
+    filter: grayscale(30%);
+}
+
+    .disabled .visualizer-card:hover {
+        transform: none;
+        cursor: default;
+    }
