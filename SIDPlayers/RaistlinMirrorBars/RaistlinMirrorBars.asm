@@ -540,18 +540,6 @@ RenderBars: {
 	//; Get bar height
 	ldx smoothedHeights, y
 	
-	//; Look up color from height table
-	//; Use frame counter to create flicker effect
-	lda frameCounter
-	and #$03				//; 0-3 for selecting which of 4 entries
-	sta tempFlicker
-	
-	//; Calculate table index: height + (frameCounter & 3)
-	txa
-	clc
-	adc tempFlicker
-	tax
-	
 	//; Get color from table
 	lda heightColorTable, x
 	
@@ -578,8 +566,6 @@ RenderBars: {
 	//; Render to screen 1
 	jmp RenderToScreen1
 }
-
-tempFlicker: .byte 0
 
 //; Screen-specific rendering routines
 RenderToScreen0: {
