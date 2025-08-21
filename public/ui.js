@@ -134,6 +134,36 @@ class UIController {
                     this.stopEditing(field);
                 }
             });
+
+            // Add paste handler to strip formatting
+            const textSpan = field.querySelector('.text');
+            textSpan.addEventListener('paste', (e) => {
+                e.preventDefault();
+
+                // Get plain text from clipboard
+                let text = '';
+                if (e.clipboardData || e.originalEvent.clipboardData) {
+                    text = (e.clipboardData || e.originalEvent.clipboardData).getData('text/plain');
+                } else if (window.clipboardData) {
+                    text = window.clipboardData.getData('Text');
+                }
+
+                // Clean up the text
+                text = text.replace(/[\r\n\t]/g, ' '); // Replace newlines and tabs with spaces
+                text = text.replace(/\s+/g, ' '); // Replace multiple spaces with single space
+                text = text.trim();
+
+                // Insert the plain text at cursor position
+                if (window.getSelection) {
+                    const selection = window.getSelection();
+                    if (!selection.rangeCount) return;
+                    selection.deleteFromDocument();
+                    selection.getRangeAt(0).insertNode(document.createTextNode(text));
+
+                    // Move cursor to end of inserted text
+                    selection.collapseToEnd();
+                }
+            });
         });
     }
 
@@ -161,17 +191,26 @@ class UIController {
         const textSpan = field.querySelector('.text');
         textSpan.contentEditable = 'false';
 
+        // Clean and limit text
+        let text = textSpan.textContent || '';
+
+        // Remove any HTML that might have been pasted
+        text = text.replace(/<[^>]*>/g, '');
+
+        // Clean whitespace
+        text = text.replace(/[\r\n\t]/g, ' ');
+        text = text.replace(/\s+/g, ' ');
+        text = text.trim();
+
         // Limit to 31 characters
-        let text = textSpan.textContent.trim();
         if (text.length > 31) {
             text = text.substring(0, 31);
-            textSpan.textContent = text;
         }
+
+        textSpan.textContent = text;
 
         // Update in WASM
         const fieldName = field.dataset.field;
-
-        // Convert field name to match what the analyzer expects
         let analyzerFieldName = fieldName;
         if (fieldName === 'title') analyzerFieldName = 'name';
 
