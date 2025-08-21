@@ -125,10 +125,17 @@ class UIController {
         grid.innerHTML = '';
 
         // Show all visualizers in disabled state
-        for (const viz of VISUALIZERS) {
+        for (let i = 0; i < VISUALIZERS.length; i++) {
+            const viz = VISUALIZERS[i];
             const card = this.createVisualizerCard(viz);
             card.classList.add('disabled');
             card.style.pointerEvents = 'none';
+
+            // Show the first one as selected for visual consistency
+            if (i === 0) {
+                card.classList.add('selected');
+            }
+
             grid.appendChild(card);
         }
     }
@@ -159,8 +166,10 @@ class UIController {
         const editableFields = [this.elements.sidTitle, this.elements.sidAuthor, this.elements.sidCopyright];
 
         editableFields.forEach(field => {
+            const textSpan = field.querySelector('.text');
+
             field.addEventListener('click', (e) => {
-                if (!field.classList.contains('editing')) {
+                if (!field.classList.contains('editing') && !field.classList.contains('disabled')) {
                     this.startEditing(field);
                 }
             });
@@ -175,14 +184,19 @@ class UIController {
                 }
             });
 
-            field.addEventListener('blur', () => {
+            // Use blur on the text span instead of the field
+            textSpan.addEventListener('blur', () => {
                 if (field.classList.contains('editing')) {
-                    this.stopEditing(field);
+                    // Use setTimeout to allow click events on other elements to fire first
+                    setTimeout(() => {
+                        if (field.classList.contains('editing')) {
+                            this.stopEditing(field);
+                        }
+                    }, 200);
                 }
             });
 
             // Add paste handler to strip formatting
-            const textSpan = field.querySelector('.text');
             textSpan.addEventListener('paste', (e) => {
                 e.preventDefault();
 
@@ -466,9 +480,16 @@ class UIController {
         incompatible.sort((a, b) => a.name.localeCompare(b.name));
 
         // Add compatible visualizers
-        for (const viz of compatible) {
+        for (let i = 0; i < compatible.length; i++) {
+            const viz = compatible[i];
             const card = this.createVisualizerCard(viz);
             grid.appendChild(card);
+
+            // Auto-select the first compatible visualizer
+            if (i === 0) {
+                this.selectVisualizer(viz);
+                card.classList.add('selected');
+            }
         }
 
         // Add separator if there are both compatible and incompatible visualizers
