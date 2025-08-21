@@ -834,10 +834,12 @@ div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
 
 * = SCREEN0_ADDRESS "Screen 0"
-	.fill $400, $00
+	.fill LOGO_HEIGHT * 40, $00
+	.fill $400 - (LOGO_HEIGHT * 40), $20
 
 * = SCREEN1_ADDRESS "Screen 1"
-	.fill $400, $00
+	.fill LOGO_HEIGHT * 40, $00
+	.fill $400 - (LOGO_HEIGHT * 40), $20
 
 * = BITMAP_ADDRESS "Bitmap"
 	.fill $2000, $00
