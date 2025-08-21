@@ -54,6 +54,9 @@
 .const TOP_SPECTRUM_HEIGHT				= 9
 .const BOTTOM_SPECTRUM_HEIGHT			= 3
 
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+
 .const SONG_TITLE_LINE					= 23
 .const SPECTRUM_START_LINE				= 11
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
@@ -469,7 +472,7 @@ UpdateBarDecay: {
 	//; Target is higher - move up quickly
 	lda barHeights, x
 	clc
-	adc #16
+	adc #BAR_INCREASE_RATE
 	cmp targetBarHeights, x
 	bcc !storeHeight+
 	lda targetBarHeights, x		//; Don't overshoot
@@ -479,7 +482,7 @@ UpdateBarDecay: {
 	//; Target is lower - move down slowly
 	lda barHeights, x
 	sec
-	sbc #4
+	sbc #BAR_DECREASE_RATE
 	cmp targetBarHeights, x
 	bcs !storeHeight+
 	lda targetBarHeights, x		//; Don't undershoot
@@ -952,7 +955,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 
 .align 128
 div16:						.fill 128, i / 16.0
-div16mul3:					.fill 128, (3 * i) / 16.0
+div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 
 //; =============================================================================
 //; SPRITE DATA

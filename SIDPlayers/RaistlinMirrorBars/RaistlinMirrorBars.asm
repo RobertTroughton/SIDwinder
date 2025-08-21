@@ -50,6 +50,9 @@
 .const TOP_SPECTRUM_HEIGHT				= 9
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
 .const SPECTRUM_START_LINE				= 3
@@ -455,7 +458,7 @@ UpdateBarDecay: {
 	//; Target is higher - move up quickly
 	lda barHeights, x
 	clc
-	adc #16
+	adc #BAR_INCREASE_RATE
 	cmp targetBarHeights, x
 	bcc !storeHeight+
 	lda targetBarHeights, x		//; Don't overshoot
@@ -465,7 +468,7 @@ UpdateBarDecay: {
 	//; Target is lower - move down slowly
 	lda barHeights, x
 	sec
-	sbc #4
+	sbc #BAR_DECREASE_RATE
 	cmp targetBarHeights, x
 	bcs !storeHeight+
 	lda targetBarHeights, x		//; Don't undershoot
@@ -935,7 +938,7 @@ barCharacterMap:
 
 .align 128
 div16:						.fill 128, i / 16.0
-div16mul3:					.fill 128, (3 * i) / 16.0
+div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 
 //; =============================================================================
 //; CHARSET DATA
