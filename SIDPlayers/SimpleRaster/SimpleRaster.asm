@@ -31,11 +31,14 @@
 .var MainAddress = * - $100
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
-//;.var BackupSIDMemory = MainAddress + 6
-//;.var RestoreSIDMemory = MainAddress + 9
+.var BackupSIDMemory = MainAddress + 6
+.var RestoreSIDMemory = MainAddress + 9
 .var NumCallsPerFrame = MainAddress + 12
-//;.var BorderColour = MainAddress + 13
-//;.var BitmapScreenColour = MainAddress + 14
+.var BorderColour = MainAddress + 13
+.var BitmapScreenColour = MainAddress + 14
+.var SongNumber = MainAddress + 15
+.var SongName = MainAddress + 16
+.var ArtistName = MainAddress + 16 + 32
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -57,6 +60,7 @@ InitIRQ: {
     sta $d020                           //; Black border
 
     //; Initialize the music
+    lda SongNumber
 	tax
 	tay
     jsr SIDInit

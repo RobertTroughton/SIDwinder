@@ -1407,4 +1407,10 @@ extern "C" {
         free(ptr);
     }
 
+    // Add this function to set the accumulator
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_set_accumulator(uint8_t value) {
+        cpu.a = value;
+    }
+
 } // extern "C"

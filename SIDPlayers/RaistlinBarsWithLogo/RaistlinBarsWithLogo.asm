@@ -35,10 +35,12 @@
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
-//;.var NumCallsPerFrame = MainAddress + 12
+.var NumCallsPerFrame = MainAddress + 12
 .var BorderColour = MainAddress + 13
 .var BitmapScreenColour = MainAddress + 14
+.var SongNumber = MainAddress + 15
 .var SongName = MainAddress + 16
+.var ArtistName = MainAddress + 16 + 32
 
 	jmp Initialize					//; Entry point for the player
 
@@ -819,7 +821,7 @@ SetupMusic: {
 	bpl !loop-
 
 	//; Initialize player
-	lda #$00
+    lda SongNumber
 	tax
 	tay
 	jmp SIDInit

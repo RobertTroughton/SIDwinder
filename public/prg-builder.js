@@ -150,7 +150,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame, maxCallsPerFrame) {
+    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
         const data = new Uint8Array(0x50);
 
         // Apply the maximum calls per frame limit if specified
@@ -183,6 +183,9 @@ class SIDwinderPRGExporter {
         data[0x0C] = effectiveCallsPerFrame & 0xFF;
         data[0x0D] = 0x00; // BorderColour
         data[0x0E] = 0x00; // BitmapScreenColour
+
+        // Add selected song at offset 0x0F (after BitmapScreenColour)
+        data[0x0F] = selectedSong & 0xFF;
 
         // SID Name at $4010-$402F
         const nameBytes = this.stringToPETSCII(name, 32);
@@ -368,7 +371,8 @@ class SIDwinderPRGExporter {
             includeData = true,
             compressionType = 'tscrunch',
             maxCallsPerFrame = null,
-            visualizerId = null
+            visualizerId = null,
+            selectedSong = 0
         } = options;
 
         try {
@@ -440,6 +444,7 @@ class SIDwinderPRGExporter {
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
             // Make sure maxCallsPerFrame is passed from options
+            // Near the end where we generate the data block:
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -450,7 +455,8 @@ class SIDwinderPRGExporter {
                 header.name || 'Unknown',
                 header.author || 'Unknown',
                 numCallsPerFrame,
-                options.maxCallsPerFrame  // Use from options, not from local variable
+                options.maxCallsPerFrame,
+                selectedSong
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');

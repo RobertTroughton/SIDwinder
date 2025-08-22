@@ -904,3 +904,25 @@ body {
         transform: none;
         cursor: default;
     }
+
+.song-selector-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+    .song-selector-container label {
+        margin-right: 10px;
+        color: #64B5F6;
+    }
+
+    .song-selector-container select {
+        padding: 8px 12px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #fff;
+        min-width: 200px;
+    }

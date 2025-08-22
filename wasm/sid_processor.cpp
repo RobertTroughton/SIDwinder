@@ -260,38 +260,53 @@ extern "C" {
         uint8_t ciaTimerHi = 0;
         bool ciaTimerSet = false;
 
-        // Reset CPU and reload data
-        cpu_init();
-        cpu_set_tracking(false);
+        // Determine how many songs to analyze (max 8)
+        uint16_t songsToAnalyze = std::min((uint16_t)8, sidState.header.songs);
 
-        // Reload music data
-        uint32_t musicSize = sidState.fileSize - sidState.dataStart;
-        uint8_t* musicData = sidState.fileBuffer + sidState.dataStart;
+        // Frames per song (divide total frames by number of songs)
+        uint32_t framesPerSong = frameCount / songsToAnalyze;
 
-        for (uint32_t i = 0; i < musicSize; i++) {
-            cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
-        }
+        // Iterate through songs
+        for (uint16_t songNum = 1; songNum <= songsToAnalyze; songNum++) {
+            // Reset CPU and reload data for each song
+            cpu_init();
+            cpu_set_tracking(false);
 
-        // Enable tracking
-        cpu_set_tracking(true);
+            // Reload music data
+            uint32_t musicSize = sidState.fileSize - sidState.dataStart;
+            uint8_t* musicData = sidState.fileBuffer + sidState.dataStart;
 
-        // Execute init
-        if (!cpu_execute_function(sidState.header.initAddress, 100000)) {
-            return -2; // Init failed
-        }
-
-        // Enable write recording
-        cpu_set_record_writes(true);
-
-        // Execute play routine for specified frames
-        for (uint32_t frame = 0; frame < frameCount; frame++) {
-            if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
-                break; // Play routine failed, but continue
+            for (uint32_t i = 0; i < musicSize; i++) {
+                cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
             }
 
-            // Progress callback
-            if (progressCallback && (frame % 100 == 0)) {
-                progressCallback(frame, frameCount);
+            // Set the song number in accumulator before calling init
+            // Many SID players expect the song number (0-based) in the accumulator
+            extern void cpu_set_accumulator(uint8_t value);
+            cpu_set_accumulator(songNum - 1); // Convert to 0-based
+
+            // Enable tracking
+            cpu_set_tracking(true);
+
+            // Execute init
+            if (!cpu_execute_function(sidState.header.initAddress, 100000)) {
+                continue; // Skip this song if init fails
+            }
+
+            // Enable write recording
+            cpu_set_record_writes(true);
+
+            // Execute play routine for this song
+            for (uint32_t frame = 0; frame < framesPerSong; frame++) {
+                if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
+                    break; // Play routine failed, but continue
+                }
+
+                // Progress callback - adjust for multiple songs
+                if (progressCallback && (frame % 100 == 0)) {
+                    uint32_t totalProgress = ((songNum - 1) * framesPerSong) + frame;
+                    progressCallback(totalProgress, frameCount);
+                }
             }
         }
 

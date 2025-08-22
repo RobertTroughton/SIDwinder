@@ -406,6 +406,9 @@ class UIController {
                 header.innerHTML = `🎮 Choose Your Visualizer <span style="font-size: 0.8em; color: #666;"></span>`;
             }
 
+            // Add song selector if multiple songs
+            this.addSongSelector();
+
             // Initialize visualizer selection
             this.initVisualizerSelection();
 
@@ -426,6 +429,34 @@ class UIController {
                     }, 500);
                 }
             }
+        }
+    }
+
+    addSongSelector() {
+        // Remove any existing song selector
+        const existingSelector = document.getElementById('songSelectorContainer');
+        if (existingSelector) {
+            existingSelector.remove();
+        }
+
+        // Only add if there are multiple songs
+        if (this.sidHeader && this.sidHeader.songs > 1) {
+            const visualizerGrid = document.getElementById('visualizerGrid');
+            const selectorContainer = document.createElement('div');
+            selectorContainer.id = 'songSelectorContainer';
+            selectorContainer.className = 'export-option song-selector-container';
+            selectorContainer.innerHTML = `
+            <label for="songSelector">Select Song:</label>
+            <select id="songSelector">
+                ${Array.from({ length: Math.min(this.sidHeader.songs, 256) }, (_, i) => i + 1)
+                    .map(num => `<option value="${num}" ${num === this.sidHeader.startSong ? 'selected' : ''}>
+                        Song ${num} of ${this.sidHeader.songs}${num === this.sidHeader.startSong ? ' (default)' : ''}
+                    </option>`).join('')}
+            </select>
+        `;
+
+            // Insert before visualizer grid
+            visualizerGrid.parentNode.insertBefore(selectorContainer, visualizerGrid);
         }
     }
 
@@ -843,6 +874,10 @@ class UIController {
 
         this.showExportStatus('Building PRG file...', 'info');
 
+        // Get the selected song (default to startSong if selector doesn't exist)
+        const songSelector = document.getElementById('songSelector');
+        const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
+
         try {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
@@ -860,7 +895,8 @@ class UIController {
                 includeData: true,
                 compressionType: compressionType,
                 maxCallsPerFrame: maxCallsPerFrame,
-                visualizerId: this.selectedVisualizer.id
+                visualizerId: this.selectedVisualizer.id,
+                selectedSong: selectedSong - 1  // Convert to 0-based for the PRG
             };
 
             const prgData = await this.prgExporter.createPRG(options);
