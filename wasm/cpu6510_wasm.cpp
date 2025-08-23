@@ -1487,4 +1487,41 @@ extern "C" {
         cpu.y = value;
     }
 
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_save_memory(uint8_t* buffer) {
+        memcpy(buffer, cpu.memory, 65536);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_restore_memory(uint8_t* buffer) {
+        memcpy(cpu.memory, buffer, 65536);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_reset_state_only() {
+        // Reset CPU state but NOT memory
+        cpu.pc = 0;
+        cpu.sp = 0xFD;
+        cpu.a = 0;
+        cpu.x = 0;
+        cpu.y = 0;
+        cpu.status = FLAG_INTERRUPT | FLAG_UNUSED;
+        cpu.cycles = 0;
+
+        // Reset tracking but don't clear memory
+        cpu.ciaTimerLo = 0;
+        cpu.ciaTimerHi = 0;
+        cpu.ciaTimerWritten = false;
+        cpu.totalSidWrites = 0;
+        cpu.totalZpWrites = 0;
+        cpu.recordWrites = false;
+
+        // Clear access tracking
+        memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
+        memset(cpu.sidWrites, 0, sizeof(cpu.sidWrites));
+        memset(cpu.zpWrites, 0, sizeof(cpu.zpWrites));
+        memset(cpu.lastWritePC, 0, sizeof(cpu.lastWritePC));
+        cpu.writeSequence.clear();
+    }
+
 } // extern "C"

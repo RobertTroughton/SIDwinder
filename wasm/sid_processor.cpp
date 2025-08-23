@@ -108,6 +108,9 @@ extern "C" {
     extern uint32_t cpu_get_sid_writes(uint8_t reg);
     extern uint32_t cpu_get_zp_writes(uint8_t addr);
     extern void cpu_set_record_writes(bool record);
+    extern void cpu_save_memory(uint8_t* buffer);
+    extern void cpu_restore_memory(uint8_t* buffer);
+    extern void cpu_reset_state_only();
 
     // Helper function to swap endianness
     uint16_t swap16(uint16_t value) {
@@ -255,30 +258,42 @@ extern "C" {
         memset(sidState.analysis.sidRegisterWrites, 0, sizeof(sidState.analysis.sidRegisterWrites));
         sidState.analysis.codeBytes = 0;
         sidState.analysis.dataBytes = 0;
+        sidState.analysis.hasPattern = false;
+        sidState.analysis.patternPeriod = 0;
+        sidState.analysis.initFrames = 0;
+        sidState.analysis.numCallsPerFrame = 1;
+        sidState.analysis.ciaTimerValue = 0;
+        sidState.analysis.ciaTimerDetected = false;
 
-        uint8_t ciaTimerLo = 0;
-        uint8_t ciaTimerHi = 0;
-        bool ciaTimerSet = false;
+        // Create a clean memory snapshot after initial load
+        uint8_t* cleanMemorySnapshot = (uint8_t*)malloc(65536);
 
-        // Determine how many songs to analyze - we could clamp here if we're worried that there're too many?
+        // First, init with clean memory
+        cpu_init();
+        cpu_set_tracking(false);
+
+        // Load music data
+        uint32_t musicSize = sidState.fileSize - sidState.dataStart;
+        uint8_t* musicData = sidState.fileBuffer + sidState.dataStart;
+        for (uint32_t i = 0; i < musicSize; i++) {
+            cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
+        }
+
+        // Save this clean state
+        cpu_save_memory(cleanMemorySnapshot);
+
+        // Determine how many songs to analyze
         uint16_t songsToAnalyze = sidState.header.songs;
 
         // Iterate through songs
         for (uint16_t songNum = 1; songNum <= songsToAnalyze; songNum++) {
-            // Reset CPU and reload data for each song
-            cpu_init();
-            cpu_set_tracking(false);
+            // RESTORE COMPLETE MEMORY STATE
+            cpu_restore_memory(cleanMemorySnapshot);
 
-            // Reload music data
-            uint32_t musicSize = sidState.fileSize - sidState.dataStart;
-            uint8_t* musicData = sidState.fileBuffer + sidState.dataStart;
+            // Reset CPU state but keep the restored memory
+            cpu_reset_state_only();
 
-            for (uint32_t i = 0; i < musicSize; i++) {
-                cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
-            }
-
-            // Set the song number in accumulator before calling init
-            // Many SID players expect the song number (0-based) in the accumulator
+            // Set the song number in accumulator, X and Y registers
             extern void cpu_set_accumulator(uint8_t value);
             extern void cpu_set_xreg(uint8_t value);
             extern void cpu_set_yreg(uint8_t value);
@@ -294,86 +309,88 @@ extern "C" {
                 continue; // Skip this song if init fails
             }
 
-            // Enable write recording
+            // Enable write recording for pattern detection (optional)
             cpu_set_record_writes(true);
 
             // Execute play routine for this song
             for (uint32_t frame = 0; frame < frameCount; frame++) {
                 if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
-                    break; // Play routine failed, but continue
+                    break; // Play routine failed, but continue with next song
                 }
 
-                // Progress callback - adjust for multiple songs
+                // Progress callback
                 if (progressCallback && (frame % 100 == 0)) {
-                    uint32_t totalProgress = frame;
-                    progressCallback(totalProgress, frameCount);
+                    uint32_t totalProgress = (songNum - 1) * frameCount + frame;
+                    uint32_t totalFrames = songsToAnalyze * frameCount;
+                    progressCallback(totalProgress, totalFrames);
+                }
+            }
+
+            // ACCUMULATE analysis results for THIS song before resetting
+            for (uint32_t addr = 0; addr < 65536; addr++) {
+                uint8_t access = cpu_get_memory_access(addr);
+
+                // Track modified addresses
+                if (access & 0x04) { // Write flag
+                    sidState.analysis.modifiedAddresses.insert(addr);
+
+                    if (addr < 256) {
+                        sidState.analysis.zeroPageUsed.insert(addr);
+                    }
+                }
+
+                // Track code vs data (only for the SID's loaded range)
+                if (addr >= sidState.header.loadAddress &&
+                    addr < sidState.header.loadAddress + musicSize) {
+                    if (access & 0x01) { // Execute flag
+                        sidState.analysis.codeBytes++;
+                    }
+                    else {
+                        sidState.analysis.dataBytes++;
+                    }
+                }
+            }
+
+            // Accumulate SID register usage
+            for (int reg = 0; reg < 32; reg++) {
+                sidState.analysis.sidRegisterWrites[reg] += cpu_get_sid_writes(reg);
+            }
+
+            // Check for CIA timer (only need to detect once)
+            if (!sidState.analysis.ciaTimerDetected) {
+                extern uint8_t cpu_get_cia_timer_lo();
+                extern uint8_t cpu_get_cia_timer_hi();
+                extern bool cpu_get_cia_timer_written();
+
+                if (cpu_get_cia_timer_written()) {
+                    uint8_t ciaTimerLo = cpu_get_cia_timer_lo();
+                    uint8_t ciaTimerHi = cpu_get_cia_timer_hi();
+
+                    if (ciaTimerLo != 0 || ciaTimerHi != 0) {
+                        uint16_t timerValue = ciaTimerLo | (ciaTimerHi << 8);
+                        // PAL: 312 lines * 63 cycles = 19656 cycles per frame
+                        // NTSC: 263 lines * 65 cycles = 17095 cycles per frame
+                        double cyclesPerFrame = 19656.0; // Default PAL
+
+                        // Check if NTSC
+                        if (sidState.header.version >= 2) {
+                            uint16_t flags = sidState.header.flags;
+                            if ((flags & 0x0C) == 0x08) { // NTSC flag
+                                cyclesPerFrame = 17095.0;
+                            }
+                        }
+
+                        double freq = cyclesPerFrame / timerValue;
+                        sidState.analysis.numCallsPerFrame = (uint8_t)std::min(16, std::max(1, (int)(freq + 0.5)));
+                        sidState.analysis.ciaTimerValue = timerValue;
+                        sidState.analysis.ciaTimerDetected = true;
+                    }
                 }
             }
         }
 
-        // Gather analysis results
-
-        // Modified addresses
-        uint32_t musicSize_analysis = sidState.fileSize - sidState.dataStart;
-        for (uint32_t addr = 0; addr < 65536; addr++) {
-            uint8_t access = cpu_get_memory_access(addr);
-            if (access & 0x04) { // Write flag
-                sidState.analysis.modifiedAddresses.insert(addr);
-
-                if (addr < 256) {
-                    sidState.analysis.zeroPageUsed.insert(addr);
-                }
-            }
-
-            // Code vs data
-            if (addr >= sidState.header.loadAddress &&
-                addr < sidState.header.loadAddress + musicSize_analysis) {
-                if (access & 0x01) { // Execute flag
-                    sidState.analysis.codeBytes++;
-                }
-                else {
-                    sidState.analysis.dataBytes++;
-                }
-            }
-        }
-
-        // SID register usage
-        for (int reg = 0; reg < 32; reg++) {
-            sidState.analysis.sidRegisterWrites[reg] = cpu_get_sid_writes(reg);
-        }
-
-		// timing analysis
-        extern uint8_t cpu_get_cia_timer_lo();
-        extern uint8_t cpu_get_cia_timer_hi();
-        extern bool cpu_get_cia_timer_written();
-
-        if (cpu_get_cia_timer_written()) {
-            uint8_t ciaTimerLo = cpu_get_cia_timer_lo();
-            uint8_t ciaTimerHi = cpu_get_cia_timer_hi();
-
-            if (ciaTimerLo != 0 || ciaTimerHi != 0) {
-                uint16_t timerValue = ciaTimerLo | (ciaTimerHi << 8);
-                // PAL: 312 lines * 63 cycles = 19656 cycles per frame
-                // NTSC: 263 lines * 65 cycles = 17095 cycles per frame
-                double cyclesPerFrame = 19656.0; // Default PAL
-/*                if (strcmp(sid_get_clock_type(), "NTSC") == 0) {
-                    cyclesPerFrame = 17095.0;
-                }*/
-
-                double freq = cyclesPerFrame / timerValue;
-                sidState.analysis.numCallsPerFrame = (uint8_t)std::min(16, std::max(1, (int)(freq + 0.5)));
-                sidState.analysis.ciaTimerValue = timerValue;
-                sidState.analysis.ciaTimerDetected = true;
-            }
-            else {
-                sidState.analysis.numCallsPerFrame = 1;
-                sidState.analysis.ciaTimerDetected = false;
-            }
-        }
-        else {
-            sidState.analysis.numCallsPerFrame = 1;
-            sidState.analysis.ciaTimerDetected = false;
-        }
+        // Clean up
+        free(cleanMemorySnapshot);
 
         return 0; // Success
     }
