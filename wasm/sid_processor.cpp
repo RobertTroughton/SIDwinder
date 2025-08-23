@@ -260,11 +260,8 @@ extern "C" {
         uint8_t ciaTimerHi = 0;
         bool ciaTimerSet = false;
 
-        // Determine how many songs to analyze (max 8)
-        uint16_t songsToAnalyze = std::min((uint16_t)8, sidState.header.songs);
-
-        // Frames per song (divide total frames by number of songs)
-        uint32_t framesPerSong = frameCount / songsToAnalyze;
+        // Determine how many songs to analyze - we could clamp here if we're worried that there're too many?
+        uint16_t songsToAnalyze = sidState.header.songs;
 
         // Iterate through songs
         for (uint16_t songNum = 1; songNum <= songsToAnalyze; songNum++) {
@@ -283,7 +280,11 @@ extern "C" {
             // Set the song number in accumulator before calling init
             // Many SID players expect the song number (0-based) in the accumulator
             extern void cpu_set_accumulator(uint8_t value);
-            cpu_set_accumulator(songNum - 1); // Convert to 0-based
+            extern void cpu_set_xreg(uint8_t value);
+            extern void cpu_set_yreg(uint8_t value);
+            cpu_set_accumulator(songNum - 1);
+            cpu_set_xreg(songNum - 1);
+            cpu_set_yreg(songNum - 1);
 
             // Enable tracking
             cpu_set_tracking(true);
@@ -297,14 +298,14 @@ extern "C" {
             cpu_set_record_writes(true);
 
             // Execute play routine for this song
-            for (uint32_t frame = 0; frame < framesPerSong; frame++) {
+            for (uint32_t frame = 0; frame < frameCount; frame++) {
                 if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
                     break; // Play routine failed, but continue
                 }
 
                 // Progress callback - adjust for multiple songs
                 if (progressCallback && (frame % 100 == 0)) {
-                    uint32_t totalProgress = ((songNum - 1) * framesPerSong) + frame;
+                    uint32_t totalProgress = frame;
                     progressCallback(totalProgress, frameCount);
                 }
             }

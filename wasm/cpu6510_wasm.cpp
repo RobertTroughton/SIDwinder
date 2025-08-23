@@ -6,6 +6,7 @@
 #include <cstring>
 #include <vector>
 #include <algorithm>
+#include <set>
 #include "opcodes.h"
 
 extern "C" {
@@ -572,7 +573,7 @@ extern "C" {
         case 0xE6: // INC zero page
         {
             uint8_t zp = cpu.memory[pc++];
-            uint8_t val = cpu.memory[zp] + 1;
+            uint8_t val = rd(zp) + 1;
             write_memory_internal(zp, val);
             set_zn_flags(val);
             cpu.cycles += 5;
@@ -582,7 +583,7 @@ extern "C" {
         case 0xEE: // INC absolute
         {
             uint16_t addr = read_word(pc);
-            uint8_t val = cpu.memory[addr] + 1;
+            uint8_t val = rd(addr) + 1;
             write_memory_internal(addr, val);
             set_zn_flags(val);
             cpu.cycles += 6;
@@ -592,7 +593,7 @@ extern "C" {
         case 0xF6: // INC zero page,X
         {
             uint8_t zp = (cpu.memory[pc++] + cpu.x) & 0xFF;
-            uint8_t val = cpu.memory[zp] + 1;
+            uint8_t val = rd(zp) + 1;
             write_memory_internal(zp, val);
             set_zn_flags(val);
             cpu.cycles += 6;
@@ -602,7 +603,7 @@ extern "C" {
         case 0xFE: // INC absolute,X
         {
             uint16_t addr = read_word(pc) + cpu.x;
-            uint8_t val = cpu.memory[addr] + 1;
+            uint8_t val = rd(addr) + 1;
             write_memory_internal(addr, val);
             set_zn_flags(val);
             cpu.cycles += 7;
@@ -612,7 +613,7 @@ extern "C" {
         case 0xC6: // DEC zero page
         {
             uint8_t zp = cpu.memory[pc++];
-            uint8_t val = cpu.memory[zp] - 1;
+            uint8_t val = rd(zp) - 1;
             write_memory_internal(zp, val);
             set_zn_flags(val);
             cpu.cycles += 5;
@@ -622,7 +623,7 @@ extern "C" {
         case 0xCE: // DEC absolute
         {
             uint16_t addr = read_word(pc);
-            uint8_t val = cpu.memory[addr] - 1;
+            uint8_t val = rd(addr) - 1;
             write_memory_internal(addr, val);
             set_zn_flags(val);
             cpu.cycles += 6;
@@ -632,7 +633,7 @@ extern "C" {
         case 0xD6: // DEC zero page,X
         {
             uint8_t zp = (cpu.memory[pc++] + cpu.x) & 0xFF;
-            uint8_t val = cpu.memory[zp] - 1;
+            uint8_t val = rd(zp) - 1;
             write_memory_internal(zp, val);
             set_zn_flags(val);
             cpu.cycles += 6;
@@ -642,7 +643,7 @@ extern "C" {
         case 0xDE: // DEC absolute,X
         {
             uint16_t addr = read_word(pc) + cpu.x;
-            uint8_t val = cpu.memory[addr] - 1;
+            uint8_t val = rd(addr) - 1;
             write_memory_internal(addr, val);
             set_zn_flags(val);
             cpu.cycles += 7;
@@ -1204,19 +1205,40 @@ extern "C" {
 
         // SLO (ASL + ORA)
         case 0x07: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(5); } break;
-            // ... similarly: 0x17,0x0F,0x1F,0x1B,0x03,0x13
+        case 0x17: { auto e = ea_zpx(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x0F: { auto e = ea_abs(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x1F: { auto e = ea_absx(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x1B: { auto e = ea_absy(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x03: { auto e = ea_indx(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(8); } break;
+        case 0x13: { auto e = ea_indy(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 0x80); v <<= 1; write_memory_internal(e.addr, v); cpu.a |= v; set_zn_flags(cpu.a); add(8); } break;
 
+            // Additional unofficial NOPs that might access memory
         // RLA (ROL + AND)
         case 0x27: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(5); } break;
-            // ... similarly: 0x37,0x2F,0x3F,0x3B,0x23,0x33
+        case 0x37: { auto e = ea_zpx(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x2F: { auto e = ea_abs(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x3F: { auto e = ea_absx(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x3B: { auto e = ea_absy(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x23: { auto e = ea_indx(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(8); } break;
+        case 0x33: { auto e = ea_indy(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 0x80); v = (v << 1) | (c ? 1 : 0); write_memory_internal(e.addr, v); cpu.a &= v; set_zn_flags(cpu.a); add(8); } break;
 
         // SRE (LSR + EOR)
         case 0x47: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(5); } break;
-            // ... similarly: 0x57,0x4F,0x5F,0x5B,0x43,0x53
+        case 0x57: { auto e = ea_zpx(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x4F: { auto e = ea_abs(pc);  uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(6); } break;
+        case 0x5F: { auto e = ea_absx(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x5B: { auto e = ea_absy(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(7); } break;
+        case 0x43: { auto e = ea_indx(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(8); } break;
+        case 0x53: { auto e = ea_indy(pc); uint8_t v = rd(e.addr); set_flag(FLAG_CARRY, v & 1); v >>= 1; write_memory_internal(e.addr, v); cpu.a ^= v; set_zn_flags(cpu.a); add(8); } break;
 
         // RRA (ROR + ADC)
         case 0x67: { auto e = ea_zp(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(5); } break;
-            // ... similarly: 0x77,0x6F,0x7F,0x7B,0x63,0x73
+        case 0x77: { auto e = ea_zpx(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(6); } break;
+        case 0x6F: { auto e = ea_abs(pc);  uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(6); } break;
+        case 0x7F: { auto e = ea_absx(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(7); } break;
+        case 0x7B: { auto e = ea_absy(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(7); } break;
+        case 0x63: { auto e = ea_indx(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(8); } break;
+        case 0x73: { auto e = ea_indy(pc); uint8_t v = rd(e.addr); bool c = test_flag(FLAG_CARRY); set_flag(FLAG_CARRY, v & 1); v = (v >> 1) | (c ? 0x80 : 0); write_memory_internal(e.addr, v); do_adc(v); add(8); } break;
 
         // ANC (AND #imm; C = bit7)
         case 0x0B: case 0x2B: { uint8_t v = cpu.memory[pc++]; cpu.a &= v; set_zn_flags(cpu.a); set_flag(FLAG_CARRY, cpu.a & 0x80); add(2); } break;
@@ -1235,17 +1257,59 @@ extern "C" {
         case 0x62: case 0x72: case 0x92: case 0xB2: case 0xD2: case 0xF2:
         { pc--; add(2); } break;
 
+        case 0x04: case 0x14: case 0x34: case 0x44: case 0x54: case 0x64: case 0x74:
+        case 0x80: case 0x82: case 0x89: case 0xC2: case 0xD4: case 0xE2: case 0xF4:
+            // NOP zp (3 cycles, read zp)
+        { uint8_t zp = cpu.memory[pc++]; rd(zp); add(3); } break;
+
+        case 0x0C:
+            // NOP abs (4 cycles, read abs)
+        { uint16_t addr = read_word(pc); rd(addr); add(4); } break;
+
+        case 0x1C: case 0x3C: case 0x5C: case 0x7C: case 0xDC: case 0xFC:
+            // NOP abs,X (4-5 cycles, read abs,X)
+        { auto e = ea_absx(pc); rd(e.addr); add_read(4, e.cross); } break;
+
+        case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA: case 0xFA:
+            // NOP implied (2 cycles)
+            add(2); break;
+
+            // Replace the current default case with this:
         default:
-            // For unimplemented opcodes, try to guess the size from the opcode table
+        {
+            // Report the unimplemented opcode
+            printf("ERROR: Unimplemented opcode $%02X at PC=$%04X\n", opcode, cpu.pc - 1);
+
+            // Log some context to help debug
+            printf("  A=$%02X X=$%02X Y=$%02X SP=$%02X\n", cpu.a, cpu.x, cpu.y, cpu.sp);
+            printf("  Next bytes: $%02X $%02X $%02X\n",
+                cpu.memory[pc],
+                cpu.memory[(pc + 1) & 0xFFFF],
+                cpu.memory[(pc + 2) & 0xFFFF]);
+
+            // You could also maintain a list of unimplemented opcodes encountered
+            static std::set<uint8_t> unimplementedOpcodes;
+            if (unimplementedOpcodes.find(opcode) == unimplementedOpcodes.end()) {
+                unimplementedOpcodes.insert(opcode);
+                printf("  (First occurrence of this opcode)\n");
+            }
+
+            // Try to continue with the opcode table if available
             if (opcodeTable[opcode].size > 0) {
                 pc += opcodeTable[opcode].size - 1;
                 cpu.cycles += opcodeTable[opcode].cycles;
+                printf("  Attempting to skip instruction (size=%d)\n", opcodeTable[opcode].size);
             }
             else {
-                // Unknown opcode - just advance
+                // Complete unknown - this is bad
+                printf("  FATAL: Unknown instruction size - emulation may be corrupted\n");
+                // You might want to halt emulation here or return an error
                 cpu.cycles += 2;
+                // Set an error flag that can be checked
+                // cpu.emulationError = true;
             }
-            break;
+        }
+        break;
         }
 
         cpu.pc = pc;
@@ -1411,6 +1475,16 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
         void cpu_set_accumulator(uint8_t value) {
         cpu.a = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_set_xreg(uint8_t value) {
+        cpu.x = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        void cpu_set_yreg(uint8_t value) {
+        cpu.y = value;
     }
 
 } // extern "C"
