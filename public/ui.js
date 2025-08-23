@@ -901,18 +901,20 @@ class UIController {
 
             const prgData = await this.prgExporter.createPRG(options);
 
-            // Generate filename suffix based on compression
-            let suffix = '';
-            switch (compressionType) {
-                case 'none':
-                    suffix = '';
-                    break;
-                case 'tscrunch':
-                    suffix = '_tscrunched';
-                    break;
+            // Generate filename based on compression
+            const isCompressed = compressionType !== 'none';
+            let filename;
+
+            if (isCompressed) {
+                // Compressed: just songname.prg
+                filename = `${baseName}.prg`;
+            } else {
+                // Uncompressed: songname-sys16640.prg (or whatever the visualizer address is)
+                const sysAddress = options.visualizerLoadAddress; // 0x4100 = 16640 decimal
+                filename = `${baseName}-sys${sysAddress}.prg`;
             }
 
-            this.downloadFile(prgData, `${baseName}_${this.selectedVisualizer.id}${suffix}.prg`);
+            this.downloadFile(prgData, filename);
 
             const sizeKB = (prgData.length / 1024).toFixed(2);
             let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;
