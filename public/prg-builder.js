@@ -270,8 +270,8 @@ class SIDwinderPRGExporter {
         data[0xC4] = sidInfo.playAddress & 0xFF;
         data[0xC5] = (sidInfo.playAddress >> 8) & 0xFF;
 
-        // End address (calculate from data size)
-        const endAddress = sidInfo.loadAddress + (header.fileSize || 0x2000) - 1;
+        // End address (calculate from actual data size)
+        const endAddress = sidInfo.loadAddress + (sidInfo.dataSize || 0x1000) - 1;
         data[0xC6] = endAddress & 0xFF;
         data[0xC7] = (endAddress >> 8) & 0xFF;
 
@@ -424,14 +424,16 @@ class SIDwinderPRGExporter {
             if (firstTwo === loadAddress) {
                 return {
                     data: musicData.slice(2),
-                    loadAddress: loadAddress
+                    loadAddress: loadAddress,
+                    dataSize: musicData.slice(2).length  // Add this
                 };
             }
         }
 
         return {
             data: musicData,
-            loadAddress: loadAddress
+            loadAddress: loadAddress,
+            dataSize: musicData.length  // Add this
         };
     }
 
@@ -669,7 +671,8 @@ class SIDwinderPRGExporter {
                     {
                         initAddress: actualInitAddress,
                         playAddress: actualPlayAddress,
-                        loadAddress: actualSidAddress
+                        loadAddress: actualSidAddress,
+                        dataSize: sidInfo.dataSize  // Add this
                     },
                     this.analyzer.analysisResults,
                     header,

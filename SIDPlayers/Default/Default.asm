@@ -240,19 +240,6 @@ PopulateMetadata:
     lda SIDPlay+2
     sta PlayAddress+1
     
-    // Load address would be passed by the linker
-    // For now, assume it's at $1000
-    lda #$00
-    sta LoadAddress
-    lda #$10
-    sta LoadAddress+1
-    
-    // End address would be calculated
-    lda #$FF
-    sta EndAddress
-    lda #$2F
-    sta EndAddress+1
-    
     // Default to 1 song if not set
     lda NumSongs
     bne !skip+
