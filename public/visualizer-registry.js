@@ -43,7 +43,7 @@ const VISUALIZERS = [
         description: 'Full-screen bitmap',
         preview: 'prg/simplebitmap.png',
         binary: 'prg/simplebitmap.bin',
-        maxCallsPerFrame: 1,
+        maxCallsPerFrame: 8,
         config: 'prg/simplebitmap.json'
     },
     {
@@ -52,8 +52,17 @@ const VISUALIZERS = [
         description: 'Minimal rasterbar effect',
         preview: 'prg/simpleraster.png',
         binary: 'prg/simpleraster.bin',
-        maxCallsPerFrame: 1,
+        maxCallsPerFrame: 8,
         config: 'prg/simpleraster.json'
+    },
+    {
+        id: 'TextInfo',
+        name: 'Text Info',
+        description: 'Minimal player with textual information - similar to PSID64',
+        preview: 'prg/textinfo.png',
+        binary: 'prg/textinfo.bin',
+        maxCallsPerFrame: 8,
+        config: 'prg/textinfo.json'
     }
 ];
 

@@ -202,6 +202,146 @@ class SIDwinderPRGExporter {
         return data;
     }
 
+    // Add the extended data block generator method
+    generateExtendedDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
+        const data = new Uint8Array(0x100); // Larger data block for extended metadata
+
+        // Apply the maximum calls per frame limit if specified
+        let effectiveCallsPerFrame = numCallsPerFrame;
+        if (maxCallsPerFrame !== null && numCallsPerFrame > maxCallsPerFrame) {
+            console.warn(`SID requires ${numCallsPerFrame} calls per frame, but visualizer supports max ${maxCallsPerFrame}. Limiting to ${maxCallsPerFrame}.`);
+            effectiveCallsPerFrame = maxCallsPerFrame;
+        }
+
+        // Standard data block (0x00-0x4F)
+        // JMP SIDInit at $4000
+        data[0] = 0x4C;
+        data[1] = sidInfo.initAddress & 0xFF;
+        data[2] = (sidInfo.initAddress >> 8) & 0xFF;
+
+        // JMP SIDPlay at $4003
+        data[3] = 0x4C;
+        data[4] = sidInfo.playAddress & 0xFF;
+        data[5] = (sidInfo.playAddress >> 8) & 0xFF;
+
+        // JMP SaveModifiedMemory at $4006
+        data[6] = 0x4C;
+        data[7] = saveRoutineAddr & 0xFF;
+        data[8] = (saveRoutineAddr >> 8) & 0xFF;
+
+        // JMP RestoreModifiedMemory at $4009
+        data[9] = 0x4C;
+        data[10] = restoreRoutineAddr & 0xFF;
+        data[11] = (restoreRoutineAddr >> 8) & 0xFF;
+
+        data[0x0C] = effectiveCallsPerFrame & 0xFF;
+        data[0x0D] = 0x00; // BorderColour
+        data[0x0E] = 0x00; // BackgroundColour
+        data[0x0F] = selectedSong & 0xFF;
+
+        // SID Name at $4010-$402F
+        const nameBytes = this.stringToPETSCII(header.name || '', 32);
+        for (let i = 0; i < 32; i++) {
+            data[0x10 + i] = nameBytes[i];
+        }
+
+        // Author Name at $4030-$404F
+        const authorBytes = this.stringToPETSCII(header.author || '', 32);
+        for (let i = 0; i < 32; i++) {
+            data[0x30 + i] = authorBytes[i];
+        }
+
+        // Copyright at 0x50-0x6F
+        const copyrightBytes = this.stringToPETSCII(header.copyright || '', 32);
+        for (let i = 0; i < 32; i++) {
+            data[0x50 + i] = copyrightBytes[i];
+        }
+
+        // Technical metadata at 0x80+
+        // Load address
+        data[0x80] = sidInfo.loadAddress & 0xFF;
+        data[0x81] = (sidInfo.loadAddress >> 8) & 0xFF;
+
+        // Init address
+        data[0x82] = sidInfo.initAddress & 0xFF;
+        data[0x83] = (sidInfo.initAddress >> 8) & 0xFF;
+
+        // Play address
+        data[0x84] = sidInfo.playAddress & 0xFF;
+        data[0x85] = (sidInfo.playAddress >> 8) & 0xFF;
+
+        // End address (calculate from data size)
+        const endAddress = sidInfo.loadAddress + (header.fileSize || 0x2000) - 1;
+        data[0x86] = endAddress & 0xFF;
+        data[0x87] = (endAddress >> 8) & 0xFF;
+
+        // Number of songs
+        data[0x88] = (header.songs || 1) & 0xFF;
+
+        // Clock type (0=PAL, 1=NTSC)
+        const clockType = (header.clockType === 'NTSC') ? 1 : 0;
+        data[0x89] = clockType;
+
+        // SID model (0=6581, 1=8580)
+        const sidModel = (header.sidModel && header.sidModel.includes('8580')) ? 1 : 0;
+        data[0x8A] = sidModel;
+
+        // ZP usage data (formatted string)
+        if (analysisResults && analysisResults.zpAddresses) {
+            const zpString = this.formatZPUsage(analysisResults.zpAddresses);
+            const zpBytes = this.stringToPETSCII(zpString, 256);
+            for (let i = 0; i < Math.min(256, zpBytes.length); i++) {
+                data[0x8B + i] = zpBytes[i];
+            }
+        } else {
+            // Default "NONE" if no ZP usage
+            const noneBytes = this.stringToPETSCII('NONE', 256);
+            for (let i = 0; i < noneBytes.length; i++) {
+                data[0x8B + i] = noneBytes[i];
+            }
+        }
+
+        return data;
+    }
+
+    formatZPUsage(zpAddresses) {
+        if (!zpAddresses || zpAddresses.length === 0) {
+            return 'NONE';
+        }
+
+        // Sort and group into ranges
+        const sorted = [...zpAddresses].sort((a, b) => a - b);
+        const ranges = [];
+        let currentRange = { start: sorted[0], end: sorted[0] };
+
+        for (let i = 1; i < sorted.length; i++) {
+            if (sorted[i] === currentRange.end + 1) {
+                currentRange.end = sorted[i];
+            } else {
+                ranges.push(currentRange);
+                currentRange = { start: sorted[i], end: sorted[i] };
+            }
+        }
+        ranges.push(currentRange);
+
+        // Format as string
+        const parts = ranges.map(r => {
+            if (r.start === r.end) {
+                return `$${r.start.toString(16).toUpperCase().padStart(2, '0')}`;
+            } else {
+                return `$${r.start.toString(16).toUpperCase().padStart(2, '0')}-$${r.end.toString(16).toUpperCase().padStart(2, '0')}`;
+            }
+        });
+
+        // Join with commas and truncate if too long
+        let result = parts.join(', ');
+        if (result.length > 255) {
+            result = result.substring(0, 252) + '...';
+        }
+
+        return result;
+    }
+
     stringToPETSCII(str, length) {
         const bytes = new Uint8Array(length);
         bytes.fill(0x20);
@@ -380,11 +520,40 @@ class SIDwinderPRGExporter {
 
             const sidInfo = this.extractSIDMusicData();
 
+            // Get the header from the already loaded SID
+            // The analyzer should already have the SID loaded from the UI
+            let header = null;
+
+            // Try to get cached header from analyzer if it exists
+            if (this.analyzer.sidHeader) {
+                header = this.analyzer.sidHeader;
+            } else {
+                // If not cached, reload it
+                const modifiedSID = this.analyzer.createModifiedSID();
+                if (modifiedSID) {
+                    header = await this.analyzer.loadSID(modifiedSID);
+                    // Cache it for future use
+                    this.analyzer.sidHeader = header;
+                }
+            }
+
+            if (!header) {
+                // Fallback to default values
+                header = {
+                    name: 'Unknown',
+                    author: 'Unknown',
+                    copyright: '',
+                    songs: 1,
+                    clockType: 'PAL',
+                    sidModel: '6581',
+                    fileSize: sidInfo.data.length
+                };
+            }
+
+
             const actualSidAddress = sidLoadAddress || sidInfo.loadAddress;
             const actualInitAddress = sidInitAddress || sidInfo.initAddress || actualSidAddress;
             const actualPlayAddress = sidPlayAddress || sidInfo.playAddress || (actualSidAddress + 3);
-
-            const header = await this.analyzer.loadSID(this.analyzer.createModifiedSID());
 
             // Add SID music
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');
@@ -399,8 +568,7 @@ class SIDwinderPRGExporter {
 
             // Process additional visualizer inputs
             // Use the visualizerId if provided, otherwise try to extract from filename
-            const visualizerName = options.visualizerId ||
-                options.visualizerFile.replace('prg/', '').replace('.bin', '').toLowerCase();
+            const visualizerName = options.visualizerId || options.visualizerFile.replace('prg/', '').replace('.bin', '').toLowerCase();
 
             const additionalComponents = await this.processVisualizerInputs(visualizerName);
 
@@ -443,21 +611,40 @@ class SIDwinderPRGExporter {
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
-            // Make sure maxCallsPerFrame is passed from options
-            // Near the end where we generate the data block:
-            const dataBlock = this.generateDataBlock(
-                {
-                    initAddress: actualInitAddress,
-                    playAddress: actualPlayAddress
-                },
-                saveRoutineAddr,
-                restoreRoutineAddr,
-                header.name || 'Unknown',
-                header.author || 'Unknown',
-                numCallsPerFrame,
-                options.maxCallsPerFrame,
-                selectedSong
-            );
+            let dataBlock;
+
+            // Check if this visualizer needs extended metadata
+            if (visualizerName === 'textinfo') {
+                dataBlock = this.generateExtendedDataBlock(
+                    {
+                        initAddress: actualInitAddress,
+                        playAddress: actualPlayAddress,
+                        loadAddress: actualSidAddress
+                    },
+                    this.analyzer.analysisResults,
+                    header,
+                    saveRoutineAddr,
+                    restoreRoutineAddr,
+                    numCallsPerFrame,
+                    options.maxCallsPerFrame,
+                    selectedSong
+                );
+            } else {
+                // Use standard data block for other visualizers
+                dataBlock = this.generateDataBlock(
+                    {
+                        initAddress: actualInitAddress,
+                        playAddress: actualPlayAddress
+                    },
+                    saveRoutineAddr,
+                    restoreRoutineAddr,
+                    header.name || 'Unknown',
+                    header.author || 'Unknown',
+                    numCallsPerFrame,
+                    options.maxCallsPerFrame,
+                    selectedSong
+                );
+            }
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
 

@@ -1,0 +1,81 @@
+{
+  "name": "TextInfo",
+  "description": "Text-based information display",
+  "maxCallsPerFrame": 8,
+  "options": [
+    {
+      "id": "borderColor",
+      "label": "Border Color",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 15,
+      "memory": {
+        "targetAddress": "0x400D",
+        "size": 1
+      }
+    },
+    {
+      "id": "backgroundColor",
+      "label": "Background Color",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 15,
+      "memory": {
+        "targetAddress": "0x400E",
+        "size": 1
+      }
+    }
+  ],
+  "metadata": {
+    "extended": true,
+    "fields": [
+      {
+        "name": "copyright",
+        "offset": "0x4050",
+        "size": 32
+      },
+      {
+        "name": "loadAddress",
+        "offset": "0x4080",
+        "size": 2
+      },
+      {
+        "name": "initAddress",
+        "offset": "0x4082",
+        "size": 2
+      },
+      {
+        "name": "playAddress",
+        "offset": "0x4084",
+        "size": 2
+      },
+      {
+        "name": "endAddress",
+        "offset": "0x4086",
+        "size": 2
+      },
+      {
+        "name": "numSongs",
+        "offset": "0x4088",
+        "size": 1
+      },
+      {
+        "name": "clockType",
+        "offset": "0x4089",
+        "size": 1
+      },
+      {
+        "name": "sidModel",
+        "offset": "0x408A",
+        "size": 1
+      },
+      {
+        "name": "zpUsage",
+        "offset": "0x408B",
+        "size": 256
+      }
+    ]
+  }
+}

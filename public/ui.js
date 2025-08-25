@@ -336,6 +336,7 @@ class UIController {
             // Load SID file
             const header = await this.analyzer.loadSID(buffer);
             this.sidHeader = header;
+            this.analyzer.sidHeader = header;
 
             // Store original metadata
             this.originalMetadata = {
