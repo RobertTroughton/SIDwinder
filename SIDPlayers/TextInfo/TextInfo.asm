@@ -554,8 +554,8 @@ UpdateDynamicInfo:
     cmp #2
     bcc !skip+
     
-    ldx #26
-    ldy #13
+    ldx #6
+    ldy #14
     jsr SetCursor
     
     ldx #$01 //; white

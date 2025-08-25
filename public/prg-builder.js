@@ -188,13 +188,13 @@ class SIDwinderPRGExporter {
         data[0x0F] = selectedSong & 0xFF;
 
         // SID Name at $4010-$402F
-        const nameBytes = this.stringToPETSCII(name, 32);
+        const nameBytes = this.stringToPETSCII(this.centerString(name || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
 
         // Author Name at $4030-$404F
-        const authorBytes = this.stringToPETSCII(author, 32);
+        const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x30 + i] = authorBytes[i];
         }
@@ -240,19 +240,19 @@ class SIDwinderPRGExporter {
         data[0x0F] = selectedSong & 0xFF;
 
         // SID Name at $4010-$402F
-        const nameBytes = this.stringToPETSCII(header.name || '', 32);
+        const nameBytes = this.stringToPETSCII(this.centerString(name || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
 
         // Author Name at $4030-$404F
-        const authorBytes = this.stringToPETSCII(header.author || '', 32);
+        const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x30 + i] = authorBytes[i];
         }
 
         // Copyright at 0x50-0x6F
-        const copyrightBytes = this.stringToPETSCII(header.copyright || '', 32);
+        const copyrightBytes = this.stringToPETSCII(this.centerString(header.copyright || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x50 + i] = copyrightBytes[i];
         }
@@ -287,18 +287,13 @@ class SIDwinderPRGExporter {
         data[0x8A] = sidModel;
 
         // ZP usage data (formatted string)
-        if (analysisResults && analysisResults.zpAddresses) {
-            const zpString = this.formatZPUsage(analysisResults.zpAddresses);
-            const zpBytes = this.stringToPETSCII(zpString, 256);
-            for (let i = 0; i < Math.min(256, zpBytes.length); i++) {
-                data[0x8B + i] = zpBytes[i];
-            }
-        } else {
-            // Default "NONE" if no ZP usage
-            const noneBytes = this.stringToPETSCII('NONE', 256);
-            for (let i = 0; i < noneBytes.length; i++) {
-                data[0x8B + i] = noneBytes[i];
-            }
+        let zpString = 'NONE';
+        if (analysisResults) {
+            zpString = this.formatZPUsage(analysisResults.zpAddresses);
+        }
+        const zpBytes = this.stringToPETSCII(zpString, 32);
+        for (let i = 0; i < 32; i++) {
+            data[0x8B + i] = zpBytes[i];
         }
 
         return data;
@@ -344,37 +339,50 @@ class SIDwinderPRGExporter {
 
     stringToPETSCII(str, length) {
         const bytes = new Uint8Array(length);
-        bytes.fill(0x20);
+        bytes.fill(0x20);  // Fill with spaces
 
-        if (str && str.trim().length > 0) {
-            str = str.trim();
-            if (str.length > length) {
-                str = str.substring(0, length);
-            }
+        if (str && str.length > 0) {
+            const maxLen = Math.min(str.length, length);
 
-            const padding = Math.floor((length - str.length) / 2);
-
-            for (let i = 0; i < str.length; i++) {
+            for (let i = 0; i < maxLen; i++) {
                 const code = str.charCodeAt(i);
                 let petscii = 0x20;
 
                 if (code >= 65 && code <= 90) {
                     petscii = code;
                 } else if (code >= 97 && code <= 122) {
-                    petscii = code - 32;
+                    petscii = code - 32;  // Convert lowercase to uppercase
                 } else if (code >= 48 && code <= 57) {
                     petscii = code;
                 } else if (code === 32) {
                     petscii = 0x20;
                 } else {
-                    petscii = code;
+                    petscii = code;  // Pass through other characters
                 }
 
-                bytes[padding + i] = petscii & 0xFF;
+                bytes[i] = petscii & 0xFF;
             }
         }
 
         return bytes;
+    }
+
+    centerString(str, length) {
+        if (!str || str.length === 0) {
+            return str;
+        }
+
+        str = str.trim();
+        if (str.length >= length) {
+            return str.substring(0, length);
+        }
+
+        const padding = Math.floor((length - str.length) / 2);
+        const paddingStr = ' '.repeat(padding);
+        const result = paddingStr + str;
+
+        // Pad the end to make sure we have exactly 'length' characters
+        return result.padEnd(length, ' ');
     }
 
     async loadBinaryFile(url) {
@@ -614,7 +622,7 @@ class SIDwinderPRGExporter {
             let dataBlock;
 
             // Check if this visualizer needs extended metadata
-            if (visualizerName === 'textinfo') {
+            if (visualizerName === 'TextInfo') {
                 dataBlock = this.generateExtendedDataBlock(
                     {
                         initAddress: actualInitAddress,
