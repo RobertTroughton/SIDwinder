@@ -68,10 +68,12 @@
 .var Display_ControlsTitle_Y        = 19
 .var Display_Controls_F1_X          = 8
 .var Display_Controls_F1_Y          = 21
+.var Display_Controls_SPACE_X       = 8
+.var Display_Controls_SPACE_Y       = 22
 .var Display_Controls_Navigation_X  = 8
-.var Display_Controls_Navigation_Y  = 22
+.var Display_Controls_Navigation_Y  = 23
 .var Display_Controls_SongSelectKeys_X = 8
-.var Display_Controls_SongSelectKeys_Y = 23
+.var Display_Controls_SongSelectKeys_Y = 24
 
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
@@ -217,6 +219,7 @@ CursorX:          .byte $00
 CursorY:          .byte $00
 
 FastForwardActive:  .byte $00
+FFCallCounter:      .byte $00
 
 // =============================================================================
 // POPULATE METADATA (called by linker or filled by PRG builder)
@@ -527,6 +530,15 @@ DrawControls:
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
+    // SPACE for fast-forward
+    ldx #Display_Controls_SPACE_X
+    ldy #Display_Controls_SPACE_Y
+    jsr SetCursor
+    lda #<SpaceText
+    ldy #>SpaceText
+    ldx #Display_ControlsInfo_Colour
+    jsr PrintString
+    
     // Check if we have multiple songs
     lda NumSongs
     cmp #2
@@ -699,10 +711,79 @@ UpdateTimer:
 // =============================================================================
 
 CheckKeyboard:
-
+    // Check SPACE key (already working)
     jsr CheckSpaceKey
+    
+    // Check F1 key directly
+    jsr CheckF1Key
+    lda F1KeyPressed
+    beq !notF1+
+    lda F1KeyReleased
+    beq !notF1+  // Still held from last time
+    
+    // F1 was just pressed
+    lda #0
+    sta F1KeyReleased
+    lda ShowRasterBars
+    eor #$01
+    sta ShowRasterBars
+    jmp !done+
+    
+!notF1:
+    lda F1KeyPressed
+    bne !stillF1+
+    lda #1
+    sta F1KeyReleased  // F1 released, ready for next press
+!stillF1:
 
-    // Scan keyboard using our custom routine
+    // Only check song selection keys if we have multiple songs
+    lda NumSongs
+    cmp #2
+    bcs !skip+
+    rts
+!skip:
+    
+    // Check + key directly
+    jsr CheckPlusKey
+    lda PlusKeyPressed
+    beq !notPlus+
+    lda PlusKeyReleased
+    beq !notPlus+  // Still held from last time
+    
+    // + was just pressed
+    lda #0
+    sta PlusKeyReleased
+    jsr NextSong
+    jmp !done+
+    
+!notPlus:
+    lda PlusKeyPressed
+    bne !stillPlus+
+    lda #1
+    sta PlusKeyReleased  // + released, ready for next press
+!stillPlus:
+
+    // Check - key directly
+    jsr CheckMinusKey
+    lda MinusKeyPressed
+    beq !notMinus+
+    lda MinusKeyReleased
+    beq !notMinus+  // Still held from last time
+    
+    // - was just pressed
+    lda #0
+    sta MinusKeyReleased
+    jsr PrevSong
+    jmp !done+
+    
+!notMinus:
+    lda MinusKeyPressed
+    bne !stillMinus+
+    lda #1
+    sta MinusKeyReleased  // - released, ready for next press
+!stillMinus:
+
+    // For letter/number keys, use the general scanner
     jsr ScanKeyboard
     
     // Check if we got a key (0 means no key or still debouncing)
@@ -712,40 +793,13 @@ CheckKeyboard:
     // We have a debounced key press
     sta TempStorage
     
-    // Check for F1
-    cmp #KEY_F1
-    bne !notF1+
-    lda ShowRasterBars
-    eor #$01
-    sta ShowRasterBars
-    rts
-
-!notF1:
     // Get the key with shift detection for letters
     lda TempStorage
     jsr GetKeyWithShift
     sta TempStorage
     
-    // Only process song selection if multiple songs
-    lda NumSongs
-    cmp #2
-    bcc !done+
-    
     lda TempStorage
     
-    // Check + and -
-    cmp #'+'
-    bne !notPlus+
-    jsr NextSong
-    rts
-    
-!notPlus:
-    cmp #'-'
-    bne !notMinus+
-    jsr PrevSong
-    rts
-    
-!notMinus:
     // Check 1-9 (for songs 1-9)
     cmp #'1'
     bcc !notDigit+
@@ -759,7 +813,7 @@ CheckKeyboard:
     bcs !done+
     
     jsr SelectSong
-    rts
+    jmp !done+
     
 !notDigit:
     // Check A-Z (uppercase) for songs 10-35
@@ -775,14 +829,14 @@ CheckKeyboard:
     bcs !done+
     
     jsr SelectSong
-    rts
+    jmp !done+
     
 !checkLowercase:
     // Check a-z (lowercase) for songs 10-35
     cmp #'a'
-    bcc !notLetter+
+    bcc !done+
     cmp #'{'  // 'z'+1
-    bcs !notLetter+
+    bcs !done+
     
     // Lowercase letter - a=song 10 (index 9)
     sec
@@ -791,12 +845,11 @@ CheckKeyboard:
     bcs !done+
     
     jsr SelectSong
-    rts
     
-!notLetter:
 !done:
     rts
 
+// Direct hardware key checks
 CheckSpaceKey:
     ldx #$00
     lda #%01111111  // Row 7
@@ -806,6 +859,41 @@ CheckSpaceKey:
     eor #%00010000
     sta FastForwardActive
     rts
+
+CheckF1Key:
+    lda #%11111110  // Row 0
+    sta $DC00
+    lda $DC01
+    and #%00010000  // Column 4 (F1)
+    eor #%00010000
+    sta F1KeyPressed
+    rts
+
+CheckPlusKey:
+    lda #%11011111  // Row 5
+    sta $DC00
+    lda $DC01
+    and #%00000001  // Column 0 (+)
+    eor #%00000001
+    sta PlusKeyPressed
+    rts
+
+CheckMinusKey:
+    lda #%11011111  // Row 5
+    sta $DC00
+    lda $DC01
+    and #%00001000  // Column 3 (-)
+    eor #%00001000
+    sta MinusKeyPressed
+    rts
+
+// Key state variables
+F1KeyPressed:    .byte 0
+F1KeyReleased:   .byte 1
+PlusKeyPressed:  .byte 0
+PlusKeyReleased: .byte 1
+MinusKeyPressed: .byte 0
+MinusKeyReleased:.byte 1
 
 // =============================================================================
 // SONG SELECTION
@@ -986,43 +1074,71 @@ MusicIRQ:
     sta $d020
 !skip:
 
+    // Check if we're in fast-forward mode
+    lda FastForwardActive
+    beq !normalPlay+
+    
+    // === FAST FORWARD MODE ===
+    // We need to call SIDPlay NumCallsPerFrame times to simulate one frame
+    // Then check for space release and update timer
+    
+!ffFrameLoop:
+    // Call SIDPlay the required number of times for one frame
+    lda NumCallsPerFrame
+    sta FFCallCounter
+    
+!ffCallLoop:
+    jsr SIDPlay
+    inc $d020  // Visual feedback
+    dec FFCallCounter
+    lda FFCallCounter
+    bne !ffCallLoop-
+    
+    // One complete "frame" worth of calls done
+    jsr UpdateTimer
+    jsr UpdateDynamicInfo
+    
+    // Check if space is still held
+    jsr CheckSpaceKey
+    lda FastForwardActive
+    bne !ffFrameLoop-  // Continue fast-forward
+    
+    // Space released - exit fast-forward
+    lda #$00
+    sta $d020
+    
+    // Reset the call counter for normal operation
+    lda #0
+    sta callCount + 1
+    
+    jmp !done+
+
+!normalPlay:
+    // === NORMAL PLAY MODE ===
 callCount:
     ldx #0
     inx
     cpx NumCallsPerFrame
     bne !justPlay+
     
-    // Frame boundary
+    // Frame boundary - all calls for this frame complete
     jsr UpdateTimer
     jsr UpdateDynamicInfo
     ldx #0
 
 !justPlay:
     stx callCount + 1
-
-!playLoop:
-    lda FastForwardActive
-    beq !normalPlay+
-
-    // Play music
+    
+    // Play music once
     jsr SIDPlay
-    inc $d020
-    jsr UpdateTimer
-    jsr UpdateDynamicInfo
-
-    jsr CheckSpaceKey
-    lda FastForwardActive
-    bne !playLoop-
-
-!normalPlay:
-
-    // Play music
-    jsr SIDPlay
-
+    
+    lda ShowRasterBars
+    beq !skip+
     lda #$00
     sta $d020
 !skip:
 
+!done:
     // Next interrupt
     ldx callCount + 1
     jsr set_d011_and_d012
@@ -1108,6 +1224,9 @@ SelectSuffix:       .text " = Select Song"
 NavigationText:     .text "+/- = Next/Prev Song"
                     .byte 0
 F1Text:             .text " F1 = Toggle Timing Bar(s)"
+                    .byte 0
+
+SpaceText:          .text "SPACE = Fast Forward (Hold)"
                     .byte 0
 
 // Raster tables

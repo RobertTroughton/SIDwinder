@@ -129,56 +129,150 @@ ScanKeyboard:
 // =============================================================================
 DetectKeyPress:
     // Scan the keyboard matrix
-    ldx #0           // Column counter
-    lda #%11111110   // Start with column 0 active
+    ldy #0           // Row counter
     
-!scanColumn:
-    sta CIA1_PRA     // Select column
-    lda CIA1_PRB     // Read rows
+!scanRow:
+    lda RowSelectTable,y
+    sta CIA1_PRA     // Write to Port A to select row
+    lda CIA1_PRB     // Read columns from Port B
     cmp #$ff         // Check if any key pressed (active low)
     bne !foundKey+
     
-    // No key in this column, try next
-    lda CIA1_PRA
-    sec
-    rol              // Rotate to next column
-    inx
-    cpx #8
-    bne !scanColumn-
+    // No key in this row, try next
+    iny
+    cpy #8
+    bne !scanRow-
     
     // No key found
     lda #0
     rts
     
 !foundKey:
-    // Found a key - determine which row
+    // Found a key - determine which column
     eor #$ff         // Invert to make pressed keys = 1
-    ldy #0
+    ldx #0
     
-!findRow:
+!findColumn:
     lsr
-    bcs !gotRow+     // Carry set = this row pressed
-    iny
-    cpy #8
-    bne !findRow-
+    bcs !gotColumn+  // Carry set = this column pressed
+    inx
+    cpx #8
+    bne !findColumn-
     
     // Shouldn't get here, but return 0 if we do
     lda #0
     rts
     
-!gotRow:
-    // Calculate matrix position: column * 8 + row
-    txa              // Column in X
-    asl
-    asl
-    asl              // Column * 8
-    sta TempCalc
+!gotColumn:
+    // Calculate matrix position: row * 8 + column
     tya              // Row in Y
+    asl
+    asl
+    asl              // Row * 8
+    sta TempCalc
+    txa              // Column in X
     clc
-    adc TempCalc     // Add row
+    adc TempCalc     // Add column
     rts
 
 TempCalc: .byte 0
+
+// Row select patterns (one bit low for each row)
+RowSelectTable:
+    .byte %11111110  // Row 0
+    .byte %11111101  // Row 1
+    .byte %11111011  // Row 2
+    .byte %11110111  // Row 3
+    .byte %11101111  // Row 4
+    .byte %11011111  // Row 5
+    .byte %10111111  // Row 6
+    .byte %01111111  // Row 7
+
+// =============================================================================
+// C64 Keyboard Matrix Table (CORRECTED)
+// Based on the actual C64 matrix: rows (Port A output) x columns (Port B input)
+// Each entry is row*8 + column
+// =============================================================================
+KeyMatrixTable:
+    // Row 0 (PA0 = 0)
+    .byte KEY_DELETE      // 0,0 = DEL/INST
+    .byte KEY_RETURN      // 0,1 = Return
+    .byte KEY_CURSOR_LR   // 0,2 = Cursor Right/Left
+    .byte KEY_F7          // 0,3 = F7/F8
+    .byte KEY_F1          // 0,4 = F1/F2
+    .byte KEY_F3          // 0,5 = F3/F4
+    .byte KEY_F5          // 0,6 = F5/F6
+    .byte KEY_CURSOR_UD   // 0,7 = Cursor Down/Up
+    
+    // Row 1 (PA1 = 0)
+    .byte '3'             // 1,0
+    .byte 'w'             // 1,1
+    .byte 'a'             // 1,2
+    .byte '4'             // 1,3
+    .byte 'z'             // 1,4
+    .byte 's'             // 1,5
+    .byte 'e'             // 1,6
+    .byte KEY_SHIFT       // 1,7 = Left Shift
+    
+    // Row 2 (PA2 = 0)
+    .byte '5'             // 2,0
+    .byte 'r'             // 2,1
+    .byte 'd'             // 2,2
+    .byte '6'             // 2,3
+    .byte 'c'             // 2,4
+    .byte 'f'             // 2,5
+    .byte 't'             // 2,6
+    .byte 'x'             // 2,7
+    
+    // Row 3 (PA3 = 0)
+    .byte '7'             // 3,0
+    .byte 'y'             // 3,1
+    .byte 'g'             // 3,2
+    .byte '8'             // 3,3
+    .byte 'b'             // 3,4
+    .byte 'h'             // 3,5
+    .byte 'u'             // 3,6
+    .byte 'v'             // 3,7
+    
+    // Row 4 (PA4 = 0)
+    .byte '9'             // 4,0
+    .byte 'i'             // 4,1
+    .byte 'j'             // 4,2
+    .byte '0'             // 4,3
+    .byte 'm'             // 4,4
+    .byte 'k'             // 4,5
+    .byte 'o'             // 4,6
+    .byte 'n'             // 4,7
+    
+    // Row 5 (PA5 = 0)
+    .byte '+'             // 5,0 = Plus
+    .byte 'p'             // 5,1
+    .byte 'l'             // 5,2
+    .byte '-'             // 5,3 = Minus
+    .byte '.'             // 5,4 = Period
+    .byte ':'             // 5,5 = Colon (shift ;)
+    .byte '@'             // 5,6
+    .byte ','             // 5,7 = Comma
+    
+    // Row 6 (PA6 = 0)
+    .byte $5c             // 6,0 = £
+    .byte '*'             // 6,1
+    .byte ';'             // 6,2
+    .byte KEY_HOME        // 6,3 = CLR/HOME
+    .byte KEY_SHIFT       // 6,4 = Right Shift
+    .byte '='             // 6,5
+    .byte $5e             // 6,6 = ↑ (up arrow)
+    .byte '/'             // 6,7
+    
+    // Row 7 (PA7 = 0)
+    .byte '1'             // 7,0
+    .byte $5f             // 7,1 = ← (left arrow)
+    .byte KEY_CONTROL     // 7,2 = Control
+    .byte '2'             // 7,3
+    .byte ' '             // 7,4 = Space
+    .byte KEY_COMMODORE   // 7,5 = C=
+    .byte 'q'             // 7,6
+    .byte KEY_RUNSTOP     // 7,7 = Run/Stop
 
 // =============================================================================
 // Convert matrix position to ASCII/special key code
@@ -189,92 +283,6 @@ ConvertMatrixToASCII:
     tax
     lda KeyMatrixTable,x
     rts
-
-// =============================================================================
-// C64 Keyboard Matrix Table
-// Organized by column (0-7) and row (0-7)
-// Each entry is column*8 + row
-// =============================================================================
-KeyMatrixTable:
-    // Column 0
-    .byte KEY_DELETE      // 0,0 = DEL
-    .byte KEY_RETURN      // 0,1 = Return
-    .byte KEY_CURSOR_LR   // 0,2 = Cursor Right/Left
-    .byte KEY_F7          // 0,3 = F7
-    .byte KEY_F1          // 0,4 = F1
-    .byte KEY_F3          // 0,5 = F3
-    .byte KEY_F5          // 0,6 = F5
-    .byte KEY_CURSOR_UD   // 0,7 = Cursor Down/Up
-    
-    // Column 1
-    .byte '3'             // 1,0
-    .byte 'w'             // 1,1
-    .byte 'a'             // 1,2
-    .byte '4'             // 1,3
-    .byte 'z'             // 1,4
-    .byte 's'             // 1,5
-    .byte 'e'             // 1,6
-    .byte KEY_SHIFT       // 1,7 = Left Shift
-    
-    // Column 2
-    .byte '5'             // 2,0
-    .byte 'r'             // 2,1
-    .byte 'd'             // 2,2
-    .byte '6'             // 2,3
-    .byte 'c'             // 2,4
-    .byte 'f'             // 2,5
-    .byte 't'             // 2,6
-    .byte 'x'             // 2,7
-    
-    // Column 3
-    .byte '7'             // 3,0
-    .byte 'y'             // 3,1
-    .byte 'g'             // 3,2
-    .byte '8'             // 3,3
-    .byte 'b'             // 3,4
-    .byte 'h'             // 3,5
-    .byte 'u'             // 3,6
-    .byte 'v'             // 3,7
-    
-    // Column 4
-    .byte '9'             // 4,0
-    .byte 'i'             // 4,1
-    .byte 'j'             // 4,2
-    .byte '0'             // 4,3
-    .byte 'm'             // 4,4
-    .byte 'k'             // 4,5
-    .byte 'o'             // 4,6
-    .byte 'n'             // 4,7
-    
-    // Column 5
-    .byte '+'             // 5,0
-    .byte 'p'             // 5,1
-    .byte 'l'             // 5,2
-    .byte '-'             // 5,3
-    .byte '.'             // 5,4
-    .byte ':'             // 5,5
-    .byte '@'             // 5,6
-    .byte ','             // 5,7
-    
-    // Column 6
-    .byte $5c             // 6,0 = £
-    .byte '*'             // 6,1
-    .byte ';'             // 6,2
-    .byte KEY_HOME        // 6,3 = CLR/HOME
-    .byte KEY_SHIFT       // 6,4 = Right Shift
-    .byte '='             // 6,5
-    .byte $5e             // 6,6 = ↑
-    .byte '/'             // 6,7
-    
-    // Column 7
-    .byte '1'             // 7,0
-    .byte $5f             // 7,1 = ←
-    .byte KEY_CONTROL     // 7,2 = Control
-    .byte '2'             // 7,3
-    .byte ' '             // 7,4 = Space
-    .byte KEY_COMMODORE   // 7,5 = C=
-    .byte 'q'             // 7,6
-    .byte KEY_RUNSTOP     // 7,7 = Run/Stop
 
 // =============================================================================
 // Check if specific key is currently pressed (no debouncing)
