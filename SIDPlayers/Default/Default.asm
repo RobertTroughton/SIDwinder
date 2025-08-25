@@ -216,6 +216,8 @@ TempStorage:      .byte $00
 CursorX:          .byte $00
 CursorY:          .byte $00
 
+FastForwardActive:  .byte $00
+
 // =============================================================================
 // POPULATE METADATA (called by linker or filled by PRG builder)
 // =============================================================================
@@ -697,6 +699,9 @@ UpdateTimer:
 // =============================================================================
 
 CheckKeyboard:
+
+    jsr CheckSpaceKey
+
     // Scan keyboard using our custom routine
     jsr ScanKeyboard
     
@@ -790,6 +795,16 @@ CheckKeyboard:
     
 !notLetter:
 !done:
+    rts
+
+CheckSpaceKey:
+    ldx #$00
+    lda #%01111111  // Row 7
+    sta $DC00
+    lda $DC01
+    and #%00010000  // Column 4 (SPACE)
+    eor #%00010000
+    sta FastForwardActive
     rts
 
 // =============================================================================
@@ -984,13 +999,26 @@ callCount:
 
 !justPlay:
     stx callCount + 1
-    
+
+!playLoop:
+    lda FastForwardActive
+    beq !normalPlay+
+
     // Play music
     jsr SIDPlay
-    
-    // Restore border
-    lda ShowRasterBars
-    beq !skip+
+    inc $d020
+    jsr UpdateTimer
+    jsr UpdateDynamicInfo
+
+    jsr CheckSpaceKey
+    lda FastForwardActive
+    bne !playLoop-
+
+!normalPlay:
+
+    // Play music
+    jsr SIDPlay
+
     lda #$00
     sta $d020
 !skip:
