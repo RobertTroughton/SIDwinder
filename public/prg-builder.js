@@ -257,34 +257,34 @@ class SIDwinderPRGExporter {
             data[0x50 + i] = copyrightBytes[i];
         }
 
-        // Technical metadata at 0x80+
+        // Technical metadata at 0xC0+
         // Load address
-        data[0x80] = sidInfo.loadAddress & 0xFF;
-        data[0x81] = (sidInfo.loadAddress >> 8) & 0xFF;
+        data[0xC0] = sidInfo.loadAddress & 0xFF;
+        data[0xC1] = (sidInfo.loadAddress >> 8) & 0xFF;
 
         // Init address
-        data[0x82] = sidInfo.initAddress & 0xFF;
-        data[0x83] = (sidInfo.initAddress >> 8) & 0xFF;
+        data[0xC2] = sidInfo.initAddress & 0xFF;
+        data[0xC3] = (sidInfo.initAddress >> 8) & 0xFF;
 
         // Play address
-        data[0x84] = sidInfo.playAddress & 0xFF;
-        data[0x85] = (sidInfo.playAddress >> 8) & 0xFF;
+        data[0xC4] = sidInfo.playAddress & 0xFF;
+        data[0xC5] = (sidInfo.playAddress >> 8) & 0xFF;
 
         // End address (calculate from data size)
         const endAddress = sidInfo.loadAddress + (header.fileSize || 0x2000) - 1;
-        data[0x86] = endAddress & 0xFF;
-        data[0x87] = (endAddress >> 8) & 0xFF;
+        data[0xC6] = endAddress & 0xFF;
+        data[0xC7] = (endAddress >> 8) & 0xFF;
 
         // Number of songs
-        data[0x88] = (header.songs || 1) & 0xFF;
+        data[0xC8] = (header.songs || 1) & 0xFF;
 
         // Clock type (0=PAL, 1=NTSC)
         const clockType = (header.clockType === 'NTSC') ? 1 : 0;
-        data[0x89] = clockType;
+        data[0xC9] = clockType;
 
         // SID model (0=6581, 1=8580)
         const sidModel = (header.sidModel && header.sidModel.includes('8580')) ? 1 : 0;
-        data[0x8A] = sidModel;
+        data[0xCA] = sidModel;
 
         // ZP usage data (formatted string)
         let zpString = 'NONE';
@@ -293,7 +293,7 @@ class SIDwinderPRGExporter {
         }
         const zpBytes = this.stringToPETSCII(zpString, 32);
         for (let i = 0; i < 32; i++) {
-            data[0x8B + i] = zpBytes[i];
+            data[0xE0 + i] = zpBytes[i];
         }
 
         return data;
@@ -491,21 +491,63 @@ class SIDwinderPRGExporter {
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
             if (element && optionConfig.memory) {
-                let value = parseInt(element.value) || optionConfig.default || 0;
 
-                // Create a single-byte component for this option
-                const data = new Uint8Array(optionConfig.memory.size || 1);
-                data[0] = value & 0xFF; // Ensure it's a byte
+                if (optionConfig.type === 'date') {
+                    // Handle date type option
+                    const dateValue = element.value;
+                    let formattedDate = '';
 
-                optionComponents.push({
-                    data: data,
-                    loadAddress: parseInt(optionConfig.memory.targetAddress),
-                    name: `option_${optionConfig.id}`
-                });
+                    if (dateValue) {
+                        // Convert date to display format
+                        const date = new Date(dateValue);
+                        const day = date.getDate();
+                        const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                            'July', 'August', 'September', 'October', 'November', 'December'];
+                        const month = months[date.getMonth()];
+                        const year = date.getFullYear();
+
+                        const suffix = this.getOrdinalSuffix(day);
+                        formattedDate = `${day}${suffix} ${month} ${year}`;
+                    }
+
+                    // Convert to PETSCII and pad to size
+                    const data = this.stringToPETSCII(
+                        this.centerString(formattedDate, optionConfig.memory.size || 32),
+                        optionConfig.memory.size || 32
+                    );
+
+                    optionComponents.push({
+                        data: data,
+                        loadAddress: parseInt(optionConfig.memory.targetAddress),
+                        name: `option_${optionConfig.id}`
+                    });
+
+                } else if (optionConfig.type === 'number') {
+                    // Existing number handling
+                    let value = parseInt(element.value) || optionConfig.default || 0;
+                    const data = new Uint8Array(optionConfig.memory.size || 1);
+                    data[0] = value & 0xFF;
+
+                    optionComponents.push({
+                        data: data,
+                        loadAddress: parseInt(optionConfig.memory.targetAddress),
+                        name: `option_${optionConfig.id}`
+                    });
+                }
             }
         }
 
         return optionComponents;
+    }
+
+    getOrdinalSuffix(day) {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
     }
 
     async createPRG(options = {}) {

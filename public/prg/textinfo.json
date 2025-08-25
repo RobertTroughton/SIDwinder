@@ -2,12 +2,30 @@
   "name": "TextInfo",
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
+  "options": [
+    {
+      "id": "releaseDate",
+      "label": "Release Date",
+      "type": "date",
+      "default": "",
+      "description": "",
+      "memory": {
+        "targetAddress": "0x4070",
+        "size": 32
+      }
+    }
+  ],
   "metadata": {
     "extended": true,
     "fields": [
       {
         "name": "copyright",
         "offset": "0x4050",
+        "size": 32
+      },
+      {
+        "name": "releaseDate",
+        "offset": "0x4070",
         "size": 32
       },
       {

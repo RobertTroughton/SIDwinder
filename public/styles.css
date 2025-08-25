@@ -926,3 +926,28 @@ body {
         color: #fff;
         min-width: 200px;
     }
+
+/* Date Option Styles */
+.date-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.date-option-input {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.date-display {
+    padding: 5px 10px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    min-width: 150px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}

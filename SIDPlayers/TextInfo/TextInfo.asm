@@ -10,29 +10,91 @@
 * = $4100 "Main Code"
 
 .var MainAddress = * - $100
+
+    jmp InitIRQ
+
+.var Display_Title_Colour           = $01
+.var Display_Artist_Colour          = $0f
+.var Display_Copyright_Colour       = $0c
+.var Display_ReleaseData_Colour     = $0c
+.var Display_Separators_Colour      = $0b
+.var Display_InfoTitles_Colour      = $0e
+.var Display_InfoValues_Colour      = $01
+.var Display_ControlsTitle_Colour   = $02
+.var Display_ControlsInfo_Colour    = $04
+
+.var Display_Title_X                = 4    
+.var Display_Title_Y                = 0
+
+.var Display_Artist_X               = 4
+.var Display_Artist_Y               = 1
+
+.var Display_Copyright_X            = 4
+.var Display_Copyright_Y            = 2
+
+.var Display_ReleaseData_X          = 4
+.var Display_ReleaseData_Y          = 4
+
+.var Display_Separator1_Y           = 6
+
+.var Display_Memory_X               = 9 + 2
+.var Display_Memory_Y               = 7
+
+.var Display_InitLabel_X            = 9 + 4
+.var Display_InitLabel_Y            = 8
+
+.var Display_PlayLabel_X            = 9 + 4
+.var Display_PlayLabel_Y            = 9
+
+.var Display_ZP_X                   = 9 + 0
+.var Display_ZP_Y                   = 10
+.var Display_Songs_X                = 9 + 3
+.var Display_Songs_Y                = 11
+.var Display_Clock_X                = 9 + 3
+.var Display_Clock_Y                = 12
+.var Display_SID_X                  = 9 + 5
+.var Display_SID_Y                  = 13
+
+.var Display_Separator2_Y           = 14
+
+.var Display_Time_X                 = 9 + 4
+.var Display_Time_Y                 = 15
+.var Display_Song_X                 = 9 + 4
+.var Display_Song_Y                 = 16
+
+.var Display_Separator3_Y           = 17
+
+.var Display_ControlsTitle_X        = 13
+.var Display_ControlsTitle_Y        = 19
+.var Display_Controls_F1_X          = 8
+.var Display_Controls_F1_Y          = 21
+.var Display_Controls_Navigation_X  = 8
+.var Display_Controls_Navigation_Y  = 22
+.var Display_Controls_SongSelectKeys_X = 8
+.var Display_Controls_SongSelectKeys_Y = 23
+
 .var SIDInit = MainAddress + 0
 .var SIDPlay = MainAddress + 3
 .var BackupSIDMemory = MainAddress + 6
 .var RestoreSIDMemory = MainAddress + 9
 .var NumCallsPerFrame = MainAddress + 12
-.var BorderColour = MainAddress + 13
-.var BackgroundColour = MainAddress + 14
+//;.var BorderColour = MainAddress + 13
+//;.var BackgroundColour = MainAddress + 14
 .var SongNumber = MainAddress + 15
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 .var CopyrightInfo = MainAddress + 16 + 64  // Extended data area
-
-    jmp InitIRQ
+.var ReleaseDate = MainAddress + 16 + 96  // 0x4070
 
 // Additional metadata that we'll need to populate from analysis
-.var LoadAddress = $4080
-.var InitAddress = $4082
-.var PlayAddress = $4084
-.var EndAddress = $4086
-.var NumSongs = $4088
-.var ClockType = $4089     // 0=PAL, 1=NTSC
-.var SIDModel = $408A      // 0=6581, 1=8580
-.var ZPUsageData = $408B   // Will store formatted ZP usage string
+.var LoadAddress = $40C0
+.var InitAddress = $40C2
+.var PlayAddress = $40C4
+.var EndAddress = $40C6
+.var NumSongs = $40C8
+.var ClockType = $40C9     // 0=PAL, 1=NTSC
+.var SIDModel = $40CA      // 0=6581, 1=8580
+.var ZPUsageData = $40E0   // Will store formatted ZP usage string
 
 // Constants
 .const SCREEN_RAM = $0400
@@ -85,10 +147,8 @@ InitIRQ:
     // Clear screen and set colors
     jsr ClearScreen
     
-    // Set border and background
-    lda BorderColour
+    lda #$00
     sta $d020
-    lda BackgroundColour
     sta $d021
 
     // Set to text mode with uppercase/lowercase charset
@@ -225,47 +285,55 @@ DrawStaticInfo:
     bne !loop-
 
     // Title - center at column 4 (32 char field + 4 = 36, centered in 40)
-    ldx #4
-    ldy #0
+    ldx #Display_Title_X
+    ldy #Display_Title_Y
     jsr SetCursor
     lda #<SongName
     ldy #>SongName
-    ldx #$01 //; white
+    ldx #Display_Title_Colour
     jsr PrintString
 
     // Author - centered
-    ldx #4
-    ldy #1
+    ldx #Display_Artist_X
+    ldy #Display_Artist_Y
     jsr SetCursor
     lda #<ArtistName
     ldy #>ArtistName
-    ldx #$0f //; off-white
+    ldx #Display_Artist_Colour
     jsr PrintString
 
     // Copyright - centered
-    ldx #4
-    ldy #2
+    ldx #Display_Copyright_X
+    ldy #Display_Copyright_Y
     jsr SetCursor
     lda #<CopyrightInfo
     ldy #>CopyrightInfo
-    ldx #$0c //; light grey
+    ldx #Display_Copyright_Colour
     jsr PrintString
 
+    ldx #Display_ReleaseData_X
+    ldy #Display_ReleaseData_Y
+    jsr SetCursor
+    lda #<ReleaseDate
+    ldy #>ReleaseDate
+    ldx #Display_ReleaseData_Colour
+    jsr PrintString
+    
     // Draw separator using proper screen codes
     ldx #0
-    ldy #4
+    ldy #Display_Separator1_Y
     jsr DrawSeparator
 
     // Memory range - properly formatted
-    ldx #9 + 2
-    ldy #5
+    ldx #Display_Memory_X
+    ldy #Display_Memory_Y
     jsr SetCursor
     lda #<MemoryLabel
     ldy #>MemoryLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
     lda LoadAddress+1
@@ -282,15 +350,15 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Init address
-    ldx #9 + 4
-    ldy #6
+    ldx #Display_InitLabel_X
+    ldy #Display_InitLabel_Y
     jsr SetCursor
     lda #<InitLabel
     ldy #>InitLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
     lda InitAddress+1
@@ -299,15 +367,15 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Play address - on same line, column 20
-    ldx #9 + 4
-    ldy #7
+    ldx #Display_PlayLabel_X
+    ldy #Display_PlayLabel_Y
     jsr SetCursor
     lda #<PlayLabel
     ldy #>PlayLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
     lda PlayAddress+1
@@ -316,36 +384,36 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Zero page usage
-    ldx #9 + 0
-    ldy #8
+    ldx #Display_ZP_X
+    ldy #Display_ZP_Y
     jsr SetCursor
     lda #<ZPLabel
     ldy #>ZPLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     jsr PrintZPUsage
 
     // Songs, Clock, and SID Model
-    ldx #9 + 3
-    ldy #9
+    ldx #Display_Songs_X
+    ldy #Display_Songs_Y
     jsr SetCursor
     lda #<SongsLabel
     ldy #>SongsLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda NumSongs
     jsr PrintHexByte
 
-    ldx #9 + 3
-    ldy #10
+    ldx #Display_Clock_X
+    ldy #Display_Clock_Y
     jsr SetCursor
     lda #<ClockLabel
     ldy #>ClockLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
     lda ClockType
@@ -357,15 +425,15 @@ DrawStaticInfo:
     lda #<PALText
     ldy #>PALText
 !print:
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     jsr PrintString
 
-    ldx #9 + 5
-    ldy #11
+    ldx #Display_SID_X
+    ldy #Display_SID_Y
     jsr SetCursor
     lda #<SIDLabel
     ldy #>SIDLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
     
     lda SIDModel
@@ -377,21 +445,21 @@ DrawStaticInfo:
     lda #<SID6581Text
     ldy #>SID6581Text
 !print:
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     jsr PrintString
 
     // Draw separator
     ldx #0
-    ldy #12
+    ldy #Display_Separator2_Y
     jsr DrawSeparator
 
     // Time label
-    ldx #9 + 4
-    ldy #13
+    ldx #Display_Time_X
+    ldy #Display_Time_Y
     jsr SetCursor
     lda #<TimeLabel
     ldy #>TimeLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
 
     // Song label (only if multiple songs)
@@ -399,18 +467,18 @@ DrawStaticInfo:
     cmp #2
     bcc !skip+
     
-    ldx #9 + 4
-    ldy #14
+    ldx #Display_Song_X
+    ldy #Display_Song_Y
     jsr SetCursor
     lda #<CurrentSongLabel
     ldy #>CurrentSongLabel
-    ldx #$03 //; cyan
+    ldx #Display_InfoTitles_Colour
     jsr PrintString
 
 !skip:
     // Draw separator before controls
     ldx #0
-    ldy #15
+    ldy #Display_Separator3_Y
     jsr DrawSeparator
 
     // Draw controls info
@@ -425,7 +493,7 @@ DrawSeparator:
     jsr SetCursor
 
     ldy #39
-    ldx #$0b
+    ldx #Display_Separators_Colour
 !loop:
     lda #$2d  // Screen code for '-'
     jsr PrintChar
@@ -440,21 +508,21 @@ DrawSeparator:
 DrawControls:
     
     // Controls header
-    ldx #13
-    ldy #17
+    ldx #Display_ControlsTitle_X
+    ldy #Display_ControlsTitle_Y
     jsr SetCursor
     lda #<ControlsLabel
     ldy #>ControlsLabel
-    ldx #$05    //; green
+    ldx #Display_ControlsTitle_Colour
     jsr PrintString
 
     // F1 for raster bars
-    ldx #7
-    ldy #19
+    ldx #Display_Controls_F1_X
+    ldy #Display_Controls_F1_Y
     jsr SetCursor
     lda #<F1Text
     ldy #>F1Text
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
     // Check if we have multiple songs
@@ -465,8 +533,8 @@ DrawControls:
 
 !multipleSongs:
     // Multiple songs - show selection keys
-    ldx #7
-    ldy #21
+    ldx #Display_Controls_SongSelectKeys_X
+    ldy #Display_Controls_SongSelectKeys_Y
     jsr SetCursor
     
     // Determine range to show
@@ -477,7 +545,7 @@ DrawControls:
     // 10+ songs - show "1-9, A-?"
     lda #<Select19Text  // Changed from Select09Text
     ldy #>Select19Text
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
     // Check if we need letters too
@@ -487,13 +555,13 @@ DrawControls:
     
     lda #<CommaSpace
     ldy #>CommaSpace
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
     // Show A-? range
     lda #<AThru
     ldy #>AThru
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
     // Calculate last letter (A = song 10, B = song 11, etc.)
@@ -514,7 +582,7 @@ DrawControls:
     // Under 10 songs - show "1-X"
     lda #<OneThru  // Changed from ZeroThru
     ldy #>OneThru
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
     lda NumSongs
@@ -524,17 +592,17 @@ DrawControls:
     
     lda #<SelectSuffix
     ldy #>SelectSuffix
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
 !nav:
     // Navigation keys
-    ldx #7
-    ldy #20
+    ldx #Display_Controls_Navigation_X
+    ldy #Display_Controls_Navigation_Y
     jsr SetCursor
     lda #<NavigationText
     ldy #>NavigationText
-    ldx #$0a //; pink
+    ldx #Display_ControlsInfo_Colour
     jmp PrintString
 
 // =============================================================================
@@ -543,11 +611,11 @@ DrawControls:
 
 UpdateDynamicInfo:
     // Update timer display
-    ldx #6 + 9 + 4
-    ldy #13
+    ldx #Display_Time_X + 6
+    ldy #Display_Time_Y
     jsr SetCursor
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda TimerMinutes
     jsr PrintTwoDigits
     lda #':'
@@ -559,12 +627,12 @@ UpdateDynamicInfo:
     lda NumSongs
     cmp #2
     bcc !skip+
-    
-    ldx #6 + 9 + 4
-    ldy #14
+
+    ldx #Display_Song_X + 6
+    ldy #Display_Song_Y
     jsr SetCursor
     
-    ldx #$01 //; white
+    ldx #Display_InfoValues_Colour
     lda CurrentSong
     clc
     adc #1  // Convert to 1-based
@@ -1009,7 +1077,7 @@ SelectSuffix:       .text " = Select Song"
                     .byte 0
 NavigationText:     .text "+/- = Next/Prev Song"
                     .byte 0
-F1Text:             .text "F1  = Toggle Timing Bar(s)"
+F1Text:             .text " F1 = Toggle Timing Bar(s)"
                     .byte 0
 
 // Raster tables
