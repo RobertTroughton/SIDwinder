@@ -22,6 +22,8 @@
 .var ArtistName = MainAddress + 16 + 32
 .var CopyrightInfo = MainAddress + 16 + 64  // Extended data area
 
+    jmp InitIRQ
+
 // Additional metadata that we'll need to populate from analysis
 .var LoadAddress = $4080
 .var InitAddress = $4082
@@ -37,6 +39,9 @@
 .const COLOR_RAM = $d800
 .const ROW_WIDTH = 40
 
+// Import the keyboard scanner module
+.import source "../INC/keyboard.asm"
+
 // =============================================================================
 // INITIALIZATION ENTRY POINT
 // =============================================================================
@@ -47,6 +52,9 @@ InitIRQ:
     // Configure memory mapping
     lda #$35
     sta $01
+
+    // Initialize keyboard scanning
+    jsr InitKeyboard
 
     // Wait for stable raster
     jsr VSync
@@ -63,6 +71,7 @@ InitIRQ:
     sta TimerMinutes
     sta FrameCounter
     sta ShowRasterBars
+    sta KeyboardCheckCounter
     
     // Set frames per second based on clock type
     lda ClockType
@@ -128,9 +137,13 @@ InitIRQ:
 
     cli
 
-    // Main loop - handle keyboard input
 MainLoop:
+    inc KeyboardCheckCounter
+    lda KeyboardCheckCounter
+    and #$03
+    bne !skipKeyboard+ //; check keyboard every 4th frame
     jsr CheckKeyboard
+!skipKeyboard:
     jmp MainLoop
 
 // =============================================================================
@@ -143,6 +156,7 @@ TimerMinutes:     .byte $00
 FrameCounter:     .byte $00
 ShowRasterBars:   .byte $00
 FramesPerSecond:  .byte $32  // Default to 50 (PAL)
+KeyboardCheckCounter: .byte $00
 
 // Temporary storage for print routines
 TempStorage:      .byte $00
@@ -426,6 +440,7 @@ DrawSeparator:
     jsr PrintChar
     dey
     bpl !loop-
+    rts
 
 // =============================================================================
 // DRAW CONTROLS
@@ -619,22 +634,23 @@ UpdateTimer:
     rts
 
 // =============================================================================
-// KEYBOARD HANDLER
+// KEYBOARD HANDLER (Now using hardware scanning)
 // =============================================================================
 
 CheckKeyboard:
-    rts
 
-    jsr $ff9f  // SCNKEY
-    jsr $ffe4  // GETIN
+    // Scan keyboard using our custom routine
+    jsr ScanKeyboard
     
+    // Check if we got a key
+    cmp #0
     beq !done+
     
     // Store key
     sta TempStorage
     
-    // Check for F1 (133)
-    cmp #133
+    // Check for F1
+    cmp #KEY_F1
     bne !notF1+
     lda ShowRasterBars
     eor #$01
@@ -677,18 +693,26 @@ CheckKeyboard:
     rts
     
 !notDigit:
-    // Check A-Z (for songs 10-35)
+    // Check a-z or A-Z (handle both cases)
+    pha
+    and #$df  // Convert to uppercase for comparison
     cmp #'A'
-    bcc !notLetter+
+    bcc !notLetterPop+
     cmp #'['  // 'Z'+1
-    bcs !notLetter+
+    bcs !notLetterPop+
     
+    // Valid letter - calculate song number
     sec
     sbc #'A'-10
     cmp NumSongs
-    bcs !done+
+    bcs !notLetterPop+
     
+    pla  // Clean stack
     jsr SelectSong
+    rts
+    
+!notLetterPop:
+    pla  // Restore original key
     
 !notLetter:
 !done:
@@ -868,13 +892,10 @@ MusicIRQ:
 
     // Show raster timing if enabled
     lda ShowRasterBars
-    beq !noRaster+
-    lda $d020
-    lda #2  // Red
-    sta $d020
+    beq !skip+
+    inc $d020
+!skip:
 
-!noRaster:
-    // Track call count
 callCount:
     ldx #0
     inx
@@ -894,10 +915,10 @@ callCount:
     
     // Restore border
     lda ShowRasterBars
-    beq !noRestore+
-    sta $d020
+    beq !skip+
+    dec $d020
+!skip:
 
-!noRestore:
     // Next interrupt
     ldx callCount + 1
     jsr set_d011_and_d012
