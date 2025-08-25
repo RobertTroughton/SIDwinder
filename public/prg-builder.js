@@ -556,7 +556,7 @@ class SIDwinderPRGExporter {
             sidInitAddress = null,
             sidPlayAddress = null,
             dataLoadAddress = 0x4000,
-            visualizerFile = 'prg/RaistlinBars.bin',
+            visualizerFile = 'prg/TextInput.bin',
             visualizerLoadAddress = 0x4100,
             includeData = true,
             compressionType = 'tscrunch',
@@ -664,7 +664,7 @@ class SIDwinderPRGExporter {
             let dataBlock;
 
             // Check if this visualizer needs extended metadata
-            if (visualizerName === 'TextInfo') {
+            if (visualizerName === 'default') {
                 dataBlock = this.generateExtendedDataBlock(
                     {
                         initAddress: actualInitAddress,

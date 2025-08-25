@@ -1,8 +1,8 @@
+java -jar .\KickAss.jar .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default.bin
 java -jar .\KickAss.jar .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars.bin
 java -jar .\KickAss.jar .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo.bin
 java -jar .\KickAss.jar .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars.bin
 java -jar .\KickAss.jar .\SIDPlayers\RaistlinMirrorBarsWithLogo\RaistlinMirrorBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinMirrorBarsWithLogo.bin
 java -jar .\KickAss.jar .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap.bin
 java -jar .\KickAss.jar .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster.bin
-java -jar .\KickAss.jar .\SIDPlayers\TextInfo\TextInfo.asm -showmem -binfile -o public\prg\TextInfo.bin
 @pause

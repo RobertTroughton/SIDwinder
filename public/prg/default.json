@@ -1,5 +1,5 @@
 {
-  "name": "TextInfo",
+  "name": "default",
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
   "options": [

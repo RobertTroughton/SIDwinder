@@ -2,6 +2,15 @@
 
 const VISUALIZERS = [
     {
+        id: 'default',
+        name: 'Default',
+        description: 'Minimal player with textual information',
+        preview: 'prg/default.png',
+        binary: 'prg/default.bin',
+        maxCallsPerFrame: 8,
+        config: 'prg/default.json'
+    },
+    {
         id: 'RaistlinBars',
         name: 'Raistlin Bars',
         description: 'Spectrometer bars',
@@ -54,15 +63,6 @@ const VISUALIZERS = [
         binary: 'prg/simpleraster.bin',
         maxCallsPerFrame: 8,
         config: 'prg/simpleraster.json'
-    },
-    {
-        id: 'TextInfo',
-        name: 'Text Info',
-        description: 'Minimal player with textual information - similar to PSID64',
-        preview: 'prg/textinfo.png',
-        binary: 'prg/textinfo.bin',
-        maxCallsPerFrame: 8,
-        config: 'prg/textinfo.json'
     }
 ];
 
