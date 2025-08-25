@@ -68,7 +68,7 @@
 .var Display_ControlsTitle_Y        = 19
 .var Display_Controls_F1_X          = 8
 .var Display_Controls_F1_Y          = 21
-.var Display_Controls_SPACE_X       = 8
+.var Display_Controls_SPACE_X       = 6
 .var Display_Controls_SPACE_Y       = 22
 .var Display_Controls_Navigation_X  = 8
 .var Display_Controls_Navigation_Y  = 23
@@ -411,7 +411,7 @@ DrawStaticInfo:
     
     ldx #Display_InfoValues_Colour
     lda NumSongs
-    jsr PrintHexByte
+    jsr PrintTwoDigits_NoPreZeros
 
     ldx #Display_Clock_X
     ldy #Display_Clock_Y
@@ -1023,8 +1023,7 @@ PrintHexByte:
     jsr PrintHexNibble
     pla
     and #$0f
-    jsr PrintHexNibble
-    rts
+    jmp PrintHexNibble
 
 PrintHexNibble:
     cmp #10
@@ -1038,15 +1037,26 @@ PrintHexNibble:
 !print:
     jmp PrintChar
 
-TopNibbleBytes: .fill 60, (i / 10) + '0'
-BottomNibbleBytes: .fill 60, mod(i, 10) + '0'
+TopDigit: .fill 100, (i / 10) + '0'
+BottomDigit: .fill 100, mod(i, 10) + '0'
 
 PrintTwoDigits:
     tay
-    lda TopNibbleBytes, y
+    lda TopDigit, y
     jsr PrintChar
 
-    lda BottomNibbleBytes, y
+    lda BottomDigit, y
+    jmp PrintChar
+
+PrintTwoDigits_NoPreZeros:
+    tay
+    lda TopDigit, y
+    cmp #$30
+    beq !skip+
+    jsr PrintChar
+!skip:
+
+    lda BottomDigit, y
     jmp PrintChar
 
 // =============================================================================
