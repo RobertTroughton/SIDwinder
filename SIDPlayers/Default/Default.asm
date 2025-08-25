@@ -14,9 +14,8 @@
     jmp InitIRQ
 
 .var Display_Title_Colour           = $01
-.var Display_Artist_Colour          = $0f
+.var Display_Artist_Colour          = $0c
 .var Display_Copyright_Colour       = $0c
-.var Display_ReleaseData_Colour     = $0c
 .var Display_Separators_Colour      = $0b
 .var Display_InfoTitles_Colour      = $0e
 .var Display_InfoValues_Colour      = $01
@@ -32,37 +31,34 @@
 .var Display_Copyright_X            = 4
 .var Display_Copyright_Y            = 2
 
-.var Display_ReleaseData_X          = 4
-.var Display_ReleaseData_Y          = 4
-
-.var Display_Separator1_Y           = 6
+.var Display_Separator1_Y           = 5
 
 .var Display_Memory_X               = 9 + 2
-.var Display_Memory_Y               = 7
+.var Display_Memory_Y               = 6
 
 .var Display_InitLabel_X            = 9 + 4
-.var Display_InitLabel_Y            = 8
+.var Display_InitLabel_Y            = 7
 
 .var Display_PlayLabel_X            = 9 + 4
-.var Display_PlayLabel_Y            = 9
+.var Display_PlayLabel_Y            = 8
 
 .var Display_ZP_X                   = 9 + 0
-.var Display_ZP_Y                   = 10
+.var Display_ZP_Y                   = 9
 .var Display_Songs_X                = 9 + 3
-.var Display_Songs_Y                = 11
+.var Display_Songs_Y                = 10
 .var Display_Clock_X                = 9 + 3
-.var Display_Clock_Y                = 12
+.var Display_Clock_Y                = 11
 .var Display_SID_X                  = 9 + 5
-.var Display_SID_Y                  = 13
+.var Display_SID_Y                  = 12
 
-.var Display_Separator2_Y           = 14
+.var Display_Separator2_Y           = 13
 
 .var Display_Time_X                 = 9 + 4
-.var Display_Time_Y                 = 15
+.var Display_Time_Y                 = 14
 .var Display_Song_X                 = 9 + 4
-.var Display_Song_Y                 = 16
+.var Display_Song_Y                 = 15
 
-.var Display_Separator3_Y           = 17
+.var Display_Separator3_Y           = 16
 
 .var Display_ControlsTitle_X        = 13
 .var Display_ControlsTitle_Y        = 19
@@ -86,7 +82,6 @@
 .var SongName = MainAddress + 16
 .var ArtistName = MainAddress + 16 + 32
 .var CopyrightInfo = MainAddress + 16 + 64  // Extended data area
-.var ReleaseDate = MainAddress + 16 + 96  // 0x4070
 
 // Additional metadata that we'll need to populate from analysis
 .var LoadAddress = $40C0
@@ -303,14 +298,6 @@ DrawStaticInfo:
     ldx #Display_Copyright_Colour
     jsr PrintString
 
-    ldx #Display_ReleaseData_X
-    ldy #Display_ReleaseData_Y
-    jsr SetCursor
-    lda #<ReleaseDate
-    ldy #>ReleaseDate
-    ldx #Display_ReleaseData_Colour
-    jsr PrintString
-    
     // Draw separator using proper screen codes
     ldx #0
     ldy #Display_Separator1_Y

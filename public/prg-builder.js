@@ -672,7 +672,7 @@ class SIDwinderPRGExporter {
                         initAddress: actualInitAddress,
                         playAddress: actualPlayAddress,
                         loadAddress: actualSidAddress,
-                        dataSize: sidInfo.dataSize  // Add this
+                        dataSize: sidInfo.dataSize
                     },
                     this.analyzer.analysisResults,
                     header,

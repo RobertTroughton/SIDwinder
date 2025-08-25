@@ -736,33 +736,6 @@ class UIController {
             </div>
         `;
             div.innerHTML = html;
-        } else if (config.type === 'date') {
-            // New date type handling
-            div.innerHTML = `
-            <label for="${config.id}">${config.label}:</label>
-            <div class="date-input-wrapper">
-                <input type="date" 
-                       id="${config.id}" 
-                       class="date-option-input"
-                       data-config='${JSON.stringify(config)}'>
-                <span class="date-display" id="${config.id}-display">Not Set</span>
-                ${config.description ? `<span class="input-description">${config.description}</span>` : ''}
-            </div>
-        `;
-
-            const dateInput = div.querySelector('input[type="date"]');
-            const dateDisplay = div.querySelector('.date-display');
-
-            // Use arrow function to preserve 'this' context
-            dateInput.addEventListener('change', (e) => {
-                if (e.target.value) {
-                    // 'this' now refers to the UIController instance
-                    const formatted = this.formatDateForDisplay(e.target.value);
-                    dateDisplay.textContent = formatted;
-                } else {
-                    dateDisplay.textContent = 'Not Set';
-                }
-            });
         }
 
         return div;
