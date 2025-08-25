@@ -150,7 +150,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
+    generateDataBlock(sidInfo, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
         const data = new Uint8Array(0x50);
 
         // Apply the maximum calls per frame limit if specified
@@ -686,6 +686,7 @@ class SIDwinderPRGExporter {
                         initAddress: actualInitAddress,
                         playAddress: actualPlayAddress
                     },
+                    header,
                     saveRoutineAddr,
                     restoreRoutineAddr,
                     numCallsPerFrame,
