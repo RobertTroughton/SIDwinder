@@ -7,9 +7,9 @@
 // A minimalist text display showing SID file information and playback controls
 // =============================================================================
 
-* = $4100 "Main Code"
+.var BASE_ADDRESS = $4000
 
-.var MainAddress = * - $100
+* = BASE_ADDRESS + $100 "Main Code"
 
     jmp InitIRQ
 
@@ -71,27 +71,27 @@
 .var Display_Controls_SongSelectKeys_X = 8
 .var Display_Controls_SongSelectKeys_Y = 24
 
-.var SIDInit = MainAddress + 0
-.var SIDPlay = MainAddress + 3
-.var BackupSIDMemory = MainAddress + 6
-.var RestoreSIDMemory = MainAddress + 9
-.var NumCallsPerFrame = MainAddress + 12
-//;.var BorderColour = MainAddress + 13
-//;.var BackgroundColour = MainAddress + 14
-.var SongNumber = MainAddress + 15
-.var SongName = MainAddress + 16
-.var ArtistName = MainAddress + 16 + 32
-.var CopyrightInfo = MainAddress + 16 + 64  // Extended data area
+.var SIDInit = BASE_ADDRESS + 0
+.var SIDPlay = BASE_ADDRESS + 3
+.var BackupSIDMemory = BASE_ADDRESS + 6
+.var RestoreSIDMemory = BASE_ADDRESS + 9
+.var NumCallsPerFrame = BASE_ADDRESS + 12
+//;.var BorderColour = BASE_ADDRESS + 13
+//;.var BackgroundColour = BASE_ADDRESS + 14
+.var SongNumber = BASE_ADDRESS + 15
+.var SongName = BASE_ADDRESS + 16
+.var ArtistName = BASE_ADDRESS + 16 + 32
+.var CopyrightInfo = BASE_ADDRESS + 16 + 64  // Extended data area
 
 // Additional metadata that we'll need to populate from analysis
-.var LoadAddress = $40C0
-.var InitAddress = $40C2
-.var PlayAddress = $40C4
-.var EndAddress = $40C6
-.var NumSongs = $40C8
-.var ClockType = $40C9     // 0=PAL, 1=NTSC
-.var SIDModel = $40CA      // 0=6581, 1=8580
-.var ZPUsageData = $40E0   // Will store formatted ZP usage string
+.var LoadAddress = BASE_ADDRESS + $c0
+.var InitAddress = BASE_ADDRESS + $c2
+.var PlayAddress = BASE_ADDRESS + $c4
+.var EndAddress = BASE_ADDRESS + $c6
+.var NumSongs = BASE_ADDRESS + $c8
+.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
+.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
+.var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
 
 // Constants
 .const SCREEN_RAM = $0400
