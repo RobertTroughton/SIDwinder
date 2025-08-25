@@ -967,7 +967,8 @@ MusicIRQ:
     // Show raster timing if enabled
     lda ShowRasterBars
     beq !skip+
-    inc $d020
+    lda #$02
+    sta $d020
 !skip:
 
 callCount:
@@ -990,7 +991,8 @@ callCount:
     // Restore border
     lda ShowRasterBars
     beq !skip+
-    dec $d020
+    lda #$00
+    sta $d020
 !skip:
 
     // Next interrupt
@@ -1083,8 +1085,8 @@ F1Text:             .text " F1 = Toggle Timing Bar(s)"
 // Raster tables
 .var FrameHeight = 312
 
-D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
-D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
+D011_Values_1Call: .byte 0
+D012_Values_1Call: .byte 128
 D011_Values_2Calls: .fill 2, (>(mod(250 + ((FrameHeight * i) / 2), 312))) * $80
 D012_Values_2Calls: .fill 2, (<(mod(250 + ((FrameHeight * i) / 2), 312)))
 D011_Values_3Calls: .fill 3, (>(mod(250 + ((FrameHeight * i) / 3), 312))) * $80
