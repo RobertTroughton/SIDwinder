@@ -2,32 +2,6 @@
   "name": "TextInfo",
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
-  "options": [
-    {
-      "id": "borderColor",
-      "label": "Border Color",
-      "type": "number",
-      "default": 0,
-      "min": 0,
-      "max": 15,
-      "memory": {
-        "targetAddress": "0x400D",
-        "size": 1
-      }
-    },
-    {
-      "id": "backgroundColor",
-      "label": "Background Color",
-      "type": "number",
-      "default": 0,
-      "min": 0,
-      "max": 15,
-      "memory": {
-        "targetAddress": "0x400E",
-        "size": 1
-      }
-    }
-  ],
   "metadata": {
     "extended": true,
     "fields": [

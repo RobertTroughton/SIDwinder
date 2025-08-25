@@ -150,7 +150,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, name, author, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
+    generateDataBlock(sidInfo, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
         const data = new Uint8Array(0x50);
 
         // Apply the maximum calls per frame limit if specified
@@ -188,7 +188,7 @@ class SIDwinderPRGExporter {
         data[0x0F] = selectedSong & 0xFF;
 
         // SID Name at $4010-$402F
-        const nameBytes = this.stringToPETSCII(this.centerString(name || '', 32), 32);
+        const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
@@ -240,7 +240,7 @@ class SIDwinderPRGExporter {
         data[0x0F] = selectedSong & 0xFF;
 
         // SID Name at $4010-$402F
-        const nameBytes = this.stringToPETSCII(this.centerString(name || '', 32), 32);
+        const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
@@ -646,8 +646,6 @@ class SIDwinderPRGExporter {
                     },
                     saveRoutineAddr,
                     restoreRoutineAddr,
-                    header.name || 'Unknown',
-                    header.author || 'Unknown',
                     numCallsPerFrame,
                     options.maxCallsPerFrame,
                     selectedSong

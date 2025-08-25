@@ -71,7 +71,6 @@ InitIRQ:
     sta TimerMinutes
     sta FrameCounter
     sta ShowRasterBars
-    sta KeyboardCheckCounter
     
     // Set frames per second based on clock type
     lda ClockType
@@ -138,12 +137,7 @@ InitIRQ:
     cli
 
 MainLoop:
-    inc KeyboardCheckCounter
-    lda KeyboardCheckCounter
-    and #$03
-    bne !skipKeyboard+ //; check keyboard every 4th frame
     jsr CheckKeyboard
-!skipKeyboard:
     jmp MainLoop
 
 // =============================================================================
@@ -156,7 +150,6 @@ TimerMinutes:     .byte $00
 FrameCounter:     .byte $00
 ShowRasterBars:   .byte $00
 FramesPerSecond:  .byte $32  // Default to 50 (PAL)
-KeyboardCheckCounter: .byte $00
 
 // Temporary storage for print routines
 TempStorage:      .byte $00
@@ -260,12 +253,12 @@ DrawStaticInfo:
 
     // Draw separator using proper screen codes
     ldx #0
-    ldy #3
+    ldy #4
     jsr DrawSeparator
 
     // Memory range - properly formatted
-    ldx #0
-    ldy #4
+    ldx #9 + 2
+    ldy #5
     jsr SetCursor
     lda #<MemoryLabel
     ldy #>MemoryLabel
@@ -289,8 +282,8 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Init address
-    ldx #0
-    ldy #5
+    ldx #9 + 4
+    ldy #6
     jsr SetCursor
     lda #<InitLabel
     ldy #>InitLabel
@@ -306,8 +299,8 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Play address - on same line, column 20
-    ldx #0
-    ldy #6
+    ldx #9 + 4
+    ldy #7
     jsr SetCursor
     lda #<PlayLabel
     ldy #>PlayLabel
@@ -323,8 +316,8 @@ DrawStaticInfo:
     jsr PrintHexByte
 
     // Zero page usage
-    ldx #0
-    ldy #7
+    ldx #9 + 0
+    ldy #8
     jsr SetCursor
     lda #<ZPLabel
     ldy #>ZPLabel
@@ -335,8 +328,8 @@ DrawStaticInfo:
     jsr PrintZPUsage
 
     // Songs, Clock, and SID Model
-    ldx #0
-    ldy #8
+    ldx #9 + 3
+    ldy #9
     jsr SetCursor
     lda #<SongsLabel
     ldy #>SongsLabel
@@ -347,8 +340,8 @@ DrawStaticInfo:
     lda NumSongs
     jsr PrintHexByte
 
-    ldx #0
-    ldy #9
+    ldx #9 + 3
+    ldy #10
     jsr SetCursor
     lda #<ClockLabel
     ldy #>ClockLabel
@@ -367,8 +360,8 @@ DrawStaticInfo:
     ldx #$01 //; white
     jsr PrintString
 
-    ldx #0
-    ldy #10
+    ldx #9 + 5
+    ldy #11
     jsr SetCursor
     lda #<SIDLabel
     ldy #>SIDLabel
@@ -389,11 +382,11 @@ DrawStaticInfo:
 
     // Draw separator
     ldx #0
-    ldy #11
+    ldy #12
     jsr DrawSeparator
 
     // Time label
-    ldx #0
+    ldx #9 + 4
     ldy #13
     jsr SetCursor
     lda #<TimeLabel
@@ -406,7 +399,7 @@ DrawStaticInfo:
     cmp #2
     bcc !skip+
     
-    ldx #0
+    ldx #9 + 4
     ldy #14
     jsr SetCursor
     lda #<CurrentSongLabel
@@ -421,9 +414,7 @@ DrawStaticInfo:
     jsr DrawSeparator
 
     // Draw controls info
-    jsr DrawControls
-
-    rts
+    jmp DrawControls
 
 // =============================================================================
 // DRAW SEPARATOR LINE
@@ -449,7 +440,7 @@ DrawSeparator:
 DrawControls:
     
     // Controls header
-    ldx #0
+    ldx #13
     ldy #17
     jsr SetCursor
     lda #<ControlsLabel
@@ -458,7 +449,7 @@ DrawControls:
     jsr PrintString
 
     // F1 for raster bars
-    ldx #0
+    ldx #7
     ldy #19
     jsr SetCursor
     lda #<F1Text
@@ -474,25 +465,25 @@ DrawControls:
 
 !multipleSongs:
     // Multiple songs - show selection keys
-    ldx #0
+    ldx #7
     ldy #21
     jsr SetCursor
     
     // Determine range to show
     lda NumSongs
-    cmp #11
+    cmp #10  // Changed from 11 to 10
     bcc !under10+
     
-    // 10+ songs
-    lda #<Select09Text
-    ldy #>Select09Text
+    // 10+ songs - show "1-9, A-?"
+    lda #<Select19Text  // Changed from Select09Text
+    ldy #>Select19Text
     ldx #$0a //; pink
     jsr PrintString
     
     // Check if we need letters too
     lda NumSongs
-    cmp #11
-    beq !nav+  // Exactly 10, no letters needed
+    cmp #10
+    beq !nav+  // Exactly 9 songs, no letters needed
     
     lda #<CommaSpace
     ldy #>CommaSpace
@@ -505,11 +496,11 @@ DrawControls:
     ldx #$0a //; pink
     jsr PrintString
     
-    // Calculate last letter
+    // Calculate last letter (A = song 10, B = song 11, etc.)
     lda NumSongs
     sec
-    sbc #10
-    cmp #26
+    sbc #9  // Convert to letter offset
+    cmp #27  // More than 26 letters?
     bcc !letter+
     lda #26  // Cap at Z
 !letter:
@@ -520,15 +511,15 @@ DrawControls:
     jmp !nav+
 
 !under10:
-    // Under 10 songs
-    lda #<ZeroThru
-    ldy #>ZeroThru
+    // Under 10 songs - show "1-X"
+    lda #<OneThru  // Changed from ZeroThru
+    ldy #>OneThru
     ldx #$0a //; pink
     jsr PrintString
     
     lda NumSongs
     clc
-    adc #'0'-1
+    adc #'0'  // Convert to ASCII digit (1-9)
     jsr PrintChar
     
     lda #<SelectSuffix
@@ -538,7 +529,7 @@ DrawControls:
 
 !nav:
     // Navigation keys
-    ldx #0
+    ldx #7
     ldy #20
     jsr SetCursor
     lda #<NavigationText
@@ -552,7 +543,7 @@ DrawControls:
 
 UpdateDynamicInfo:
     // Update timer display
-    ldx #6
+    ldx #6 + 9 + 4
     ldy #13
     jsr SetCursor
     
@@ -569,7 +560,7 @@ UpdateDynamicInfo:
     cmp #2
     bcc !skip+
     
-    ldx #6
+    ldx #6 + 9 + 4
     ldy #14
     jsr SetCursor
     
@@ -634,19 +625,18 @@ UpdateTimer:
     rts
 
 // =============================================================================
-// KEYBOARD HANDLER (Now using hardware scanning)
+// KEYBOARD HANDLER (Now using hardware scanning with proper debouncing)
 // =============================================================================
 
 CheckKeyboard:
-
     // Scan keyboard using our custom routine
     jsr ScanKeyboard
     
-    // Check if we got a key
+    // Check if we got a key (0 means no key or still debouncing)
     cmp #0
     beq !done+
     
-    // Store key
+    // We have a debounced key press
     sta TempStorage
     
     // Check for F1
@@ -658,6 +648,11 @@ CheckKeyboard:
     rts
 
 !notF1:
+    // Get the key with shift detection for letters
+    lda TempStorage
+    jsr GetKeyWithShift
+    sta TempStorage
+    
     // Only process song selection if multiple songs
     lda NumSongs
     cmp #2
@@ -678,14 +673,15 @@ CheckKeyboard:
     rts
     
 !notMinus:
-    // Check 0-9
-    cmp #'0'
+    // Check 1-9 (for songs 1-9)
+    cmp #'1'
     bcc !notDigit+
     cmp #':'  // '9'+1
     bcs !notDigit+
     
+    // Convert 1-9 to 0-8 (internal song numbers)
     sec
-    sbc #'0'
+    sbc #'1'  // '1' becomes 0, '2' becomes 1, etc.
     cmp NumSongs
     bcs !done+
     
@@ -693,26 +689,36 @@ CheckKeyboard:
     rts
     
 !notDigit:
-    // Check a-z or A-Z (handle both cases)
-    pha
-    and #$df  // Convert to uppercase for comparison
+    // Check A-Z (uppercase) for songs 10-35
     cmp #'A'
-    bcc !notLetterPop+
+    bcc !checkLowercase+
     cmp #'['  // 'Z'+1
-    bcs !notLetterPop+
+    bcs !checkLowercase+
     
-    // Valid letter - calculate song number
+    // Uppercase letter - A=song 10 (index 9)
     sec
-    sbc #'A'-10
+    sbc #'A'-9  // 'A' becomes 9, 'B' becomes 10, etc.
     cmp NumSongs
-    bcs !notLetterPop+
+    bcs !done+
     
-    pla  // Clean stack
     jsr SelectSong
     rts
     
-!notLetterPop:
-    pla  // Restore original key
+!checkLowercase:
+    // Check a-z (lowercase) for songs 10-35
+    cmp #'a'
+    bcc !notLetter+
+    cmp #'{'  // 'z'+1
+    bcs !notLetter+
+    
+    // Lowercase letter - a=song 10 (index 9)
+    sec
+    sbc #'a'-9  // 'a' becomes 9, 'b' becomes 10, etc.
+    cmp NumSongs
+    bcs !done+
+    
+    jsr SelectSong
+    rts
     
 !notLetter:
 !done:
@@ -991,9 +997,9 @@ ControlsLabel:      .text "== CONTROLS =="
                     .byte 0
 
 // Control text
-Select09Text:       .text "0-9"
+Select19Text:       .text "1-9"
                     .byte 0
-ZeroThru:           .text "0-"
+OneThru:            .text "1-"
                     .byte 0
 AThru:              .text "A-"
                     .byte 0
@@ -1003,9 +1009,7 @@ SelectSuffix:       .text " = Select Song"
                     .byte 0
 NavigationText:     .text "+/- = Next/Prev Song"
                     .byte 0
-SingleSongText:     .text "Single Song (No Selection)"
-                    .byte 0
-F1Text:             .text "F1 = Toggle Timing Bar(s)"
+F1Text:             .text "F1  = Toggle Timing Bar(s)"
                     .byte 0
 
 // Raster tables
