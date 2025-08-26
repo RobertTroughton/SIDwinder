@@ -88,6 +88,7 @@
 //; INCLUDES
 //; =============================================================================
 
+#define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -151,7 +152,7 @@ Initialize:
 	sta $d019
 
 	lda #$00
-	sta NextIRQ + 1
+	sta NextIRQLdx + 1
 
 	jsr VSync
 
@@ -223,6 +224,24 @@ MainIRQ:
 	tya
 	pha
 
+	lda FastForwardActive
+	beq !normalPlay+
+	
+!ffFrameLoop:
+	jsr SIDPlay
+	inc $d020
+	
+	jsr CheckSpaceKey
+	lda FastForwardActive
+	bne !ffFrameLoop-
+	
+	lda #$00
+	sta NextIRQLdx + 1
+	sta $d020
+	jmp !done+
+
+!normalPlay:
+
 	ldy currentScreenBuffer
 	lda D018Values, y
 	cmp $d018
@@ -237,9 +256,9 @@ MainIRQ:
 	jsr UpdateBarDecay
 
 	inc frameCounter
-	bne !skip+
+	bne !done+
 	inc frame256Counter
-!skip:
+!done:
 
 	jsr NextIRQ
 
@@ -264,14 +283,21 @@ MusicOnlyIRQ:
 	pha
 	tya
 	pha
+	lda $01
+	pha
+	lda #$35
+	sta $01
 
-	jsr PlayMusicWithAnalysis
+	lda FastForwardActive
+	bne !done+
+	
+	jsr JustPlayMusic
+
+!done:
 	jsr NextIRQ
 
-	lda #$01
-	sta $d01a
-	sta $d019
-
+	pla
+	sta $01
 	pla
 	tay
 	pla
@@ -284,13 +310,15 @@ MusicOnlyIRQ:
 //; =============================================================================
 
 NextIRQ:
+
+NextIRQLdx:
 	ldx #$00
 	inx
 	cpx NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:
-	stx NextIRQ + 1
+	stx NextIRQLdx + 1
 
 	jsr set_d011_and_d012
 

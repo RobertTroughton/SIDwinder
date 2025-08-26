@@ -99,6 +99,7 @@
 //; INCLUDES
 //; =============================================================================
 
+#define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -240,6 +241,30 @@ MainIRQ:
 	lda #$35
 	sta $01
 
+	lda FastForwardActive
+	beq !normalPlay+
+	
+!ffFrameLoop:
+	lda NumCallsPerFrame
+	sta FFCallCounter
+	
+!ffCallLoop:
+	jsr SIDPlay
+	inc $d020
+	dec FFCallCounter
+	lda FFCallCounter
+	bne !ffCallLoop-
+	
+	jsr CheckSpaceKey
+	lda FastForwardActive
+	bne !ffFrameLoop-
+	
+	lda #$00
+	sta NextIRQLdx + 1
+	sta $d020
+	jmp !done+
+
+!normalPlay:
 	ldy currentScreenBuffer
 	lda D018Values, y
 	cmp $d018
@@ -260,6 +285,7 @@ MainIRQ:
 	jsr UpdateSprites
 	jsr AnalyseMusic
 
+!done:
 	jsr NextIRQ
 
 	pla
