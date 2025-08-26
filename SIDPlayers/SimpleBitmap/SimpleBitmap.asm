@@ -99,8 +99,6 @@ Initialize:
 
     jsr NMIFix
 
-    jsr VSync
-
     jsr init_D011_D012_values
 
     ldy #$00
@@ -158,17 +156,6 @@ Initialize:
 
 Forever:
     jmp Forever
-
-//; =============================================================================
-//; VERTICAL SYNC ROUTINE
-//; =============================================================================
-
-VSync:
-    bit $d011
-    bpl *-3
-    bit $d011
-    bmi *-3
-    rts
 
 //; =============================================================================
 //; MAIN MUSIC INTERRUPT HANDLER
@@ -249,7 +236,7 @@ D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Value
 //; INCLUDES
 //; =============================================================================
 
-.import source "../INC/NMIFix.asm"           //; NMI interrupt protection
+.import source "../INC/Common.asm"
 
 //; =============================================================================
 //; DATA SECTION - Placeholder screen and bitmap data

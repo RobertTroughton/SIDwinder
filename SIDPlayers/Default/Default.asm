@@ -1039,13 +1039,6 @@ PrintTwoDigits_NoPreZeros:
 // INTERRUPT HANDLERS
 // =============================================================================
 
-VSync:
-    bit $d011
-    bpl *-3
-    bit $d011
-    bmi *-3
-    rts
-
 MusicIRQ:
     pha
     txa
@@ -1241,7 +1234,7 @@ D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_1Call, <D012_Value
 D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
 
 // Include NMI fix
-.import source "../INC/NMIFix.asm"
+.import source "../INC/Common.asm"
 
 // =============================================================================
 // END OF FILE
