@@ -44,26 +44,6 @@
 
 	jmp Initialize
 
-.var SIDInit = BASE_ADDRESS + 0
-.var SIDPlay = BASE_ADDRESS + 3
-.var BackupSIDMemory = BASE_ADDRESS + 6
-.var RestoreSIDMemory = BASE_ADDRESS + 9
-.var NumCallsPerFrame = BASE_ADDRESS + 12
-.var BorderColour = BASE_ADDRESS + 13
-.var BitmapScreenColour = BASE_ADDRESS + 14
-.var SongNumber = BASE_ADDRESS + 15
-.var SongName = BASE_ADDRESS + 16
-.var ArtistName = BASE_ADDRESS + 16 + 32
-
-.var LoadAddress = BASE_ADDRESS + $c0
-.var InitAddress = BASE_ADDRESS + $c2
-.var PlayAddress = BASE_ADDRESS + $c4
-.var EndAddress = BASE_ADDRESS + $c6
-.var NumSongs = BASE_ADDRESS + $c8
-.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
-.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
-.var ZPUsageData = BASE_ADDRESS + $e0   // Formatted ZP usage string
-
 //; =============================================================================
 //; EXTERNAL RESOURCES
 //; =============================================================================

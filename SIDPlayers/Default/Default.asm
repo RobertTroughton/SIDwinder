@@ -1,11 +1,7 @@
-// default.asm - Text-based SID information display visualizer
-// =============================================================================
-//                             TEXT INFO PLAYER
+//; =============================================================================
+//;                             DEFAULT PLAYER
 //                   Text-based SID Information Display for C64
-// =============================================================================
-// Part of the SIDwinder player collection
-// A minimalist text display showing SID file information and playback controls
-// =============================================================================
+//; =============================================================================
 
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
@@ -71,29 +67,6 @@
 .var Display_Controls_SongSelectKeys_X = 8
 .var Display_Controls_SongSelectKeys_Y = 24
 
-.var SIDInit = BASE_ADDRESS + 0
-.var SIDPlay = BASE_ADDRESS + 3
-.var BackupSIDMemory = BASE_ADDRESS + 6
-.var RestoreSIDMemory = BASE_ADDRESS + 9
-.var NumCallsPerFrame = BASE_ADDRESS + 12
-//;.var BorderColour = BASE_ADDRESS + 13
-//;.var BackgroundColour = BASE_ADDRESS + 14
-.var SongNumber = BASE_ADDRESS + 15
-.var SongName = BASE_ADDRESS + 16
-.var ArtistName = BASE_ADDRESS + 16 + 32
-.var CopyrightInfo = BASE_ADDRESS + 16 + 64  // Extended data area
-
-// Additional metadata that we'll need to populate from analysis
-.var LoadAddress = BASE_ADDRESS + $c0
-.var InitAddress = BASE_ADDRESS + $c2
-.var PlayAddress = BASE_ADDRESS + $c4
-.var EndAddress = BASE_ADDRESS + $c6
-.var NumSongs = BASE_ADDRESS + $c8
-.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
-.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
-.var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
-
-// Constants
 .const SCREEN_RAM = $0400
 .const COLOR_RAM = $d800
 .const ROW_WIDTH = 40
@@ -119,31 +92,26 @@ Initialize:
 
     sei
 
-    // Configure memory mapping
     lda #$35
     sta $01
 
-    // Wait for stable raster
     jsr VSync
 
-    // Blank screen during setup
     lda #$00
     sta $d011
-    sta $d020                           //; Black border
+    sta $d020
 
-    // Initialize keyboard scanning
     jsr InitKeyboard
 
-    // Initialize variables
     lda SongNumber
     sta CurrentSong
+
     lda #0
     sta TimerSeconds
     sta TimerMinutes
     sta FrameCounter
     sta ShowRasterBars
     
-    // Set frames per second based on clock type
     lda ClockType
     beq !pal+
     lda #60
@@ -153,35 +121,28 @@ Initialize:
 !store:
     sta FramesPerSecond
 
-    // Clear screen and set colors
     jsr ClearScreen
     
     lda #$00
     sta $d020
     sta $d021
 
-    // Set to text mode with uppercase/lowercase charset
-    lda #$16  // Screen at $0400, charset at ROM default (lowercase)
+    lda #$16
     sta $d018
 
-    // Populate metadata fields (this would be done by the linker)
     jsr PopulateMetadata
 
-    // Draw the static information
     jsr DrawStaticInfo
     
-    // Initialize the music
     lda CurrentSong
     tax
     tay
     jsr SIDInit
 
-    // Disable NMI
     jsr NMIFix
 
     jsr init_D011_D012_values
 
-    // Set up interrupts
     lda #<MusicIRQ
     sta $fffe
     lda #>MusicIRQ
@@ -195,12 +156,10 @@ Initialize:
     lda #$01
     sta $d019
 
-    // Configure first raster position
     ldx #0
     jsr set_d011_and_d012
 
-    // Enable display
-    lda #$1b  // Text mode, display on, 25 rows
+    lda #$1b
     sta $d011
 
     cli
@@ -216,9 +175,8 @@ MainLoop:
 TimerSeconds:     .byte $00
 TimerMinutes:     .byte $00
 FrameCounter:     .byte $00
-FramesPerSecond:  .byte $32  // Default to 50 (PAL)
+FramesPerSecond:  .byte $32
 
-// Temporary storage for print routines
 TempStorage:      .byte $00
 CursorX:          .byte $00
 CursorY:          .byte $00
@@ -228,10 +186,7 @@ CursorY:          .byte $00
 // =============================================================================
 
 PopulateMetadata:
-    // This is where the PRG builder would inject actual data
-    // For now, we'll read from the SID header locations
     
-    // Get actual addresses from SID
     lda SIDInit+1
     sta InitAddress
     lda SIDInit+2
@@ -242,18 +197,11 @@ PopulateMetadata:
     lda SIDPlay+2
     sta PlayAddress+1
     
-    // Default to 1 song if not set
     lda NumSongs
     bne !skip+
     lda #1
     sta NumSongs
 !skip:
-    
-    // Default to PAL if not set
-    // (ClockType already set by PRG builder)
-    
-    // Default to 6581 if not set
-    // (SIDModel already set by PRG builder)
     
     rts
 
@@ -262,10 +210,9 @@ PopulateMetadata:
 // =============================================================================
 
 DrawStaticInfo:
-    // Clear screen with proper screen codes
     ldx #0
 !loop:
-    lda #$20        // Screen code for space
+    lda #$20
     sta SCREEN_RAM,x
     sta SCREEN_RAM+256,x
     sta SCREEN_RAM+512,x
@@ -278,7 +225,6 @@ DrawStaticInfo:
     inx
     bne !loop-
 
-    // Title - center at column 4 (32 char field + 4 = 36, centered in 40)
     ldx #Display_Title_X
     ldy #Display_Title_Y
     jsr SetCursor
@@ -287,7 +233,6 @@ DrawStaticInfo:
     ldx #Display_Title_Colour
     jsr PrintString
 
-    // Author - centered
     ldx #Display_Artist_X
     ldy #Display_Artist_Y
     jsr SetCursor
@@ -296,7 +241,6 @@ DrawStaticInfo:
     ldx #Display_Artist_Colour
     jsr PrintString
 
-    // Copyright - centered
     ldx #Display_Copyright_X
     ldy #Display_Copyright_Y
     jsr SetCursor
@@ -305,12 +249,10 @@ DrawStaticInfo:
     ldx #Display_Copyright_Colour
     jsr PrintString
 
-    // Draw separator using proper screen codes
     ldx #0
     ldy #Display_Separator1_Y
     jsr DrawSeparator
 
-    // Memory range - properly formatted
     ldx #Display_Memory_X
     ldy #Display_Memory_Y
     jsr SetCursor
@@ -318,7 +260,6 @@ DrawStaticInfo:
     ldy #>MemoryLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
@@ -335,7 +276,6 @@ DrawStaticInfo:
     lda EndAddress
     jsr PrintHexByte
 
-    // Init address
     ldx #Display_InitLabel_X
     ldy #Display_InitLabel_Y
     jsr SetCursor
@@ -343,7 +283,6 @@ DrawStaticInfo:
     ldy #>InitLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
@@ -352,7 +291,6 @@ DrawStaticInfo:
     lda InitAddress
     jsr PrintHexByte
 
-    // Play address - on same line, column 20
     ldx #Display_PlayLabel_X
     ldy #Display_PlayLabel_Y
     jsr SetCursor
@@ -360,7 +298,6 @@ DrawStaticInfo:
     ldy #>PlayLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     ldx #Display_InfoValues_Colour
     lda #'$'
     jsr PrintChar
@@ -369,7 +306,6 @@ DrawStaticInfo:
     lda PlayAddress
     jsr PrintHexByte
 
-    // Zero page usage
     ldx #Display_ZP_X
     ldy #Display_ZP_Y
     jsr SetCursor
@@ -377,11 +313,11 @@ DrawStaticInfo:
     ldy #>ZPLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     ldx #Display_InfoValues_Colour
-    jsr PrintZPUsage
+    lda #<ZPUsageData
+    ldy #>ZPUsageData
+    jsr PrintString
 
-    // Songs, Clock, and SID Model
     ldx #Display_Songs_X
     ldy #Display_Songs_Y
     jsr SetCursor
@@ -389,7 +325,6 @@ DrawStaticInfo:
     ldy #>SongsLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     ldx #Display_InfoValues_Colour
     lda NumSongs
     jsr PrintTwoDigits_NoPreZeros
@@ -401,7 +336,6 @@ DrawStaticInfo:
     ldy #>ClockLabel
     ldx #Display_InfoTitles_Colour
     jsr PrintString
-    
     lda ClockType
     beq !pal+
     lda #<NTSCText
@@ -434,12 +368,10 @@ DrawStaticInfo:
     ldx #Display_InfoValues_Colour
     jsr PrintString
 
-    // Draw separator
     ldx #0
     ldy #Display_Separator2_Y
     jsr DrawSeparator
 
-    // Time label
     ldx #Display_Time_X
     ldy #Display_Time_Y
     jsr SetCursor
@@ -448,7 +380,6 @@ DrawStaticInfo:
     ldx #Display_InfoTitles_Colour
     jsr PrintString
 
-    // Song label (only if multiple songs)
     lda NumSongs
     cmp #2
     bcc !skip+
@@ -462,12 +393,10 @@ DrawStaticInfo:
     jsr PrintString
 
 !skip:
-    // Draw separator before controls
     ldx #0
     ldy #Display_Separator3_Y
     jsr DrawSeparator
 
-    // Draw controls info
     jmp DrawControls
 
 // =============================================================================
@@ -481,7 +410,7 @@ DrawSeparator:
     ldy #39
     ldx #Display_Separators_Colour
 !loop:
-    lda #$2d  // Screen code for '-'
+    lda #$2d
     jsr PrintChar
     dey
     bpl !loop-
@@ -493,7 +422,6 @@ DrawSeparator:
 
 DrawControls:
     
-    // Controls header
     ldx #Display_ControlsTitle_X
     ldy #Display_ControlsTitle_Y
     jsr SetCursor
@@ -502,7 +430,6 @@ DrawControls:
     ldx #Display_ControlsTitle_Colour
     jsr PrintString
 
-    // F1 for raster bars
     ldx #Display_Controls_F1_X
     ldy #Display_Controls_F1_Y
     jsr SetCursor
@@ -511,7 +438,6 @@ DrawControls:
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
-    // SPACE for fast-forward
     ldx #Display_Controls_SPACE_X
     ldy #Display_Controls_SPACE_Y
     jsr SetCursor
@@ -520,52 +446,45 @@ DrawControls:
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
-    // Check if we have multiple songs
     lda NumSongs
     cmp #2
     bcs !multipleSongs+
     rts
 
 !multipleSongs:
-    // Multiple songs - show selection keys
     ldx #Display_Controls_SongSelectKeys_X
     ldy #Display_Controls_SongSelectKeys_Y
     jsr SetCursor
     
-    // Determine range to show
     lda NumSongs
-    cmp #10  // Changed from 11 to 10
+    cmp #10
     bcc !under10+
     
-    // 10+ songs - show "1-9, A-?"
-    lda #<Select19Text  // Changed from Select09Text
+    lda #<Select19Text
     ldy #>Select19Text
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
-    // Check if we need letters too
     lda NumSongs
     cmp #10
-    beq !nav+  // Exactly 9 songs, no letters needed
+    beq !nav+
     
     lda #<CommaSpace
     ldy #>CommaSpace
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
-    // Show A-? range
     lda #<AThru
     ldy #>AThru
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
-    // Calculate last letter (A = song 10, B = song 11, etc.)
     lda NumSongs
     sec
-    sbc #9  // Convert to letter offset
-    cmp #27  // More than 26 letters?
+    sbc #9
+    cmp #27
     bcc !letter+
-    lda #26  // Cap at Z
+    lda #26
 !letter:
     clc
     adc #'A'-1
@@ -574,15 +493,14 @@ DrawControls:
     jmp !nav+
 
 !under10:
-    // Under 10 songs - show "1-X"
-    lda #<OneThru  // Changed from ZeroThru
+    lda #<OneThru
     ldy #>OneThru
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
     
     lda NumSongs
     clc
-    adc #'0'  // Convert to ASCII digit (1-9)
+    adc #'0'
     jsr PrintChar
     
     lda #<SelectSuffix
@@ -591,7 +509,6 @@ DrawControls:
     jsr PrintString
 
 !nav:
-    // Navigation keys
     ldx #Display_Controls_Navigation_X
     ldy #Display_Controls_Navigation_Y
     jsr SetCursor
@@ -605,7 +522,6 @@ DrawControls:
 // =============================================================================
 
 UpdateDynamicInfo:
-    // Update timer display
     ldx #Display_Time_X + 6
     ldy #Display_Time_Y
     jsr SetCursor
@@ -618,7 +534,6 @@ UpdateDynamicInfo:
     lda TimerSeconds
     jsr PrintTwoDigits
 
-    // Update current song (if multiple)
     lda NumSongs
     cmp #2
     bcc !skip+
@@ -630,7 +545,7 @@ UpdateDynamicInfo:
     ldx #Display_InfoValues_Colour
     lda CurrentSong
     clc
-    adc #1  // Convert to 1-based
+    adc #1
     jsr PrintTwoDigits
     lda #'/'
     jsr PrintChar
@@ -639,16 +554,6 @@ UpdateDynamicInfo:
 
 !skip:
     rts
-
-// =============================================================================
-// PRINT ZERO PAGE USAGE
-// =============================================================================
-
-PrintZPUsage:
-    // Print the ZP usage data string that was populated by PRG builder
-    lda #<ZPUsageData
-    ldy #>ZPUsageData
-    jmp PrintString
 
 // =============================================================================
 // TIMER UPDATE
@@ -661,7 +566,6 @@ UpdateTimer:
     cmp FramesPerSecond
     bcc !done+
     
-    // One second elapsed
     lda #0
     sta FrameCounter
     
@@ -670,12 +574,10 @@ UpdateTimer:
     cmp #60
     bcc !done+
     
-    // One minute elapsed
     lda #0
     sta TimerSeconds
     inc TimerMinutes
     
-    // Cap at 99:59
     lda TimerMinutes
     cmp #100
     bcc !done+
@@ -724,7 +626,6 @@ SetCursor:
     rts
 
 PrintString:
-    // A/Y = string address (null terminated)
     sta StringReadPtr + 1
     sty StringReadPtr + 2
     
@@ -744,7 +645,6 @@ StringReadPtr:
     rts
 
 PrintChar:
-    // A = character to print (PETSCII)
     
 PrintPtr:
     sta $abcd
@@ -763,7 +663,6 @@ ColorPtr:
 !skip:
     
     rts
-
 
 PrintHexByte:
     pha
@@ -821,61 +720,39 @@ MusicIRQ:
     tya
     pha
 
-    // Show raster timing if enabled
-    lda ShowRasterBars
-    beq !skip+
-    lda #$02
-    sta $d020
-!skip:
-
-    // Check if we're in fast-forward mode
     lda FastForwardActive
     beq !normalPlay+
     
-    // === FAST FORWARD MODE ===
-    // We need to call SIDPlay NumCallsPerFrame times to simulate one frame
-    // Then check for space release and update timer
-    
 !ffFrameLoop:
-    // Call SIDPlay the required number of times for one frame
     lda NumCallsPerFrame
     sta FFCallCounter
     
 !ffCallLoop:
     jsr SIDPlay
-    inc $d020  // Visual feedback
+    inc $d020
     dec FFCallCounter
     lda FFCallCounter
     bne !ffCallLoop-
     
-    // One complete "frame" worth of calls done
     jsr UpdateTimer
     jsr UpdateDynamicInfo
     
-    // Check if space is still held
     jsr CheckSpaceKey
     lda FastForwardActive
-    bne !ffFrameLoop-  // Continue fast-forward
+    bne !ffFrameLoop-
     
-    // Space released - exit fast-forward
     lda #$00
     sta $d020
-    
-    // Reset the call counter for normal operation
-    lda #0
     sta callCount + 1
-    
     jmp !done+
 
 !normalPlay:
-    // === NORMAL PLAY MODE ===
 callCount:
     ldx #0
     inx
     cpx NumCallsPerFrame
     bne !justPlay+
     
-    // Frame boundary - all calls for this frame complete
     jsr UpdateTimer
     jsr UpdateDynamicInfo
     ldx #0
@@ -883,17 +760,9 @@ callCount:
 !justPlay:
     stx callCount + 1
     
-    // Play music once
-    jsr SIDPlay
-    
-    lda ShowRasterBars
-    beq !skip+
-    lda #$00
-    sta $d020
-!skip:
+    jsr JustPlayMusic
 
 !done:
-    // Next interrupt
     ldx callCount + 1
     jsr set_d011_and_d012
     
@@ -905,7 +774,6 @@ callCount:
     pla
     rti
 
-// Raster timing routines (same as SimpleBitmap)
 init_D011_D012_values:
     ldx NumCallsPerFrame
     lda D011_Values_Lookup_Lo, x
@@ -964,7 +832,6 @@ CurrentSongLabel:   .text "Song: "
 ControlsLabel:      .text "== CONTROLS =="
                     .byte 0
 
-// Control text
 Select19Text:       .text "1-9"
                     .byte 0
 OneThru:            .text "1-"
@@ -983,7 +850,6 @@ F1Text:             .text " F1 = Toggle Timing Bar(s)"
 SpaceText:          .text "SPACE = Fast Forward (Hold)"
                     .byte 0
 
-// Raster tables
 .var FrameHeight = 312
 
 D011_Values_1Call: .byte 0
@@ -1007,10 +873,3 @@ D011_Values_Lookup_Lo: .byte <D011_Values_1Call, <D011_Values_1Call, <D011_Value
 D011_Values_Lookup_Hi: .byte >D011_Values_1Call, >D011_Values_1Call, >D011_Values_2Calls, >D011_Values_3Calls, >D011_Values_4Calls, >D011_Values_5Calls, >D011_Values_6Calls, >D011_Values_7Calls, >D011_Values_8Calls
 D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_1Call, <D012_Values_2Calls, <D012_Values_3Calls, <D012_Values_4Calls, <D012_Values_5Calls, <D012_Values_6Calls, <D012_Values_7Calls, <D012_Values_8Calls
 D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
-
-// Include NMI fix
-.import source "../INC/Common.asm"
-
-// =============================================================================
-// END OF FILE
-// =============================================================================

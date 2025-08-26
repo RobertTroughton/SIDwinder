@@ -1,67 +1,15 @@
-//; =============================================================================
-//;                             SIMPLE BITMAP PLAYER
-//;                   Bitmap Graphics SID Music Player for C64
-//; =============================================================================
-//; Part of the SIDwinder player collection
-//; A music player that displays a multicolor bitmap while playing SID tunes
-//; =============================================================================
-//;
-//; DESCRIPTION:
-//; ------------
-//; SimpleBitmap combines SID music playback with visual presentation using
-//; the C64's multicolor bitmap mode. It displays a static image while playing
-//; music through raster interrupt driven playback.
-//;
-//; KEY FEATURES:
-//; - Multicolor bitmap display (160x200 resolution, 4 colors per cell)
-//; - Raster interrupt driven music playback
-//; - Support for multi-speed tunes
-//; - Automatic bitmap data loading and display setup
-//; - NMI interrupt protection
-//;
-//; TECHNICAL DETAILS:
-//; - Uses VIC-II bitmap mode with color RAM configuration
-//; - Bitmap data loaded from external files (map, screen, color)
-//; - Memory layout: Bitmap at $A000, Color at $8800, Screen at $8C00
-//; - Stable raster interrupts ensure smooth playback
-//;
-//; REQUIRED FILES:
-//; - bitmap.map: Bitmap pixel data (8000 bytes)
-//; - bitmap.scr: Screen color data (1000 bytes)
-//; - bitmap.col: Color RAM data (1000 bytes)
-//;
-//; =============================================================================
-
-//; Memory Map
-
-//; On Load
-//; VICBANK + $2000-$3f3f : Bitmap
-//; VICBANK + $1800-$1BFF : Screen Data
-//; VICBANK + $1C00-$1FFF : Colour Data
-
-//; Real-time
-//; VICBANK + $2000-$3f3f : Bitmap
-//; VICBANK + $1800-$1BFF : Screen Data
-//; VICBANK + $1C00-$1FFF : Colour Data
+// =============================================================================
+//                             SIMPLE BITMAP PLAYER
+//                   Bitmap Graphics SID Music Player for C64
+// =============================================================================
 
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
 
-	jmp Initialize
+    jmp Initialize
 
-.var SIDInit = BASE_ADDRESS + 0
-.var SIDPlay = BASE_ADDRESS + 3
-.var BackupSIDMemory = BASE_ADDRESS + 6
-.var RestoreSIDMemory = BASE_ADDRESS + 9
-.var NumCallsPerFrame = BASE_ADDRESS + 12
-.var BorderColour = BASE_ADDRESS + 13
-.var BitmapScreenColour = BASE_ADDRESS + 14
-.var SongNumber = BASE_ADDRESS + 15
-.var SongName = BASE_ADDRESS + 16
-.var ArtistName = BASE_ADDRESS + 16 + 32
-
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK                         = (BASE_ADDRESS / $4000)
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
 .const BITMAP_BANK                      = 1
 .const SCREEN_BANK                      = 6
@@ -75,9 +23,22 @@
 .const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 
-//; =============================================================================
-//; INITIALIZATION ENTRY POINT
-//; =============================================================================
+// =============================================================================
+// INCLUDES
+// =============================================================================
+
+#define INCLUDE_SPACE_FASTFORWARD
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+
+// =============================================================================
+// INITIALIZATION ENTRY POINT
+// =============================================================================
 
 Initialize:
     sei
@@ -92,14 +53,26 @@ Initialize:
     sta $d020
     sta $d021
 
+    jsr InitKeyboard
+
     lda SongNumber
-	tax
-	tay
+    sta CurrentSong
+    
+    lda NumSongs
+    bne !skip+
+    lda #1
+    sta NumSongs
+!skip:
+
+    lda #0
+    sta ShowRasterBars
+
+    lda CurrentSong
+    tax
+    tay
     jsr SIDInit
 
     jsr NMIFix
-
-    jsr init_D011_D012_values
 
     ldy #$00
 !loop:
@@ -111,8 +84,10 @@ Initialize:
     iny
     bne !loop-
 
-	lda BitmapScreenColour
+    lda BitmapScreenColour
     sta $d021
+
+    jsr init_D011_D012_values
 
     lda #<MusicIRQ
     sta $fffe
@@ -154,61 +129,97 @@ Initialize:
 
     cli
 
-Forever:
-    jmp Forever
+MainLoop:
+    jsr CheckKeyboard
+    jmp MainLoop
 
-//; =============================================================================
-//; MAIN MUSIC INTERRUPT HANDLER
-//; =============================================================================
+// =============================================================================
+// MAIN MUSIC INTERRUPT HANDLER
+// =============================================================================
 
 MusicIRQ:
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    lda FastForwardActive
+    beq !normalPlay+
+    
+!ffFrameLoop:
+    lda NumCallsPerFrame
+    sta FFCallCounter
+    
+!ffCallLoop:
+    jsr SIDPlay
+    inc $d020
+    dec FFCallCounter
+    lda FFCallCounter
+    bne !ffCallLoop-
+    
+    jsr CheckSpaceKey
+    lda FastForwardActive
+    bne !ffFrameLoop-
+    
+    lda #$00
+    sta $d020
+    sta callCount + 1
+    jmp !done+
+
+!normalPlay:
 callCount:
     ldx #0
     inx
     cpx NumCallsPerFrame
-    bne JustPlayMusic
+    bne !justPlay+
     ldx #0
 
-JustPlayMusic:
+!justPlay:
     stx callCount + 1
 
-    jsr SIDPlay
+    jsr JustPlayMusic
 
+!done:
     ldx callCount + 1
     jsr set_d011_and_d012
 
     asl $d019
+    pla
+    tay
+    pla
+    tax
+    pla
     rti
 
 init_D011_D012_values:
-	ldx NumCallsPerFrame
-	lda D011_Values_Lookup_Lo, x
-	sta d011_values_ptr + 1
-	lda D011_Values_Lookup_Hi, x
-	sta d011_values_ptr + 2
-	lda D012_Values_Lookup_Lo, x
-	sta d012_values_ptr + 1
-	lda D012_Values_Lookup_Hi, x
-	sta d012_values_ptr + 2
-	rts
+    ldx NumCallsPerFrame
+    lda D011_Values_Lookup_Lo, x
+    sta d011_values_ptr + 1
+    lda D011_Values_Lookup_Hi, x
+    sta d011_values_ptr + 2
+    lda D012_Values_Lookup_Lo, x
+    sta d012_values_ptr + 1
+    lda D012_Values_Lookup_Hi, x
+    sta d012_values_ptr + 2
+    rts
 
 set_d011_and_d012:
 d012_values_ptr:
-	lda $abcd, x
-	sta $d012
-	lda $d011
-	and #$7f
-ora_D011_value:
+    lda $abcd, x
+    sta $d012
+    lda $d011
+    and #$7f
 d011_values_ptr:
-	ora $abcd, x
-	sta $d011
-	rts
+    ora $abcd, x
+    sta $d011
+    rts
 
-//; =============================================================================
-//; DATA SECTION - Raster Line Timing
-//; =============================================================================
+// =============================================================================
+// DATA SECTION - Raster Line Timing
+// =============================================================================
 
-.var FrameHeight = 312 // TODO: NTSC!
+.var FrameHeight = 312
 
 D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
 D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
@@ -232,26 +243,15 @@ D011_Values_Lookup_Hi: .byte >D011_Values_1Call, >D011_Values_1Call, >D011_Value
 D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_1Call, <D012_Values_2Calls, <D012_Values_3Calls, <D012_Values_4Calls, <D012_Values_5Calls, <D012_Values_6Calls, <D012_Values_7Calls, <D012_Values_8Calls
 D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
 
-//; =============================================================================
-//; INCLUDES
-//; =============================================================================
-
-.import source "../INC/Common.asm"
-
-//; =============================================================================
-//; DATA SECTION - Placeholder screen and bitmap data
-//; =============================================================================
+// =============================================================================
+// DATA SECTION - Placeholder screen and bitmap data
+// =============================================================================
 
 * = BITMAP_MAP_DATA "Bitmap MAP Data"
-	.fill $2000, $00
+    .fill $2000, $00
 
 * = BITMAP_SCREEN_DATA "Bitmap SCR Data"
-	.fill $400, $00
+    .fill $400, $00
 
 * = BITMAP_COLOUR_DATA "Bitmap COL Data"
-	.fill $400, $00
-
-
-//; =============================================================================
-//; END OF FILE
-//; =============================================================================
+    .fill $400, $00
