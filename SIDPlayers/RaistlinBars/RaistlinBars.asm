@@ -28,19 +28,39 @@
 //;
 //; =============================================================================
 
-* = $4100 "Main Code"
+.var BASE_ADDRESS = $4000
 
-.var MainAddress = * - $100
-.var SIDInit = MainAddress + 0
-.var SIDPlay = MainAddress + 3
-.var BackupSIDMemory = MainAddress + 6
-.var RestoreSIDMemory = MainAddress + 9
-.var NumCallsPerFrame = MainAddress + 12
-.var BorderColour = MainAddress + 13
-.var BitmapScreenColour = MainAddress + 14
-.var SongNumber = MainAddress + 15
-.var SongName = MainAddress + 16
-.var ArtistName = MainAddress + 16 + 32
+* = BASE_ADDRESS + $100 "Main Code"
+
+    jmp Initialize
+
+.var SIDInit = BASE_ADDRESS + 0
+.var SIDPlay = BASE_ADDRESS + 3
+.var BackupSIDMemory = BASE_ADDRESS + 6
+.var RestoreSIDMemory = BASE_ADDRESS + 9
+.var NumCallsPerFrame = BASE_ADDRESS + 12
+.var BorderColour = BASE_ADDRESS + 13
+.var BitmapScreenColour = BASE_ADDRESS + 14
+.var SongNumber = BASE_ADDRESS + 15
+.var SongName = BASE_ADDRESS + 16
+.var ArtistName = BASE_ADDRESS + 16 + 32
+
+.var LoadAddress = BASE_ADDRESS + $c0
+.var InitAddress = BASE_ADDRESS + $c2
+.var PlayAddress = BASE_ADDRESS + $c4
+.var EndAddress = BASE_ADDRESS + $c6
+.var NumSongs = BASE_ADDRESS + $c8
+.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
+.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
+.var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
+
+.import source "../INC/keyboard.asm"
+
+CurrentSong:      .byte $00
+FastForwardActive:.byte $00
+FFCallCounter:    .byte $00
+ShowRasterBars:   .byte $00
+
 
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
@@ -116,6 +136,9 @@ Initialize: {
 	sta $d011
 	sta $d020
 
+    // Initialize keyboard scanning
+    jsr InitKeyboard
+
 	//; System setup
 	jsr SetupStableRaster
 	jsr SetupSystem
@@ -156,6 +179,8 @@ Initialize: {
 
 	//; Main loop - wait for visualization updates
 MainLoop:
+    jsr CheckKeyboard
+
 	lda visualizationUpdateFlag
 	beq MainLoop
 
@@ -188,27 +213,6 @@ SetupSystem: {
 	sta $dd02
 
 	rts
-}
-
-//; =============================================================================
-//; Macros
-//; =============================================================================
-.macro CallSubroutinesButAvoidCallingThemOnTopOfThemselves(list_of_subroutines_to_call) {
-are_the_subroutines_still_running_lda: lda #0
-    bne !+
-    // Protect against us being invoked again on top of our own invocation
-    lda #1
-    sta are_the_subroutines_still_running_lda + 1
-
-    // Allow interrupts to occur on top of the subroutines we now call
-    cli
-    .for (var i = 0; i < list_of_subroutines_to_call.size(); i++) {
-        jsr list_of_subroutines_to_call.get(i)
-    }
-
-    lda #0
-    sta are_the_subroutines_still_running_lda + 1
-!:
 }
 
 //; =============================================================================
@@ -295,17 +299,16 @@ MainIRQ: {
 	inc frame256Counter
 !skip:
 
-	//; Setup next interrupt
-	jsr NextIRQ
-
-	//; Acknowledge interrupt
-	lda #$01
-	sta $d019
-
 	//; Update bar animations and play music and analyze
 	//; And do it with interrupts acknowledged, so another interrupt can happen while we do so
-	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
-	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(UpdateBarDecay, UpdateColors, UpdateSprites))
+	jsr JustPlayMusic
+	jsr UpdateBarDecay
+	jsr UpdateColors
+	jsr UpdateSprites
+	jsr AnalyseMusic
+
+	//; Setup next interrupt
+	jsr NextIRQ
 
 	pla
 	sta $01
@@ -331,13 +334,10 @@ MusicOnlyIRQ: {
 	pha
 	lda #$35
 	sta $01
+
+	jsr JustPlayMusic
+
 	jsr NextIRQ
-
-	lda #$01
-	sta $d019
-
-    // Call the subroutines after acknowledging the VIC interrupt, so that subsequent interrupts can happen on top of the call. The CallSubroutinesButAvoidCallingThemOnTopOfThemselves() macro will ensure that we do not call the subroutines on top of themselves.
-	CallSubroutinesButAvoidCallingThemOnTopOfThemselves(List().add(PlayMusicWithAnalysis))
 
     pla
     sta $01
@@ -353,7 +353,7 @@ MusicOnlyIRQ: {
 //; INTERRUPT CHAINING
 //; =============================================================================
 
-NextIRQ: {
+NextIRQ:
 
 NextIRQLdx: ldx #$00						//; Self-modified
 	inx
@@ -370,6 +370,8 @@ NextIRQLdx: ldx #$00						//; Self-modified
 	cpx #$00
 	bne !musicOnly+
 
+	lda #$01
+	sta $d019
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -382,25 +384,40 @@ NextIRQLdx: ldx #$00						//; Self-modified
 	lda #>MusicOnlyIRQ
 	sta $ffff
 	rts
-}
 
 //; =============================================================================
 //; MUSIC PLAYBACK WITH ANALYSIS
 //; =============================================================================
 
-PlayMusicWithAnalysis: {
+JustPlayMusic:
 
-	//; First playback - normal music playing with state preservation
-	jsr BackupSIDMemory
+    lda ShowRasterBars
+	beq !skip+
+	lda #$02
+	sta $d020
+!skip:
+
 	jsr SIDPlay
-	jsr RestoreSIDMemory
+
+    lda ShowRasterBars
+	beq !skip+
+	lda #$00
+	sta $d020
+!skip:
+
+	rts
+
+AnalyseMusic:
 
 	//; Second playback - capture SID registers
 	lda $01
 	pha
 	lda #$30
 	sta $01
+
+	jsr BackupSIDMemory
 	jsr SIDPlay
+	jsr RestoreSIDMemory
 
 	ldy #24
 !loop:
@@ -414,7 +431,6 @@ PlayMusicWithAnalysis: {
 
 	//; Analyze captured registers
 	jmp AnalyzeSIDRegisters
-}
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS
@@ -900,14 +916,202 @@ d011_values_ptr:
 	sta $d011
 	rts
 
+CheckKeyboard:
+    jsr CheckSpaceKey
+    jsr CheckF1Key
+    lda F1KeyPressed
+    beq !notF1+
+    lda F1KeyReleased
+    beq !notF1+
+    
+    lda #0
+    sta F1KeyReleased
+    lda ShowRasterBars
+    eor #$01
+    sta ShowRasterBars
+    jmp !done+
+    
+!notF1:
+    lda F1KeyPressed
+    bne !stillF1+
+    lda #1
+    sta F1KeyReleased
+!stillF1:
+
+    lda NumSongs
+    cmp #2
+    bcs !multiSong+
+    rts
+    
+!multiSong:
+    // Check +/- keys for song navigation
+    jsr CheckPlusKey
+    lda PlusKeyPressed
+    beq !notPlus+
+    lda PlusKeyReleased
+    beq !notPlus+
+    
+    lda #0
+    sta PlusKeyReleased
+    jsr NextSong
+    jmp !done+
+    
+!notPlus:
+    lda PlusKeyPressed
+    bne !stillPlus+
+    lda #1
+    sta PlusKeyReleased
+!stillPlus:
+
+    jsr CheckMinusKey
+    lda MinusKeyPressed
+    beq !notMinus+
+    lda MinusKeyReleased
+    beq !notMinus+
+    
+    lda #0
+    sta MinusKeyReleased
+    jsr PrevSong
+    jmp !done+
+    
+!notMinus:
+    lda MinusKeyPressed
+    bne !stillMinus+
+    lda #1
+    sta MinusKeyReleased
+!stillMinus:
+
+    // Check number/letter keys
+    jsr ScanKeyboard
+    cmp #0
+    beq !done+
+    
+    jsr GetKeyWithShift
+    
+    // Check 1-9
+    cmp #'1'
+    bcc !done+
+    cmp #':'
+    bcs !checkLetters+
+    
+    sec
+    sbc #'1'
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLetters:
+    // Check A-Z
+    cmp #'A'
+    bcc !checkLower+
+    cmp #'['
+    bcs !checkLower+
+    
+    sec
+    sbc #'A'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLower:
+    cmp #'a'
+    bcc !done+
+    cmp #'{'
+    bcs !done+
+    
+    sec
+    sbc #'a'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    
+!done:
+    rts
+
+// Direct key checks
+CheckSpaceKey:
+    lda #%01111111
+    sta $DC00
+    lda $DC01
+    and #%00010000
+    eor #%00010000
+    sta FastForwardActive
+    rts
+
+CheckF1Key:
+    lda #%11111110
+    sta $DC00
+    lda $DC01
+    and #%00010000
+    eor #%00010000
+    sta F1KeyPressed
+    rts
+
+CheckPlusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00000001
+    eor #%00000001
+    sta PlusKeyPressed
+    rts
+
+CheckMinusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00001000
+    eor #%00001000
+    sta MinusKeyPressed
+    rts
+
+// Key state variables
+F1KeyPressed:    .byte 0
+F1KeyReleased:   .byte 1
+PlusKeyPressed:  .byte 0
+PlusKeyReleased: .byte 1
+MinusKeyPressed: .byte 0
+MinusKeyReleased:.byte 1
+
+// Song selection
+SelectSong:
+    sta CurrentSong
+    tax
+    tay
+    jsr SIDInit
+    rts
+
+NextSong:
+    lda CurrentSong
+    clc
+    adc #1
+    cmp NumSongs
+    bcc !ok+
+    lda #0
+!ok:
+    jsr SelectSong
+    rts
+
+PrevSong:
+    lda CurrentSong
+    bne !ok+
+    lda NumSongs
+!ok:
+    sec
+    sbc #1
+    jsr SelectSong
+    rts
+
 //; =============================================================================
 //; DATA SECTION - Raster Line Timing
 //; =============================================================================
 
 .var FrameHeight = 312 // TODO: NTSC!
 
-D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
-D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
+D011_Values_1Call: .fill 1, 0
+D012_Values_1Call: .fill 1, 250
 D011_Values_2Calls: .fill 2, (>(mod(250 + ((FrameHeight * i) / 2), 312))) * $80
 D012_Values_2Calls: .fill 2, (<(mod(250 + ((FrameHeight * i) / 2), 312)))
 D011_Values_3Calls: .fill 3, (>(mod(250 + ((FrameHeight * i) / 3), 312))) * $80
