@@ -61,7 +61,7 @@
 .var SongName = BASE_ADDRESS + 16
 .var ArtistName = BASE_ADDRESS + 16 + 32
 
-.const VIC_BANK                         = 1
+.const VIC_BANK							= (BASE_ADDRESS / $4000)
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
 .const BITMAP_BANK                      = 1
 .const SCREEN_BANK                      = 6
@@ -79,39 +79,29 @@
 //; INITIALIZATION ENTRY POINT
 //; =============================================================================
 
-Initialize: {
-    sei                                 //; Disable interrupts during setup
+Initialize:
+    sei
 
-    //; Configure memory mapping
-    lda #$35                            //; Enable KERNAL, BASIC, and I/O
+    lda #$35
     sta $01
 
-    //; Wait for stable raster position
     jsr VSync
 
-    //; Blank screen during initialization
     lda #$00
-    sta $d011                           //; Turn off display
-    sta $d020                           //; Black border
-    sta $d021                           //; Black background
+    sta $d011
+    sta $d020
+    sta $d021
 
-    //; Initialize the music
     lda SongNumber
 	tax
 	tay
     jsr SIDInit
 
-    //; Disable NMI interrupts
     jsr NMIFix
 
-    //; Ensure stable timing
     jsr VSync
 
     jsr init_D011_D012_values
-
-    //; ==========================================================================
-    //; COLOR RAM INITIALIZATION
-    //; ==========================================================================
 
     ldy #$00
 !loop:
@@ -126,43 +116,33 @@ Initialize: {
 	lda BitmapScreenColour
     sta $d021
 
-    //; ==========================================================================
-    //; INTERRUPT SYSTEM SETUP
-    //; ==========================================================================
-
-    //; Set up interrupt vectors
     lda #<MusicIRQ
     sta $fffe
     lda #>MusicIRQ
     sta $ffff
 
-    //; Configure interrupt sources
     lda #$7f
-    sta $dc0d                           //; Disable CIA interrupts
-    lda $dc0d                           //; Acknowledge any pending
+    sta $dc0d
+    lda $dc0d
     lda #$01
-    sta $d01a                           //; Enable raster interrupts
+    sta $d01a
     lda #$01
-    sta $d019                           //; Clear any pending raster interrupt
+    sta $d019
 
-    //; Set VIC bank (bank 0: $0000-$3FFF)
     lda #DD00Value
     sta $dd00
     lda #DD02Value
     sta $dd02
 
-    //; Configure VIC memory pointers
     lda #D018Value
     sta $d018
 
-    //; Set display mode
-    lda #$18                            //; Multicolor mode on
+    lda #$18
     sta $d016
 
-    lda #$00                            //; Sprites off
+    lda #$00
     sta $d015
 
-    //; Wait for stable position before enabling display
     jsr VSync
 
     lda BorderColour
@@ -171,60 +151,47 @@ Initialize: {
     lda #$3b
     sta $d011
 
-    //; Configure first raster position
     ldx #0
     jsr set_d011_and_d012
 
-    cli                                 //; Enable interrupts
+    cli
 
-    //; Main loop - music plays via interrupts
 Forever:
     jmp Forever
-}
 
 //; =============================================================================
 //; VERTICAL SYNC ROUTINE
 //; =============================================================================
-//; Waits for the vertical blank period to ensure stable timing
-//; Registers: Preserves all
 
-VSync: {
-    bit $d011                           //; Wait for raster to leave
-    bpl *-3                             //; the vertical blank area
-    bit $d011                           //; Wait for raster to enter
-    bmi *-3                             //; the vertical blank area
+VSync:
+    bit $d011
+    bpl *-3
+    bit $d011
+    bmi *-3
     rts
-}
 
 //; =============================================================================
 //; MAIN MUSIC INTERRUPT HANDLER
 //; =============================================================================
-//; Handles music playback for multi-speed tunes
-//; No visual effects to maintain clean bitmap display
 
-MusicIRQ: {
-    //; Track which call this is within the frame
+MusicIRQ:
 callCount:
-    ldx #0                              //; Self-modifying counter
+    ldx #0
     inx
     cpx NumCallsPerFrame
     bne JustPlayMusic
-    ldx #0                              //; Reset counter at frame boundary
+    ldx #0
 
 JustPlayMusic:
-    stx callCount + 1                   //; Store updated counter
+    stx callCount + 1
 
-    //; Play the music
     jsr SIDPlay
 
-    //; Set up next interrupt
     ldx callCount + 1
     jsr set_d011_and_d012
 
-    //; Acknowledge interrupt
-    asl $d019                           //; Clear raster interrupt flag
+    asl $d019
     rti
-}
 
 init_D011_D012_values:
 	ldx NumCallsPerFrame
@@ -281,7 +248,6 @@ D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Value
 //; =============================================================================
 //; INCLUDES
 //; =============================================================================
-//; Import common utility routines
 
 .import source "../INC/NMIFix.asm"           //; NMI interrupt protection
 

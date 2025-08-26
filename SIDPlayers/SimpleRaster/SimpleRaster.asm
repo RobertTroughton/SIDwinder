@@ -62,108 +62,87 @@ FFCallCounter:    .byte $00
 //; INITIALIZATION ENTRY POINT
 //; =============================================================================
 
-Initialize: {
-    sei                                 //; Disable interrupts during setup
+Initialize:
+    sei
 
-    //; Configure memory mapping
-    lda #$35                            //; Enable KERNAL, BASIC, and I/O
+    lda #$35
     sta $01
 
-    //; Wait for stable raster position
     jsr VSync
 
-    //; Blank screen during initialization
     lda #$00
-    sta $d011                           //; Turn off display
-    sta $d020                           //; Black border
+    sta $d011
+    sta $d020
 
-    // Initialize keyboard scanning
     jsr InitKeyboard
 
-    // Initialize variables
     lda SongNumber
     sta CurrentSong
     
-    // Check if NumSongs is set, default to 1 if not
     lda NumSongs
     bne !skip+
     lda #1
     sta NumSongs
 !skip:
 
-    // Initialize the music
     lda CurrentSong
     tax
     tay
     jsr SIDInit
 
-    //; Ensure we're at a stable position
     jsr VSync
 
-    //; Disable NMI interrupts to prevent interference
     jsr NMIFix
 
     jsr init_D011_D012_values
 
-    //; Set up interrupt vectors
     lda #<MusicIRQ
     sta $fffe
     lda #>MusicIRQ
     sta $ffff
 
-    //; Configure first raster position
     ldx #0
 	jsr set_d011_and_d012
 
-    //; Configure interrupt sources
     lda #$7f
-    sta $dc0d                           //; Disable CIA interrupts
-    lda $dc0d                           //; Acknowledge any pending
+    sta $dc0d
+    lda $dc0d
     lda #$01
-    sta $d01a                           //; Enable raster interrupts
+    sta $d01a
     lda #$01
-    sta $d019                           //; Clear any pending raster interrupt
+    sta $d019
 
-    cli                                 //; Enable interrupts
+    cli
 
-    //; Main loop - the music plays via interrupts
 Forever:
     jsr CheckKeyboard
     jmp Forever
-}
 
 //; =============================================================================
 //; VERTICAL SYNC ROUTINE
 //; =============================================================================
-//; Waits for the vertical blank period to ensure stable timing
-//; Registers: Preserves all
 
-VSync: {
-    bit $d011                           //; Wait for raster to leave
-    bpl *-3                             //; the vertical blank area
-    bit $d011                           //; Wait for raster to enter
-    bmi *-3                             //; the vertical blank area
+VSync:
+    bit $d011
+    bpl *-3
+    bit $d011
+    bmi *-3
     rts
-}
 
 //; =============================================================================
 //; MAIN MUSIC INTERRUPT HANDLER
 //; =============================================================================
-//; Handles music playback and visual feedback
-//; Automatically manages multiple calls per frame for multi-speed tunes
 
-MusicIRQ: {
+MusicIRQ:
     pha
     txa
     pha
     tya
     pha
 
-    // Check if we're in fast-forward mode
     lda FastForwardActive
     beq !normalPlay+
     
-    // Fast forward - call multiple times
 !ffFrameLoop:
     lda NumCallsPerFrame
     sta FFCallCounter
@@ -224,7 +203,6 @@ ColChangeFrame:
     tax
     pla
     rti
-}
 
 init_D011_D012_values:
 	ldx NumCallsPerFrame
@@ -438,7 +416,6 @@ D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Value
 //; =============================================================================
 //; INCLUDES
 //; =============================================================================
-//; Import common utility routines
 
 .import source "../INC/NMIFix.asm"           //; NMI interrupt protection
 

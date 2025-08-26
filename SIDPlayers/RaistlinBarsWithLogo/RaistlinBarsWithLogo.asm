@@ -28,6 +28,19 @@
 //;
 //; =============================================================================
 
+//; Memory Map
+
+//; On Load
+//; VICBANK + $2000-$2C7F : Logo Bitmap (10 * $140)
+//; VICBANK + $3000-$318F : Logo Screen Data
+//; VICBANK + $3400-$358F : Logo Colour Data
+
+//; Real-time
+//; VICBANK + $2000-$2C7F : Logo Bitmap (10 * $140)
+//; VICBANK + $3000-$33FF : Screen 0
+//; VICBANK + $3400-$37FF : Screen 1
+//; VICBANK + $3800-$3FFF : CharSet
+
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
@@ -67,26 +80,27 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK							= 1 //; $C000-$FFFF
+.const VIC_BANK							= (BASE_ADDRESS / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 
-.const SCREEN0_BANK						= 4	//; $5000-53E7
-.const SCREEN1_BANK						= 5	//; $5400-57E7
-.const CHARSET_BANK						= 3 //; $5800-5FFF
-.const BITMAP_BANK						= 1 //; $6000-7F3F
-.const SPRITE_BASE_INDEX				= $38 //; $4E00-4FFF
+.const SCREEN0_BANK						= 12	//; $7000-$73FF
+.const SCREEN1_BANK						= 13	//; $7400-$77FF
+.const CHARSET_BANK						= 7		//; $7800-$7FFF
+.const BITMAP_BANK						= 1		//; $6000-$6C7F
+.const SPRITE_BASE_INDEX				= $38	//; $4E00-$4FFF
 
 //; Calculated addresses
-.const BITMAP_SCR0_DATA					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
-.const BITMAP_SCR1_DATA					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
-.const BITMAP_COL_DATA					= BITMAP_SCR1_DATA //; on load, we have the COL data in the SCR1 data
+.const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
+.const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
+.const BITMAP_COL_DATA					= SCREEN1_ADDRESS //; on load, we have the COL data in the SCR1 data
 .const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
-.const BITMAP_MAP_DATA					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+
 .const SPRITES_ADDRESS					= VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
-.const SPRITE_POINTERS_0				= BITMAP_SCR0_DATA + $3F8
-.const SPRITE_POINTERS_1				= BITMAP_SCR1_DATA + $3F8
+.const SPRITE_POINTERS_0				= SCREEN0_ADDRESS + $3F8
+.const SPRITE_POINTERS_1				= SCREEN1_ADDRESS + $3F8
 
 //; VIC register values
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
@@ -114,26 +128,19 @@
 //; INITIALIZATION
 //; =============================================================================
 
-Initialize: {
+Initialize:
 	sei
 
-	//; Wait for stable raster before setup
-	bit $d011
-	bpl *-3
-	bit $d011
-	bmi *-3
+	jsr VSync
 
-	//; Turn off display during initialization
 	lda #$00
 	sta $d011
 	sta $d020
 
-	//; System setup
 	jsr SetupStableRaster
 	jsr SetupSystem
 	jsr NMIFix
 
-	//; Initialize display
 	jsr InitializeVIC
 	jsr DrawScreens
 
@@ -146,26 +153,20 @@ Initialize: {
 	cpy #NUM_FREQUENCY_BARS + 4
 	bne !loop-
 
-	//; Setup interrupts
 	jsr SetupInterrupts
 
-	//; Initialize music
 	jsr SetupMusic
-
-	bit $d011
-	bpl *-3
-	bit $d011
-	bmi *-3
-
-	lda BorderColour
-	sta $d020
 
 	lda BitmapScreenColour
 	sta $d021
 
+	jsr VSync
+
+	lda BorderColour
+	sta $d020
+
 	cli
 
-	//; Main loop - wait for visualization updates
 MainLoop:
 	lda visualizationUpdateFlag
 	beq MainLoop
@@ -176,30 +177,26 @@ MainLoop:
 	lda #$00
 	sta visualizationUpdateFlag
 
-	//; Toggle double buffer
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
 
 	jmp MainLoop
-}
 
 //; =============================================================================
 //; SYSTEM SETUP
 //; =============================================================================
 
-SetupSystem: {
+SetupSystem:
 	lda #$35
 	sta $01
 
-	//; Set VIC bank
 	lda #(63 - VIC_BANK)
 	sta $dd00
 	lda #VIC_BANK
 	sta $dd02
 
 	rts
-}
 
 //; =============================================================================
 //; VIC INITIALIZATION
@@ -207,8 +204,7 @@ SetupSystem: {
 
 .const SKIP_REGISTER = $e1
 
-InitializeVIC: {
-	//; Apply VIC register configuration
+InitializeVIC:
 	ldx #VICConfigEnd - VICConfigStart - 1
 !loop:
 	lda VICConfigStart, x
@@ -219,43 +215,37 @@ InitializeVIC: {
 	dex
 	bpl !loop-
 
-	//; Initialize color palette
 	jsr InitializeColors
 
 	rts
-}
 
 //; =============================================================================
 //; INTERRUPT SETUP
 //; =============================================================================
 
-SetupInterrupts: {
-	//; Set IRQ vectors
+SetupInterrupts:
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
 	sta $ffff
 
-	//; Setup raster interrupt
 	lda #251
 	sta $d012
 	lda $d011
 	and #$7f
 	sta $d011
 
-	//; Enable raster interrupts
 	lda #$01
 	sta $d01a
 	sta $d019
 
 	rts
-}
 
 //; =============================================================================
 //; MAIN INTERRUPT HANDLER
 //; =============================================================================
 
-MainIRQ: {
+MainIRQ:
 	pha
 	txa
 	pha
@@ -275,18 +265,14 @@ MainIRQ: {
 	lda D018Values, y
 	sta SpectrometerD018 + 1
 
-	//; Signal visualization update
 	inc visualizationUpdateFlag
 
-	//; Play music and analyze
 	jsr PlayMusicWithAnalysis
 
-	//; Update bar animations
 	jsr UpdateBarDecay
 	jsr UpdateColors
 	jsr UpdateSprites
 
-	//; Frame counter
 	inc frameCounter
 	bne !skip+
 	inc frame256Counter
@@ -302,7 +288,6 @@ MainIRQ: {
 	lda #>SpectrometerDisplayIRQ
 	sta $ffff
 
-	//; Acknowledge interrupt
 	lda #$01
 	sta $d01a
 	sta $d019
@@ -313,7 +298,6 @@ MainIRQ: {
 	tax
 	pla
 	rti
-}
 
 SpectrometerDisplayIRQ:
 	pha
@@ -338,7 +322,6 @@ SpectrometerD018:
 	lda #$08
 	sta $d016
 
-	//; Signal visualization update
 	inc visualizationUpdateFlag
 
 	lda #251
@@ -349,7 +332,6 @@ SpectrometerD018:
 	lda #>MainIRQ
 	sta $ffff
 
-	//; Acknowledge interrupt
 	lda #$01
 	sta $d01a
 	sta $d019
@@ -365,14 +347,12 @@ SpectrometerD018:
 //; MUSIC PLAYBACK WITH ANALYSIS
 //; =============================================================================
 
-PlayMusicWithAnalysis: {
+PlayMusicWithAnalysis:
 
-	//; First playback - normal music playing with state preservation
 	jsr BackupSIDMemory
 	jsr SIDPlay
 	jsr RestoreSIDMemory
 
-	//; Second playback - capture SID registers
 	lda $01
 	pha
 	lda #$30
@@ -389,35 +369,28 @@ PlayMusicWithAnalysis: {
 	pla
 	sta $01
 
-	//; Analyze captured registers
 	jmp AnalyzeSIDRegisters
-}
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS
 //; =============================================================================
 
-AnalyzeSIDRegisters: {
-	//; Process each voice
+AnalyzeSIDRegisters:
 	.for (var voice = 0; voice < 3; voice++) {
-		//; Check if voice is active
-		lda sidRegisterMirror + (voice * 7) + 4		//; Control register
-		bmi !skipVoice+									//; Skip if noise
-		and #$01										//; Check gate
+		lda sidRegisterMirror + (voice * 7) + 4
+		bmi !skipVoice+
+		and #$01
 		beq !skipVoice+
 
-		//; Get frequency and map to bar position
-		ldy sidRegisterMirror + (voice * 7) + 1		//; Frequency high
+		ldy sidRegisterMirror + (voice * 7) + 1
 		cpy #4
 		bcc !lowFreq+
 
-		//; High frequency lookup
 		ldx frequencyToBarHi, y
 		jmp !gotBar+
 
 	!lowFreq:
-		//; Low frequency lookup
-		ldx sidRegisterMirror + (voice * 7) + 0		//; Frequency low
+		ldx sidRegisterMirror + (voice * 7) + 0
 		txa
 		lsr
 		lsr
@@ -426,11 +399,9 @@ AnalyzeSIDRegisters: {
 		ldx frequencyToBarLo, y
 
 	!gotBar:
-		//; Process envelope
-		lda sidRegisterMirror + (voice * 7) + 6		//; SR register
+		lda sidRegisterMirror + (voice * 7) + 6
 		pha
 
-		//; Set release rate for this voice
 		and #$0f
 		tay
 		lda releaseRateHi, y
@@ -438,7 +409,6 @@ AnalyzeSIDRegisters: {
 		lda releaseRateLo, y
 		sta voiceReleaseLo + voice
 
-		//; Check sustain level
 		pla
 		lsr
 		lsr
@@ -453,42 +423,36 @@ AnalyzeSIDRegisters: {
 	!skipVoice:
 	}
 	rts
-}
 
 //; =============================================================================
 //; BAR ANIMATION
 //; =============================================================================
 
-UpdateBarDecay: {
-	//; Apply decay and interpolation to each bar
+UpdateBarDecay:
 	ldx #NUM_FREQUENCY_BARS - 1
 !loop:
-	//; Check if we have a new target
 	lda targetBarHeights, x
 	beq !justDecay+
 	
-	//; We have a target - interpolate towards it
 	cmp barHeights, x
-	beq !clearTarget+			//; Already at target
-	bcc !moveDown+				//; Target is lower
+	beq !clearTarget+
+	bcc !moveDown+
 	
-	//; Target is higher - move up quickly
 	lda barHeights, x
 	clc
 	adc #BAR_INCREASE_RATE
 	cmp targetBarHeights, x
 	bcc !storeHeight+
-	lda targetBarHeights, x		//; Don't overshoot
+	lda targetBarHeights, x
 	jmp !storeHeight+
 	
 !moveDown:
-	//; Target is lower - move down slowly
 	lda barHeights, x
 	sec
 	sbc #BAR_DECREASE_RATE
 	cmp targetBarHeights, x
 	bcs !storeHeight+
-	lda targetBarHeights, x		//; Don't undershoot
+	lda targetBarHeights, x
 	
 !storeHeight:
 	sta barHeights, x
@@ -496,16 +460,13 @@ UpdateBarDecay: {
 	sta barHeightsLo, x
 	
 !clearTarget:
-	//; Clear target once reached
 	lda #$00
 	sta targetBarHeights, x
 	jmp !next+
 	
 !justDecay:
-	//; No target - apply normal decay
 	ldy barVoiceMap, x
 
-	//; 16-bit subtraction for smooth decay
 	sec
 	lda barHeightsLo, x
 	sbc voiceReleaseLo, y
@@ -514,7 +475,6 @@ UpdateBarDecay: {
 	sbc voiceReleaseHi, y
 	bpl !positive+
 
-	//; Clamp to zero
 	lda #$00
 	sta barHeightsLo, x
 !positive:
@@ -524,14 +484,12 @@ UpdateBarDecay: {
 	dex
 	bpl !loop-
 	rts
-}
 
 //; =============================================================================
 //; SMOOTHING ALGORITHM
 //; =============================================================================
 
-ApplySmoothing: {
-	//; Apply gaussian-like smoothing for natural movement
+ApplySmoothing:
 	ldx #0
 !loop:
 	lda barHeights, x
@@ -550,14 +508,12 @@ ApplySmoothing: {
 	cpx #NUM_FREQUENCY_BARS
 	bne !loop-
 	rts
-}
 
 //; =============================================================================
 //; RENDERING
 //; =============================================================================
 
-RenderBars: {
-	//; Update colors first
+RenderBars:
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
@@ -569,12 +525,10 @@ RenderBars: {
 	beq !colorLoop-
 	sta previousColors, y
 
-	//; Update main bars
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
-	//; Update reflection with darker color
 	tax
 	lda darkerColorMap, x
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
@@ -584,20 +538,15 @@ RenderBars: {
 
 !colorsDone:
 
-	//; Render to appropriate screen buffer
 	lda currentScreenBuffer
 	beq !renderScreen1+
 
-	//; Render to screen 0
 	jmp RenderToScreen0
 
 !renderScreen1:
-	//; Render to screen 1
 	jmp RenderToScreen1
-}
 
-//; Screen-specific rendering routines
-RenderToScreen0: {
+RenderToScreen0:
 	ldy #NUM_FREQUENCY_BARS
 !loop:
 	dey
@@ -611,13 +560,11 @@ RenderToScreen0: {
 	sta previousHeightsScreen0, y
 	tax
 
-	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta BITMAP_SCR0_DATA + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
-	//; Draw reflection
 	txa
 	lsr
 	tax
@@ -625,12 +572,11 @@ RenderToScreen0: {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		clc
 		adc #10
-		sta BITMAP_SCR0_DATA + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN0_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-}
 
-RenderToScreen1: {
+RenderToScreen1:
 	ldy #NUM_FREQUENCY_BARS
 !loop:
 	dey
@@ -644,13 +590,11 @@ RenderToScreen1: {
 	sta previousHeightsScreen1, y
 	tax
 
-	//; Draw main bar
 	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
 		lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
-		sta BITMAP_SCR1_DATA + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 
-	//; Draw reflection
 	txa
 	lsr
 	tax
@@ -658,17 +602,15 @@ RenderToScreen1: {
 		lda barCharacterMap - REFLECTION_OFFSET + (line * 8), x
 		clc
 		adc #20
-		sta BITMAP_SCR1_DATA + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-}
 
 //; =============================================================================
 //; COLOR MANAGEMENT
 //; =============================================================================
 
-UpdateColors: {
-	//; Update color cycling on 256-frame boundaries
+UpdateColors:
 	lda frameCounter
 	bne !done+
 
@@ -676,7 +618,6 @@ UpdateColors: {
 	lda #$00
 	sta colorUpdateIndex
 
-	//; Cycle to next palette
 	ldx currentPalette
 	inx
 	cpx #NUM_COLOR_PALETTES
@@ -685,18 +626,16 @@ UpdateColors: {
 !setPalette:
 	stx currentPalette
 
-	//; Update palette pointers
 	lda colorPalettesLo, x
 	sta !readColor+ + 1
 	lda colorPalettesHi, x
 	sta !readColor+ + 2
 
 !done:
-	//; Gradual color update
 	ldx colorUpdateIndex
 	bmi !exit+
 
-	lda #$0b							//; Default color
+	lda #$0b
 	ldy heightToColorIndex, x
 	bmi !useDefault+
 !readColor:
@@ -712,22 +651,20 @@ UpdateColors: {
 	sta colorUpdateIndex
 !exit:
 	rts
-}
 
 //; =============================================================================
 //; SPRITE ANIMATION
 //; =============================================================================
 
-UpdateSprites: {
+UpdateSprites:
 	ldx spriteAnimationIndex
 
-	//; Update X positions from sine table
 	lda spriteSineTable, x
 	.for (var i = 0; i < 8; i++) {
 		sta $d000 + (i * 2)
 		.if (i != 7) {
 			clc
-			adc #$30					//; 48 pixels between sprites
+			adc #$30
 		}
 	}
 	ldy #$c0
@@ -737,7 +674,6 @@ UpdateSprites: {
 !skip:
 	sty $d010
 
-	//; Update sprite pointers
 	lda frameCounter
 	lsr
 	lsr
@@ -755,38 +691,31 @@ UpdateSprites: {
 	sta spriteAnimationIndex
 
 	rts
-}
 
 //; =============================================================================
 //; UTILITY FUNCTIONS
 //; =============================================================================
 
-DrawScreens: {
+DrawScreens:
 
 	ldy #00
 !loop:
-	lda BITMAP_COL_DATA + (0 * 200), y
-	sta $d800 + (0 * 200), y
-	lda BITMAP_COL_DATA + (1 * 200), y
-	sta $d800 + (1 * 200), y
-	lda #$00
-	sta $d800 + (2 * 200), y
-	sta $d800 + (3 * 200), y
-	sta $d800 + (4 * 200), y
+	.for (var i = 0; i < 4; i++)
+	{
+		lda BITMAP_COL_DATA + (i * 256), y
+		sta $d800 + (i * 256), y
+	}
 	iny
-	cpy #200
 	bne !loop-
 
-//; add the song title to screen 0
 	ldy #31
 !loop:
-	//; Song Title
 	lda SongName, y
-	sta BITMAP_SCR0_DATA + (SONG_TITLE_LINE * 40) + 4, y
-	sta BITMAP_SCR1_DATA + (SONG_TITLE_LINE * 40) + 4, y
+	sta SCREEN0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
+	sta SCREEN1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
 	ora #$80
-	sta BITMAP_SCR0_DATA + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	sta BITMAP_SCR1_DATA + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
+	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	lda #$01
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
@@ -794,13 +723,11 @@ DrawScreens: {
 	bpl !loop-
 
 	rts
-}
 
-InitializeColors: {
-	//; Initialize bar colors
+InitializeColors:
 	ldx #0
 !loop:
-	lda #$0b							//; Default cyan
+	lda #$0b
 	ldy heightToColorIndex, x
 	bmi !useDefault+
 	lda colorPalettes, y
@@ -810,10 +737,8 @@ InitializeColors: {
 	cpx #MAX_BAR_HEIGHT + 5
 	bne !loop-
 	rts
-}
 
-SetupMusic: {
-	//; Clear SID
+SetupMusic:
 	ldy #24
 	lda #$00
 !loop:
@@ -821,12 +746,21 @@ SetupMusic: {
 	dey
 	bpl !loop-
 
-	//; Initialize player
     lda SongNumber
 	tax
 	tay
 	jmp SIDInit
-}
+
+//; =============================================================================
+//; VERTICAL SYNC ROUTINE
+//; =============================================================================
+
+VSync:
+    bit $d011
+    bpl *-3
+    bit $d011
+    bmi *-3
+    rts
 
 //; =============================================================================
 //; DATA SECTION - VIC Configuration
@@ -954,11 +888,11 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 .import source "../INC/NMIFix.asm"
 .import source "../INC/StableRasterSetup.asm"
 
-.import source "../INC/FreqTable.asm"
-
 .align 128
 div16:						.fill 128, i / 16.0
 div16mul3:					.fill 128, ((3.0 * i) / 16.0)
+
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; SPRITE DATA
@@ -1011,16 +945,16 @@ div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
 	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
 
-* = BITMAP_SCR0_DATA "Screen 0"
+* = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20
 
-* = BITMAP_SCR1_DATA "Screen 1"
+* = SCREEN1_ADDRESS "Screen 1"
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20
 
-* = BITMAP_MAP_DATA "Bitmap"
-	.fill $2000, $00
+* = BITMAP_ADDRESS "Bitmap"
+	.fill $C80, $00
 
 //; =============================================================================
 //; END OF FILE
