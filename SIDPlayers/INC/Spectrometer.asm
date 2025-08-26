@@ -2,9 +2,6 @@
 //;                           BAR ANALYSIS MODULE
 //;              Common SID Analysis and Bar Animation Functions
 //; =============================================================================
-//; Extracted from RaistlinBars visualizers for code reuse
-//; Requires configuration constants to be defined before inclusion
-//; =============================================================================
 
 #importonce
 
@@ -14,11 +11,6 @@
 //; - BAR_INCREASE_RATE
 //; - BAR_DECREASE_RATE
 //; - MAX_BAR_HEIGHT
-
-//; Required memory locations:
-//; - SIDPlay (routine address)
-//; - BackupSIDMemory (routine address)
-//; - RestoreSIDMemory (routine address)
 
 //; =============================================================================
 //; BAR STATE DATA
@@ -60,9 +52,6 @@ voiceReleaseHi:             .fill 3, 0
 .align 3
 voiceReleaseLo:             .fill 3, 0
 
-.align 32
-sidRegisterMirror:          .fill 32, 0
-
 //; =============================================================================
 //; CALCULATION TABLES
 //; =============================================================================
@@ -77,37 +66,11 @@ div16:                      .fill 128, i / 16.0
 div16mul3:                  .fill 128, ((3.0 * i) / 16.0)
 
 //; =============================================================================
-//; MUSIC PLAYBACK WITH ANALYSIS
-//; =============================================================================
-
-PlayMusicWithAnalysis:
-    jsr BackupSIDMemory
-    jsr SIDPlay
-    jsr RestoreSIDMemory
-
-    lda $01
-    pha
-    lda #$30
-    sta $01
-    jsr SIDPlay
-
-    ldy #24
-!loop:
-    lda $d400, y
-    sta sidRegisterMirror, y
-    dey
-    bpl !loop-
-
-    pla
-    sta $01
-
-    jmp AnalyzeSIDRegisters
-
-//; =============================================================================
 //; SID REGISTER ANALYSIS
 //; =============================================================================
 
 AnalyzeSIDRegisters:
+    // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
         bmi !skipVoice+

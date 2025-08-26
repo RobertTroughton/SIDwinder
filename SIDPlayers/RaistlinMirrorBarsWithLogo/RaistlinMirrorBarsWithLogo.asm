@@ -60,6 +60,21 @@
 .var SongName = BASE_ADDRESS + 16
 .var ArtistName = BASE_ADDRESS + 16 + 32
 
+.var LoadAddress = BASE_ADDRESS + $c0
+.var InitAddress = BASE_ADDRESS + $c2
+.var PlayAddress = BASE_ADDRESS + $c4
+.var EndAddress = BASE_ADDRESS + $c6
+.var NumSongs = BASE_ADDRESS + $c8
+.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
+.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
+.var ZPUsageData = BASE_ADDRESS + $e0   // Formatted ZP usage string
+
+//; =============================================================================
+//; EXTERNAL RESOURCES
+//; =============================================================================
+
+.var file_charsetData = LoadBinary("CharSet.map")
+
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
@@ -100,10 +115,20 @@
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
 
 //; =============================================================================
-//; EXTERNAL RESOURCES
+//; INCLUDES
 //; =============================================================================
 
-.var file_charsetData = LoadBinary("CharSet.map")
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+#define INCLUDE_MUSIC_ANALYSIS
+
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+.import source "../INC/StableRasterSetup.asm"
+.import source "../INC/Spectrometer.asm"
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; INITIALIZATION
@@ -117,6 +142,8 @@ Initialize:
 	lda #$00
 	sta $d011
 	sta $d020
+
+    jsr InitKeyboard
 
 	jsr SetupStableRaster
 	jsr SetupSystem
@@ -134,9 +161,21 @@ Initialize:
 	cpy #NUM_FREQUENCY_BARS + 4
 	bne !loop-
 
-	jsr SetupInterrupts
-
 	jsr SetupMusic
+
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+
+	lda #251
+	sta $d012
+	lda #$7b
+	sta $d011
+
+	lda #$01
+	sta $d01a
+	sta $d019
 
 	lda BitmapScreenColour
 	sta $d021
@@ -149,6 +188,8 @@ Initialize:
 	cli
 
 MainLoop:
+    jsr CheckKeyboard
+
 	lda visualizationUpdateFlag
 	beq MainLoop
 
@@ -196,28 +237,6 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
-
-	rts
-
-//; =============================================================================
-//; INTERRUPT SETUP
-//; =============================================================================
-
-SetupInterrupts:
-
-	lda #<MainIRQ
-	sta $fffe
-	lda #>MainIRQ
-	sta $ffff
-
-	lda #251
-	sta $d012
-	lda #$7b
-	sta $d011
-
-	lda #$01
-	sta $d01a
-	sta $d019
 
 	rts
 
@@ -523,15 +542,6 @@ heightColorTable:
 barCharacterMap:
 	.fill 8, 225 + i
 	.fill MAX_BAR_HEIGHT, 233
-
-//; =============================================================================
-//; INCLUDES
-//; =============================================================================
-
-.import source "../INC/Common.asm"
-.import source "../INC/StableRasterSetup.asm"
-.import source "../INC/Spectrometer.asm"
-.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; CHARSET AND BITMAP DATA

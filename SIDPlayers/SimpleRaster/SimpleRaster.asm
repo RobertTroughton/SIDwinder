@@ -52,11 +52,17 @@
 .var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
 .var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
 
-.import source "../INC/keyboard.asm"
+//; =============================================================================
+//; INCLUDES
+//; =============================================================================
 
-CurrentSong:      .byte $00
-FastForwardActive:.byte $00
-FFCallCounter:    .byte $00
+#define INCLUDE_SPACE_FASTFORWARD
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -217,163 +223,6 @@ d011_values_ptr:
 	sta $d011
 	rts
 
-CheckKeyboard:
-    jsr CheckSpaceKey
-
-    lda NumSongs
-    cmp #2
-    bcs !multiSong+
-    rts
-    
-!multiSong:
-    // Check +/- keys for song navigation
-    jsr CheckPlusKey
-    lda PlusKeyPressed
-    beq !notPlus+
-    lda PlusKeyReleased
-    beq !notPlus+
-    
-    lda #0
-    sta PlusKeyReleased
-    jsr NextSong
-    jmp !done+
-    
-!notPlus:
-    lda PlusKeyPressed
-    bne !stillPlus+
-    lda #1
-    sta PlusKeyReleased
-!stillPlus:
-
-    jsr CheckMinusKey
-    lda MinusKeyPressed
-    beq !notMinus+
-    lda MinusKeyReleased
-    beq !notMinus+
-    
-    lda #0
-    sta MinusKeyReleased
-    jsr PrevSong
-    jmp !done+
-    
-!notMinus:
-    lda MinusKeyPressed
-    bne !stillMinus+
-    lda #1
-    sta MinusKeyReleased
-!stillMinus:
-
-    // Check number/letter keys
-    jsr ScanKeyboard
-    cmp #0
-    beq !done+
-    
-    jsr GetKeyWithShift
-    
-    // Check 1-9
-    cmp #'1'
-    bcc !done+
-    cmp #':'
-    bcs !checkLetters+
-    
-    sec
-    sbc #'1'
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    jmp !done+
-    
-!checkLetters:
-    // Check A-Z
-    cmp #'A'
-    bcc !checkLower+
-    cmp #'['
-    bcs !checkLower+
-    
-    sec
-    sbc #'A'-9
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    jmp !done+
-    
-!checkLower:
-    cmp #'a'
-    bcc !done+
-    cmp #'{'
-    bcs !done+
-    
-    sec
-    sbc #'a'-9
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    
-!done:
-    rts
-
-// Direct key checks
-CheckSpaceKey:
-    lda #%01111111
-    sta $DC00
-    lda $DC01
-    and #%00010000
-    eor #%00010000
-    sta FastForwardActive
-    rts
-
-CheckPlusKey:
-    lda #%11011111
-    sta $DC00
-    lda $DC01
-    and #%00000001
-    eor #%00000001
-    sta PlusKeyPressed
-    rts
-
-CheckMinusKey:
-    lda #%11011111
-    sta $DC00
-    lda $DC01
-    and #%00001000
-    eor #%00001000
-    sta MinusKeyPressed
-    rts
-
-// Key state variables
-PlusKeyPressed:  .byte 0
-PlusKeyReleased: .byte 1
-MinusKeyPressed: .byte 0
-MinusKeyReleased:.byte 1
-
-// Song selection
-SelectSong:
-    sta CurrentSong
-    tax
-    tay
-    jmp SIDInit
-
-NextSong:
-    lda CurrentSong
-    clc
-    adc #1
-    cmp NumSongs
-    bcc !ok+
-    lda #0
-!ok:
-    jsr SelectSong
-    rts
-
-PrevSong:
-    lda CurrentSong
-    bne !ok+
-    lda NumSongs
-!ok:
-    sec
-    sbc #1
-    jsr SelectSong
-    rts
-    
 //; =============================================================================
 //; DATA SECTION - Raster Line Timing
 //; =============================================================================
@@ -401,12 +250,6 @@ D011_Values_Lookup_Lo: .byte <D011_Values_1Call, <D011_Values_1Call, <D011_Value
 D011_Values_Lookup_Hi: .byte >D011_Values_1Call, >D011_Values_1Call, >D011_Values_2Calls, >D011_Values_3Calls, >D011_Values_4Calls, >D011_Values_5Calls, >D011_Values_6Calls, >D011_Values_7Calls, >D011_Values_8Calls
 D012_Values_Lookup_Lo: .byte <D012_Values_1Call, <D012_Values_1Call, <D012_Values_2Calls, <D012_Values_3Calls, <D012_Values_4Calls, <D012_Values_5Calls, <D012_Values_6Calls, <D012_Values_7Calls, <D012_Values_8Calls
 D012_Values_Lookup_Hi: .byte >D012_Values_1Call, >D012_Values_1Call, >D012_Values_2Calls, >D012_Values_3Calls, >D012_Values_4Calls, >D012_Values_5Calls, >D012_Values_6Calls, >D012_Values_7Calls, >D012_Values_8Calls
-
-//; =============================================================================
-//; INCLUDES
-//; =============================================================================
-
-.import source "../INC/Common.asm"
 
 //; =============================================================================
 //; END OF FILE

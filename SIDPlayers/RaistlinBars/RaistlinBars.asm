@@ -62,15 +62,14 @@
 .var NumSongs = BASE_ADDRESS + $c8
 .var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
 .var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
-.var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
+.var ZPUsageData = BASE_ADDRESS + $e0   // Formatted ZP usage string
 
-.import source "../INC/keyboard.asm"
+//; =============================================================================
+//; EXTERNAL RESOURCES
+//; =============================================================================
 
-CurrentSong:      .byte $00
-FastForwardActive:.byte $00
-FFCallCounter:    .byte $00
-ShowRasterBars:   .byte $00
-
+.var file_charsetData = LoadBinary("CharSet.map")
+.var file_waterSpritesData = LoadBinary("WaterSprites.map")
 
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
@@ -117,11 +116,20 @@ ShowRasterBars:   .byte $00
 .const COLORS_PER_PALETTE				= 8
 
 //; =============================================================================
-//; EXTERNAL RESOURCES
+//; INCLUDES
 //; =============================================================================
 
-.var file_charsetData = LoadBinary("CharSet.map")
-.var file_waterSpritesData = LoadBinary("WaterSprites.map")
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+#define INCLUDE_MUSIC_ANALYSIS
+
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+.import source "../INC/StableRasterSetup.asm"
+.import source "../INC/Spectrometer.asm"
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; INITIALIZATION
@@ -158,12 +166,24 @@ Initialize:
 
 	jsr SetupMusic
 
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+	lda #$01
+	sta $d01a
+	sta $d019
+
+	ldx #$00
+	jsr set_d011_and_d012
+
+	lda #$00
+	sta NextIRQ + 1
+
 	jsr VSync
 
 	lda #$1b
 	sta $d011
-
-	jsr SetupInterrupts
 
 	cli
 
@@ -219,29 +239,6 @@ InitializeVIC:
 	bpl !loop-
 
 	jsr InitializeColors
-
-	rts
-
-//; =============================================================================
-//; INTERRUPT SETUP
-//; =============================================================================
-
-SetupInterrupts:
-
-	lda #<MainIRQ
-	sta $fffe
-	lda #>MainIRQ
-	sta $ffff
-
-	ldx #$00
-	jsr set_d011_and_d012
-
-	lda #$01
-	sta $d01a
-	sta $d019
-
-	lda #$00
-	sta NextIRQ + 1
 
 	rts
 
@@ -353,51 +350,6 @@ NextIRQLdx:
 	lda #>MusicOnlyIRQ
 	sta $ffff
 	rts
-
-//; =============================================================================
-//; MUSIC PLAYBACK WITH ANALYSIS
-//; =============================================================================
-
-JustPlayMusic:
-
-    lda ShowRasterBars
-	beq !skip+
-	lda #$02
-	sta $d020
-!skip:
-
-	jsr SIDPlay
-
-    lda ShowRasterBars
-	beq !skip+
-	lda #$00
-	sta $d020
-!skip:
-
-	rts
-
-AnalyseMusic:
-
-	lda $01
-	pha
-	lda #$30
-	sta $01
-
-	jsr BackupSIDMemory
-	jsr SIDPlay
-	jsr RestoreSIDMemory
-
-	ldy #24
-!loop:
-	lda $d400, y
-	sta sidRegisterMirror, y
-	dey
-	bpl !loop-
-
-	pla
-	sta $01
-
-	jmp AnalyzeSIDRegisters
 
 //; =============================================================================
 //; RENDERING
@@ -693,194 +645,6 @@ d011_values_ptr:
 	sta $d011
 	rts
 
-CheckKeyboard:
-    jsr CheckSpaceKey
-    jsr CheckF1Key
-    lda F1KeyPressed
-    beq !notF1+
-    lda F1KeyReleased
-    beq !notF1+
-    
-    lda #0
-    sta F1KeyReleased
-    lda ShowRasterBars
-    eor #$01
-    sta ShowRasterBars
-    jmp !done+
-    
-!notF1:
-    lda F1KeyPressed
-    bne !stillF1+
-    lda #1
-    sta F1KeyReleased
-!stillF1:
-
-    lda NumSongs
-    cmp #2
-    bcs !multiSong+
-    rts
-    
-!multiSong:
-    // Check +/- keys for song navigation
-    jsr CheckPlusKey
-    lda PlusKeyPressed
-    beq !notPlus+
-    lda PlusKeyReleased
-    beq !notPlus+
-    
-    lda #0
-    sta PlusKeyReleased
-    jsr NextSong
-    jmp !done+
-    
-!notPlus:
-    lda PlusKeyPressed
-    bne !stillPlus+
-    lda #1
-    sta PlusKeyReleased
-!stillPlus:
-
-    jsr CheckMinusKey
-    lda MinusKeyPressed
-    beq !notMinus+
-    lda MinusKeyReleased
-    beq !notMinus+
-    
-    lda #0
-    sta MinusKeyReleased
-    jsr PrevSong
-    jmp !done+
-    
-!notMinus:
-    lda MinusKeyPressed
-    bne !stillMinus+
-    lda #1
-    sta MinusKeyReleased
-!stillMinus:
-
-    // Check number/letter keys
-    jsr ScanKeyboard
-    cmp #0
-    beq !done+
-    
-    jsr GetKeyWithShift
-    
-    // Check 1-9
-    cmp #'1'
-    bcc !done+
-    cmp #':'
-    bcs !checkLetters+
-    
-    sec
-    sbc #'1'
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    jmp !done+
-    
-!checkLetters:
-    // Check A-Z
-    cmp #'A'
-    bcc !checkLower+
-    cmp #'['
-    bcs !checkLower+
-    
-    sec
-    sbc #'A'-9
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    jmp !done+
-    
-!checkLower:
-    cmp #'a'
-    bcc !done+
-    cmp #'{'
-    bcs !done+
-    
-    sec
-    sbc #'a'-9
-    cmp NumSongs
-    bcs !done+
-    jsr SelectSong
-    
-!done:
-    rts
-
-// Direct key checks
-CheckSpaceKey:
-    lda #%01111111
-    sta $DC00
-    lda $DC01
-    and #%00010000
-    eor #%00010000
-    sta FastForwardActive
-    rts
-
-CheckF1Key:
-    lda #%11111110
-    sta $DC00
-    lda $DC01
-    and #%00010000
-    eor #%00010000
-    sta F1KeyPressed
-    rts
-
-CheckPlusKey:
-    lda #%11011111
-    sta $DC00
-    lda $DC01
-    and #%00000001
-    eor #%00000001
-    sta PlusKeyPressed
-    rts
-
-CheckMinusKey:
-    lda #%11011111
-    sta $DC00
-    lda $DC01
-    and #%00001000
-    eor #%00001000
-    sta MinusKeyPressed
-    rts
-
-// Key state variables
-F1KeyPressed:    .byte 0
-F1KeyReleased:   .byte 1
-PlusKeyPressed:  .byte 0
-PlusKeyReleased: .byte 1
-MinusKeyPressed: .byte 0
-MinusKeyReleased:.byte 1
-
-// Song selection
-SelectSong:
-    sta CurrentSong
-    tax
-    tay
-    jsr SIDInit
-    rts
-
-NextSong:
-    lda CurrentSong
-    clc
-    adc #1
-    cmp NumSongs
-    bcc !ok+
-    lda #0
-!ok:
-    jsr SelectSong
-    rts
-
-PrevSong:
-    lda CurrentSong
-    bne !ok+
-    lda NumSongs
-!ok:
-    sec
-    sbc #1
-    jsr SelectSong
-    rts
-
 //; =============================================================================
 //; DATA SECTION - Raster Line Timing
 //; =============================================================================
@@ -994,15 +758,6 @@ barCharacterMap:
 //; =============================================================================
 
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
-
-//; =============================================================================
-//; INCLUDES
-//; =============================================================================
-
-.import source "../INC/Common.asm"
-.import source "../INC/StableRasterSetup.asm"
-.import source "../INC/Spectrometer.asm"
-.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; SPRITE DATA

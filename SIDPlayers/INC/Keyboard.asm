@@ -1,19 +1,18 @@
-// keyboard.asm - Non-kernel keyboard scanning routines
+// keyboard.asm - Unified keyboard handling for SIDwinder visualizers
 // =============================================================================
-//                          KEYBOARD SCANNER MODULE
-//                     Direct hardware keyboard scanning for C64
-// =============================================================================
-// Part of the SIDwinder player collection
-// Provides kernel-independent keyboard scanning functionality
+//                          KEYBOARD HANDLER MODULE
+//                     Unified keyboard handling for all visualizers
 // =============================================================================
 
-// CIA#1 Port A and B for keyboard scanning
-.const CIA1_PRA = $dc00  // Port A (keyboard column write)
-.const CIA1_PRB = $dc01  // Port B (keyboard row read)
-.const CIA1_DDRA = $dc02 // Data direction register A
-.const CIA1_DDRB = $dc03 // Data direction register B
+#importonce
 
-// Special key codes (non-ASCII)
+// CIA#1 Port registers
+.const CIA1_PRA = $dc00  
+.const CIA1_PRB = $dc01  
+.const CIA1_DDRA = $dc02 
+.const CIA1_DDRB = $dc03 
+
+// Special key codes (non-ASCII) - ALL needed for the matrix table
 .const KEY_F1 = $85
 .const KEY_F3 = $86
 .const KEY_F5 = $87
@@ -29,33 +28,269 @@
 .const KEY_COMMODORE = $00
 
 // Variables for keyboard handling
-CurrentKeyMatrix:   .byte 0     // Currently detected matrix position
-CurrentKey:         .byte 0     // Currently pressed key (ASCII/special)
-LastKey:            .byte 0     // Last pressed key for debouncing
-KeyReleased:        .byte 1     // Flag for key release detection
-DebounceCounter:    .byte 0     // Debounce counter
-.const DEBOUNCE_DELAY = 5       // Frames to wait for debounce
+CurrentKeyMatrix:   .byte 0     
+CurrentKey:         .byte 0     
+LastKey:            .byte 0     
+KeyReleased:        .byte 1     
+DebounceCounter:    .byte 0     
+.const DEBOUNCE_DELAY = 5       
+
+// Common variables (always allocated but conditionally used)
+CurrentSong:        .byte $00
+ShowRasterBars:     .byte $00
+
+#if INCLUDE_SPACE_FASTFORWARD
+FastForwardActive:  .byte $00
+FFCallCounter:      .byte $00
+#endif
+
+// Key state tracking
+#if INCLUDE_F1_SHOWRASTERTIMINGBAR
+F1KeyPressed:       .byte 0
+F1KeyReleased:      .byte 1
+#endif
+
+#if INCLUDE_PLUS_MINUS_SONGCHANGE
+PlusKeyPressed:     .byte 0
+PlusKeyReleased:    .byte 1
+MinusKeyPressed:    .byte 0
+MinusKeyReleased:   .byte 1
+#endif
+
+// =============================================================================
+// Main keyboard check routine
+// =============================================================================
+CheckKeyboard:
+    #if INCLUDE_SPACE_FASTFORWARD
+    jsr CheckSpaceKey
+    #endif
+    
+    #if INCLUDE_F1_SHOWRASTERTIMINGBAR
+    jsr CheckF1Key
+    lda F1KeyPressed
+    beq !notF1+
+    lda F1KeyReleased
+    beq !notF1+
+    
+    lda #0
+    sta F1KeyReleased
+    lda ShowRasterBars
+    eor #$01
+    sta ShowRasterBars
+    jmp !checkSongKeys+
+    
+!notF1:
+    lda F1KeyPressed
+    bne !stillF1+
+    lda #1
+    sta F1KeyReleased
+!stillF1:
+    #endif
+
+!checkSongKeys:
+    // Check if we have multiple songs
+    lda NumSongs
+    cmp #2
+    bcs !multiSong+
+    rts
+    
+!multiSong:
+    #if INCLUDE_PLUS_MINUS_SONGCHANGE
+    // Check +/- keys
+    jsr CheckPlusKey
+    lda PlusKeyPressed
+    beq !notPlus+
+    lda PlusKeyReleased
+    beq !notPlus+
+    
+    lda #0
+    sta PlusKeyReleased
+    jsr NextSong
+    jmp !done+
+    
+!notPlus:
+    lda PlusKeyPressed
+    bne !stillPlus+
+    lda #1
+    sta PlusKeyReleased
+!stillPlus:
+
+    jsr CheckMinusKey
+    lda MinusKeyPressed
+    beq !notMinus+
+    lda MinusKeyReleased
+    beq !notMinus+
+    
+    lda #0
+    sta MinusKeyReleased
+    jsr PrevSong
+    jmp !done+
+    
+!notMinus:
+    lda MinusKeyPressed
+    bne !stillMinus+
+    lda #1
+    sta MinusKeyReleased
+!stillMinus:
+    #endif
+
+    #if INCLUDE_09ALPHA_SONGCHANGE
+    // Check number/letter keys
+    jsr ScanKeyboard
+    cmp #0
+    beq !done+
+    
+    jsr GetKeyWithShift
+    
+    // Check 1-9
+    cmp #'1'
+    bcc !done+
+    cmp #':'
+    bcs !checkLetters+
+    
+    sec
+    sbc #'1'
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLetters:
+    // Check A-Z
+    cmp #'A'
+    bcc !checkLower+
+    cmp #'['
+    bcs !checkLower+
+    
+    sec
+    sbc #'A'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLower:
+    cmp #'a'
+    bcc !done+
+    cmp #'{'
+    bcs !done+
+    
+    sec
+    sbc #'a'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    #endif
+    
+!done:
+    rts
 
 // =============================================================================
 // Initialize keyboard scanning
 // =============================================================================
 InitKeyboard:
-    // Set up CIA ports for keyboard scanning
     lda #$ff
-    sta CIA1_DDRA  // Port A all outputs (columns)
+    sta CIA1_DDRA
     lda #$00
-    sta CIA1_DDRB  // Port B all inputs (rows)
+    sta CIA1_DDRB
     
-    // Clear keyboard state
     lda #0
     sta CurrentKeyMatrix
     sta CurrentKey
     sta LastKey
     sta DebounceCounter
+    sta CurrentSong
+    sta ShowRasterBars
     lda #1
     sta KeyReleased
     
+    #if INCLUDE_SPACE_FASTFORWARD
+    lda #0
+    sta FastForwardActive
+    sta FFCallCounter
+    #endif
+    
     rts
+
+// =============================================================================
+// Direct key checks
+// =============================================================================
+
+#if INCLUDE_SPACE_FASTFORWARD
+CheckSpaceKey:
+    lda #%01111111
+    sta $DC00
+    lda $DC01
+    and #%00010000
+    eor #%00010000
+    sta FastForwardActive
+    rts
+#endif
+
+#if INCLUDE_F1_SHOWRASTERTIMINGBAR
+CheckF1Key:
+    lda #%11111110
+    sta $DC00
+    lda $DC01
+    and #%00010000
+    eor #%00010000
+    sta F1KeyPressed
+    rts
+#endif
+
+#if INCLUDE_PLUS_MINUS_SONGCHANGE
+CheckPlusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00000001
+    eor #%00000001
+    sta PlusKeyPressed
+    rts
+
+CheckMinusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00001000
+    eor #%00001000
+    sta MinusKeyPressed
+    rts
+#endif
+
+// =============================================================================
+// Song selection
+// =============================================================================
+
+SelectSong:
+    sta CurrentSong
+    tax
+    tay
+    jsr SIDInit
+    rts
+
+#if INCLUDE_PLUS_MINUS_SONGCHANGE
+NextSong:
+    lda CurrentSong
+    clc
+    adc #1
+    cmp NumSongs
+    bcc !ok+
+    lda #0
+!ok:
+    jsr SelectSong
+    rts
+
+PrevSong:
+    lda CurrentSong
+    bne !ok+
+    lda NumSongs
+!ok:
+    sec
+    sbc #1
+    jsr SelectSong
+    rts
+#endif
 
 // =============================================================================
 // Scan keyboard matrix - with proper debouncing

@@ -98,8 +98,18 @@
 .const COLOR_RAM = $d800
 .const ROW_WIDTH = 40
 
-// Import the keyboard scanner module
+//; =============================================================================
+//; INCLUDES
+//; =============================================================================
+
+#define INCLUDE_SPACE_FASTFORWARD
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+
+.import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
 
 // =============================================================================
 // INITIALIZATION ENTRY POINT
@@ -203,20 +213,15 @@ MainLoop:
 // RUNTIME VARIABLES (stored as local data, not in zero page)
 // =============================================================================
 
-CurrentSong:      .byte $00
 TimerSeconds:     .byte $00
 TimerMinutes:     .byte $00
 FrameCounter:     .byte $00
-ShowRasterBars:   .byte $00
 FramesPerSecond:  .byte $32  // Default to 50 (PAL)
 
 // Temporary storage for print routines
 TempStorage:      .byte $00
 CursorX:          .byte $00
 CursorY:          .byte $00
-
-FastForwardActive:  .byte $00
-FFCallCounter:      .byte $00
 
 // =============================================================================
 // POPULATE METADATA (called by linker or filled by PRG builder)
@@ -680,236 +685,6 @@ UpdateTimer:
     sta TimerSeconds
 
 !done:
-    rts
-
-// =============================================================================
-// KEYBOARD HANDLER (Now using hardware scanning with proper debouncing)
-// =============================================================================
-
-CheckKeyboard:
-    // Check SPACE key (already working)
-    jsr CheckSpaceKey
-    
-    // Check F1 key directly
-    jsr CheckF1Key
-    lda F1KeyPressed
-    beq !notF1+
-    lda F1KeyReleased
-    beq !notF1+  // Still held from last time
-    
-    // F1 was just pressed
-    lda #0
-    sta F1KeyReleased
-    lda ShowRasterBars
-    eor #$01
-    sta ShowRasterBars
-    jmp !done+
-    
-!notF1:
-    lda F1KeyPressed
-    bne !stillF1+
-    lda #1
-    sta F1KeyReleased  // F1 released, ready for next press
-!stillF1:
-
-    // Only check song selection keys if we have multiple songs
-    lda NumSongs
-    cmp #2
-    bcs !skip+
-    rts
-!skip:
-    
-    // Check + key directly
-    jsr CheckPlusKey
-    lda PlusKeyPressed
-    beq !notPlus+
-    lda PlusKeyReleased
-    beq !notPlus+  // Still held from last time
-    
-    // + was just pressed
-    lda #0
-    sta PlusKeyReleased
-    jsr NextSong
-    jmp !done+
-    
-!notPlus:
-    lda PlusKeyPressed
-    bne !stillPlus+
-    lda #1
-    sta PlusKeyReleased  // + released, ready for next press
-!stillPlus:
-
-    // Check - key directly
-    jsr CheckMinusKey
-    lda MinusKeyPressed
-    beq !notMinus+
-    lda MinusKeyReleased
-    beq !notMinus+  // Still held from last time
-    
-    // - was just pressed
-    lda #0
-    sta MinusKeyReleased
-    jsr PrevSong
-    jmp !done+
-    
-!notMinus:
-    lda MinusKeyPressed
-    bne !stillMinus+
-    lda #1
-    sta MinusKeyReleased  // - released, ready for next press
-!stillMinus:
-
-    // For letter/number keys, use the general scanner
-    jsr ScanKeyboard
-    
-    // Check if we got a key (0 means no key or still debouncing)
-    cmp #0
-    beq !done+
-    
-    // We have a debounced key press
-    sta TempStorage
-    
-    // Get the key with shift detection for letters
-    lda TempStorage
-    jsr GetKeyWithShift
-    sta TempStorage
-    
-    lda TempStorage
-    
-    // Check 1-9 (for songs 1-9)
-    cmp #'1'
-    bcc !notDigit+
-    cmp #':'  // '9'+1
-    bcs !notDigit+
-    
-    // Convert 1-9 to 0-8 (internal song numbers)
-    sec
-    sbc #'1'  // '1' becomes 0, '2' becomes 1, etc.
-    cmp NumSongs
-    bcs !done+
-    
-    jsr SelectSong
-    jmp !done+
-    
-!notDigit:
-    // Check A-Z (uppercase) for songs 10-35
-    cmp #'A'
-    bcc !checkLowercase+
-    cmp #'['  // 'Z'+1
-    bcs !checkLowercase+
-    
-    // Uppercase letter - A=song 10 (index 9)
-    sec
-    sbc #'A'-9  // 'A' becomes 9, 'B' becomes 10, etc.
-    cmp NumSongs
-    bcs !done+
-    
-    jsr SelectSong
-    jmp !done+
-    
-!checkLowercase:
-    // Check a-z (lowercase) for songs 10-35
-    cmp #'a'
-    bcc !done+
-    cmp #'{'  // 'z'+1
-    bcs !done+
-    
-    // Lowercase letter - a=song 10 (index 9)
-    sec
-    sbc #'a'-9  // 'a' becomes 9, 'b' becomes 10, etc.
-    cmp NumSongs
-    bcs !done+
-    
-    jsr SelectSong
-    
-!done:
-    rts
-
-// Direct hardware key checks
-CheckSpaceKey:
-    ldx #$00
-    lda #%01111111  // Row 7
-    sta $DC00
-    lda $DC01
-    and #%00010000  // Column 4 (SPACE)
-    eor #%00010000
-    sta FastForwardActive
-    rts
-
-CheckF1Key:
-    lda #%11111110  // Row 0
-    sta $DC00
-    lda $DC01
-    and #%00010000  // Column 4 (F1)
-    eor #%00010000
-    sta F1KeyPressed
-    rts
-
-CheckPlusKey:
-    lda #%11011111  // Row 5
-    sta $DC00
-    lda $DC01
-    and #%00000001  // Column 0 (+)
-    eor #%00000001
-    sta PlusKeyPressed
-    rts
-
-CheckMinusKey:
-    lda #%11011111  // Row 5
-    sta $DC00
-    lda $DC01
-    and #%00001000  // Column 3 (-)
-    eor #%00001000
-    sta MinusKeyPressed
-    rts
-
-// Key state variables
-F1KeyPressed:    .byte 0
-F1KeyReleased:   .byte 1
-PlusKeyPressed:  .byte 0
-PlusKeyReleased: .byte 1
-MinusKeyPressed: .byte 0
-MinusKeyReleased:.byte 1
-
-// =============================================================================
-// SONG SELECTION
-// =============================================================================
-
-SelectSong:
-    sta CurrentSong
-    
-    // Re-init with new song
-    tax
-    tay
-    jsr SIDInit
-    
-    // Reset timer
-    lda #0
-    sta TimerSeconds
-    sta TimerMinutes
-    sta FrameCounter
-    
-    rts
-
-NextSong:
-    lda CurrentSong
-    clc
-    adc #1
-    cmp NumSongs
-    bcc !ok+
-    lda #0
-!ok:
-    jsr SelectSong
-    rts
-
-PrevSong:
-    lda CurrentSong
-    bne !ok+
-    lda NumSongs
-!ok:
-    sec
-    sbc #1
-    jsr SelectSong
     rts
 
 // =============================================================================

@@ -55,6 +55,21 @@
 .var SongName = BASE_ADDRESS + 16
 .var ArtistName = BASE_ADDRESS + 16 + 32
 
+.var LoadAddress = BASE_ADDRESS + $c0
+.var InitAddress = BASE_ADDRESS + $c2
+.var PlayAddress = BASE_ADDRESS + $c4
+.var EndAddress = BASE_ADDRESS + $c6
+.var NumSongs = BASE_ADDRESS + $c8
+.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
+.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
+.var ZPUsageData = BASE_ADDRESS + $e0   // Formatted ZP usage string
+
+//; =============================================================================
+//; EXTERNAL RESOURCES
+//; =============================================================================
+
+.var file_charsetData = LoadBinary("CharSet.map")
+
 //; =============================================================================
 //; CONFIGURATION CONSTANTS
 //; =============================================================================
@@ -90,10 +105,20 @@
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
 
 //; =============================================================================
-//; EXTERNAL RESOURCES
+//; INCLUDES
 //; =============================================================================
 
-.var file_charsetData = LoadBinary("CharSet.map")
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+#define INCLUDE_MUSIC_ANALYSIS
+
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+.import source "../INC/StableRasterSetup.asm"
+.import source "../INC/Spectrometer.asm"
+.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; INITIALIZATION
@@ -107,6 +132,8 @@ Initialize:
 	lda #$00
 	sta $d011
 	sta $d020
+
+    jsr InitKeyboard
 
 	jsr SetupStableRaster
 	jsr SetupSystem
@@ -128,16 +155,31 @@ Initialize:
 
 	jsr SetupMusic
 
+	lda #<MainIRQ
+	sta $fffe
+	lda #>MainIRQ
+	sta $ffff
+
+	ldx #$00
+	jsr set_d011_and_d012
+
+	lda #$01
+	sta $d01a
+	sta $d019
+
+	lda #$00
+	sta NextIRQ + 1
+
 	jsr VSync
 
 	lda #$1b
 	sta $d011
 
-	jsr SetupInterrupts
-
 	cli
 
 MainLoop:
+    jsr CheckKeyboard
+
 	lda visualizationUpdateFlag
 	beq MainLoop
 
@@ -188,29 +230,6 @@ InitializeVIC:
 	rts
 
 //; =============================================================================
-//; INTERRUPT SETUP
-//; =============================================================================
-
-SetupInterrupts:
-
-	lda #<MainIRQ
-	sta $fffe
-	lda #>MainIRQ
-	sta $ffff
-
-	ldx #$00
-	jsr set_d011_and_d012
-
-	lda #$01
-	sta $d01a
-	sta $d019
-
-	lda #$00
-	sta NextIRQ + 1
-
-	rts
-
-//; =============================================================================
 //; MAIN INTERRUPT HANDLER
 //; =============================================================================
 
@@ -228,11 +247,11 @@ MainIRQ:
 	sta $d018
 !skip:
 
+	jsr PlayMusicWithAnalysis
+
 	inc visualizationUpdateFlag
 
 	jsr UpdateBarDecay
-
-	jsr PlayMusicWithAnalysis
 
 	inc frameCounter
 	bne !skip+
@@ -481,8 +500,8 @@ d011_values_ptr:
 
 .var FrameHeight = 312 // TODO: NTSC!
 
-D011_Values_1Call: .fill 1, (>(mod(250 + ((FrameHeight * i) / 1), 312))) * $80
-D012_Values_1Call: .fill 1, (<(mod(250 + ((FrameHeight * i) / 1), 312)))
+D011_Values_1Call: .fill 1, 0
+D012_Values_1Call: .fill 1, 250
 D011_Values_2Calls: .fill 2, (>(mod(250 + ((FrameHeight * i) / 2), 312))) * $80
 D012_Values_2Calls: .fill 2, (<(mod(250 + ((FrameHeight * i) / 2), 312)))
 D011_Values_3Calls: .fill 3, (>(mod(250 + ((FrameHeight * i) / 3), 312))) * $80
@@ -576,15 +595,6 @@ heightColorTable:
 barCharacterMap:
 	.fill 8, 225 + i
 	.fill MAX_BAR_HEIGHT, 233
-
-//; =============================================================================
-//; INCLUDES
-//; =============================================================================
-
-.import source "../INC/Common.asm"
-.import source "../INC/StableRasterSetup.asm"
-.import source "../INC/Spectrometer.asm"
-.import source "../INC/FreqTable.asm"
 
 //; =============================================================================
 //; CHARSET DATA
