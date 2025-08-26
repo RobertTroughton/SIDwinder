@@ -26,7 +26,7 @@ JustPlayMusic:
     lda #$00
     sta $d020
 !skip:
-    #endif
+    #endif // INCLUDE_F1_SHOWRASTERTIMINGBAR
 
     rts
 
@@ -57,7 +57,7 @@ AnalyseMusic:
     jmp AnalyzeSIDRegisters
 
 sidRegisterMirror: .fill 25, 0
-#endif
+#endif // INCLUDE_MUSIC_ANALYSIS
 
 // =============================================================================
 // Combined playback routine for visualizers
@@ -65,6 +65,5 @@ sidRegisterMirror: .fill 25, 0
 #if INCLUDE_MUSIC_ANALYSIS
 PlayMusicWithAnalysis:
     jsr JustPlayMusic
-    jsr AnalyseMusic
-    rts
-#endif
+    jmp AnalyseMusic
+#endif // INCLUDE_MUSIC_ANALYSIS
