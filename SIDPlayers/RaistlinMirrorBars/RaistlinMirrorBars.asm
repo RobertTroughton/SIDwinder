@@ -584,8 +584,6 @@ barCharacterMap:
 .import source "../INC/Common.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
-
-.align 256
 .import source "../INC/FreqTable.asm"
 
 //; =============================================================================

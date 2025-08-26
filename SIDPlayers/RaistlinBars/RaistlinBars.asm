@@ -1002,8 +1002,6 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 .import source "../INC/Common.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
-
-.align 256
 .import source "../INC/FreqTable.asm"
 
 //; =============================================================================

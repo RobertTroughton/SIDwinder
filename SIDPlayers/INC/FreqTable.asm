@@ -2,6 +2,47 @@
 //; DATA SECTION - Lookup Tables
 //; =============================================================================
 
+.var SUSTAINBOOST = 8
+.align 16
+releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
+
+.align 16
+releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
+
+.align 16
+sustainToHeight:			.fill 16, ((i + SUSTAINBOOST) * MAX_BAR_HEIGHT) / (16 - 1 + SUSTAINBOOST)
+
+.align 256
 frequencyToBarHi:
 .byte $00, $02, $06, $08, $0A, $0C, $0D, $0E, $0F, $0F, $10, $11, $12, $12, $12, $13 // 00-0F
 .byte $14, $14, $14, $14, $15, $15, $16, $16, $16, $17, $17, $17, $17, $18, $18, $18 // 10-1F
@@ -20,6 +61,7 @@ frequencyToBarHi:
 .byte $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $27, $27, $27, $27, $27, $27 // E0-EF
 .byte $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27 // F0-FF
 
+.align 256
 frequencyToBarLo:
 .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00 // 00-0F
 .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00 // 10-1F
@@ -37,43 +79,3 @@ frequencyToBarLo:
 .byte $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 // D0-DF
 .byte $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $09, $09, $09, $09, $09, $09 // E0-EF
 .byte $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09 // F0-FF
-
-//; Envelope conversions
-
-.var SUSTAINBOOST = 8
-sustainToHeight:			.fill 16, ((i + SUSTAINBOOST) * MAX_BAR_HEIGHT) / (16 - 1 + SUSTAINBOOST)
-
-releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-
-releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-

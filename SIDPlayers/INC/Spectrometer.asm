@@ -24,37 +24,56 @@
 //; BAR STATE DATA
 //; =============================================================================
 
+.align NUM_FREQUENCY_BARS
 barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
+
+.align NUM_FREQUENCY_BARS
 barVoiceMap:                .fill NUM_FREQUENCY_BARS, 0
+
+.align NUM_FREQUENCY_BARS
 targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
 
+.align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
 previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 
+.align NUM_FREQUENCY_BARS
+smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
+
+.align NUM_FREQUENCY_BARS + 4
 .byte $00, $00
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
-
-smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
 
 //; =============================================================================
 //; VOICE STATE DATA
 //; =============================================================================
 
+.align 3
 voiceReleaseHi:             .fill 3, 0
+
+.align 3
 voiceReleaseLo:             .fill 3, 0
+
+.align 32
 sidRegisterMirror:          .fill 32, 0
 
 //; =============================================================================
 //; CALCULATION TABLES
 //; =============================================================================
 
+.align 4
 multiply64Table:            .fill 4, i * 64
 
-//; Aligned for optimal access
 .align 128
 div16:                      .fill 128, i / 16.0
+
+.align 128
 div16mul3:                  .fill 128, ((3.0 * i) / 16.0)
 
 //; =============================================================================
