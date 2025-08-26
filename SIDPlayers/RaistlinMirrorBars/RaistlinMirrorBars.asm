@@ -28,6 +28,16 @@
 //;
 //; =============================================================================
 
+//; Memory Map
+
+//; On Load
+//; VICBANK + $3800-$3FFF : CharSet
+
+//; Real-time
+//; VICBANK + $3000-$33FF : Screen 0
+//; VICBANK + $3400-$37FF : Screen 1
+//; VICBANK + $3800-$3FFF : CharSet
+
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
@@ -64,11 +74,11 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK							= 1 //; $4000-$7FFF
+.const VIC_BANK							= 1
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
-.const SCREEN0_BANK						= 4 //; $5000-$53FF
-.const SCREEN1_BANK						= 5 //; $5400-$57FF
-.const CHARSET_BANK						= 3 //; $5800-$5FFF
+.const SCREEN0_BANK						= 12
+.const SCREEN1_BANK						= 13
+.const CHARSET_BANK						= 7
 
 //; Calculated addresses
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
@@ -629,22 +639,16 @@ RenderToScreen1: {
 //; =============================================================================
 
 ClearScreens: {
-	ldx #$00
+	ldy #$00
 	lda #$20							//; Space character
 !loop:
-	sta SCREEN0_ADDRESS + $000, x
-	sta SCREEN0_ADDRESS + $100, x
-	sta SCREEN0_ADDRESS + $200, x
-	sta SCREEN0_ADDRESS + $300, x
-	sta SCREEN1_ADDRESS + $000, x
-	sta SCREEN1_ADDRESS + $100, x
-	sta SCREEN1_ADDRESS + $200, x
-	sta SCREEN1_ADDRESS + $300, x
-	sta $d800 + $000, x
-	sta $d800 + $100, x
-	sta $d800 + $200, x
-	sta $d800 + $300, x
-	inx
+	.for (var i = 0; i < 4; i++)
+	{
+		sta SCREEN0_ADDRESS + (i * 256), y
+		sta SCREEN1_ADDRESS + (i * 256), y
+		sta $d800 + (i * 256), y
+	}
+	iny
 	bne !loop-
 	rts
 }

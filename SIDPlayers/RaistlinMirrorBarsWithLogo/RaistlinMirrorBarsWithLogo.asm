@@ -30,6 +30,20 @@
 //;
 //; =============================================================================
 
+
+//; Memory Map
+
+//; On Load
+//; VICBANK + $2000-$2C7F : Logo Bitmap (10 * $140)
+//; VICBANK + $3000-$318F : Logo Screen Data
+//; VICBANK + $3400-$358F : Logo Colour Data
+
+//; Real-time
+//; VICBANK + $2000-$2C7F : Logo Bitmap (10 * $140)
+//; VICBANK + $3000-$33FF : Screen 0
+//; VICBANK + $3400-$37FF : Screen 1
+//; VICBANK + $3800-$3FFF : CharSet
+
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
@@ -69,9 +83,9 @@
 //; Memory configuration
 .const VIC_BANK							= 1 //; $4000-$7FFF
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
-.const SCREEN0_BANK						= 4 //; $5000-$53FF
-.const SCREEN1_BANK						= 5 //; $5400-$57FF
-.const CHARSET_BANK						= 3 //; $5800-$5FFF
+.const SCREEN0_BANK						= 12 //; $7000-$73FF
+.const SCREEN1_BANK						= 13 //; $7400-$77FF
+.const CHARSET_BANK						= 7 //; $7800-$7FFF
 .const BITMAP_BANK						= 1 //; $6000-$7F3F
 
 //; Calculated addresses
@@ -635,16 +649,12 @@ DrawScreens: {
 
 	ldy #00
 !loop:
-	lda SCREEN1_ADDRESS + (0 * 200), y
-	sta $d800 + (0 * 200), y
-	lda SCREEN1_ADDRESS + (1 * 200), y
-	sta $d800 + (1 * 200), y
-	lda #$00
-	sta $d800 + (2 * 200), y
-	sta $d800 + (3 * 200), y
-	sta $d800 + (4 * 200), y
+	.for (var i = 0; i < 4; i++)
+	{
+		lda SCREEN1_ADDRESS + (i * 256), y
+		sta $d800 + (i * 256), y
+	}
 	iny
-	cpy #200
 	bne !loop-
 
 //; add the song title to screen 0
@@ -846,7 +856,7 @@ div16mul3:					.fill 128, ((3.0 * i) / 16.0)
 	.fill $400 - (LOGO_HEIGHT * 40), $20
 
 * = BITMAP_ADDRESS "Bitmap"
-	.fill $2000, $00
+	.fill $C80, $00
 
 //; =============================================================================
 //; END OF FILE

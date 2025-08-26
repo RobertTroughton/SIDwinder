@@ -32,6 +32,18 @@
 //;
 //; =============================================================================
 
+//; Memory Map
+
+//; On Load
+//; VICBANK + $2000-$3f3f : Bitmap
+//; VICBANK + $1800-$1BFF : Screen Data
+//; VICBANK + $1C00-$1FFF : Colour Data
+
+//; Real-time
+//; VICBANK + $2000-$3f3f : Bitmap
+//; VICBANK + $1800-$1BFF : Screen Data
+//; VICBANK + $1C00-$1FFF : Colour Data
+
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
@@ -51,17 +63,17 @@
 
 .const VIC_BANK                         = 1
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
-.const BITMAP_BANK                      = 1                                             //; $6000-7fff
-.const COLOUR_BANK                      = 6 //; temp store - to be copied to $d800      //; $5800-5bff
-.const SCREEN_BANK                      = 7                                             //; $5c00-5fff
+.const BITMAP_BANK                      = 1
+.const SCREEN_BANK                      = 6
+.const COLOUR_BANK                      = 7
 
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 .const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
 
 .const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
-.const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 .const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
+.const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -89,11 +101,11 @@ Initialize: {
 	tay
     jsr SIDInit
 
-    //; Ensure stable timing
-    jsr VSync
-
     //; Disable NMI interrupts
     jsr NMIFix
+
+    //; Ensure stable timing
+    jsr VSync
 
     jsr init_D011_D012_values
 
@@ -133,20 +145,6 @@ Initialize: {
     lda #$01
     sta $d019                           //; Clear any pending raster interrupt
 
-    //; Wait for stable position before enabling display
-    jsr VSync
-
-    lda BorderColour
-    sta $d020
-
-    //; Configure first raster position
-    ldx #0
-    jsr set_d011_and_d012
-
-    //; ==========================================================================
-    //; VIC-II BITMAP MODE CONFIGURATION
-    //; ==========================================================================
-
     //; Set VIC bank (bank 0: $0000-$3FFF)
     lda #DD00Value
     sta $dd00
@@ -160,14 +158,22 @@ Initialize: {
     //; Set display mode
     lda #$18                            //; Multicolor mode on
     sta $d016
+
     lda #$00                            //; Sprites off
     sta $d015
 
-    //; Enable bitmap display
-    lda $d011
-    and #$80                            //; Preserve raster high bit
-    ora #$3b                            //; Bitmap mode, display on, 25 rows
+    //; Wait for stable position before enabling display
+    jsr VSync
+
+    lda BorderColour
+    sta $d020
+
+    lda #$3b
     sta $d011
+
+    //; Configure first raster position
+    ldx #0
+    jsr set_d011_and_d012
 
     cli                                 //; Enable interrupts
 

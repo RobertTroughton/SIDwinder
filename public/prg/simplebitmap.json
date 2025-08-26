@@ -21,13 +21,13 @@
         {
           "name": "screen",
           "sourceOffset": "0x1F42",
-          "targetAddress": "0x5C00",
+          "targetAddress": "0x5800",
           "size": "0x03E8"
         },
         {
           "name": "color",
           "sourceOffset": "0x232A",
-          "targetAddress": "0x5800",
+          "targetAddress": "0x5C00",
           "size": "0x03E8"
         },
         {
