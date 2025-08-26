@@ -28,21 +28,22 @@
 //;
 //; =============================================================================
 
-* = $4100 "Main Code"
+.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
-.var MainAddress = * - $100
-.var SIDInit = MainAddress + 0
-.var SIDPlay = MainAddress + 3
-.var BackupSIDMemory = MainAddress + 6
-.var RestoreSIDMemory = MainAddress + 9
-.var NumCallsPerFrame = MainAddress + 12
-.var BorderColour = MainAddress + 13
-.var BitmapScreenColour = MainAddress + 14
-.var SongNumber = MainAddress + 15
-.var SongName = MainAddress + 16
-.var ArtistName = MainAddress + 16 + 32
+* = BASE_ADDRESS + $100 "Main Code"
 
-	jmp Initialize					//; Entry point for the player
+	jmp Initialize
+
+.var SIDInit = BASE_ADDRESS + 0
+.var SIDPlay = BASE_ADDRESS + 3
+.var BackupSIDMemory = BASE_ADDRESS + 6
+.var RestoreSIDMemory = BASE_ADDRESS + 9
+.var NumCallsPerFrame = BASE_ADDRESS + 12
+.var BorderColour = BASE_ADDRESS + 13
+.var BitmapScreenColour = BASE_ADDRESS + 14
+.var SongNumber = BASE_ADDRESS + 15
+.var SongName = BASE_ADDRESS + 16
+.var ArtistName = BASE_ADDRESS + 16 + 32
 
 
 //; =============================================================================

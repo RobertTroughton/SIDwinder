@@ -26,11 +26,11 @@
 //;
 //; =============================================================================
 
-.var BASE_ADDRESS = $4000
+.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
 
-    jmp InitIRQ
+	jmp Initialize
 
 .var SIDInit = BASE_ADDRESS + 0
 .var SIDPlay = BASE_ADDRESS + 3
@@ -62,7 +62,7 @@ FFCallCounter:    .byte $00
 //; INITIALIZATION ENTRY POINT
 //; =============================================================================
 
-InitIRQ: {
+Initialize: {
     sei                                 //; Disable interrupts during setup
 
     //; Configure memory mapping

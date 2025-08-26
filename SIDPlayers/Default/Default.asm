@@ -7,11 +7,11 @@
 // A minimalist text display showing SID file information and playback controls
 // =============================================================================
 
-.var BASE_ADDRESS = $4000
+.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
 
-    jmp InitIRQ
+    jmp Initialize
 
 .var Display_Title_Colour           = $01
 .var Display_Artist_Colour          = $0c
@@ -105,7 +105,8 @@
 // INITIALIZATION ENTRY POINT
 // =============================================================================
 
-InitIRQ:
+Initialize:
+
     sei
 
     // Configure memory mapping

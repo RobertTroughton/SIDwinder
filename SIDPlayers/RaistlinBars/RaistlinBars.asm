@@ -28,7 +28,7 @@
 //;
 //; =============================================================================
 
-.var BASE_ADDRESS = $4000
+.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 
 * = BASE_ADDRESS + $100 "Main Code"
 
