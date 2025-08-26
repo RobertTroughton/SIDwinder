@@ -1,5 +1,14 @@
 {
   "name": "Basic Raster Bar",
-  "maxCallsPerFrame": 6,
-  "version": "1.0"
+  "maxCallsPerFrame": 8,
+  "metadata": {
+    "extended": true,
+    "fields": [
+      {
+        "name": "numSongs",
+        "offset": "0x4088",
+        "size": 1
+      }
+    ]
+  }
 }

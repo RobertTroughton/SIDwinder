@@ -12,42 +12,42 @@
       },
       {
         "name": "loadAddress",
-        "offset": "0x4080",
+        "offset": "0x40C0",
         "size": 2
       },
       {
         "name": "initAddress",
-        "offset": "0x4082",
+        "offset": "0x40C2",
         "size": 2
       },
       {
         "name": "playAddress",
-        "offset": "0x4084",
+        "offset": "0x40C4",
         "size": 2
       },
       {
         "name": "endAddress",
-        "offset": "0x4086",
+        "offset": "0x40C6",
         "size": 2
       },
       {
         "name": "numSongs",
-        "offset": "0x4088",
+        "offset": "0x40C8",
         "size": 1
       },
       {
         "name": "clockType",
-        "offset": "0x4089",
+        "offset": "0x40C9",
         "size": 1
       },
       {
         "name": "sidModel",
-        "offset": "0x408A",
+        "offset": "0x40CA",
         "size": 1
       },
       {
         "name": "zpUsage",
-        "offset": "0x408B",
+        "offset": "0x40CB",
         "size": 256
       }
     ]

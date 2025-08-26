@@ -150,58 +150,6 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
-        const data = new Uint8Array(0x50);
-
-        // Apply the maximum calls per frame limit if specified
-        let effectiveCallsPerFrame = numCallsPerFrame;
-        if (maxCallsPerFrame !== null && numCallsPerFrame > maxCallsPerFrame) {
-            console.warn(`SID requires ${numCallsPerFrame} calls per frame, but visualizer supports max ${maxCallsPerFrame}. Limiting to ${maxCallsPerFrame}.`);
-            effectiveCallsPerFrame = maxCallsPerFrame;
-        }
-
-        // JMP SIDInit at $4000
-        data[0] = 0x4C;
-        data[1] = sidInfo.initAddress & 0xFF;
-        data[2] = (sidInfo.initAddress >> 8) & 0xFF;
-
-        // JMP SIDPlay at $4003
-        data[3] = 0x4C;
-        data[4] = sidInfo.playAddress & 0xFF;
-        data[5] = (sidInfo.playAddress >> 8) & 0xFF;
-
-        // JMP SaveModifiedMemory at $4006
-        data[6] = 0x4C;
-        data[7] = saveRoutineAddr & 0xFF;
-        data[8] = (saveRoutineAddr >> 8) & 0xFF;
-
-        // JMP RestoreModifiedMemory at $4009
-        data[9] = 0x4C;
-        data[10] = restoreRoutineAddr & 0xFF;
-        data[11] = (restoreRoutineAddr >> 8) & 0xFF;
-
-        data[0x0C] = effectiveCallsPerFrame & 0xFF;
-        data[0x0D] = 0x00; // BorderColour
-        data[0x0E] = 0x00; // BitmapScreenColour
-
-        // Add selected song at offset 0x0F (after BitmapScreenColour)
-        data[0x0F] = selectedSong & 0xFF;
-
-        // SID Name at $4010-$402F
-        const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
-        for (let i = 0; i < 32; i++) {
-            data[0x10 + i] = nameBytes[i];
-        }
-
-        // Author Name at $4030-$404F
-        const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
-        for (let i = 0; i < 32; i++) {
-            data[0x30 + i] = authorBytes[i];
-        }
-
-        return data;
-    }
-
     // Add the extended data block generator method
     generateExtendedDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
         const data = new Uint8Array(0x100); // Larger data block for extended metadata
@@ -663,40 +611,21 @@ class SIDwinderPRGExporter {
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
-            let dataBlock;
-
-            // Check if this visualizer needs extended metadata
-            if (visualizerName === 'default') {
-                dataBlock = this.generateExtendedDataBlock(
-                    {
-                        initAddress: actualInitAddress,
-                        playAddress: actualPlayAddress,
-                        loadAddress: actualSidAddress,
-                        dataSize: sidInfo.dataSize
-                    },
-                    this.analyzer.analysisResults,
-                    header,
-                    saveRoutineAddr,
-                    restoreRoutineAddr,
-                    numCallsPerFrame,
-                    options.maxCallsPerFrame,
-                    selectedSong
-                );
-            } else {
-                // Use standard data block for other visualizers
-                dataBlock = this.generateDataBlock(
-                    {
-                        initAddress: actualInitAddress,
-                        playAddress: actualPlayAddress
-                    },
-                    header,
-                    saveRoutineAddr,
-                    restoreRoutineAddr,
-                    numCallsPerFrame,
-                    options.maxCallsPerFrame,
-                    selectedSong
-                );
-            }
+            const dataBlock = this.generateExtendedDataBlock(
+                {
+                    initAddress: actualInitAddress,
+                    playAddress: actualPlayAddress,
+                    loadAddress: actualSidAddress,
+                    dataSize: sidInfo.dataSize
+                },
+                this.analyzer.analysisResults,
+                header,
+                saveRoutineAddr,
+                restoreRoutineAddr,
+                numCallsPerFrame,
+                options.maxCallsPerFrame,
+                selectedSong
+            );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
 

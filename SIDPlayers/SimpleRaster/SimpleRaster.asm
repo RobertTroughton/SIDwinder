@@ -26,19 +26,37 @@
 //;
 //; =============================================================================
 
-* = $4100 "Main Code"
+.var BASE_ADDRESS = $4000
 
-.var MainAddress = * - $100
-.var SIDInit = MainAddress + 0
-.var SIDPlay = MainAddress + 3
-.var BackupSIDMemory = MainAddress + 6
-.var RestoreSIDMemory = MainAddress + 9
-.var NumCallsPerFrame = MainAddress + 12
-.var BorderColour = MainAddress + 13
-.var BitmapScreenColour = MainAddress + 14
-.var SongNumber = MainAddress + 15
-.var SongName = MainAddress + 16
-.var ArtistName = MainAddress + 16 + 32
+* = BASE_ADDRESS + $100 "Main Code"
+
+    jmp InitIRQ
+
+.var SIDInit = BASE_ADDRESS + 0
+.var SIDPlay = BASE_ADDRESS + 3
+.var BackupSIDMemory = BASE_ADDRESS + 6
+.var RestoreSIDMemory = BASE_ADDRESS + 9
+.var NumCallsPerFrame = BASE_ADDRESS + 12
+.var BorderColour = BASE_ADDRESS + 13
+.var BitmapScreenColour = BASE_ADDRESS + 14
+.var SongNumber = BASE_ADDRESS + 15
+.var SongName = BASE_ADDRESS + 16
+.var ArtistName = BASE_ADDRESS + 16 + 32
+
+.var LoadAddress = BASE_ADDRESS + $c0
+.var InitAddress = BASE_ADDRESS + $c2
+.var PlayAddress = BASE_ADDRESS + $c4
+.var EndAddress = BASE_ADDRESS + $c6
+.var NumSongs = BASE_ADDRESS + $c8
+.var ClockType = BASE_ADDRESS + $c9     // 0=PAL, 1=NTSC
+.var SIDModel = BASE_ADDRESS + $ca      // 0=6581, 1=8580
+.var ZPUsageData = BASE_ADDRESS + $e0   // Will store formatted ZP usage string
+
+.import source "../INC/keyboard.asm"
+
+CurrentSong:      .byte $00
+FastForwardActive:.byte $00
+FFCallCounter:    .byte $00
 
 //; =============================================================================
 //; INITIALIZATION ENTRY POINT
@@ -59,10 +77,24 @@ InitIRQ: {
     sta $d011                           //; Turn off display
     sta $d020                           //; Black border
 
-    //; Initialize the music
+    // Initialize keyboard scanning
+    jsr InitKeyboard
+
+    // Initialize variables
     lda SongNumber
-	tax
-	tay
+    sta CurrentSong
+    
+    // Check if NumSongs is set, default to 1 if not
+    lda NumSongs
+    bne !skip+
+    lda #1
+    sta NumSongs
+!skip:
+
+    // Initialize the music
+    lda CurrentSong
+    tax
+    tay
     jsr SIDInit
 
     //; Ensure we're at a stable position
@@ -96,6 +128,7 @@ InitIRQ: {
 
     //; Main loop - the music plays via interrupts
 Forever:
+    jsr CheckKeyboard
     jmp Forever
 }
 
@@ -120,42 +153,76 @@ VSync: {
 //; Automatically manages multiple calls per frame for multi-speed tunes
 
 MusicIRQ: {
-    //; Increment call counter
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    // Check if we're in fast-forward mode
+    lda FastForwardActive
+    beq !normalPlay+
+    
+    // Fast forward - call multiple times
+!ffFrameLoop:
+    lda NumCallsPerFrame
+    sta FFCallCounter
+    
+!ffCallLoop:
+    jsr SIDPlay
+    inc $d020  // Visual feedback
+    dec FFCallCounter
+    lda FFCallCounter
+    bne !ffCallLoop-
+    
+    // Check if space is still held
+    jsr CheckSpaceKey
+    lda FastForwardActive
+    bne !ffFrameLoop-
+    
+    lda #$00
+    sta $d020
+    lda #0
+    sta callCount + 1
+    jmp !done+
+
+!normalPlay:
+    // Normal playback
 callCount:
-    ldx #0                              //; Self-modifying counter
+    ldx #0
     inx
     cpx NumCallsPerFrame
-    bne JustPlayMusic
-
-    //; Frame boundary reached - update visual feedback
+    bne !justPlay+
+    
+    // Frame boundary - update visual
 ColChangeFrame:
-    ldy #$c0                            //; Self-modifying color index
+    ldy #$c0
     iny
-    bne !skip+
-    inc $d020                           //; Change background color
-    ldy #$c0                            //; Reset color cycle
-!skip:
-    sty ColChangeFrame + 1              //; Store new color index
-    ldx #0                              //; Reset call counter
+    bne !skip2+
+    inc $d020
+    ldy #$c0
+!skip2:
+    sty ColChangeFrame + 1
+    ldx #0
 
-JustPlayMusic:
-    stx callCount + 1                   //; Store updated counter
+!justPlay:
+    stx callCount + 1
+    
+    inc $d020
+    jsr SIDPlay
+    dec $d020
 
-    //; Visual CPU usage indicator
-    lda $d020
-    eor #$08
-    sta $d020
-    jsr SIDPlay                         //; Call the music player
-    lda $d020
-    eor #$08
-    sta $d020
-
-    //; Set up next interrupt
+!done:
+    // Setup next interrupt
     ldx callCount + 1
-	jsr set_d011_and_d012
-
-    //; Acknowledge interrupt
-    asl $d019                           //; Clear raster interrupt flag
+    jsr set_d011_and_d012
+    
+    asl $d019
+    pla
+    tay
+    pla
+    tax
+    pla
     rti
 }
 
@@ -183,6 +250,163 @@ d011_values_ptr:
 	sta $d011
 	rts
 
+CheckKeyboard:
+    jsr CheckSpaceKey
+
+    lda NumSongs
+    cmp #2
+    bcs !multiSong+
+    rts
+    
+!multiSong:
+    // Check +/- keys for song navigation
+    jsr CheckPlusKey
+    lda PlusKeyPressed
+    beq !notPlus+
+    lda PlusKeyReleased
+    beq !notPlus+
+    
+    lda #0
+    sta PlusKeyReleased
+    jsr NextSong
+    jmp !done+
+    
+!notPlus:
+    lda PlusKeyPressed
+    bne !stillPlus+
+    lda #1
+    sta PlusKeyReleased
+!stillPlus:
+
+    jsr CheckMinusKey
+    lda MinusKeyPressed
+    beq !notMinus+
+    lda MinusKeyReleased
+    beq !notMinus+
+    
+    lda #0
+    sta MinusKeyReleased
+    jsr PrevSong
+    jmp !done+
+    
+!notMinus:
+    lda MinusKeyPressed
+    bne !stillMinus+
+    lda #1
+    sta MinusKeyReleased
+!stillMinus:
+
+    // Check number/letter keys
+    jsr ScanKeyboard
+    cmp #0
+    beq !done+
+    
+    jsr GetKeyWithShift
+    
+    // Check 1-9
+    cmp #'1'
+    bcc !done+
+    cmp #':'
+    bcs !checkLetters+
+    
+    sec
+    sbc #'1'
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLetters:
+    // Check A-Z
+    cmp #'A'
+    bcc !checkLower+
+    cmp #'['
+    bcs !checkLower+
+    
+    sec
+    sbc #'A'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    jmp !done+
+    
+!checkLower:
+    cmp #'a'
+    bcc !done+
+    cmp #'{'
+    bcs !done+
+    
+    sec
+    sbc #'a'-9
+    cmp NumSongs
+    bcs !done+
+    jsr SelectSong
+    
+!done:
+    rts
+
+// Direct key checks
+CheckSpaceKey:
+    lda #%01111111
+    sta $DC00
+    lda $DC01
+    and #%00010000
+    eor #%00010000
+    sta FastForwardActive
+    rts
+
+CheckPlusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00000001
+    eor #%00000001
+    sta PlusKeyPressed
+    rts
+
+CheckMinusKey:
+    lda #%11011111
+    sta $DC00
+    lda $DC01
+    and #%00001000
+    eor #%00001000
+    sta MinusKeyPressed
+    rts
+
+// Key state variables
+PlusKeyPressed:  .byte 0
+PlusKeyReleased: .byte 1
+MinusKeyPressed: .byte 0
+MinusKeyReleased:.byte 1
+
+// Song selection
+SelectSong:
+    sta CurrentSong
+    tax
+    tay
+    jmp SIDInit
+
+NextSong:
+    lda CurrentSong
+    clc
+    adc #1
+    cmp NumSongs
+    bcc !ok+
+    lda #0
+!ok:
+    jsr SelectSong
+    rts
+
+PrevSong:
+    lda CurrentSong
+    bne !ok+
+    lda NumSongs
+!ok:
+    sec
+    sbc #1
+    jsr SelectSong
+    rts
+    
 //; =============================================================================
 //; DATA SECTION - Raster Line Timing
 //; =============================================================================

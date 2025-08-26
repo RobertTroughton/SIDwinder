@@ -112,15 +112,16 @@ InitIRQ:
     lda #$35
     sta $01
 
-    // Initialize keyboard scanning
-    jsr InitKeyboard
-
     // Wait for stable raster
     jsr VSync
 
     // Blank screen during setup
     lda #$00
     sta $d011
+    sta $d020                           //; Black border
+
+    // Initialize keyboard scanning
+    jsr InitKeyboard
 
     // Initialize variables
     lda SongNumber
