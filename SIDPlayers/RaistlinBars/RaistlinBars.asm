@@ -150,19 +150,19 @@ Initialize:
 
 	jsr SetupMusic
 
+	lda #$00
+	sta NextIRQLdx + 1
+	tax
+	jsr set_d011_and_d012
+
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
 	sta $ffff
+
 	lda #$01
 	sta $d01a
 	sta $d019
-
-	ldx #$00
-	jsr set_d011_and_d012
-
-	lda #$00
-	sta NextIRQ + 1
 
 	jsr VSync
 
@@ -252,7 +252,6 @@ MainIRQ:
 	jsr SIDPlay
 	inc $d020
 	dec FFCallCounter
-	lda FFCallCounter
 	bne !ffCallLoop-
 	
 	jsr CheckSpaceKey
@@ -262,6 +261,8 @@ MainIRQ:
 	lda #$00
 	sta NextIRQLdx + 1
 	sta $d020
+    tax
+    jsr set_d011_and_d012
 	jmp !done+
 
 !normalPlay:

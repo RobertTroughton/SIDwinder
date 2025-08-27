@@ -1546,7 +1546,7 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 18983 bytes, Cleaned: 12283 bytes (reduced by 35.3%)*
+*Original size: 19349 bytes, Cleaned: 12640 bytes (reduced by 34.7%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -1583,6 +1583,7 @@ Files: 1
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
+#define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -1676,6 +1677,25 @@ MainIRQ:
 	pha
 	lda #$35
 	sta $01
+	lda FastForwardActive
+	beq !normalPlay+
+!ffFrameLoop:
+	lda NumCallsPerFrame
+	sta FFCallCounter
+!ffCallLoop:
+	jsr SIDPlay
+	inc $d020
+	dec FFCallCounter
+	lda FFCallCounter
+	bne !ffCallLoop-
+	jsr CheckSpaceKey
+	lda FastForwardActive
+	bne !ffFrameLoop-
+	lda #$00
+	sta NextIRQLdx + 1
+	sta $d020
+	jmp !done+
+!normalPlay:
 	ldy currentScreenBuffer
 	lda D018Values, y
 	cmp $d018
@@ -1692,6 +1712,7 @@ MainIRQ:
 	jsr UpdateColors
 	jsr UpdateSprites
 	jsr AnalyseMusic
+!done:
 	jsr NextIRQ
 	pla
 	sta $01
@@ -2558,7 +2579,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 13930 bytes, Cleaned: 8191 bytes (reduced by 41.2%)*
+*Original size: 14248 bytes, Cleaned: 8498 bytes (reduced by 40.4%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -2585,6 +2606,7 @@ Files: 1
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+#define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -2630,7 +2652,7 @@ Initialize:
 	sta $d01a
 	sta $d019
 	lda #$00
-	sta NextIRQ + 1
+	sta NextIRQLdx + 1
 	jsr VSync
 	lda #$1b
 	sta $d011
@@ -2673,6 +2695,19 @@ MainIRQ:
 	pha
 	tya
 	pha
+	lda FastForwardActive
+	beq !normalPlay+
+!ffFrameLoop:
+	jsr SIDPlay
+	inc $d020
+	jsr CheckSpaceKey
+	lda FastForwardActive
+	bne !ffFrameLoop-
+	lda #$00
+	sta NextIRQLdx + 1
+	sta $d020
+	jmp !done+
+!normalPlay:
 	ldy currentScreenBuffer
 	lda D018Values, y
 	cmp $d018
@@ -2683,9 +2718,9 @@ MainIRQ:
 	inc visualizationUpdateFlag
 	jsr UpdateBarDecay
 	inc frameCounter
-	bne !skip+
+	bne !done+
 	inc frame256Counter
-!skip:
+!done:
 	jsr NextIRQ
 	lda #$01
 	sta $d01a
@@ -2702,11 +2737,17 @@ MusicOnlyIRQ:
 	pha
 	tya
 	pha
-	jsr PlayMusicWithAnalysis
+	lda $01
+	pha
+	lda #$35
+	sta $01
+	lda FastForwardActive
+	bne !done+
+	jsr JustPlayMusic
+!done:
 	jsr NextIRQ
-	lda #$01
-	sta $d01a
-	sta $d019
+	pla
+	sta $01
 	pla
 	tay
 	pla
@@ -2714,13 +2755,14 @@ MusicOnlyIRQ:
 	pla
 	rti
 NextIRQ:
+NextIRQLdx:
 	ldx #$00
 	inx
 	cpx NumCallsPerFrame
 	bne !notLast+
 	ldx #$00
 !notLast:
-	stx NextIRQ + 1
+	stx NextIRQLdx + 1
 	jsr set_d011_and_d012
 	cpx #$00
 	bne !musicOnly+

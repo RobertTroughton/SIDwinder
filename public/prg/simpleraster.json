@@ -1,14 +1,18 @@
 {
-  "name": "Basic Raster Bar",
+  "name": "Simple Raster",
   "maxCallsPerFrame": 8,
-  "metadata": {
-    "extended": true,
-    "fields": [
-      {
-        "name": "numSongs",
-        "offset": "0x4088",
-        "size": 1
-      }
-    ]
+  "layouts": {
+    "addr4000": {
+      "vicBank": 1,
+      "baseAddress": "0x4000",
+      "dataAddress": "0x4000",
+      "sysAddress": "0x4100"
+    },
+    "addrC000": {
+      "vicBank": 3,
+      "baseAddress": "0xC000",
+      "dataAddress": "0xC000",
+      "sysAddress": "0xE100"
+    }
   }
 }

@@ -2,6 +2,18 @@
   "name": "Simple Bitmap",
   "maxCallsPerFrame": 6,
   "version": "1.0",
+
+  "layouts": {
+    "addr4000": {
+      "vicBank": 1,
+      "baseAddress": "0x4000",
+      "dataAddress": "0x4000",
+      "sysAddress": "0x4100",
+      "borderColor": "0x400D",
+      "backgroundColor": "0x400E"
+    }
+  },
+
   "inputs": [
     {
       "id": "koala",
@@ -11,34 +23,37 @@
       "required": false,
       "default": "prg/default-picture.kla",
       "description": "C64 Koala format image (10001 bytes)",
-      "memory": [
-        {
-          "name": "bitmap",
-          "sourceOffset": "0x0002",
-          "targetAddress": "0x6000",
-          "size": "0x1F40"
-        },
-        {
-          "name": "screen",
-          "sourceOffset": "0x1F42",
-          "targetAddress": "0x5800",
-          "size": "0x03E8"
-        },
-        {
-          "name": "color",
-          "sourceOffset": "0x232A",
-          "targetAddress": "0x5C00",
-          "size": "0x03E8"
-        },
-        {
-          "name": "background",
-          "sourceOffset": "0x2712",
-          "targetAddress": "0x400E",
-          "size": "0x0001"
-        }
-      ]
+      "memory": {
+        "addr4000": [
+          {
+            "name": "bitmap",
+            "sourceOffset": "0x0002",
+            "targetAddress": "0x6000",
+            "size": "0x1F40"
+          },
+          {
+            "name": "screen",
+            "sourceOffset": "0x1F42",
+            "targetAddress": "0x5800",
+            "size": "0x03E8"
+          },
+          {
+            "name": "color",
+            "sourceOffset": "0x232A",
+            "targetAddress": "0x5C00",
+            "size": "0x03E8"
+          },
+          {
+            "name": "background",
+            "sourceOffset": "0x2712",
+            "targetAddress": "0x400E",
+            "size": "0x0001"
+          }
+        ]
+      }
     }
   ],
+
   "options": [
     {
       "id": "borderColor",
@@ -47,11 +62,7 @@
       "default": 0,
       "min": 0,
       "max": 15,
-      "description": "$00-$0F",
-      "memory": {
-        "targetAddress": "0x400D",
-        "size": 1
-      }
+      "dataField": "borderColor"
     }
   ]
 }

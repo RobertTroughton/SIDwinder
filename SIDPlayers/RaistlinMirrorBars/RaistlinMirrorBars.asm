@@ -139,20 +139,19 @@ Initialize:
 
 	jsr SetupMusic
 
+	lda #$00
+	sta NextIRQLdx + 1
+	tax
+	jsr set_d011_and_d012
+
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
 	sta $ffff
 
-	ldx #$00
-	jsr set_d011_and_d012
-
 	lda #$01
 	sta $d01a
 	sta $d019
-
-	lda #$00
-	sta NextIRQLdx + 1
 
 	jsr VSync
 
@@ -223,13 +222,23 @@ MainIRQ:
 	pha
 	tya
 	pha
+	lda $01
+	pha
+	lda #$35
+	sta $01
 
 	lda FastForwardActive
 	beq !normalPlay+
 	
 !ffFrameLoop:
+	lda NumCallsPerFrame
+	sta FFCallCounter
+	
+!ffCallLoop:
 	jsr SIDPlay
 	inc $d020
+	dec FFCallCounter
+	bne !ffCallLoop-
 	
 	jsr CheckSpaceKey
 	lda FastForwardActive
@@ -238,10 +247,11 @@ MainIRQ:
 	lda #$00
 	sta NextIRQLdx + 1
 	sta $d020
+    tax
+    jsr set_d011_and_d012
 	jmp !done+
 
 !normalPlay:
-
 	ldy currentScreenBuffer
 	lda D018Values, y
 	cmp $d018
@@ -249,23 +259,22 @@ MainIRQ:
 	sta $d018
 !skip:
 
-	jsr PlayMusicWithAnalysis
-
 	inc visualizationUpdateFlag
 
-	jsr UpdateBarDecay
-
 	inc frameCounter
-	bne !done+
+	bne !skip+
 	inc frame256Counter
-!done:
+!skip:
 
+	jsr JustPlayMusic
+	jsr UpdateBarDecay
+	jsr AnalyseMusic
+
+!done:
 	jsr NextIRQ
 
-	lda #$01
-	sta $d01a
-	sta $d019
-
+	pla
+	sta $01
 	pla
 	tay
 	pla
@@ -325,6 +334,8 @@ NextIRQLdx:
 	cpx #$00
 	bne !musicOnly+
 
+	lda #$01
+	sta $d019
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -337,6 +348,7 @@ NextIRQLdx:
 	lda #>MusicOnlyIRQ
 	sta $ffff
 	rts
+
 
 //; =============================================================================
 //; RENDERING

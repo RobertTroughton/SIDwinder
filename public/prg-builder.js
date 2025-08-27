@@ -85,6 +85,24 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
+    selectLayout(vizConfig, preferredAddress = null) {
+        if (!vizConfig || !vizConfig.layouts) {
+            return 'addr4000'; // Default fallback
+        }
+
+        // If a preferred address is specified, try to use it
+        if (preferredAddress) {
+            const layoutKey = `addr${preferredAddress.toString(16).toUpperCase().padStart(4, '0')}`;
+            if (vizConfig.layouts[layoutKey]) {
+                return layoutKey;
+            }
+        }
+
+        // For now, just return the first available layout
+        const layoutKeys = Object.keys(vizConfig.layouts);
+        return layoutKeys[0] || 'addr4000';
+    }
+
     generateSaveRoutine(modifiedAddresses, targetAddress) {
         const code = [];
         let storeAddr = targetAddress;
@@ -150,91 +168,81 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    // Add the extended data block generator method
     generateExtendedDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
-        const data = new Uint8Array(0x100); // Larger data block for extended metadata
+        const data = new Uint8Array(0x100);
 
-        // Apply the maximum calls per frame limit if specified
         let effectiveCallsPerFrame = numCallsPerFrame;
         if (maxCallsPerFrame !== null && numCallsPerFrame > maxCallsPerFrame) {
             console.warn(`SID requires ${numCallsPerFrame} calls per frame, but visualizer supports max ${maxCallsPerFrame}. Limiting to ${maxCallsPerFrame}.`);
             effectiveCallsPerFrame = maxCallsPerFrame;
         }
 
-        // Standard data block (0x00-0x4F)
-        // JMP SIDInit at $4000
+        // JMP SIDInit at $xx00
         data[0] = 0x4C;
         data[1] = sidInfo.initAddress & 0xFF;
         data[2] = (sidInfo.initAddress >> 8) & 0xFF;
 
-        // JMP SIDPlay at $4003
+        // JMP SIDPlay at $xx03
         data[3] = 0x4C;
         data[4] = sidInfo.playAddress & 0xFF;
         data[5] = (sidInfo.playAddress >> 8) & 0xFF;
 
-        // JMP SaveModifiedMemory at $4006
+        // JMP SaveModifiedMemory at $xx06
         data[6] = 0x4C;
         data[7] = saveRoutineAddr & 0xFF;
         data[8] = (saveRoutineAddr >> 8) & 0xFF;
 
-        // JMP RestoreModifiedMemory at $4009
+        // JMP RestoreModifiedMemory at $xx09
         data[9] = 0x4C;
         data[10] = restoreRoutineAddr & 0xFF;
         data[11] = (restoreRoutineAddr >> 8) & 0xFF;
 
         data[0x0C] = effectiveCallsPerFrame & 0xFF;
-        data[0x0D] = 0x00; // BorderColour
-        data[0x0E] = 0x00; // BackgroundColour
+        data[0x0D] = 0x00; // BorderColour (will be overwritten by options if present)
+        data[0x0E] = 0x00; // BackgroundColour (will be overwritten by options if present)
         data[0x0F] = selectedSong & 0xFF;
 
-        // SID Name at $4010-$402F
+        // SID Name at $xx10-$xx2F
         const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
 
-        // Author Name at $4030-$404F
+        // Author Name at $xx30-$xx4F
         const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x30 + i] = authorBytes[i];
         }
 
-        // Copyright at 0x50-0x6F
+        // Copyright at $xx50-$xx6F
         const copyrightBytes = this.stringToPETSCII(this.centerString(header.copyright || '', 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x50 + i] = copyrightBytes[i];
         }
 
-        // Technical metadata at 0xC0+
-        // Load address
+        // Technical metadata at $xxC0+
         data[0xC0] = sidInfo.loadAddress & 0xFF;
         data[0xC1] = (sidInfo.loadAddress >> 8) & 0xFF;
 
-        // Init address
         data[0xC2] = sidInfo.initAddress & 0xFF;
         data[0xC3] = (sidInfo.initAddress >> 8) & 0xFF;
 
-        // Play address
         data[0xC4] = sidInfo.playAddress & 0xFF;
         data[0xC5] = (sidInfo.playAddress >> 8) & 0xFF;
 
-        // End address (calculate from actual data size)
         const endAddress = sidInfo.loadAddress + (sidInfo.dataSize || 0x1000) - 1;
         data[0xC6] = endAddress & 0xFF;
         data[0xC7] = (endAddress >> 8) & 0xFF;
 
-        // Number of songs
         data[0xC8] = (header.songs || 1) & 0xFF;
 
-        // Clock type (0=PAL, 1=NTSC)
         const clockType = (header.clockType === 'NTSC') ? 1 : 0;
         data[0xC9] = clockType;
 
-        // SID model (0=6581, 1=8580)
         const sidModel = (header.sidModel && header.sidModel.includes('8580')) ? 1 : 0;
         data[0xCA] = sidModel;
 
-        // ZP usage data (formatted string)
+        // ZP usage data
         let zpString = 'NONE';
         if (analysisResults) {
             zpString = this.formatZPUsage(analysisResults.zpAddresses);
@@ -252,7 +260,6 @@ class SIDwinderPRGExporter {
             return 'NONE';
         }
 
-        // Sort and group into ranges
         const sorted = [...zpAddresses].sort((a, b) => a - b);
         const ranges = [];
         let currentRange = { start: sorted[0], end: sorted[0] };
@@ -267,7 +274,6 @@ class SIDwinderPRGExporter {
         }
         ranges.push(currentRange);
 
-        // Format as string
         const parts = ranges.map(r => {
             if (r.start === r.end) {
                 return `$${r.start.toString(16).toUpperCase().padStart(2, '0')}`;
@@ -276,7 +282,6 @@ class SIDwinderPRGExporter {
             }
         });
 
-        // Join with commas and truncate if too long
         let result = parts.join(', ');
         if (result.length > 255) {
             result = result.substring(0, 252) + '...';
@@ -287,7 +292,7 @@ class SIDwinderPRGExporter {
 
     stringToPETSCII(str, length) {
         const bytes = new Uint8Array(length);
-        bytes.fill(0x20);  // Fill with spaces
+        bytes.fill(0x20);
 
         if (str && str.length > 0) {
             const maxLen = Math.min(str.length, length);
@@ -299,13 +304,13 @@ class SIDwinderPRGExporter {
                 if (code >= 65 && code <= 90) {
                     petscii = code;
                 } else if (code >= 97 && code <= 122) {
-                    petscii = code - 32;  // Convert lowercase to uppercase
+                    petscii = code - 32;
                 } else if (code >= 48 && code <= 57) {
                     petscii = code;
                 } else if (code === 32) {
                     petscii = 0x20;
                 } else {
-                    petscii = code;  // Pass through other characters
+                    petscii = code;
                 }
 
                 bytes[i] = petscii & 0xFF;
@@ -329,8 +334,17 @@ class SIDwinderPRGExporter {
         const paddingStr = ' '.repeat(padding);
         const result = paddingStr + str;
 
-        // Pad the end to make sure we have exactly 'length' characters
         return result.padEnd(length, ' ');
+    }
+
+    getOrdinalSuffix(day) {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
     }
 
     async loadBinaryFile(url) {
@@ -373,7 +387,7 @@ class SIDwinderPRGExporter {
                 return {
                     data: musicData.slice(2),
                     loadAddress: loadAddress,
-                    dataSize: musicData.slice(2).length  // Add this
+                    dataSize: musicData.slice(2).length
                 };
             }
         }
@@ -381,17 +395,16 @@ class SIDwinderPRGExporter {
         return {
             data: musicData,
             loadAddress: loadAddress,
-            dataSize: musicData.length  // Add this
+            dataSize: musicData.length
         };
     }
 
-    async processVisualizerInputs(visualizerType) {
-
+    async processVisualizerInputs(visualizerType, layoutKey = 'addr4000') {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
         if (!vizConfig || !vizConfig.inputs) {
-            return []; // No additional inputs needed
+            return [];
         }
 
         const additionalComponents = [];
@@ -401,25 +414,27 @@ class SIDwinderPRGExporter {
             let fileData = null;
 
             if (inputElement && inputElement.files.length > 0) {
-                // User selected a file
                 const file = inputElement.files[0];
                 const arrayBuffer = await file.arrayBuffer();
                 fileData = new Uint8Array(arrayBuffer);
             } else if (inputConfig.default) {
-                // Use default file
                 fileData = await config.loadDefaultFile(inputConfig.default);
             }
 
-            if (fileData && inputConfig.memory) {
-                // Extract memory regions
-                const regions = config.extractMemoryRegions(fileData, inputConfig.memory);
+            if (fileData && inputConfig.memory && inputConfig.memory[layoutKey]) {
+                const memoryRegions = inputConfig.memory[layoutKey];
 
-                // Add each region as a component
-                for (const region of regions) {
+                for (const memConfig of memoryRegions) {
+                    const sourceOffset = parseInt(memConfig.sourceOffset);
+                    const targetAddress = parseInt(memConfig.targetAddress);
+                    const size = parseInt(memConfig.size);
+
+                    const data = fileData.slice(sourceOffset, sourceOffset + size);
+
                     additionalComponents.push({
-                        data: region.data,
-                        loadAddress: region.targetAddress,
-                        name: `${inputConfig.id}_${region.name}`
+                        data: data,
+                        loadAddress: targetAddress,
+                        name: `${inputConfig.id}_${memConfig.name}`
                     });
                 }
             }
@@ -428,7 +443,7 @@ class SIDwinderPRGExporter {
         return additionalComponents;
     }
 
-    async processVisualizerOptions(visualizerType) {
+    async processVisualizerOptions(visualizerType, layoutKey = 'addr4000') {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
@@ -436,19 +451,27 @@ class SIDwinderPRGExporter {
             return [];
         }
 
+        const layout = vizConfig.layouts[layoutKey];
+        if (!layout) {
+            console.warn(`Layout ${layoutKey} not found`);
+            return [];
+        }
+
         const optionComponents = [];
 
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
-            if (element && optionConfig.memory) {
+            if (!element) continue;
+
+            // Check if this option maps to a layout field
+            if (optionConfig.dataField && layout[optionConfig.dataField]) {
+                const targetAddress = parseInt(layout[optionConfig.dataField]);
 
                 if (optionConfig.type === 'date') {
-                    // Handle date type option
                     const dateValue = element.value;
                     let formattedDate = '';
 
                     if (dateValue) {
-                        // Convert date to display format
                         const date = new Date(dateValue);
                         const day = date.getDate();
                         const months = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -460,27 +483,25 @@ class SIDwinderPRGExporter {
                         formattedDate = `${day}${suffix} ${month} ${year}`;
                     }
 
-                    // Convert to PETSCII and pad to size
                     const data = this.stringToPETSCII(
-                        this.centerString(formattedDate, optionConfig.memory.size || 32),
-                        optionConfig.memory.size || 32
+                        this.centerString(formattedDate, 32),
+                        32
                     );
 
                     optionComponents.push({
                         data: data,
-                        loadAddress: parseInt(optionConfig.memory.targetAddress),
+                        loadAddress: targetAddress,
                         name: `option_${optionConfig.id}`
                     });
 
                 } else if (optionConfig.type === 'number') {
-                    // Existing number handling
                     let value = parseInt(element.value) || optionConfig.default || 0;
-                    const data = new Uint8Array(optionConfig.memory.size || 1);
+                    const data = new Uint8Array(1);
                     data[0] = value & 0xFF;
 
                     optionComponents.push({
                         data: data,
-                        loadAddress: parseInt(optionConfig.memory.targetAddress),
+                        loadAddress: targetAddress,
                         name: `option_${optionConfig.id}`
                     });
                 }
@@ -490,25 +511,13 @@ class SIDwinderPRGExporter {
         return optionComponents;
     }
 
-    getOrdinalSuffix(day) {
-        if (day > 3 && day < 21) return 'th';
-        switch (day % 10) {
-            case 1: return 'st';
-            case 2: return 'nd';
-            case 3: return 'rd';
-            default: return 'th';
-        }
-    }
-
     async createPRG(options = {}) {
         const {
             sidLoadAddress = null,
             sidInitAddress = null,
             sidPlayAddress = null,
-            dataLoadAddress = 0x4000,
+            preferredAddress = null,
             visualizerFile = 'prg/TextInput.bin',
-            visualizerLoadAddress = 0x4100,
-            includeData = true,
             compressionType = 'tscrunch',
             maxCallsPerFrame = null,
             visualizerId = null,
@@ -520,25 +529,18 @@ class SIDwinderPRGExporter {
 
             const sidInfo = this.extractSIDMusicData();
 
-            // Get the header from the already loaded SID
-            // The analyzer should already have the SID loaded from the UI
             let header = null;
-
-            // Try to get cached header from analyzer if it exists
             if (this.analyzer.sidHeader) {
                 header = this.analyzer.sidHeader;
             } else {
-                // If not cached, reload it
                 const modifiedSID = this.analyzer.createModifiedSID();
                 if (modifiedSID) {
                     header = await this.analyzer.loadSID(modifiedSID);
-                    // Cache it for future use
                     this.analyzer.sidHeader = header;
                 }
             }
 
             if (!header) {
-                // Fallback to default values
                 header = {
                     name: 'Unknown',
                     author: 'Unknown',
@@ -550,6 +552,20 @@ class SIDwinderPRGExporter {
                 };
             }
 
+            // Load visualizer config and select layout
+            const config = new VisualizerConfig();
+            const visualizerName = options.visualizerId || options.visualizerFile.replace('prg/', '').replace('.bin', '');
+            const vizConfig = await config.loadConfig(visualizerName);
+
+            const layoutKey = this.selectLayout(vizConfig, preferredAddress);
+            const layout = vizConfig?.layouts?.[layoutKey];
+
+            if (!layout) {
+                throw new Error(`No valid layout found for visualizer ${visualizerName}`);
+            }
+
+            const dataLoadAddress = parseInt(layout.dataAddress);
+            const visualizerLoadAddress = parseInt(layout.sysAddress);
 
             const actualSidAddress = sidLoadAddress || sidInfo.loadAddress;
             const actualInitAddress = sidInitAddress || sidInfo.initAddress || actualSidAddress;
@@ -567,18 +583,13 @@ class SIDwinderPRGExporter {
             }
 
             // Process additional visualizer inputs
-            // Use the visualizerId if provided, otherwise try to extract from filename
-            const visualizerName = options.visualizerId || options.visualizerFile.replace('prg/', '').replace('.bin', '').toLowerCase();
-
-            const additionalComponents = await this.processVisualizerInputs(visualizerName);
-
+            const additionalComponents = await this.processVisualizerInputs(visualizerName, layoutKey);
             for (const component of additionalComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
             // Process visualizer options
-            const optionComponents = await this.processVisualizerOptions(visualizerName);
-
+            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
             for (const component of optionComponents) {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
@@ -632,9 +643,6 @@ class SIDwinderPRGExporter {
             // Build PRG
             const prgData = this.builder.build();
 
-            const info = this.builder.getInfo();
-
-            // Store these for later use
             this.saveRoutineAddress = saveRoutineAddr;
             this.restoreRoutineAddress = restoreRoutineAddr;
 

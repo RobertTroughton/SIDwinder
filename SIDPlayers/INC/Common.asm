@@ -67,8 +67,8 @@ VSync:
 #if INCLUDE_RASTER_TIMING_CODE
 .var FrameHeight = 312
 
-D011_Values_1Call:  .fill 1, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312))) * $80
-D012_Values_1Call:  .fill 1, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312)))
+D011_Values_1Call:  .fill 1, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 1), 312))) * $80
+D012_Values_1Call:  .fill 1, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 1), 312)))
 D011_Values_2Calls: .fill 2, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312))) * $80
 D012_Values_2Calls: .fill 2, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312)))
 D011_Values_3Calls: .fill 3, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 3), 312))) * $80
