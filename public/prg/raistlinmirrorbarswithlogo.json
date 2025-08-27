@@ -11,6 +11,13 @@
       "sysAddress": "0x4100",
       "borderColor": "0x400D"
     },
+    "addr8000": {
+      "binary": "prg/raistlinmirrorbarswithlogo-8000.bin",
+      "baseAddress": "0x8000",
+      "dataAddress": "0x8000",
+      "sysAddress": "0x8100",
+      "borderColor": "0x800D"
+    },
     "addrC000": {
       "binary": "prg/raistlinmirrorbarswithlogo-C000.bin",
       "baseAddress": "0xC000",
@@ -52,6 +59,32 @@
             "name": "background",
             "sourceOffset": "0x2712",
             "targetAddress": "0x400E",
+            "size": "0x0001"
+          }
+        ],
+        "addr8000": [
+          {
+            "name": "bitmap",
+            "sourceOffset": "0x0002",
+            "targetAddress": "0xA000",
+            "size": "0xC80"
+          },
+          {
+            "name": "screen",
+            "sourceOffset": "0x1F42",
+            "targetAddress": "0xB000",
+            "size": "0x0190"
+          },
+          {
+            "name": "color",
+            "sourceOffset": "0x232A",
+            "targetAddress": "0xB400",
+            "size": "0x0190"
+          },
+          {
+            "name": "background",
+            "sourceOffset": "0x2712",
+            "targetAddress": "0x800E",
             "size": "0x0001"
           }
         ],
