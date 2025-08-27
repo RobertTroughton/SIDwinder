@@ -13,7 +13,7 @@
       "binary": "prg/raistlinbars-C000.bin",
       "baseAddress": "0xC000",
       "dataAddress": "0xC000",
-      "sysAddress": "0xE100"
+      "sysAddress": "0xC100"
     }
   }
 }
