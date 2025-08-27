@@ -1,13 +1,21 @@
 @echo off
 setlocal
 
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinMirrorBarsWithLogo\RaistlinMirrorBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinMirrorBarsWithLogo.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\RaistlinMirrorBarsWithLogo\RaistlinMirrorBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinMirrorBarsWithLogo-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-4000.bin || goto :error
+
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\RaistlinMirrorBarsWithLogo\RaistlinMirrorBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinMirrorBarsWithLogo-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap-C000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=49152 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-C000.bin || goto :error
 
 echo.
 echo ==================================

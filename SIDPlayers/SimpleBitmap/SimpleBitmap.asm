@@ -9,7 +9,7 @@
 
     jmp Initialize
 
-.const VIC_BANK                         = (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
 .const BITMAP_BANK                      = 1
 .const SCREEN_BANK                      = 6

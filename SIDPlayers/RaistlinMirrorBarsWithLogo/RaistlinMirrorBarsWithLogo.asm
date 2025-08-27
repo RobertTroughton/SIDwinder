@@ -1,34 +1,7 @@
-//; =============================================================================
-//;                              RAISTLINBARS v2.0
-//;                   Advanced SID Music Spectrum Visualizer
-//; =============================================================================
-//; Original code by Raistlin of Genesis*Project
-//; Enhanced with SIDwinder integration and advanced analysis features
-//; =============================================================================
-//;
-//; DESCRIPTION:
-//; ------------
-//; RaistlinMirrorBarsWithLogo creates a real-time spectrum analyzer that visualizes C64 
-//; SID music with a mirrored effect. It captures frequency and envelope data 
-//; from the SID chip and transforms it into animated bars that dance to the 
-//; music, with bars reflected vertically for a symmetrical display. Plus, in includes a
-//; logo at the top of the screen.
-//;
-//; KEY FEATURES:
-//; - 40 frequency bars with 96-pixel resolution (48 pixels per half)
-//; - Real-time SID register analysis without affecting playback
-//; - Mirrored bar display for symmetrical visualization
-//; - Static color gradient with height-based brightness
-
-//; - Double-buffered display for flicker-free animation
-//;
-//; TECHNICAL APPROACH:
-//; The visualizer uses a dual-playback technique to safely read SID registers:
-//; 1. First playback with memory preservation (normal music playback)
-//; 2. Second playback with $01=$30 to capture SID states
-//; This allows real-time analysis without corrupting the music player's state.
-//;
-//; =============================================================================
+// =============================================================================
+//                        RAISTLIN MIRROR BARS WITH LOGO
+//                   Advanced SID Music Spectrum Visualizer
+// =============================================================================
 
 //; Memory Map
 
@@ -74,7 +47,7 @@
 
 .eval setSeed(55378008)
 
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12 //; $7000-$73FF
 .const SCREEN1_BANK						= 13 //; $7400-$77FF

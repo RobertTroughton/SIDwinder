@@ -85,22 +85,18 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
-    selectLayout(vizConfig, preferredAddress = null) {
-        if (!vizConfig || !vizConfig.layouts) {
-            return 'addr4000'; // Default fallback
-        }
+    selectLayout(vizConfig, sidLoadAddress, sidSize) {
+        for (const [key, layout] of Object.entries(vizConfig.layouts)) {
+            const vizStart = parseInt(layout.baseAddress);
+            const vizEnd = vizStart + 0x4000; // Assume max 16K
+            const sidEnd = sidLoadAddress + sidSize;
 
-        // If a preferred address is specified, try to use it
-        if (preferredAddress) {
-            const layoutKey = `addr${preferredAddress.toString(16).toUpperCase().padStart(4, '0')}`;
-            if (vizConfig.layouts[layoutKey]) {
-                return layoutKey;
+            // Check for overlap
+            if (vizEnd <= sidLoadAddress || vizStart >= sidEnd) {
+                return key; // No overlap, this layout works
             }
         }
-
-        // For now, just return the first available layout
-        const layoutKeys = Object.keys(vizConfig.layouts);
-        return layoutKeys[0] || 'addr4000';
+        return null; // No suitable layout found
     }
 
     generateSaveRoutine(modifiedAddresses, targetAddress) {
@@ -168,7 +164,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateExtendedDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -556,8 +552,9 @@ class SIDwinderPRGExporter {
             const config = new VisualizerConfig();
             const visualizerName = options.visualizerId || options.visualizerFile.replace('prg/', '').replace('.bin', '');
             const vizConfig = await config.loadConfig(visualizerName);
+            const configMaxCallsPerFrame = vizConfig?.maxCallsPerFrame || null;
 
-            const layoutKey = this.selectLayout(vizConfig, preferredAddress);
+            const layoutKey = this.selectLayout(vizConfig, sidInfo.loadAddress, sidInfo.dataSize);
             const layout = vizConfig?.layouts?.[layoutKey];
 
             if (!layout) {
@@ -575,8 +572,15 @@ class SIDwinderPRGExporter {
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');
 
             // Add visualizer
+            // Add visualizer
             let nextAvailableAddress = visualizerLoadAddress;
-            if (visualizerFile && visualizerFile !== 'none') {
+            // Check if layout has a binary specified
+            if (layout.binary) {
+                const visualizerBytes = await this.loadBinaryFile(layout.binary);
+                this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
+                nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
+            } else if (visualizerFile && visualizerFile !== 'none') {
+                // Fallback to old behavior if no binary in layout
                 const visualizerBytes = await this.loadBinaryFile(visualizerFile);
                 this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
                 nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
@@ -598,15 +602,23 @@ class SIDwinderPRGExporter {
             let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
             let restoreRoutineAddr = saveRoutineAddr;
 
+            let storageAddress;
+
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                const saveRoutine = this.generateSaveRoutine(modifiedAddrs, 0);
-                saveRoutineAddr = this.alignToPage(nextAvailableAddress);
-                restoreRoutineAddr = this.alignToPage(saveRoutineAddr + saveRoutine.length);
-                const restoreRoutine = this.generateRestoreRoutine(modifiedAddrs, 0);
-                const storageAddress = this.alignToPage(restoreRoutineAddr + restoreRoutine.length);
+                // Calculate sizes
+                const tempSaveRoutine = this.generateSaveRoutine(modifiedAddrs, 0x8000);
+                const tempRestoreRoutine = this.generateRestoreRoutine(modifiedAddrs, 0x8000);
+                const storageSpaceNeeded = modifiedAddrs.length;
 
+                // Always place before visualizer base address
+                const baseAddress = parseInt(layout.baseAddress);
+                storageAddress = baseAddress - storageSpaceNeeded;
+                restoreRoutineAddr = storageAddress - tempRestoreRoutine.length;
+                saveRoutineAddr = restoreRoutineAddr - tempSaveRoutine.length;
+
+                // Generate final routines with correct storage address
                 const finalSaveRoutine = this.generateSaveRoutine(modifiedAddrs, storageAddress);
                 const finalRestoreRoutine = this.generateRestoreRoutine(modifiedAddrs, storageAddress);
 
@@ -615,14 +627,15 @@ class SIDwinderPRGExporter {
             } else {
                 console.warn('No analysis results for save/restore routines');
                 const dummyRoutine = new Uint8Array([0x60]);
+                saveRoutineAddr = 0x3F00;
+                restoreRoutineAddr = 0x3F80;
                 this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
-                restoreRoutineAddr = this.alignToPage(saveRoutineAddr + 1);
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
             }
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
-            const dataBlock = this.generateExtendedDataBlock(
+            const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
                     playAddress: actualPlayAddress,
@@ -634,7 +647,7 @@ class SIDwinderPRGExporter {
                 saveRoutineAddr,
                 restoreRoutineAddr,
                 numCallsPerFrame,
-                options.maxCallsPerFrame,
+                configMaxCallsPerFrame,
                 selectedSong
             );
 

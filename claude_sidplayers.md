@@ -701,8 +701,8 @@ VSync:
     rts
 #if INCLUDE_RASTER_TIMING_CODE
 .var FrameHeight = 312
-D011_Values_1Call:  .fill 1, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312))) * $80
-D012_Values_1Call:  .fill 1, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312)))
+D011_Values_1Call:  .fill 1, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 1), 312))) * $80
+D012_Values_1Call:  .fill 1, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 1), 312)))
 D011_Values_2Calls: .fill 2, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312))) * $80
 D012_Values_2Calls: .fill 2, (<(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 2), 312)))
 D011_Values_3Calls: .fill 3, (>(mod(DEFAULT_RASTERTIMING_Y + ((FrameHeight * i) / 3), 312))) * $80
@@ -1546,7 +1546,7 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 19349 bytes, Cleaned: 12640 bytes (reduced by 34.7%)*
+*Original size: 19362 bytes, Cleaned: 12653 bytes (reduced by 34.7%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -1619,6 +1619,10 @@ Initialize:
 	cpy #NUM_FREQUENCY_BARS + 4
 	bne !loop-
 	jsr SetupMusic
+	lda #$00
+	sta NextIRQLdx + 1
+	tax
+	jsr set_d011_and_d012
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -1626,10 +1630,6 @@ Initialize:
 	lda #$01
 	sta $d01a
 	sta $d019
-	ldx #$00
-	jsr set_d011_and_d012
-	lda #$00
-	sta NextIRQ + 1
 	jsr VSync
 	lda #$1b
 	sta $d011
@@ -1686,7 +1686,6 @@ MainIRQ:
 	jsr SIDPlay
 	inc $d020
 	dec FFCallCounter
-	lda FFCallCounter
 	bne !ffCallLoop-
 	jsr CheckSpaceKey
 	lda FastForwardActive
@@ -1694,6 +1693,8 @@ MainIRQ:
 	lda #$00
 	sta NextIRQLdx + 1
 	sta $d020
+    tax
+    jsr set_d011_and_d012
 	jmp !done+
 !normalPlay:
 	ldy currentScreenBuffer
@@ -2579,7 +2580,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 14248 bytes, Cleaned: 8498 bytes (reduced by 40.4%)*
+*Original size: 14420 bytes, Cleaned: 8671 bytes (reduced by 39.9%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -2642,17 +2643,17 @@ Initialize:
 	cpy #NUM_FREQUENCY_BARS + 4
 	bne !loop-
 	jsr SetupMusic
+	lda #$00
+	sta NextIRQLdx + 1
+	tax
+	jsr set_d011_and_d012
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
 	sta $ffff
-	ldx #$00
-	jsr set_d011_and_d012
 	lda #$01
 	sta $d01a
 	sta $d019
-	lda #$00
-	sta NextIRQLdx + 1
 	jsr VSync
 	lda #$1b
 	sta $d011
@@ -2695,17 +2696,28 @@ MainIRQ:
 	pha
 	tya
 	pha
+	lda $01
+	pha
+	lda #$35
+	sta $01
 	lda FastForwardActive
 	beq !normalPlay+
 !ffFrameLoop:
+	lda NumCallsPerFrame
+	sta FFCallCounter
+!ffCallLoop:
 	jsr SIDPlay
 	inc $d020
+	dec FFCallCounter
+	bne !ffCallLoop-
 	jsr CheckSpaceKey
 	lda FastForwardActive
 	bne !ffFrameLoop-
 	lda #$00
 	sta NextIRQLdx + 1
 	sta $d020
+    tax
+    jsr set_d011_and_d012
 	jmp !done+
 !normalPlay:
 	ldy currentScreenBuffer
@@ -2714,17 +2726,18 @@ MainIRQ:
 	beq !skip+
 	sta $d018
 !skip:
-	jsr PlayMusicWithAnalysis
 	inc visualizationUpdateFlag
-	jsr UpdateBarDecay
 	inc frameCounter
-	bne !done+
+	bne !skip+
 	inc frame256Counter
+!skip:
+	jsr JustPlayMusic
+	jsr UpdateBarDecay
+	jsr AnalyseMusic
 !done:
 	jsr NextIRQ
-	lda #$01
-	sta $d01a
-	sta $d019
+	pla
+	sta $01
 	pla
 	tay
 	pla
@@ -2766,6 +2779,8 @@ NextIRQLdx:
 	jsr set_d011_and_d012
 	cpx #$00
 	bne !musicOnly+
+	lda #$01
+	sta $d019
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ

@@ -20,11 +20,7 @@ class VisualizerConfig {
 
             const config = await response.json();
 
-            // Add maxCallsPerFrame from config or use default
-            if (config.maxCallsPerFrame !== undefined) {
-                visualizer.maxCallsPerFrame = config.maxCallsPerFrame;
-            }
-
+            // No longer modify the visualizer object - just return the config
             return config;
         } catch (error) {
             console.error(`Error loading config for ${visualizerId}:`, error);

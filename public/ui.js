@@ -499,7 +499,7 @@ class UIController {
         const incompatible = [];
 
         for (const viz of VISUALIZERS) {
-            const maxCalls = viz.maxCallsPerFrame || Infinity;
+            const maxCalls = viz.configData?.maxCallsPerFrame || Infinity;
             if (requiredCalls <= maxCalls) {
                 compatible.push(viz);
             } else {
@@ -555,7 +555,7 @@ class UIController {
 
         // Check if this visualizer can handle the required calls per frame
         const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
-        const maxCalls = visualizer.maxCallsPerFrame || Infinity;
+        const maxCalls = visualizer.configData?.maxCallsPerFrame || Infinity;
         const isDisabled = requiredCalls > maxCalls;
 
         if (isDisabled) {
@@ -894,7 +894,6 @@ class UIController {
                 visualizerLoadAddress: 0x4100,
                 includeData: true,
                 compressionType: compressionType,
-                maxCallsPerFrame: maxCallsPerFrame,
                 visualizerId: this.selectedVisualizer.id,
                 selectedSong: selectedSong - 1  // Convert to 0-based for the PRG
             };

@@ -1,4 +1,4 @@
-// visualizer-registry.js - Define available visualizers
+// visualizer-registry.js - Define available visualizers (UI metadata only)
 
 const VISUALIZERS = [
     {
@@ -6,8 +6,6 @@ const VISUALIZERS = [
         name: 'Default',
         description: 'Minimal player with textual information',
         preview: 'prg/default.png',
-        binary: 'prg/default.bin',
-        maxCallsPerFrame: 8,
         config: 'prg/default.json'
     },
     {
@@ -15,17 +13,13 @@ const VISUALIZERS = [
         name: 'Raistlin Bars',
         description: 'Spectrometer bars',
         preview: 'prg/raistlinbars.png',
-        binary: 'prg/raistlinbars.bin',
-        maxCallsPerFrame: 1,
         config: 'prg/raistlinbars.json'
     },
     {
         id: 'RaistlinBarsWithLogo',
         name: 'Raistlin Bars With Logo',
-        description: 'Spectrumeter bars below an 80px tall logo',
+        description: 'Spectrometer bars below an 80px tall logo',
         preview: 'prg/raistlinbarswithlogo.png',
-        binary: 'prg/raistlinbarswithlogo.bin',
-        maxCallsPerFrame: 1,
         config: 'prg/raistlinbarswithlogo.json'
     },
     {
@@ -33,8 +27,6 @@ const VISUALIZERS = [
         name: 'Raistlin Mirror Bars',
         description: 'Spectrometer mirrored bars',
         preview: 'prg/raistlinmirrorbars.png',
-        binary: 'prg/raistlinmirrorbars.bin',
-        maxCallsPerFrame: 1,
         config: 'prg/raistlinmirrorbars.json'
     },
     {
@@ -42,8 +34,6 @@ const VISUALIZERS = [
         name: 'Raistlin Mirror Bars With Logo',
         description: 'Spectrometer mirrored bars below an 80px tall logo',
         preview: 'prg/raistlinmirrorbarswithlogo.png',
-        binary: 'prg/raistlinmirrorbarswithlogo.bin',
-        maxCallsPerFrame: 1,
         config: 'prg/raistlinmirrorbarswithlogo.json'
     },
     {
@@ -51,8 +41,6 @@ const VISUALIZERS = [
         name: 'Simple Bitmap',
         description: 'Full-screen bitmap',
         preview: 'prg/simplebitmap.png',
-        binary: 'prg/simplebitmap.bin',
-        maxCallsPerFrame: 8,
         config: 'prg/simplebitmap.json'
     },
     {
@@ -60,8 +48,6 @@ const VISUALIZERS = [
         name: 'Simple Raster',
         description: 'Minimal rasterbar effect',
         preview: 'prg/simpleraster.png',
-        binary: 'prg/simpleraster.bin',
-        maxCallsPerFrame: 8,
         config: 'prg/simpleraster.json'
     }
 ];
