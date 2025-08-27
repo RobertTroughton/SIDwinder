@@ -3,17 +3,26 @@
 //                   Bitmap Graphics SID Music Player for C64
 // =============================================================================
 
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 
-* = BASE_ADDRESS + $100 "Main Code"
+.var BASE_ADDRESS                   = LOAD_ADDRESS
+.var CODE_ADDRESS                   = BASE_ADDRESS + $100
+.var VIC_BANK_ADDRESS               = LOAD_ADDRESS
+.var VIC_BANK						= VIC_BANK_ADDRESS / $4000
+.var BITMAP_BANK                    = 1
+.var SCREEN_BANK                    = 6
+.var COLOUR_BANK                    = 7
 
-    jmp Initialize
+.if (LOAD_ADDRESS == $c000) {
 
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
-.const BITMAP_BANK                      = 1
-.const SCREEN_BANK                      = 6
-.const COLOUR_BANK                      = 7
+    .eval BASE_ADDRESS              = $e000
+    .eval CODE_ADDRESS              = $e100
+    .eval BITMAP_BANK               = 0
+    .eval SCREEN_BANK               = 12
+    .eval COLOUR_BANK               = 13
+}
+
+* = CODE_ADDRESS "Main Code"
 
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
@@ -22,6 +31,8 @@
 .const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
+
+    jmp Initialize
 
 // =============================================================================
 // INCLUDES

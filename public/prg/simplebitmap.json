@@ -12,13 +12,13 @@
       "borderColor": "0x400D",
       "backgroundColor": "0x400E"
     },
-    "addrc000": {
+    "addrC000": {
       "binary": "prg/simplebitmap-C000.bin",
       "baseAddress": "0xC000",
-      "dataAddress": "0xC000",
-      "sysAddress": "0xC100",
-      "borderColor": "0xC00D",
-      "backgroundColor": "0xC00E"
+      "dataAddress": "0xE000",
+      "sysAddress": "0xE100",
+      "borderColor": "0xE00D",
+      "backgroundColor": "0xE00E"
     }
   },
 
@@ -55,6 +55,32 @@
             "name": "background",
             "sourceOffset": "0x2712",
             "targetAddress": "0x400E",
+            "size": "0x0001"
+          }
+        ],
+        "addrC000": [
+          {
+            "name": "bitmap",
+            "sourceOffset": "0x0002",
+            "targetAddress": "0xC000",
+            "size": "0x1F40"
+          },
+          {
+            "name": "screen",
+            "sourceOffset": "0x1F42",
+            "targetAddress": "0xF000",
+            "size": "0x03E8"
+          },
+          {
+            "name": "color",
+            "sourceOffset": "0x232A",
+            "targetAddress": "0xF400",
+            "size": "0x03E8"
+          },
+          {
+            "name": "background",
+            "sourceOffset": "0x2712",
+            "targetAddress": "0xE00E",
             "size": "0x0001"
           }
         ]
