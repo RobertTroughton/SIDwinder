@@ -14,6 +14,7 @@
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x500D",
       "backgroundColor": "0x500E",
+      "scrollTextAddr": "0x4200",
       "scrollColor": "0x5080"
     },
     "addr8000": {
@@ -26,6 +27,7 @@
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x900D",
       "backgroundColor": "0x900E",
+      "scrollTextAddr": "0x8200",
       "scrollColor": "0x9080"
     }
   },
@@ -105,6 +107,16 @@
       "min": 0,
       "max": 15,
       "dataField": "borderColor"
+    },
+    {
+      "id": "scrollText",
+      "label": "Scroll Text",
+      "type": "textarea",
+      "default": "SIDwinder  ---  Your one-stop shop for all your SID visualisation needs!!       ",
+      "maxLength": 3072,
+      "dataField": "scrollTextAddr",
+      "description": "Text that scrolls across the screen",
+      "loadSave": true
     },
     {
       "id": "scrollColor",

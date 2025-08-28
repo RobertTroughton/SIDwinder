@@ -515,6 +515,24 @@ class SIDwinderPRGExporter {
                         loadAddress: targetAddress,
                         name: `option_${optionConfig.id}`
                     });
+                } else if (optionConfig.type === 'textarea') {
+                    const textValue = element.value || optionConfig.default || '';
+
+                    // Convert to PETSCII and null-terminate
+                    const data = new Uint8Array(Math.min(textValue.length + 1, 255));
+
+                    for (let i = 0; i < textValue.length && i < data.length - 1; i++) {
+                        let petscii = textValue.charCodeAt(i);
+                        if (petscii >= 97 && petscii <= 122) petscii -= 96; // Convert to uppercase
+                        data[i] = petscii & 0xFF;
+                    }
+                    data[Math.min(textValue.length, data.length - 1)] = 0x00; // Null terminator
+
+                    optionComponents.push({
+                        data: data,
+                        loadAddress: targetAddress,
+                        name: `option_${optionConfig.id}`
+                    });
                 }
             }
         }

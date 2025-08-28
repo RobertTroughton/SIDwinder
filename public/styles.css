@@ -1220,3 +1220,54 @@ body {
         justify-content: center;
     }
 }
+
+/* Textarea container styles */
+.textarea-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+    .textarea-container textarea {
+        width: 100%;
+        min-height: 60px;
+        padding: 8px 12px;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        background: white;
+        color: #333;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        resize: vertical;
+        transition: all 0.2s;
+    }
+
+        .textarea-container textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+.textarea-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.load-text-btn, .save-text-btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .load-text-btn:hover, .save-text-btn:hover {
+        background: #764ba2;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+

@@ -837,6 +837,27 @@ class UIController {
                 <span class="date-preview" id="${config.id}-preview">Not set</span>
             </div>
         `;
+        } else if (config.type === 'textarea') {
+            // New textarea handling
+            html += `
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <div class="textarea-container">
+                    <textarea 
+                        id="${config.id}" 
+                        maxlength="${config.maxLength || 255}"
+                        rows="3"
+                        placeholder="${config.description || ''}"
+                    >${config.default || ''}</textarea>
+                    ${config.loadSave ? `
+                        <div class="textarea-controls">
+                            <button type="button" class="load-text-btn" data-target="${config.id}">Load</button>
+                            <button type="button" class="save-text-btn" data-target="${config.id}">Save</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
         }
 
         html += '</div>';
@@ -929,6 +950,18 @@ class UIController {
         document.querySelectorAll('.color-slider').forEach(slider => {
             slider.addEventListener('input', (e) => {
                 this.updateColorDisplay(e.target);
+            });
+        });
+        // Textarea load/save handlers
+        document.querySelectorAll('.load-text-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.loadScrollText(e.target.getAttribute('data-target'));
+            });
+        });
+
+        document.querySelectorAll('.save-text-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.saveScrollText(e.target.getAttribute('data-target'));
             });
         });
     }
@@ -1249,6 +1282,45 @@ class UIController {
 
         // Reset to attract mode
         this.initializeAttractMode();
+    }
+
+    loadScrollText(textareaId) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt';
+
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const textarea = document.getElementById(textareaId);
+                    if (textarea) {
+                        textarea.value = e.target.result;
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+
+        input.click();
+    }
+
+    saveScrollText(textareaId) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea) return;
+
+        const text = textarea.value;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'scrolltext.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 }
 
