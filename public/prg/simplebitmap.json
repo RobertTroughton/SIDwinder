@@ -10,6 +10,8 @@
       "size": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
+      "binaryDataStart": "0x4000",
+      "binaryDataEnd": "0x7FFF",
       "borderColor": "0x400D",
       "backgroundColor": "0x400E"
     },
@@ -19,11 +21,12 @@
       "size": "0x4000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
+      "binaryDataStart": "0x8000",
+      "binaryDataEnd": "0xBFFF",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E"
     }
   },
-
   "inputs": [
     {
       "id": "koala",

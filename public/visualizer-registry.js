@@ -44,6 +44,13 @@ const VISUALIZERS = [
         config: 'prg/simplebitmap.json'
     },
     {
+        id: 'SimpleBitmapWithScroller',
+        name: 'Simple Bitmap With Scroller',
+        description: 'Full-screen bitmap - with a scroller on top',
+        preview: 'prg/simplebitmapwithscroller.png',
+        config: 'prg/simplebitmapwithscroller.json'
+    },
+    {
         id: 'SimpleRaster',
         name: 'Simple Raster',
         description: 'Minimal rasterbar effect',

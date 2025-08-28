@@ -26,11 +26,16 @@
 //;
 //; =============================================================================
 
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
-* = BASE_ADDRESS + $100 "Main Code"
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+    
+* = CODE_ADDRESS "Main Code"
 
-	jmp Initialize
+    jmp Initialize
 
 //; =============================================================================
 //; INCLUDES

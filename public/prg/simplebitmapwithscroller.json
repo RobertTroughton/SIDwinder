@@ -1,28 +1,32 @@
 {
-  "name": "Raistlin Bars With Logo",
+  "name": "Simple Bitmap With Scroller",
+  "maxCallsPerFrame": 6,
   "version": "1.0",
-  "maxCallsPerFrame": 1,
 
   "layouts": {
     "addr4000": {
-      "binary": "prg/raistlinbarswithlogo-4000.bin",
+      "binary": "prg/simplebitmapwithscroller-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
-      "dataAddress": "0x4000",
-      "sysAddress": "0x4100",
+      "dataAddress": "0x5000",
+      "sysAddress": "0x5100",
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
-      "borderColor": "0x400D"
+      "borderColor": "0x500D",
+      "backgroundColor": "0x500E",
+      "scrollColor": "0x5080"
     },
     "addr8000": {
-      "binary": "prg/raistlinbarswithlogo-8000.bin",
+      "binary": "prg/simplebitmapwithscroller-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
-      "dataAddress": "0x8000",
-      "sysAddress": "0x8100",
+      "dataAddress": "0x9000",
+      "sysAddress": "0x9100",
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
-      "borderColor": "0x800D"
+      "borderColor": "0x900D",
+      "backgroundColor": "0x900E",
+      "scrollColor": "0x9080"
     }
   },
 
@@ -33,31 +37,32 @@
       "type": "file",
       "accept": ".koa,.kla",
       "required": false,
-      "default": "prg/default-logo.kla",
+      "default": "prg/default-picture.kla",
+      "description": "C64 Koala format image (10001 bytes)",
       "memory": {
         "addr4000": [
           {
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0x6000",
-            "size": "0xC80"
+            "size": "0x1F40"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0x7000",
-            "size": "0x0190"
+            "targetAddress": "0x4800",
+            "size": "0x03E8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0x7400",
-            "size": "0x0190"
+            "targetAddress": "0x4C00",
+            "size": "0x03E8"
           },
           {
             "name": "background",
             "sourceOffset": "0x2712",
-            "targetAddress": "0x400E",
+            "targetAddress": "0x500E",
             "size": "0x0001"
           }
         ],
@@ -66,24 +71,24 @@
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0xA000",
-            "size": "0xC80"
+            "size": "0x1F40"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0xB000",
-            "size": "0x0190"
+            "targetAddress": "0x8800",
+            "size": "0x03E8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0xB400",
-            "size": "0x0190"
+            "targetAddress": "0x8C00",
+            "size": "0x03E8"
           },
           {
             "name": "background",
             "sourceOffset": "0x2712",
-            "targetAddress": "0x800E",
+            "targetAddress": "0x900E",
             "size": "0x0001"
           }
         ]
@@ -100,6 +105,16 @@
       "min": 0,
       "max": 15,
       "dataField": "borderColor"
+    },
+    {
+      "id": "scrollColor",
+      "label": "Scroll Color",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 15,
+      "dataField": "scrollColor"
     }
+
   ]
 }

@@ -16,11 +16,19 @@
 //; VICBANK + $3400-$37FF : Screen 1
 //; VICBANK + $3800-$3FFF : CharSet
 
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
-* = BASE_ADDRESS + $100 "Main Code"
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
 
-	jmp Initialize
+* = CODE_ADDRESS "Main Code"
+
+    jmp Initialize
+
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 
 //; =============================================================================
 //; EXTERNAL RESOURCES
@@ -50,8 +58,6 @@
 .eval setSeed(55378008)
 
 //; Memory configuration
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 

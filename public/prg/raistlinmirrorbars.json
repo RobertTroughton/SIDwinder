@@ -9,14 +9,18 @@
       "baseAddress": "0x4000",
       "size": "0x4000",
       "dataAddress": "0x4000",
-      "sysAddress": "0x4100"
+      "sysAddress": "0x4100",
+      "binaryDataStart": "0x4000",
+      "binaryDataEnd": "0x7FFF"
     },
     "addr8000": {
       "binary": "prg/raistlinmirrorbars-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
       "dataAddress": "0x8000",
-      "sysAddress": "0x8100"
+      "sysAddress": "0x8100",
+      "binaryDataStart": "0x8000",
+      "binaryDataEnd": "0xBFFF"
     }
   }
 }

@@ -597,18 +597,14 @@ class SIDwinderPRGExporter {
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');
 
             // Add visualizer
-            // Add visualizer
             let nextAvailableAddress = visualizerLoadAddress;
-            // Check if layout has a binary specified
+
             if (layout.binary) {
                 const visualizerBytes = await this.loadBinaryFile(layout.binary);
-                this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
-                nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
-            } else if (visualizerFile && visualizerFile !== 'none') {
-                // Fallback to old behavior if no binary in layout
-                const visualizerBytes = await this.loadBinaryFile(visualizerFile);
-                this.builder.addComponent(visualizerBytes, visualizerLoadAddress, 'Visualizer');
-                nextAvailableAddress = visualizerLoadAddress + visualizerBytes.length;
+                const binaryLoadAddress = parseInt(layout.binaryDataStart || layout.baseAddress);
+                this.builder.addComponent(visualizerBytes, binaryLoadAddress, 'Visualizer Binary');
+                const binaryEndAddress = parseInt(layout.binaryDataEnd || (binaryLoadAddress + visualizerBytes.length));
+                nextAvailableAddress = binaryEndAddress + 1;
             }
 
             // Process additional visualizer inputs
