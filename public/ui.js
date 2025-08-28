@@ -796,18 +796,26 @@ class UIController {
         let html = `<div class="option-row">`;
 
         if (config.type === 'number') {
-            html += `
-            <label class="option-label">${config.label}</label>
-            <div class="option-control">
-                <input type="number" 
-                       id="${config.id}" 
-                       class="number-input"
-                       value="${config.default || 0}" 
-                       min="${config.min || 0}" 
-                       max="${config.max || 255}">
-                ${config.description ? `<span class="option-hint">${config.description}</span>` : ''}
-            </div>
-        `;
+            // Check if this is a color option (0-15 range)
+            if (config.id && config.id.toLowerCase().includes('color') &&
+                config.min === 0 && config.max === 15) {
+                // Color slider option
+                html += this.createColorSliderHTML(config);
+            } else {
+                // Regular number input
+                html += `
+                <label class="option-label">${config.label}</label>
+                <div class="option-control">
+                    <input type="number" 
+                           id="${config.id}" 
+                           class="number-input"
+                           value="${config.default || 0}" 
+                           min="${config.min || 0}" 
+                           max="${config.max || 255}">
+                    ${config.description ? `<span class="option-hint">${config.description}</span>` : ''}
+                </div>
+            `;
+            }
         } else if (config.type === 'select') {
             html += `
             <label class="option-label">${config.label}</label>
@@ -833,6 +841,60 @@ class UIController {
 
         html += '</div>';
         return html;
+    }
+
+    createColorSliderHTML(config) {
+        const colors = [
+            { value: 0, name: 'Black', hex: '#000000' },
+            { value: 1, name: 'White', hex: '#FFFFFF' },
+            { value: 2, name: 'Red', hex: '#753d3d' },
+            { value: 3, name: 'Cyan', hex: '#7bb4b4' },
+            { value: 4, name: 'Purple', hex: '#7d4488' },
+            { value: 5, name: 'Green', hex: '#5c985c' },
+            { value: 6, name: 'Blue', hex: '#343383' },
+            { value: 7, name: 'Yellow', hex: '#cbcc7c' },
+            { value: 8, name: 'Orange', hex: '#7c552f' },
+            { value: 9, name: 'Brown', hex: '#523e00' },
+            { value: 10, name: 'Light Red', hex: '#a76f6f' },
+            { value: 11, name: 'Dark Grey', hex: '#4e4e4e' },
+            { value: 12, name: 'Grey', hex: '#767676' },
+            { value: 13, name: 'Light Green', hex: '#9fdb9f' },
+            { value: 14, name: 'Light Blue', hex: '#6d6cbc' },
+            { value: 15, name: 'Light Grey', hex: '#a3a3a3' }
+        ];
+
+        const defaultValue = config.default || 0;
+        const defaultColor = colors[defaultValue];
+
+        return `
+        <label class="option-label">${config.label}</label>
+        <div class="option-control color-slider-control">
+            <div class="slider-wrapper">
+                <input type="range" 
+                       id="${config.id}" 
+                       class="color-slider"
+                       min="0" 
+                       max="15" 
+                       value="${defaultValue}"
+                       data-config-id="${config.id}">
+                <div class="color-slider-track">
+                    ${colors.map(c => `
+                        <div class="color-segment" 
+                             style="background: ${c.hex}"
+                             title="${c.value}: ${c.name}">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="color-value" id="${config.id}-display">
+                <span class="color-swatch" style="background: ${defaultColor.hex}"></span>
+                <span class="color-text">
+                    <span class="color-number">${defaultValue}</span>: 
+                    <span class="color-name">${defaultColor.name}</span>
+                </span>
+            </div>
+        </div>
+    `;
     }
 
     attachOptionEventListeners(config) {
@@ -863,6 +925,45 @@ class UIController {
                 }
             });
         });
+        // Color slider handlers
+        document.querySelectorAll('.color-slider').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                this.updateColorDisplay(e.target);
+            });
+        });
+    }
+
+    updateColorDisplay(slider) {
+        const colors = [
+            { value: 0, name: 'Black', hex: '#000000' },
+            { value: 1, name: 'White', hex: '#FFFFFF' },
+            { value: 2, name: 'Red', hex: '#880000' },
+            { value: 3, name: 'Cyan', hex: '#AAFFEE' },
+            { value: 4, name: 'Purple', hex: '#CC44CC' },
+            { value: 5, name: 'Green', hex: '#00CC55' },
+            { value: 6, name: 'Blue', hex: '#0000AA' },
+            { value: 7, name: 'Yellow', hex: '#EEEE77' },
+            { value: 8, name: 'Orange', hex: '#DD8855' },
+            { value: 9, name: 'Brown', hex: '#664400' },
+            { value: 10, name: 'Light Red', hex: '#FF7777' },
+            { value: 11, name: 'Dark Grey', hex: '#333333' },
+            { value: 12, name: 'Grey', hex: '#777777' },
+            { value: 13, name: 'Light Green', hex: '#AAFF66' },
+            { value: 14, name: 'Light Blue', hex: '#0088FF' },
+            { value: 15, name: 'Light Grey', hex: '#BBBBBB' }
+        ];
+
+        const value = parseInt(slider.value);
+        const color = colors[value];
+        const displayEl = document.getElementById(`${slider.id}-display`);
+
+        if (displayEl) {
+            displayEl.innerHTML = `
+            <span class="color-swatch" style="background: ${color.hex}"></span>
+            <span class="color-number">${value}</span>: 
+            <span class="color-name">${color.name}</span>
+        `;
+        }
     }
 
     updateFileInfo(header) {
