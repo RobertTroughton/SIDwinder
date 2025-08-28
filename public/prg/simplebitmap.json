@@ -19,14 +19,6 @@
       "sysAddress": "0x8100",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E"
-    },
-    "addrC000": {
-      "binary": "prg/simplebitmap-C000.bin",
-      "baseAddress": "0xC000",
-      "dataAddress": "0xE000",
-      "sysAddress": "0xE100",
-      "borderColor": "0xE00D",
-      "backgroundColor": "0xE00E"
     }
   },
 
@@ -50,13 +42,13 @@
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0x5800",
+            "targetAddress": "0x4800",
             "size": "0x03E8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0x5C00",
+            "targetAddress": "0x4C00",
             "size": "0x03E8"
           },
           {
@@ -76,45 +68,19 @@
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0x9800",
+            "targetAddress": "0x8800",
             "size": "0x03E8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0x9C00",
+            "targetAddress": "0x8C00",
             "size": "0x03E8"
           },
           {
             "name": "background",
             "sourceOffset": "0x2712",
             "targetAddress": "0x800E",
-            "size": "0x0001"
-          }
-        ],
-        "addrC000": [
-          {
-            "name": "bitmap",
-            "sourceOffset": "0x0002",
-            "targetAddress": "0xC000",
-            "size": "0x1F40"
-          },
-          {
-            "name": "screen",
-            "sourceOffset": "0x1F42",
-            "targetAddress": "0xF000",
-            "size": "0x03E8"
-          },
-          {
-            "name": "color",
-            "sourceOffset": "0x232A",
-            "targetAddress": "0xF400",
-            "size": "0x03E8"
-          },
-          {
-            "name": "background",
-            "sourceOffset": "0x2712",
-            "targetAddress": "0xE00E",
             "size": "0x0001"
           }
         ]

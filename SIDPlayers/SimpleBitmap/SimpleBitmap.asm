@@ -10,8 +10,8 @@
 .var VIC_BANK_ADDRESS               = LOAD_ADDRESS
 .var VIC_BANK						= VIC_BANK_ADDRESS / $4000
 .var BITMAP_BANK                    = 1
-.var SCREEN_BANK                    = 6
-.var COLOUR_BANK                    = 7
+.var SCREEN_BANK                    = 2
+.var COLOUR_BANK                    = 3
 
 .if (LOAD_ADDRESS == $c000) {
 
