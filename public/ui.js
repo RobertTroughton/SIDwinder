@@ -612,223 +612,257 @@ class UIController {
         }
 
         const config = await this.visualizerConfig.loadConfig(visualizer.id);
-        if (!config) {
-            optionsContainer.style.display = 'none';
+
+        // Check if we have any options to display
+        const hasLayouts = config?.layouts && Object.keys(config.layouts).length > 1;
+        const hasInputs = config?.inputs && config.inputs.length > 0;
+        const hasOptions = config?.options && config.options.length > 0;
+
+        // Always show if we have any options or if we need compression
+        if (!hasLayouts && !hasInputs && !hasOptions) {
+            // Still show for compression option
+            optionsContainer.style.display = 'block';
+            optionsContainer.className = 'visualizer-options-panel';
+            optionsContainer.innerHTML = `
+            <div class="options-header">
+                <h3>📎 Export Configuration</h3>
+            </div>
+            <div class="options-content">
+                ${this.createCompressionOptionsHTML()}
+            </div>
+        `;
             return;
         }
 
         optionsContainer.style.display = 'block';
+        optionsContainer.className = 'visualizer-options-panel';
 
-        const title = document.createElement('h3');
-        title.textContent = `${visualizer.name} Options`;
-        optionsContainer.appendChild(title);
+        // Create the structured HTML
+        let html = `
+        <div class="options-header">
+            <h3>📎 ${visualizer.name} Configuration</h3>
+        </div>
+        <div class="options-content">
+    `;
 
-        if (config.layouts && Object.keys(config.layouts).length > 1) {
-            const layoutOption = this.createLayoutSelector(visualizer, config);
-            optionsContainer.appendChild(layoutOption);
+        // Memory Layout Section (if applicable)
+        if (hasLayouts) {
+            const layoutHTML = this.createLayoutSelectorHTML(visualizer, config);
+            if (layoutHTML) {
+                html += `
+                <div class="option-group">
+                    <div class="option-group-title">Memory Location</div>
+                    ${layoutHTML}
+                </div>
+            `;
+            }
         }
 
-        if (config.inputs) {
+        // File Inputs Section (if applicable)
+        if (hasInputs) {
+            html += '<div class="option-group"><div class="option-group-title">Resources</div>';
             for (const input of config.inputs) {
-                const inputEl = this.createFileInput(input);
-                optionsContainer.appendChild(inputEl);
+                html += this.createFileInputHTML(input);
             }
+            html += '</div>';
         }
 
-        if (config.options) {
+        // Other Options Section (if applicable)
+        if (hasOptions) {
+            html += '<div class="option-group"><div class="option-group-title">Settings</div>';
             for (const option of config.options) {
-                const optionEl = this.createOption(option);
-                optionsContainer.appendChild(optionEl);
+                html += this.createOptionHTML(option);
             }
+            html += '</div>';
         }
+
+        // Always add Compression Section
+        html += this.createCompressionOptionsHTML();
+
+        html += '</div>'; // close options-content
+
+        optionsContainer.innerHTML = html;
+
+        // Attach event listeners after HTML is inserted
+        this.attachOptionEventListeners(config);
     }
 
-    createLayoutSelector(visualizer, config) {
-        const div = document.createElement('div');
-        div.className = 'export-option memory-layout-option';
+    createCompressionOptionsHTML() {
+        return `
+        <div class="option-group">
+            <div class="option-group-title">Compression</div>
+            <div class="compression-options">
+                <label class="compression-radio-option">
+                    <input type="radio" 
+                           name="compression-type" 
+                           value="none">
+                    <div class="compression-details">
+                        <span class="compression-name">None</span>
+                        <span class="compression-desc">Uncompressed PRG</span>
+                    </div>
+                </label>
+                <label class="compression-radio-option">
+                    <input type="radio" 
+                           name="compression-type" 
+                           value="tscrunch"
+                           checked>
+                    <div class="compression-details">
+                        <span class="compression-name">TSCrunch</span>
+                        <span class="compression-desc">Best compression ratio</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+    `;
+    }
 
-        // Get valid layouts
+    createLayoutSelectorHTML(visualizer, config) {
         const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
 
-        // Use the actual PRG exporter instance, not PRGBuilder
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
         }
 
         const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize);
 
-        // Build the HTML
-        let html = `
-        <label>Memory Layout:</label>
-        <div class="layout-selector">
-    `;
-
-        // Sort layouts by address
+        // Sort all layouts by address
         layouts.sort((a, b) => a.vizStart - b.vizStart);
 
-        // Create radio buttons for each layout
         const validLayouts = layouts.filter(l => l.valid);
-        const invalidLayouts = layouts.filter(l => !l.valid);
 
         if (validLayouts.length === 0) {
-            html += '<div class="layout-warning">⚠️ No compatible memory layouts available for this SID</div>';
-        } else {
-            // Valid layouts
-            validLayouts.forEach((layoutInfo, index) => {
-                const layout = layoutInfo.layout;
-                const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+            return '<div class="option-warning">⚠️ No compatible memory layouts available</div>';
+        }
 
-                html += `
-                <label class="layout-option">
-                    <input type="radio" 
-                           name="memory-layout" 
-                           value="${layoutInfo.key}" 
-                           data-visualizer="${visualizer.id}"
-                           ${index === 0 ? 'checked' : ''}>
-                    <span class="layout-info">
-                        <span class="layout-name">${layout.name || layoutInfo.key}</span>
-                        <span class="layout-range">${rangeStart}-${rangeEnd}</span>
-                    </span>
-                </label>
-            `;
-            });
+        let html = '<div class="layout-options">';
 
-            // Invalid layouts (grayed out)
-            if (invalidLayouts.length > 0) {
-                html += '<div class="layout-separator">Unavailable (conflicts with SID):</div>';
+        // All layouts in one list
+        let firstValidIndex = -1;
+        layouts.forEach((layoutInfo, index) => {
+            const layout = layoutInfo.layout;
+            const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+            const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+            const isValid = layoutInfo.valid;
 
-                invalidLayouts.forEach((layoutInfo) => {
-                    const layout = layoutInfo.layout;
-                    const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                    const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
-
-                    html += `
-                    <label class="layout-option disabled" title="${layoutInfo.overlapReason}">
-                        <input type="radio" 
-                               name="memory-layout" 
-                               value="${layoutInfo.key}" 
-                               disabled>
-                        <span class="layout-info">
-                            <span class="layout-name">${layout.name || layoutInfo.key}</span>
-                            <span class="layout-range">${rangeStart}-${rangeEnd}</span>
-                            <span class="layout-conflict">❌</span>
-                        </span>
-                    </label>
-                `;
-                });
+            // Track first valid layout for auto-selection
+            if (isValid && firstValidIndex === -1) {
+                firstValidIndex = index;
             }
+
+            html += `
+            <label class="layout-radio-option ${!isValid ? 'disabled' : ''}" 
+                   ${!isValid ? `title="${layoutInfo.overlapReason}"` : ''}>
+                <input type="radio" 
+                       name="memory-layout" 
+                       value="${layoutInfo.key}" 
+                       ${isValid && index === firstValidIndex ? 'checked' : ''}
+                       ${!isValid ? 'disabled' : ''}>
+                <div class="layout-details">
+                    <span class="layout-name">${layout.name || layoutInfo.key}</span>
+                    <span class="layout-range">${rangeStart}-${rangeEnd}</span>
+                </div>
+            </label>
+        `;
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    createFileInputHTML(config) {
+        return `
+        <div class="option-row">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="file" 
+                       id="${config.id}" 
+                       accept="${config.accept}" 
+                       style="display: none;">
+                <button type="button" 
+                        class="file-button" 
+                        data-file-input="${config.id}">
+                    Choose File
+                </button>
+                <span class="file-status" id="${config.id}-status">
+                    ${config.default ? 'Using default' : 'No file selected'}
+                </span>
+            </div>
+        </div>
+    `;
+    }
+
+    createOptionHTML(config) {
+        let html = `<div class="option-row">`;
+
+        if (config.type === 'number') {
+            html += `
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="number" 
+                       id="${config.id}" 
+                       class="number-input"
+                       value="${config.default || 0}" 
+                       min="${config.min || 0}" 
+                       max="${config.max || 255}">
+                ${config.description ? `<span class="option-hint">${config.description}</span>` : ''}
+            </div>
+        `;
+        } else if (config.type === 'select') {
+            html += `
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <select id="${config.id}" class="select-input">
+                    ${config.values.map(v =>
+                `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
+                            ${v.label}
+                        </option>`
+            ).join('')}
+                </select>
+            </div>
+        `;
+        } else if (config.type === 'date') {
+            html += `
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="date" id="${config.id}" class="date-input">
+                <span class="date-preview" id="${config.id}-preview">Not set</span>
+            </div>
+        `;
         }
 
         html += '</div>';
-
-        if (validLayouts.length === 0) {
-            // Mark this visualizer as unavailable
-            const card = document.querySelector(`.visualizer-card[data-id="${visualizer.id}"]`);
-            if (card) {
-                card.classList.add('disabled');
-                card.querySelector('.visualizer-info').setAttribute('data-reason', 'No compatible memory layout');
-            }
-        }
-
-        div.innerHTML = html;
-        return div;
+        return html;
     }
 
-    createFileInput(config) {
-        const div = document.createElement('div');
-        div.className = 'file-input-option';
-        div.innerHTML = `
-        <label for="${config.id}">${config.label}:</label>
-        <div class="file-input-controls">
-            <div class="file-input-wrapper">
-                <input type="file" id="${config.id}" accept="${config.accept}" 
-                       data-config='${JSON.stringify(config)}' style="display: none;">
-                <button type="button" class="file-select-button" id="${config.id}-button">
-                    Choose
-                </button>
-                <span class="file-name" id="${config.id}-name">
-                    ${config.default ? 'Using default' : 'No file selected'}
-                </span>
-                ${config.default ?
-                `<button type="button" class="file-clear-button" id="${config.id}-clear" style="display: none;">
-                        ✕
-                    </button>` : ''}
-            </div>
-            ${config.description ? `<div class="input-hint">${config.description}</div>` : ''}
-        </div>
-        `;
-
-        const fileInput = div.querySelector('input[type="file"]');
-        const fileName = div.querySelector('.file-name');
-        const selectButton = div.querySelector('.file-select-button');
-        const clearButton = div.querySelector('.file-clear-button');
-
-        // Click button to open file dialog
-        selectButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // Handle file selection
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                fileName.textContent = e.target.files[0].name;
-                if (clearButton) {
-                    clearButton.style.display = 'inline-block';
-                }
-            } else {
-                fileName.textContent = config.default ? 'Using default' : 'No file selected';
-                if (clearButton) {
-                    clearButton.style.display = 'none';
-                }
-            }
-        });
-
-        // Clear button to revert to default
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                fileInput.value = '';
-                fileName.textContent = 'Using default';
-                clearButton.style.display = 'none';
+    attachOptionEventListeners(config) {
+        // File input handlers
+        document.querySelectorAll('.file-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const inputId = e.target.dataset.fileInput;
+                document.getElementById(inputId).click();
             });
-        }
+        });
 
-        return div;
-    }
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const statusEl = document.getElementById(`${e.target.id}-status`);
+                if (e.target.files.length > 0) {
+                    statusEl.textContent = e.target.files[0].name;
+                    statusEl.classList.add('has-file');
+                }
+            });
+        });
 
-    createOption(config) {
-        const div = document.createElement('div');
-        div.className = 'export-option';
-
-        if (config.type === 'select') {
-            div.innerHTML = `
-            <label for="${config.id}">${config.label}:</label>
-            <select id="${config.id}">
-                ${config.values.map(v =>
-                `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
-                        ${v.label}
-                    </option>`
-            ).join('')}
-            </select>
-        `;
-        } else if (config.type === 'number') {
-            const html = `
-            <label for="${config.id}">${config.label}:</label>
-            <div class="number-input-wrapper">
-                <input type="number" 
-                       id="${config.id}" 
-                       value="${config.default || 0}" 
-                       min="${config.min || 0}" 
-                       max="${config.max || 255}"
-                       data-config='${JSON.stringify(config)}'>
-                ${config.description ? `<span class="input-description">${config.description}</span>` : ''}
-            </div>
-        `;
-            div.innerHTML = html;
-        }
-
-        return div;
+        // Date input handlers
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const previewEl = document.getElementById(`${e.target.id}-preview`);
+                if (previewEl) {
+                    previewEl.textContent = this.formatDateForDisplay(e.target.value);
+                }
+            });
+        });
     }
 
     updateFileInfo(header) {
@@ -938,29 +972,21 @@ class UIController {
             return;
         }
 
-        // Check if PRG exporter is available
-        if (!this.prgExporter) {
-            if (typeof SIDwinderPRGExporter === 'undefined') {
-                this.showExportStatus('PRG builder not loaded. Please refresh the page.', 'error');
-                return;
-            }
-            // Try to initialize it now
-            if (this.analyzer) {
-                this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-            } else {
-                this.showExportStatus('Analyzer not ready. Please reload the SID file.', 'error');
-                return;
-            }
-        }
+        // ... existing checks ...
 
-        if (!this.sidHeader) {
-            this.showExportStatus('No SID file loaded', 'error');
+        // Get the selected memory layout
+        const layoutRadio = document.querySelector('input[name="memory-layout"]:checked');
+        const selectedLayoutKey = layoutRadio ? layoutRadio.value : null;
+
+        if (!selectedLayoutKey && this.selectedVisualizer.config) {
+            // If visualizer has layouts but none selected
+            this.showExportStatus('Please select a memory layout', 'error');
             return;
         }
 
-        // Get the selected compression type
-        const compressionType = this.elements.compressionType ?
-            this.elements.compressionType.value : 'tscrunch';
+        // Get the selected compression type from radio buttons
+        const compressionRadio = document.querySelector('input[name="compression-type"]:checked');
+        const compressionType = compressionRadio ? compressionRadio.value : 'tscrunch';
 
         this.showExportStatus('Building PRG file...', 'info');
 
@@ -968,30 +994,30 @@ class UIController {
         const songSelector = document.getElementById('songSelector');
         const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
 
-        // Get the selected memory layout
-        const layoutRadio = document.querySelector('input[name="memory-layout"]:checked');
-        const selectedLayoutKey = layoutRadio ? layoutRadio.value : null;
-
-        if (!selectedLayoutKey) {
-            this.showExportStatus('Please select a memory layout', 'error');
-            return;
-        }
-
         try {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
 
-            // Get the max calls per frame for the selected visualizer
-            const maxCallsPerFrame = this.selectedVisualizer.maxCallsPerFrame || null;
+            // Load the visualizer config to get the SYS address
+            const vizConfig = await this.visualizerConfig.loadConfig(this.selectedVisualizer.id);
+            let visualizerSysAddress = 0x4100; // default fallback
+
+            if (selectedLayoutKey && vizConfig && vizConfig.layouts[selectedLayoutKey]) {
+                const layout = vizConfig.layouts[selectedLayoutKey];
+                // Use sysAddress if available, otherwise fall back to baseAddress + 0x100
+                if (layout.sysAddress) {
+                    visualizerSysAddress = parseInt(layout.sysAddress);
+                } else if (layout.baseAddress) {
+                    visualizerSysAddress = parseInt(layout.baseAddress) + 0x100;
+                }
+            }
 
             const options = {
                 sidLoadAddress: this.sidHeader.loadAddress,
                 sidInitAddress: this.sidHeader.initAddress,
                 sidPlayAddress: this.sidHeader.playAddress,
-                dataLoadAddress: 0x4000,
                 visualizerFile: this.selectedVisualizer.binary,
-                visualizerLoadAddress: 0x4100,
-                includeData: true,
+                visualizerLoadAddress: visualizerSysAddress,  // Use the actual address
                 compressionType: compressionType,
                 visualizerId: this.selectedVisualizer.id,
                 selectedSong: selectedSong - 1,
@@ -1008,9 +1034,8 @@ class UIController {
                 // Compressed: just songname.prg
                 filename = `${baseName}.prg`;
             } else {
-                // Uncompressed: songname-sys16640.prg (or whatever the visualizer address is)
-                const sysAddress = options.visualizerLoadAddress; // 0x4100 = 16640 decimal
-                filename = `${baseName}-sys${sysAddress}.prg`;
+                // Uncompressed: songname-sys{decimal_address}.prg
+                filename = `${baseName}-sys${visualizerSysAddress}.prg`;
             }
 
             this.downloadFile(prgData, filename);
