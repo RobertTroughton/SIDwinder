@@ -110,7 +110,7 @@
       "id": "scrollColor",
       "label": "Scroll Color",
       "type": "number",
-      "default": 0,
+      "default": 1,
       "min": 0,
       "max": 15,
       "dataField": "scrollColor"

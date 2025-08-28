@@ -32,6 +32,8 @@
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 .const SPRITES_DATA                     = VIC_BANK_ADDRESS + (SPRITES_INDEX * 64)
 
+.const SCROLLTEXT_ADDR                  = VIC_BANK_ADDRESS + $0200
+
 // =============================================================================
 // INCLUDES
 // =============================================================================
@@ -70,6 +72,7 @@ Initialize:
     sta $d021
 
     jsr InitKeyboard
+    jsr CopyROMFont
 
     lda SongNumber
     sta CurrentSong
@@ -100,7 +103,7 @@ Initialize:
     iny
     bne !loop-
 
-    ldy #$06
+    ldy #$07
     ldx #SPRITES_INDEX
 !loop:
     txa
@@ -214,7 +217,8 @@ callCount:
 
 SpriteScroller:
 
-    ldx #$0f
+    ldx #$0e
+    dex
     dex
     bpl !skip+
 
@@ -239,16 +243,13 @@ SpriteScroller:
     sta $d00a       //; $F0-FF
     adc #$30
     sta $d00c       //; $20-2F
+    eor #$70
+    sta $d00e       //; $50-5F
 
     rts
   
 
 ScrollSprites:
-
-    lda SPRITES_DATA + (6 * 64) + 2
-    clc
-    adc #$05
-    tax
 
     ldy #$00
 !loop:
@@ -299,17 +300,61 @@ ScrollSprites:
     lda SPRITES_DATA + (6 * 64) + 2, y
     sta SPRITES_DATA + (6 * 64) + 1, y
 
-    txa
+    lda SPRITES_DATA + (7 * 64) + 0, y
     sta SPRITES_DATA + (6 * 64) + 2, y
+    lda SPRITES_DATA + (7 * 64) + 1, y
+    sta SPRITES_DATA + (7 * 64) + 0, y
+    lda SPRITES_DATA + (7 * 64) + 2, y
+    sta SPRITES_DATA + (7 * 64) + 1, y
 
     iny
     iny
     iny
-    cpy #(5 * 3)
+    cpy #(8 * 3)
     beq !finished+
     jmp !loop-
 
 !finished:
+
+ReadScroller:
+    lda SCROLLTEXT_ADDR
+    bne !notEnd+
+    lda #<SCROLLTEXT_ADDR
+    sta ReadScroller + 1
+    lda #>SCROLLTEXT_ADDR
+    sta ReadScroller + 2
+    bne ReadScroller
+!notEnd:
+
+    tax
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    ora #$58
+    sta InCharPtr + 2
+    txa
+    asl
+    asl
+    asl
+    sta InCharPtr + 1
+
+    ldx #7
+    ldy #(7 * 3)
+InCharPtr:
+    lda $abcd, x
+    sta SPRITES_DATA + (7 * 64) + 2, y
+    dey
+    dey
+    dey
+    dex
+    bpl InCharPtr
+
+    inc ReadScroller + 1
+    bne !skip+
+    inc ReadScroller + 2
+
     rts
    
 
@@ -333,6 +378,32 @@ InitializeVIC:
 
 	rts
 
+CopyROMFont:
+
+    lda $01
+    pha
+    lda #$33
+    sta $01
+
+    ldx #$08
+    ldy #$00
+InPtr:
+    lda $d800, y
+OutPtr:
+    sta $5800, y
+    iny
+    bne InPtr
+
+    inc InPtr + 2
+    inc OutPtr + 2
+    dex
+    bne InPtr
+
+    pla
+    sta $01
+
+    rts
+
 //; =============================================================================
 //; DATA SECTION - VIC Configuration
 //; =============================================================================
@@ -345,21 +416,21 @@ VICConfigStart:
 	.byte $00, $ea						//; Sprite 4 X,Y
 	.byte $00, $ea						//; Sprite 5 X,Y
 	.byte $00, $ea						//; Sprite 6 X,Y
-	.byte $00, $00						//; Sprite 7 X,Y
-	.byte $40							//; Sprite X MSB
+	.byte $00, $ea						//; Sprite 7 X,Y
+	.byte $c0							//; Sprite X MSB
 	.byte SKIP_REGISTER					//; D011
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
 	.byte SKIP_REGISTER					//; D014
-	.byte $7f							//; Sprite enable
+	.byte $ff							//; Sprite enable
 	.byte $18							//; D016
-	.byte $7f							//; Sprite Y expand
+	.byte $ff							//; Sprite Y expand
 	.byte D018Value     				//; D018
 	.byte SKIP_REGISTER					//; D019
 	.byte SKIP_REGISTER					//; D01A
 	.byte $00							//; Sprite priority
 	.byte $00							//; Sprite multicolor
-	.byte $7f							//; Sprite X expand
+	.byte $ff							//; Sprite X expand
 	.byte $00							//; Sprite-sprite collision
 	.byte $00							//; Sprite-background collision
 	.byte SKIP_REGISTER					//; Border color
@@ -367,12 +438,16 @@ VICConfigStart:
 	.byte $00, $00						//; Extra colors
 	.byte $00, $00, $00					//; Sprite extra colors
 	.byte $01, $01, $01, $01			//; Sprite colors 0-3
-	.byte $01, $01, $01, $00			//; Sprite colors 4-7
+	.byte $01, $01, $01, $01			//; Sprite colors 4-7
 VICConfigEnd:
 
 // =============================================================================
 // DATA SECTION - Placeholder screen and bitmap data
 // =============================================================================
+
+* = SCROLLTEXT_ADDR "ScrollText"
+
+    .byte $53, $49, $44, $17, $09, $0e, $04, $05, $12, $20, $20, $2d, $2d, $2d, $20, $20, $00
 
 * = SPRITES_DATA "Sprite Data"
     .fill $200, $00
