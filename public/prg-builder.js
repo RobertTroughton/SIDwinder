@@ -85,18 +85,33 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
-    selectLayout(vizConfig, sidLoadAddress, sidSize) {
+    selectValidLayouts(vizConfig, sidLoadAddress, sidSize) {
+        const validLayouts = [];
+        const sidEnd = sidLoadAddress + sidSize;
+
         for (const [key, layout] of Object.entries(vizConfig.layouts)) {
             const vizStart = parseInt(layout.baseAddress);
-            const vizEnd = vizStart + 0x4000; // Assume max 16K
-            const sidEnd = sidLoadAddress + sidSize;
+            const vizEnd = vizStart + parseInt(layout.size || '0x4000');
 
-            // Check for overlap
-            if (vizEnd <= sidLoadAddress || vizStart >= sidEnd) {
-                return key; // No overlap, this layout works
-            }
+            const hasOverlap = !(vizEnd <= sidLoadAddress || vizStart >= sidEnd);
+
+            // Format hex inline
+            const sidStartHex = '$' + sidLoadAddress.toString(16).toUpperCase().padStart(4, '0');
+            const sidEndHex = '$' + sidEnd.toString(16).toUpperCase().padStart(4, '0');
+
+            validLayouts.push({
+                key: key,
+                layout: layout,
+                valid: !hasOverlap,
+                vizStart: vizStart,
+                vizEnd: vizEnd,
+                overlapReason: hasOverlap ?
+                    `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
+                    null
+            });
         }
-        return null; // No suitable layout found
+
+        return validLayouts;
     }
 
     generateSaveRoutine(modifiedAddresses, targetAddress) {
@@ -554,7 +569,17 @@ class SIDwinderPRGExporter {
             const vizConfig = await config.loadConfig(visualizerName);
             const configMaxCallsPerFrame = vizConfig?.maxCallsPerFrame || null;
 
-            const layoutKey = this.selectLayout(vizConfig, sidInfo.loadAddress, sidInfo.dataSize);
+            // Get the layout key from options (passed from UI) or select first valid one
+            let layoutKey = options.layoutKey;
+            if (!layoutKey) {
+                const validLayouts = this.selectValidLayouts(vizConfig, sidInfo.loadAddress, sidInfo.dataSize);
+                const firstValid = validLayouts.find(l => l.valid);
+                if (!firstValid) {
+                    throw new Error(`No valid layout found for visualizer ${visualizerName}`);
+                }
+                layoutKey = firstValid.key;
+            }
+
             const layout = vizConfig?.layouts?.[layoutKey];
 
             if (!layout) {

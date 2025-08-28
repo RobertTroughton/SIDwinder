@@ -604,32 +604,30 @@ class UIController {
 
     async loadVisualizerOptions(visualizer) {
         const optionsContainer = document.getElementById('visualizerOptions');
-
-        // Clear any existing options
         optionsContainer.innerHTML = '';
 
         if (!visualizer.config) {
-            // No config means no extra options
             optionsContainer.style.display = 'none';
             return;
         }
 
-        // Load config
         const config = await this.visualizerConfig.loadConfig(visualizer.id);
-        if (!config || (!config.inputs && !config.options)) {
+        if (!config) {
             optionsContainer.style.display = 'none';
             return;
         }
 
-        // Show container
         optionsContainer.style.display = 'block';
 
-        // Create options title
         const title = document.createElement('h3');
         title.textContent = `${visualizer.name} Options`;
         optionsContainer.appendChild(title);
 
-        // Add file inputs
+        if (config.layouts && Object.keys(config.layouts).length > 1) {
+            const layoutOption = this.createLayoutSelector(visualizer, config);
+            optionsContainer.appendChild(layoutOption);
+        }
+
         if (config.inputs) {
             for (const input of config.inputs) {
                 const inputEl = this.createFileInput(input);
@@ -637,13 +635,105 @@ class UIController {
             }
         }
 
-        // Add other options
         if (config.options) {
             for (const option of config.options) {
                 const optionEl = this.createOption(option);
                 optionsContainer.appendChild(optionEl);
             }
         }
+    }
+
+    createLayoutSelector(visualizer, config) {
+        const div = document.createElement('div');
+        div.className = 'export-option memory-layout-option';
+
+        // Get valid layouts
+        const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
+        const sidSize = this.analysisResults?.dataBytes || 0x2000;
+
+        // Use the actual PRG exporter instance, not PRGBuilder
+        if (!this.prgExporter) {
+            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+        }
+
+        const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize);
+
+        // Build the HTML
+        let html = `
+        <label>Memory Layout:</label>
+        <div class="layout-selector">
+    `;
+
+        // Sort layouts by address
+        layouts.sort((a, b) => a.vizStart - b.vizStart);
+
+        // Create radio buttons for each layout
+        const validLayouts = layouts.filter(l => l.valid);
+        const invalidLayouts = layouts.filter(l => !l.valid);
+
+        if (validLayouts.length === 0) {
+            html += '<div class="layout-warning">⚠️ No compatible memory layouts available for this SID</div>';
+        } else {
+            // Valid layouts
+            validLayouts.forEach((layoutInfo, index) => {
+                const layout = layoutInfo.layout;
+                const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+                const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+
+                html += `
+                <label class="layout-option">
+                    <input type="radio" 
+                           name="memory-layout" 
+                           value="${layoutInfo.key}" 
+                           data-visualizer="${visualizer.id}"
+                           ${index === 0 ? 'checked' : ''}>
+                    <span class="layout-info">
+                        <span class="layout-name">${layout.name || layoutInfo.key}</span>
+                        <span class="layout-range">${rangeStart}-${rangeEnd}</span>
+                    </span>
+                </label>
+            `;
+            });
+
+            // Invalid layouts (grayed out)
+            if (invalidLayouts.length > 0) {
+                html += '<div class="layout-separator">Unavailable (conflicts with SID):</div>';
+
+                invalidLayouts.forEach((layoutInfo) => {
+                    const layout = layoutInfo.layout;
+                    const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+                    const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+
+                    html += `
+                    <label class="layout-option disabled" title="${layoutInfo.overlapReason}">
+                        <input type="radio" 
+                               name="memory-layout" 
+                               value="${layoutInfo.key}" 
+                               disabled>
+                        <span class="layout-info">
+                            <span class="layout-name">${layout.name || layoutInfo.key}</span>
+                            <span class="layout-range">${rangeStart}-${rangeEnd}</span>
+                            <span class="layout-conflict">❌</span>
+                        </span>
+                    </label>
+                `;
+                });
+            }
+        }
+
+        html += '</div>';
+
+        if (validLayouts.length === 0) {
+            // Mark this visualizer as unavailable
+            const card = document.querySelector(`.visualizer-card[data-id="${visualizer.id}"]`);
+            if (card) {
+                card.classList.add('disabled');
+                card.querySelector('.visualizer-info').setAttribute('data-reason', 'No compatible memory layout');
+            }
+        }
+
+        div.innerHTML = html;
+        return div;
     }
 
     createFileInput(config) {
@@ -878,6 +968,15 @@ class UIController {
         const songSelector = document.getElementById('songSelector');
         const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
 
+        // Get the selected memory layout
+        const layoutRadio = document.querySelector('input[name="memory-layout"]:checked');
+        const selectedLayoutKey = layoutRadio ? layoutRadio.value : null;
+
+        if (!selectedLayoutKey) {
+            this.showExportStatus('Please select a memory layout', 'error');
+            return;
+        }
+
         try {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
@@ -895,7 +994,8 @@ class UIController {
                 includeData: true,
                 compressionType: compressionType,
                 visualizerId: this.selectedVisualizer.id,
-                selectedSong: selectedSong - 1  // Convert to 0-based for the PRG
+                selectedSong: selectedSong - 1,
+                layoutKey: selectedLayoutKey
             };
 
             const prgData = await this.prgExporter.createPRG(options);

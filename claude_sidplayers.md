@@ -7,7 +7,7 @@ Total players found: 8
 Files: 1
 
 ### FILE: SIDPlayers/Default/Default.asm
-*Original size: 16829 bytes, Cleaned: 13945 bytes (reduced by 17.1%)*
+*Original size: 16804 bytes, Cleaned: 13945 bytes (reduced by 17.0%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -1546,7 +1546,7 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 19362 bytes, Cleaned: 12653 bytes (reduced by 34.7%)*
+*Original size: 18140 bytes, Cleaned: 12668 bytes (reduced by 30.2%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -1563,7 +1563,7 @@ Files: 1
 .const SPECTRUM_START_LINE				= 3
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
@@ -2082,7 +2082,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 18733 bytes, Cleaned: 12078 bytes (reduced by 35.5%)*
+*Original size: 17518 bytes, Cleaned: 12093 bytes (reduced by 31.0%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -2099,7 +2099,7 @@ Files: 1
 .const SPECTRUM_START_LINE				= 11
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
@@ -2580,7 +2580,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 14420 bytes, Cleaned: 8671 bytes (reduced by 39.9%)*
+*Original size: 13153 bytes, Cleaned: 8686 bytes (reduced by 34.0%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -2595,7 +2595,7 @@ Files: 1
 .const ARTIST_NAME_LINE					= 23
 .const SPECTRUM_START_LINE				= 3
 .eval setSeed(55378008)
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
@@ -2987,7 +2987,7 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 14091 bytes, Cleaned: 8206 bytes (reduced by 41.8%)*
+*Original size: 12766 bytes, Cleaned: 8221 bytes (reduced by 35.6%)*
 ```asm
 .var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
 * = BASE_ADDRESS + $100 "Main Code"
@@ -3002,7 +3002,7 @@ Files: 1
 .const SONG_TITLE_LINE					= 23
 .const SPECTRUM_START_LINE				= 11
 .eval setSeed(55378008)
-.const VIC_BANK							= (BASE_ADDRESS / $4000)
+.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
 .const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
@@ -3362,22 +3362,31 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleBitmap/SimpleBitmap.asm
-*Original size: 4180 bytes, Cleaned: 3057 bytes (reduced by 26.9%)*
+*Original size: 4505 bytes, Cleaned: 3380 bytes (reduced by 25.0%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
-    jmp Initialize
-.const VIC_BANK                         = (BASE_ADDRESS / $4000)
-.const VIC_BANK_ADDRESS                 = VIC_BANK * $4000
-.const BITMAP_BANK                      = 1
-.const SCREEN_BANK                      = 6
-.const COLOUR_BANK                      = 7
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var BASE_ADDRESS                   = LOAD_ADDRESS
+.var CODE_ADDRESS                   = BASE_ADDRESS + $100
+.var VIC_BANK_ADDRESS               = LOAD_ADDRESS
+.var VIC_BANK						= VIC_BANK_ADDRESS / $4000
+.var BITMAP_BANK                    = 1
+.var SCREEN_BANK                    = 2
+.var COLOUR_BANK                    = 3
+.if (LOAD_ADDRESS == $c000) {
+    .eval BASE_ADDRESS              = $e000
+    .eval CODE_ADDRESS              = $e100
+    .eval BITMAP_BANK               = 0
+    .eval SCREEN_BANK               = 12
+    .eval COLOUR_BANK               = 13
+}
+* = CODE_ADDRESS "Main Code"
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 .const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
 .const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
+    jmp Initialize
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE

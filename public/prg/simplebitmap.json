@@ -7,6 +7,7 @@
     "addr4000": {
       "binary": "prg/simplebitmap-4000.bin",
       "baseAddress": "0x4000",
+      "size": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "borderColor": "0x400D",
@@ -15,6 +16,7 @@
     "addr8000": {
       "binary": "prg/simplebitmap-8000.bin",
       "baseAddress": "0x8000",
+      "size": "0x4000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "borderColor": "0x800D",
