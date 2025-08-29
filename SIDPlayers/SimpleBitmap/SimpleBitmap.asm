@@ -171,7 +171,7 @@ MusicIRQ:
     lda FastForwardActive
     bne !ffFrameLoop-
     
-    lda #$00
+    lda BorderColour
     sta $d020
     sta callCount + 1
     jmp !done+

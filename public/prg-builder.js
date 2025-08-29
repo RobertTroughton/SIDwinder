@@ -688,12 +688,6 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Process visualizer options
-            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
-            for (const component of optionComponents) {
-                this.builder.addComponent(component.data, component.loadAddress, component.name);
-            }
-
             // Add save/restore routines
             let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
             let restoreRoutineAddr = saveRoutineAddr;
@@ -748,6 +742,12 @@ class SIDwinderPRGExporter {
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
+
+            // Process visualizer options
+            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
+            for (const component of optionComponents) {
+                this.builder.addComponent(component.data, component.loadAddress, component.name);
+            }
 
             // Build PRG
             const prgData = this.builder.build();
