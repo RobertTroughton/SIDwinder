@@ -173,6 +173,8 @@ MusicIRQ:
     
     lda BorderColour
     sta $d020
+
+    lda #$00
     sta callCount + 1
     jmp !done+
 
