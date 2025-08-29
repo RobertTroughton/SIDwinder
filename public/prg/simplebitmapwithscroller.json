@@ -35,9 +35,9 @@
   "inputs": [
     {
       "id": "koala",
-      "label": "Koala Image",
+      "label": "Image File",
       "type": "file",
-      "accept": ".koa,.kla",
+      "accept": ".png,.koa,.kla",
       "required": false,
       "default": "prg/default-picture.kla",
       "description": "C64 Koala format image (10001 bytes)",

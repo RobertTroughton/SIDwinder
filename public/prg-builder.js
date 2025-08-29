@@ -1,4 +1,4 @@
-// prg-builder.js - PRG file builder for SIDwinder Web
+﻿// prg-builder.js - PRG file builder for SIDwinder Web
 // This module creates C64 PRG files combining SID music, data, and visualizer
 
 class PRGBuilder {
@@ -426,10 +426,62 @@ class SIDwinderPRGExporter {
 
             if (inputElement && inputElement.files.length > 0) {
                 const file = inputElement.files[0];
-                const arrayBuffer = await file.arrayBuffer();
-                fileData = new Uint8Array(arrayBuffer);
+
+                // Check if this is a PNG file that needs conversion
+                if (file.type === 'image/png' && file.name.toLowerCase().endsWith('.png')) {
+                    // Check for PNG converter availability
+                    if (typeof EnhancedImageLoader === 'undefined') {
+                        console.error('EnhancedImageLoader not available');
+                        throw new Error('PNG converter not loaded. Please refresh the page and try again.');
+                    }
+
+                    if (!window.SIDwinderModule) {
+                        console.error('SIDwinderModule not available');
+                        throw new Error('WASM module not ready. Please wait a moment and try again.');
+                    }
+
+                    try {
+                        console.log(`Converting PNG file: ${file.name}`);
+                        const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
+                        const result = await enhancedLoader.loadImageFile(file);
+                        fileData = result.data;
+
+                        // Debug the generated KOA structure
+                        console.log(`PNG converted successfully:`);
+                        console.log(`- File size: ${fileData.length} bytes (expected: 10003)`);
+                        console.log(`- Load address: ${fileData[1].toString(16).padStart(2, '0')}${fileData[0].toString(16).padStart(2, '0')}`);
+                        console.log(`- Background color: ${result.backgroundColor} (${result.backgroundColorName})`);
+                        console.log(`- BG at offset ${fileData.length - 1}: ${fileData[fileData.length - 1]}`);
+
+                        // Verify standard KOA structure
+                        if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
+                            console.log('✓ Valid KOA format detected');
+                        } else {
+                            console.warn('⚠ Unexpected KOA format - this may cause issues');
+                        }
+                    } catch (pngError) {
+                        console.error('PNG conversion failed:', pngError);
+                        throw new Error(`PNG conversion failed: ${pngError.message}`);
+                    }
+                } else {
+                    // Handle regular binary files
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        fileData = new Uint8Array(arrayBuffer);
+                        console.log(`Loaded binary file: ${file.name}, size: ${fileData.length} bytes`);
+                    } catch (loadError) {
+                        console.error('File loading failed:', loadError);
+                        throw new Error(`Failed to load file ${file.name}: ${loadError.message}`);
+                    }
+                }
             } else if (inputConfig.default) {
-                fileData = await config.loadDefaultFile(inputConfig.default);
+                try {
+                    fileData = await config.loadDefaultFile(inputConfig.default);
+                    console.log(`Loaded default file: ${inputConfig.default}`);
+                } catch (defaultError) {
+                    console.error('Default file loading failed:', defaultError);
+                    throw new Error(`Failed to load default file ${inputConfig.default}: ${defaultError.message}`);
+                }
             }
 
             if (fileData && inputConfig.memory && inputConfig.memory[layoutKey]) {
@@ -440,7 +492,24 @@ class SIDwinderPRGExporter {
                     const targetAddress = parseInt(memConfig.targetAddress);
                     const size = parseInt(memConfig.size);
 
-                    const data = fileData.slice(sourceOffset, sourceOffset + size);
+                    // Handle Koala file structure - skip load address if present
+                    let adjustedOffset = sourceOffset;
+
+                    // Bounds checking
+                    if (adjustedOffset >= fileData.length) {
+                        console.warn(`Offset ${adjustedOffset} exceeds file size ${fileData.length} for component ${memConfig.name}`);
+                        continue;
+                    }
+
+                    const endOffset = Math.min(adjustedOffset + size, fileData.length);
+                    const data = fileData.slice(adjustedOffset, endOffset);
+
+                    if (data.length === 0) {
+                        console.warn(`No data extracted for component ${memConfig.name}`);
+                        continue;
+                    }
+
+                    console.log(`Adding component: ${inputConfig.id}_${memConfig.name}, size: ${data.length}, address: $${targetAddress.toString(16).toUpperCase()}`);
 
                     additionalComponents.push({
                         data: data,
@@ -451,6 +520,7 @@ class SIDwinderPRGExporter {
             }
         }
 
+        console.log(`Processed ${additionalComponents.length} visualizer input components`);
         return additionalComponents;
     }
 

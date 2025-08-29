@@ -29,9 +29,9 @@
   "inputs": [
     {
       "id": "koala",
-      "label": "Koala Image",
+      "label": "Image File",
       "type": "file",
-      "accept": ".koa,.kla",
+      "accept": ".png, .koa,.kla",
       "required": false,
       "default": "prg/default-logo.kla",
       "memory": {
