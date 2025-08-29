@@ -37,7 +37,7 @@ class PNGConverter {
             const imageData = await this.loadPNGImageData(file);
 
             // Validate dimensions
-            if (imageData.width !== 320 || imageData.height !== 200) {
+            if (!((imageData.width === 320 && imageData.height === 200) || (imageData.width === 384 && imageData.height === 272))) {
                 throw new Error(`Image must be 320x200 pixels (got ${imageData.width}x${imageData.height})`);
             }
 

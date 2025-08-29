@@ -199,11 +199,9 @@ class ImagePreviewManager {
             img.src = objectUrl;
 
             // Clean up object URL after loading
-            const originalOnLoad = img.onload;
-            img.onload = () => {
+            img.addEventListener('load', () => {
                 URL.revokeObjectURL(objectUrl);
-                originalOnLoad();
-            };
+            }, { once: true });
         });
     }
 
