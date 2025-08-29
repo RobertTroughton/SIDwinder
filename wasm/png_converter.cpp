@@ -23,6 +23,7 @@ static const char* COLOR_NAMES[16] = {
 // Available C64 Palettes - Easy to copy/paste new ones here
 // Put your preferred palette first as it will be the default
 static const C64Palette AVAILABLE_PALETTES[] = {
+    {"PEPTOette_a",                     0x000000,0xffffff,0x753d3d,0x7bb4b4,0x7d4488,0x5c985c,0x343383,0xcbcc7c,0x7c552f,0x523e00,0xa76f6f,0x4e4e4e,0x767676,0x9fdb9f,0x6d6cbc,0xa3a3a3},
     {"VICE3_6_Pepto_PAL",               0x000000,0xffffff,0x68372b,0x70a4b2,0x6f3d86,0x588d43,0x352879,0xb8c76f,0x6f4f25,0x433900,0x9a6759,0x444444,0x6c6c6c,0x9ad284,0x6c5eb5,0x959595},
     {"VICE3_6_Pixcen",                  0x000000,0xffffff,0x894036,0x7abfc7,0x8a46ae,0x68a941,0x3e31a2,0xd0dc71,0x905f25,0x5c4700,0xbb776d,0x555555,0x808080,0xacea88,0x7c70da,0xababab},
     {"UnknownPal01",                    0x000000,0xffffff,0x924a40,0x84c5cc,0x9351b6,0x72b14b,0x483aaa,0xd5df7c,0x99692d,0x675200,0xc18178,0x606060,0x8a8a8a,0xb3ec91,0x867ade,0xb3b3b3},
@@ -96,7 +97,6 @@ static const C64Palette AVAILABLE_PALETTES[] = {
     {"UnknownPal37",                    0x010101,0xfdf5ff,0x8a1f00,0x65cfaa,0xa53a9f,0x4fb015,0x1a0f90,0xf0ea50,0xa04500,0x3f1f00,0xca7a5f,0x454545,0x808080,0x95ff95,0x4f90d0,0xbababa},
     {"UnknownPal38",                    0x000000,0xffffff,0x813339,0x74cec8,0x8e3c97,0x56ac4e,0x2e2c9b,0xedf171,0x8e5029,0x553800,0xc46c71,0x4a4a4a,0x9a9a9a,0xa9ff9f,0x706deb,0xb1b1b1},
     {"PALette_C64_v1r",                 0x000000,0xffffff,0x8c323d,0x66bfb3,0x8e36a1,0x4aa648,0x322dab,0xcdd256,0x8f501a,0x533d00,0xbd636e,0x4e4e4e,0x767676,0x8ce98b,0x6b66e4,0xa3a3a3},
-    {"PEPTOette_a",                     0x000000,0xffffff,0x753d3d,0x7bb4b4,0x7d4488,0x5c985c,0x343383,0xcbcc7c,0x7c552f,0x523e00,0xa76f6f,0x4e4e4e,0x767676,0x9fdb9f,0x6d6cbc,0xa3a3a3},
     {"VICE3_6_C64HQ_CRT",               0x171717,0xffffff,0xc92f00,0x7dffd9,0xea51e0,0x66e900,0x2f12e1,0xffff54,0xee6e00,0x743400,0xffaa99,0x6e6e6e,0xbcbcbc,0xaeffae,0x65c6ff,0xededed},
     {"VICE3_6_C64S_CRT",                0x000000,0xffffff,0xf80000,0x59ffff,0xf300f3,0x00ec00,0x0000ff,0xffff00,0xec7a00,0xc04400,0xff6f6f,0x7e7e7e,0xb0b0b0,0x60ff60,0x7979ff,0xdadada},
     {"VICE3_6_CCS64_CRT",               0x222222,0xffffff,0xff5757,0x6bffff,0xff7cff,0x46ff46,0x6060ff,0xffff2a,0xffcf42,0xd6a160,0xffcaca,0x7e7e7e,0xb9b9b9,0xc4ffc4,0xcfcfff,0xf3f3f3},
@@ -227,18 +227,9 @@ private:
             for (int x = 0; x < 8; x += 2) { // Step by 2 for multicolor double pixels
                 int pixelX = charX * 8 + x;
                 int pixelY = charY * 8 + y;
-
                 uint8_t color1 = getPixelColor(pixelX, pixelY);
                 uint8_t color2 = getPixelColor(pixelX + 1, pixelY);
-
-                // In multicolor mode, both pixels in a pair should be the same
-                if (color1 != color2) {
-                    // For now, use the first pixel's color
-                    colors.insert(color1);
-                }
-                else {
-                    colors.insert(color1);
-                }
+                colors.insert(color1);
             }
         }
 
@@ -392,50 +383,81 @@ public:
         }
     }
 
+    bool extractWithOffset(uint8_t* data, int offsetX, int offsetY) {
+        for (int y = 0; y < 200; y++) {
+            for (int x = 0; x < 320; x++) {
+                int srcIndex = ((y + offsetY) * 384 + (x + offsetX)) * 4;
+                int dstIndex = (y * 320 + x) * 4;
+                imageData[dstIndex] = data[srcIndex];
+                imageData[dstIndex + 1] = data[srcIndex + 1];
+                imageData[dstIndex + 2] = data[srcIndex + 2];
+                imageData[dstIndex + 3] = data[srcIndex + 3];
+            }
+        }
+
+        // Test if this offset works
+        if (testConversion()) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Try different offsets for 384x272 VICE screenshots
+    bool tryDifferentOffsets(uint8_t* data, int w, int h) {
+        for (int offsetY = 0; offsetY < 8; offsetY++) {
+            int ypos = offsetY + 35;
+            for (int offsetX = 0; offsetX < 8; offsetX++) {
+                int xpos = offsetX + 32;
+                if (extractWithOffset(data, xpos, ypos)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool testConversion() {
+        for (int charY = 0; charY < 25; charY++) {
+            for (int charX = 0; charX < 40; charX++) {
+                std::set<uint8_t> cellColors;
+                if (!analyzeCharCell(charX, charY, cellColors)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     // Set image data (supports 320x200 or 384x272 VICE screenshots)
     bool setImageData(uint8_t* data, int w, int h) {
         if (imageData) {
             delete[] imageData;
         }
 
-        if (w == 320 && h == 200) {
-            // Standard 320x200 image - use directly
-            width = w;
-            height = h;
-            int dataSize = width * height * 4; // RGBA
-            imageData = new uint8_t[dataSize];
+        width = 320;
+        height = 200;
+        int dataSize = width * height * 4; // RGBA
+        imageData = new uint8_t[dataSize];
 
-            // Copy the data directly
+        if (w == 320 && h == 200) {
             for (int i = 0; i < dataSize; i++) {
                 imageData[i] = data[i];
             }
             return true;
         }
         else if (w == 384 && h == 272) {
-            // VICE screenshot - extract 320x200 region from [32,35] to [351,234]
-            width = 320;
-            height = 200;
-            int dataSize = width * height * 4; // RGBA
-            imageData = new uint8_t[dataSize];
-
-            for (int y = 0; y < 200; y++) {
-                for (int x = 0; x < 320; x++) {
-                    int srcX = x + 32;
-                    int srcY = y + 35;
-
-                    int srcIndex = (srcY * 384 + srcX) * 4;
-                    int dstIndex = (y * 320 + x) * 4;
-
-                    imageData[dstIndex] =       data[srcIndex];
-                    imageData[dstIndex + 1] =   data[srcIndex + 1];
-                    imageData[dstIndex + 2] =   data[srcIndex + 2];
-                    imageData[dstIndex + 3] =   data[srcIndex + 3];
+            if (!extractWithOffset(data, 32, 35)) {
+                if (!tryDifferentOffsets(data, w, h)) {
+                    delete[] imageData;
+                    imageData = nullptr;
+                    return false;
                 }
             }
             return true;
         }
         else {
-            return false; // Unsupported image size
+            delete[] imageData;
+            return false;
         }
     }
 
