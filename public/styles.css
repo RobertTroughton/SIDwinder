@@ -1,4 +1,4 @@
-/* styles.css - SIDwinder Web Styles */
+/* styles.css - SIDwinder Web Styles with Image Preview Support */
 
 /* Reset and Base Styles */
 * {
@@ -569,6 +569,24 @@ body {
         margin-bottom: 0;
     }
 
+/* Full-width option row for image previews */
+.option-row-full {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+}
+
+    .option-row-full .option-label {
+        flex: none;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .option-row-full .option-control {
+        width: 100%;
+        justify-content: center;
+    }
+
 .option-label {
     flex: 0 0 140px;
     font-weight: 600;
@@ -581,6 +599,13 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+/* Image input container */
+.image-input-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 /* Layout Options */
@@ -732,6 +757,132 @@ body {
     border-radius: 6px;
     color: #856404;
     text-align: center;
+}
+
+/* Image Preview System Styles */
+.image-preview-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.image-preview-wrapper {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+    .image-preview-wrapper:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+.image-preview-frame {
+    position: relative;
+    width: 320px;
+    height: 200px;
+    margin: 0 auto;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+}
+
+.image-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.image-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.image-preview-wrapper:hover .image-preview-overlay {
+    opacity: 1;
+}
+
+.preview-click-hint {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px 12px;
+    background: rgba(102, 126, 234, 0.9);
+    border-radius: 4px;
+}
+
+.image-preview-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 249, 250, 0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.preview-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #dee2e6;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: preview-spin 1s linear infinite;
+}
+
+@keyframes preview-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.image-preview-info {
+    padding: 8px 12px;
+    background: white;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+}
+
+.preview-filename {
+    font-weight: 600;
+    color: #495057;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-size {
+    color: #6c757d;
+    font-family: monospace;
 }
 
 /* Export Buttons */
@@ -1000,6 +1151,16 @@ body {
         align-items: flex-start;
         gap: 5px;
     }
+
+    .image-preview-frame {
+        width: 280px;
+        height: 175px;
+    }
+
+    .preview-click-hint {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
 }
 
 /* Compression Options */
@@ -1113,8 +1274,6 @@ body {
         background: rgba(0, 0, 0, 0.2);
     }
 
-/* Remove the slider-dots section entirely */
-
 /* Slider thumb - transparent with border */
 .color-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -1203,24 +1362,6 @@ body {
     color: #495057;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .color-slider-control {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    .slider-wrapper {
-        width: 100%;
-    }
-
-    .color-value {
-        width: auto;
-        justify-content: center;
-    }
-}
-
 /* Textarea container styles */
 .textarea-container {
     display: flex;
@@ -1270,4 +1411,3 @@ body {
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
-

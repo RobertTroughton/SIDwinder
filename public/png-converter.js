@@ -92,14 +92,6 @@ class PNGConverter {
                         ['number', 'number'],
                         [exactPtr, distancePtr]
                     );
-
-                    const exactMatches = this.Module.getValue(exactPtr, 'i32');
-                    const distanceMatches = this.Module.getValue(distancePtr, 'i32');
-                    const totalPixels = exactMatches + distanceMatches;
-                    const exactPercent = totalPixels > 0 ? Math.round((exactMatches / totalPixels) * 100) : 0;
-
-                    console.log(`PNG→C64: ${this.getColorName(backgroundColor)} background, ${exactPercent}% exact color matches`);
-
                 } finally {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
@@ -115,16 +107,9 @@ class PNGConverter {
                         [koalaPtr]
                     );
 
-                    console.log(`KOA file created: ${actualSize} bytes (expected 10003)`);
-
                     // Copy result to JavaScript array
                     const koalaData = new Uint8Array(actualSize);
                     koalaData.set(this.Module.HEAPU8.subarray(koalaPtr, koalaPtr + actualSize));
-
-                    // Debug: Check the structure
-                    console.log(`Load address: ${koalaData[1].toString(16).padStart(2, '0')}${koalaData[0].toString(16).padStart(2, '0')}`);
-                    console.log(`Background color at offset ${actualSize - 1}: ${koalaData[actualSize - 1]} (${this.getColorName(koalaData[actualSize - 1])})`);
-                    console.log(`File structure: Load(2) + Bitmap(8000) + Screen(1000) + Color(1000) + BG(1) = ${2 + 8000 + 1000 + 1000 + 1} bytes`);
 
                     // Verify structure
                     if (actualSize !== 10003) {

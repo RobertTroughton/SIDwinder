@@ -104,10 +104,7 @@ Initialize:
     bne !loop-
 
     ldy #$07
-    ldx #SPRITES_INDEX
 !loop:
-    txa
-    sta BITMAP_SCREEN_DATA, y
     lda ScrollColour
     sta $d027, y
     dex

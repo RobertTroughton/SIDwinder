@@ -441,23 +441,15 @@ class SIDwinderPRGExporter {
                     }
 
                     try {
-                        console.log(`Converting PNG file: ${file.name}`);
                         const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
                         const result = await enhancedLoader.loadImageFile(file);
                         fileData = result.data;
 
-                        // Debug the generated KOA structure
-                        console.log(`PNG converted successfully:`);
-                        console.log(`- File size: ${fileData.length} bytes (expected: 10003)`);
-                        console.log(`- Load address: ${fileData[1].toString(16).padStart(2, '0')}${fileData[0].toString(16).padStart(2, '0')}`);
-                        console.log(`- Background color: ${result.backgroundColor} (${result.backgroundColorName})`);
-                        console.log(`- BG at offset ${fileData.length - 1}: ${fileData[fileData.length - 1]}`);
-
                         // Verify standard KOA structure
                         if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                            console.log('✓ Valid KOA format detected');
+//;                            console.log('Valid KOA format detected');
                         } else {
-                            console.warn('⚠ Unexpected KOA format - this may cause issues');
+                            console.warn('Unexpected KOA format - this may cause issues');
                         }
                     } catch (pngError) {
                         console.error('PNG conversion failed:', pngError);
@@ -468,7 +460,6 @@ class SIDwinderPRGExporter {
                     try {
                         const arrayBuffer = await file.arrayBuffer();
                         fileData = new Uint8Array(arrayBuffer);
-                        console.log(`Loaded binary file: ${file.name}, size: ${fileData.length} bytes`);
                     } catch (loadError) {
                         console.error('File loading failed:', loadError);
                         throw new Error(`Failed to load file ${file.name}: ${loadError.message}`);
@@ -477,7 +468,6 @@ class SIDwinderPRGExporter {
             } else if (inputConfig.default) {
                 try {
                     fileData = await config.loadDefaultFile(inputConfig.default);
-                    console.log(`Loaded default file: ${inputConfig.default}`);
                 } catch (defaultError) {
                     console.error('Default file loading failed:', defaultError);
                     throw new Error(`Failed to load default file ${inputConfig.default}: ${defaultError.message}`);
@@ -509,8 +499,6 @@ class SIDwinderPRGExporter {
                         continue;
                     }
 
-                    console.log(`Adding component: ${inputConfig.id}_${memConfig.name}, size: ${data.length}, address: $${targetAddress.toString(16).toUpperCase()}`);
-
                     additionalComponents.push({
                         data: data,
                         loadAddress: targetAddress,
@@ -520,7 +508,6 @@ class SIDwinderPRGExporter {
             }
         }
 
-        console.log(`Processed ${additionalComponents.length} visualizer input components`);
         return additionalComponents;
     }
 
@@ -791,7 +778,6 @@ class SIDwinderPRGExporter {
                     );
 
                     const result_ratio = result.compressedSize / result.originalSize;
-                    console.log(`${compressionType.toUpperCase()} compression: ${result.originalSize} -> ${result.compressedSize} bytes (${(result_ratio * 100).toFixed(1)}%)`);
 
                     return result.data;
 

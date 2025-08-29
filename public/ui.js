@@ -1,4 +1,4 @@
-﻿// ui.js - UI Controller for SIDwinder Web with Visual Visualizer Selection
+﻿// ui.js - UI Controller for SIDwinder Web with Visual Visualizer Selection and Image Previews
 
 class UIController {
     constructor() {
@@ -771,25 +771,47 @@ class UIController {
     }
 
     createFileInputHTML(config) {
-        return `
-        <div class="option-row">
-            <label class="option-label">${config.label}</label>
-            <div class="option-control">
-                <input type="file" 
-                       id="${config.id}" 
-                       accept="${config.accept}" 
-                       style="display: none;">
-                <button type="button" 
-                        class="file-button" 
-                        data-file-input="${config.id}">
-                    Choose File
-                </button>
-                <span class="file-status" id="${config.id}-status">
-                    ${config.default ? 'Using default' : 'No file selected'}
-                </span>
+        // Check if this is an image input that should use preview
+        const isImageInput = config.accept && (
+            config.accept.includes('image/') ||
+            config.accept.includes('.png') ||
+            config.accept.includes('.koa')
+        );
+
+        if (isImageInput) {
+            // Create a container for the image preview
+            return `
+            <div class="option-row option-row-full">
+                <label class="option-label">${config.label}</label>
+                <div class="option-control">
+                    <div id="${config.id}-preview-container" class="image-input-container">
+                        <!-- Preview will be inserted here -->
+                    </div>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        } else {
+            // Use traditional file input for non-image files
+            return `
+            <div class="option-row">
+                <label class="option-label">${config.label}</label>
+                <div class="option-control">
+                    <input type="file" 
+                           id="${config.id}" 
+                           accept="${config.accept}" 
+                           style="display: none;">
+                    <button type="button" 
+                            class="file-button" 
+                            data-file-input="${config.id}">
+                        Choose File
+                    </button>
+                    <span class="file-status" id="${config.id}-status">
+                        ${config.default ? 'Using default' : 'No file selected'}
+                    </span>
+                </div>
+            </div>
+        `;
+        }
     }
 
     createOptionHTML(config) {
@@ -919,7 +941,35 @@ class UIController {
     }
 
     attachOptionEventListeners(config) {
-        // File input handlers
+        // Initialize image preview manager if not already created
+        if (!window.imagePreviewManager) {
+            window.imagePreviewManager = new ImagePreviewManager();
+        }
+
+        // Set up image previews for image inputs
+        if (config && config.inputs) {
+            config.inputs.forEach(inputConfig => {
+                const isImageInput = inputConfig.accept && (
+                    inputConfig.accept.includes('image/') ||
+                    inputConfig.accept.includes('.png') ||
+                    inputConfig.accept.includes('.koa')
+                );
+
+                if (isImageInput) {
+                    const container = document.getElementById(`${inputConfig.id}-preview-container`);
+                    if (container) {
+                        // Create and insert the preview element
+                        const previewElement = window.imagePreviewManager.createImagePreview(inputConfig);
+                        container.appendChild(previewElement);
+
+                        // Load the default image
+                        window.imagePreviewManager.loadDefaultImage(inputConfig);
+                    }
+                }
+            });
+        }
+
+        // Traditional file input handlers (for non-image files)
         document.querySelectorAll('.file-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const inputId = e.target.dataset.fileInput;
@@ -927,7 +977,7 @@ class UIController {
             });
         });
 
-        document.querySelectorAll('input[type="file"]').forEach(input => {
+        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"]):not([accept*=".koa"])').forEach(input => {
             input.addEventListener('change', (e) => {
                 const statusEl = document.getElementById(`${e.target.id}-status`);
                 if (e.target.files.length > 0) {
@@ -1105,8 +1155,6 @@ class UIController {
             this.showExportStatus('Please select a visualizer', 'error');
             return;
         }
-
-        // ... existing checks ...
 
         // Get the selected memory layout
         const layoutRadio = document.querySelector('input[name="memory-layout"]:checked');
