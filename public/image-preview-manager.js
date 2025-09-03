@@ -205,7 +205,47 @@ class ImagePreviewManager {
         });
     }
 
-    // Create preview from binary data (like .koa files)
+    // Create preview from PNG binary data
+    async createPreviewFromPNGData(pngData) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            img.onload = () => {
+                // Set canvas to C64 resolution
+                canvas.width = 320;
+                canvas.height = 200;
+
+                // Draw and scale the image
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(img, 0, 0, 320, 200);
+
+                // Get the data URL for preview
+                const dataUrl = canvas.toDataURL();
+
+                resolve({
+                    dataUrl: dataUrl,
+                    sizeText: `${(pngData.length / 1024).toFixed(1)}KB (PNG)`
+                });
+
+                // Clean up blob URL
+                URL.revokeObjectURL(img.src);
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(img.src);
+                reject(new Error('Invalid PNG data'));
+            };
+
+            // Create blob from PNG data and set as image source
+            const blob = new Blob([pngData], { type: 'image/png' });
+            const blobUrl = URL.createObjectURL(blob);
+            img.src = blobUrl;
+        });
+    }
+
+    // Create preview from binary data (like .koa files or PNG files)
     async createPreviewFromData(fileData, filename) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -213,8 +253,12 @@ class ImagePreviewManager {
         canvas.height = 200;
 
         try {
+            // Check if this is a PNG file by magic number
+            if (this.isPNGFile(fileData)) {
+                return await this.createPreviewFromPNGData(fileData);
+            }
             // Check if this looks like a Koala file
-            if (this.isKoalaFile(fileData)) {
+            else if (this.isKoalaFile(fileData)) {
                 await this.renderKoalaPreview(ctx, fileData);
             } else {
                 // Show a generic binary file placeholder
@@ -229,6 +273,13 @@ class ImagePreviewManager {
             dataUrl: canvas.toDataURL(),
             sizeText: `${(fileData.length / 1024).toFixed(1)}KB (${this.getFileType(fileData)})`
         };
+    }
+
+    // Check if binary data is a PNG file (magic number: 89 50 4E 47 0D 0A 1A 0A)
+    isPNGFile(data) {
+        if (data.length < 8) return false;
+        return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
+            data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
 
     // Check if binary data is a Koala file
@@ -348,6 +399,9 @@ class ImagePreviewManager {
 
     // Determine file type from data
     getFileType(data) {
+        if (this.isPNGFile(data)) {
+            return 'PNG';
+        }
         if (this.isKoalaFile(data)) {
             return 'Koala';
         }
@@ -374,8 +428,6 @@ class ImagePreviewManager {
         img.src = canvas.toDataURL();
     }
 }
-
-// Note: CSS styles for image previews are included in styles.css
 
 // Export the manager
 window.ImagePreviewManager = ImagePreviewManager;

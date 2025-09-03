@@ -33,7 +33,7 @@
       "type": "file",
       "accept": ".png, .koa,.kla",
       "required": false,
-      "default": "prg/default-logo.kla",
+      "default": "prg/default-logo.png",
       "memory": {
         "addr4000": [
           {

@@ -447,7 +447,7 @@ class SIDwinderPRGExporter {
 
                         // Verify standard KOA structure
                         if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-//;                            console.log('Valid KOA format detected');
+                            //;                            console.log('Valid KOA format detected');
                         } else {
                             console.warn('Unexpected KOA format - this may cause issues');
                         }
@@ -467,7 +467,44 @@ class SIDwinderPRGExporter {
                 }
             } else if (inputConfig.default) {
                 try {
-                    fileData = await config.loadDefaultFile(inputConfig.default);
+                    const rawFileData = await config.loadDefaultFile(inputConfig.default);
+
+                    // Check if the default file is a PNG that needs conversion
+                    if (inputConfig.default.toLowerCase().endsWith('.png') && this.isPNGFile(rawFileData)) {
+                        // Check for PNG converter availability
+                        if (typeof EnhancedImageLoader === 'undefined') {
+                            console.error('EnhancedImageLoader not available');
+                            throw new Error('PNG converter not loaded. Please refresh the page and try again.');
+                        }
+
+                        if (!window.SIDwinderModule) {
+                            console.error('SIDwinderModule not available');
+                            throw new Error('WASM module not ready. Please wait a moment and try again.');
+                        }
+
+                        try {
+                            // Create a blob from the PNG data and convert it to a File-like object
+                            const blob = new Blob([rawFileData], { type: 'image/png' });
+                            const file = new File([blob], inputConfig.default.split('/').pop(), { type: 'image/png' });
+
+                            const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
+                            const result = await enhancedLoader.loadImageFile(file);
+                            fileData = result.data;
+
+                            // Verify standard KOA structure
+                            if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
+                                console.log('Default PNG converted to valid KOA format');
+                            } else {
+                                console.warn('Default PNG conversion resulted in unexpected KOA format');
+                            }
+                        } catch (pngError) {
+                            console.error('Default PNG conversion failed:', pngError);
+                            throw new Error(`Default PNG conversion failed: ${pngError.message}`);
+                        }
+                    } else {
+                        // Use the raw file data (for .koa, .kla, or other binary files)
+                        fileData = rawFileData;
+                    }
                 } catch (defaultError) {
                     console.error('Default file loading failed:', defaultError);
                     throw new Error(`Failed to load default file ${inputConfig.default}: ${defaultError.message}`);
@@ -509,6 +546,13 @@ class SIDwinderPRGExporter {
         }
 
         return additionalComponents;
+    }
+
+    // Helper method to detect PNG files by magic number
+    isPNGFile(data) {
+        if (data.length < 8) return false;
+        return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
+            data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
 
     async processVisualizerOptions(visualizerType, layoutKey = 'addr4000') {
