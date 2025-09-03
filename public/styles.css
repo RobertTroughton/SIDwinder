@@ -1,6 +1,3 @@
-/* styles.css - SIDwinder Web Styles with Image Preview Support */
-
-/* Reset and Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -17,7 +14,6 @@ body {
     padding: 20px;
 }
 
-/* Main Container */
 .container {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
@@ -27,31 +23,104 @@ body {
     overflow: hidden;
 }
 
-/* Header */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
-    text-align: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-bottom: 3px solid #00d4ff;
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-    .header h1 {
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+        animation: shimmer 3s infinite;
+        pointer-events: none;
     }
 
-    .header p {
-        font-size: 1.1em;
-        opacity: 0.9;
+@keyframes shimmer {
+    0% {
+        left: -100%;
     }
 
-/* Main Content Area */
+    100% {
+        left: 100%;
+    }
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    justify-content: center;
+}
+
+.logo {
+    height: 80px;
+    width: auto;
+    margin-right: 2rem;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5));
+    transition: filter 0.3s ease;
+}
+
+    .logo:hover {
+        filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.8));
+    }
+
+.header-info {
+    display: flex;
+    flex-direction: column;
+    color: white;
+    position: relative;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    letter-spacing: -0.5px;
+}
+
+.header p,
+.tagline {
+    font-size: 1.1rem;
+    color: #b0c4de;
+    margin: 0.25rem 0 0.5rem 0;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    opacity: 1;
+}
+
+.version-badge {
+    display: inline-block;
+    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
+    animation: pulse-badge 2s infinite;
+    align-self: flex-start;
+}
+
 .main-content {
     padding: 40px;
 }
 
-/* Section Groups */
 .section-group {
     background: rgba(102, 126, 234, 0.03);
     border: 2px solid rgba(102, 126, 234, 0.15);
@@ -72,7 +141,6 @@ body {
         user-select: none;
     }
 
-/* Info Section */
 .info-section {
     opacity: 1;
     transition: all 0.5s ease;
@@ -90,7 +158,6 @@ body {
         pointer-events: auto;
     }
 
-/* Upload Section */
 .upload-section {
     border: 3px dashed #667eea;
     border-radius: 15px;
@@ -159,7 +226,6 @@ body {
     display: none;
 }
 
-/* Song Title Section */
 .song-title-section {
     background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
     border-radius: 15px;
@@ -193,7 +259,6 @@ body {
     color: #764ba2;
 }
 
-/* Information Panels */
 .info-panels {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -226,7 +291,6 @@ body {
     grid-column: 1 / -1;
 }
 
-/* Information Rows */
 .info-row {
     display: flex;
     justify-content: space-between;
@@ -291,7 +355,6 @@ body {
             display: none;
         }
 
-/* Export Modified Container */
 .export-modified-container {
     text-align: center;
     padding-top: 10px;
@@ -304,7 +367,6 @@ body {
     font-style: italic;
 }
 
-/* Export Section */
 .export-section {
     display: block;
     opacity: 1;
@@ -339,7 +401,6 @@ body {
         font-weight: normal;
     }
 
-/* Song Selector */
 .song-selector-container {
     margin-bottom: 20px;
     padding: 15px;
@@ -375,7 +436,6 @@ body {
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-/* Visualizer Grid */
 .visualizer-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -495,7 +555,6 @@ body {
     margin: 10px 0;
 }
 
-/* Visualizer Options Panel - Complete Design */
 .visualizer-options-panel {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 2px solid rgba(102, 126, 234, 0.2);
@@ -537,7 +596,6 @@ body {
     padding: 25px;
 }
 
-/* Option Groups */
 .option-group {
     margin-bottom: 25px;
 }
@@ -557,7 +615,6 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Option Rows */
 .option-row {
     display: flex;
     align-items: center;
@@ -569,7 +626,6 @@ body {
         margin-bottom: 0;
     }
 
-/* Full-width option row for image previews */
 .option-row-full {
     flex-direction: column;
     align-items: stretch;
@@ -601,14 +657,12 @@ body {
     gap: 12px;
 }
 
-/* Image input container */
 .image-input-container {
     display: flex;
     justify-content: center;
     width: 100%;
 }
 
-/* Layout Options */
 .layout-options {
     display: flex;
     flex-direction: column;
@@ -679,7 +733,6 @@ body {
     font-style: italic;
 }
 
-/* Input Controls */
 .file-button {
     background: #667eea;
     color: white;
@@ -759,7 +812,6 @@ body {
     text-align: center;
 }
 
-/* Image Preview System Styles */
 .image-preview-container {
     width: 100%;
     max-width: 400px;
@@ -885,7 +937,6 @@ body {
     font-family: monospace;
 }
 
-/* Export Buttons */
 .export-buttons {
     display: flex;
     gap: 10px;
@@ -934,7 +985,6 @@ body {
     margin: 0 auto;
 }
 
-/* Export Status */
 .export-status {
     margin-top: 15px;
     padding: 10px;
@@ -964,7 +1014,6 @@ body {
         border: 1px solid #bee5eb;
     }
 
-/* Loading State */
 .loading {
     display: none;
     text-align: center;
@@ -995,7 +1044,6 @@ body {
     }
 }
 
-/* Progress Bar */
 .progress-bar {
     width: 100%;
     height: 20px;
@@ -1024,7 +1072,6 @@ body {
     color: #666;
 }
 
-/* Error Message */
 .error-message {
     background: #ff6b6b20;
     border: 1px solid #ff6b6b;
@@ -1039,7 +1086,6 @@ body {
         display: block;
     }
 
-/* Modal Overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1092,7 +1138,6 @@ body {
     color: #333;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
     .info-panels {
         grid-template-columns: 1fr;
@@ -1163,7 +1208,6 @@ body {
     }
 }
 
-/* Compression Options */
 .compression-options {
     display: flex;
     flex-direction: column;
@@ -1217,7 +1261,6 @@ body {
     font-size: 0.9em;
 }
 
-/* Color Slider Styles */
 .color-slider-control {
     flex: 1;
     display: flex;
@@ -1274,7 +1317,6 @@ body {
         background: rgba(0, 0, 0, 0.2);
     }
 
-/* Slider thumb - transparent with border */
 .color-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -1313,7 +1355,6 @@ body {
     border-width: 4px;
 }
 
-/* Remove default track styling */
 .color-slider::-webkit-slider-runnable-track {
     height: 30px;
     background: transparent;
@@ -1324,7 +1365,6 @@ body {
     background: transparent;
 }
 
-/* Color value display */
 .color-value {
     display: flex;
     align-items: center;
@@ -1362,7 +1402,6 @@ body {
     color: #495057;
 }
 
-/* Textarea container styles */
 .textarea-container {
     display: flex;
     flex-direction: column;
@@ -1411,3 +1450,46 @@ body {
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
+
+@media (max-width: 768px) {
+    .logo-container {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .logo {
+        height: 60px;
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+
+    .header h1 {
+        font-size: 2rem;
+    }
+
+    .header p,
+    .tagline {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo {
+        height: 50px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header p,
+    .tagline {
+        font-size: 0.9rem;
+    }
+
+    .version-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+    }
+}
