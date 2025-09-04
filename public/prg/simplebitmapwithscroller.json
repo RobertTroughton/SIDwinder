@@ -39,7 +39,7 @@
       "type": "file",
       "accept": ".png,.koa,.kla",
       "required": false,
-      "default": "prg/default-picture.kla",
+      "default": "prg/default-picture.png",
       "description": "C64 Koala format image (10001 bytes)",
       "memory": {
         "bank4000": [
