@@ -125,7 +125,7 @@ class UIController {
             modifiedRow.className = 'info-row';
             modifiedRow.innerHTML = `
         <span class="info-label">Modified Memory:</span>
-        <span class="info-value" id="modifiedMemoryCount">12 locations</span>
+        <span class="info-value" id="modifiedMemoryCount">0 locations</span>
     `;
 
             // Find the Clock Type row to insert before it
@@ -136,7 +136,7 @@ class UIController {
                 technicalPanel.appendChild(modifiedRow);
             }
         } else {
-            modifiedMemoryElement.textContent = '12 locations';  // Example value for attract mode
+            modifiedMemoryElement.textContent = '0 locations';
         }
 
         // Initialize visualizer grid with disabled state
@@ -509,63 +509,65 @@ class UIController {
         }
     }
 
-    buildVisualizerGrid() {
-        const grid = document.getElementById('visualizerGrid');
-        if (!grid) return;
+buildVisualizerGrid() {
+    const grid = document.getElementById('visualizerGrid');
+    if (!grid) return;
 
-        grid.innerHTML = '';
+    grid.innerHTML = '';
 
-        const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
+    const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
 
-        // Separate visualizers into compatible and incompatible
-        const compatible = [];
-        const incompatible = [];
+    // Separate visualizers into compatible and incompatible
+    const compatible = [];
+    const incompatible = [];
 
-        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
-        for (const viz of VISUALIZERS) {
-            // Check if visualizer can handle this SID
-            if (viz.configData) {
-                const validLayouts = this.prgExporter.selectValidLayouts(
-                    viz.configData,
-                    this.sidHeader.loadAddress,
-                    this.analysisResults?.dataBytes || 0x2000,
-                    modifiedCount  // Pass modified count for accurate layout checking
-                );
+    // Get the actual modified addresses array
+    const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
 
-                // Mark visualizer as incompatible if no valid layouts
-                if (validLayouts.filter(l => l.valid).length === 0) {
-                    incompatible.push(viz);
-                } else {
-                    compatible.push(viz);
-                }
+    for (const viz of VISUALIZERS) {
+        // Check if visualizer can handle this SID
+        if (viz.configData) {
+            const validLayouts = this.prgExporter.selectValidLayouts(
+                viz.configData,
+                this.sidHeader.loadAddress,
+                this.analysisResults?.dataBytes || 0x2000,
+                modifiedAddresses  // Pass actual addresses array, not count
+            );
+
+            // Mark visualizer as incompatible if no valid layouts
+            if (validLayouts.filter(l => l.valid).length === 0) {
+                incompatible.push(viz);
             } else {
                 compatible.push(viz);
             }
+        } else {
+            compatible.push(viz);
         }
+    }
 
-        // Sort each group by name
-        compatible.sort((a, b) => a.name.localeCompare(b.name));
-        incompatible.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort each group by name
+    compatible.sort((a, b) => a.name.localeCompare(b.name));
+    incompatible.sort((a, b) => a.name.localeCompare(b.name));
 
-        // Add compatible visualizers
-        for (let i = 0; i < compatible.length; i++) {
-            const viz = compatible[i];
-            const card = this.createVisualizerCard(viz);
-            grid.appendChild(card);
+    // Add compatible visualizers
+    for (let i = 0; i < compatible.length; i++) {
+        const viz = compatible[i];
+        const card = this.createVisualizerCard(viz);
+        grid.appendChild(card);
 
-            // Auto-select the first compatible visualizer
-            if (i === 0) {
-                this.selectVisualizer(viz);
-                card.classList.add('selected');
-            }
+        // Auto-select the first compatible visualizer
+        if (i === 0) {
+            this.selectVisualizer(viz);
+            card.classList.add('selected');
         }
+    }
 
-        // Add separator if there are both compatible and incompatible visualizers
-        if (compatible.length > 0 && incompatible.length > 0) {
-            const separator = document.createElement('div');
-            separator.className = 'visualizer-separator';
-            separator.innerHTML = '<span>Incompatible with this SID (requires fewer calls/frame)</span>';
-            separator.style.cssText = `
+    // Add separator if there are both compatible and incompatible visualizers
+    if (compatible.length > 0 && incompatible.length > 0) {
+        const separator = document.createElement('div');
+        separator.className = 'visualizer-separator';
+        separator.innerHTML = '<span>Incompatible with this SID (requires fewer calls/frame)</span>';
+        separator.style.cssText = `
             grid-column: 1 / -1;
             text-align: center;
             padding: 20px;
@@ -574,15 +576,15 @@ class UIController {
             border-top: 1px dashed #333;
             margin: 10px 0;
         `;
-            grid.appendChild(separator);
-        }
-
-        // Add incompatible visualizers
-        for (const viz of incompatible) {
-            const card = this.createVisualizerCard(viz);
-            grid.appendChild(card);
-        }
+        grid.appendChild(separator);
     }
+
+    // Add incompatible visualizers
+    for (const viz of incompatible) {
+        const card = this.createVisualizerCard(viz);
+        grid.appendChild(card);
+    }
+}
 
     createVisualizerCard(visualizer) {
         const card = document.createElement('div');
@@ -752,18 +754,17 @@ class UIController {
     `;
     }
 
-    // In ui.js, replace the createLayoutSelectorHTML function (around line 890):
-
     createLayoutSelectorHTML(visualizer, config) {
         const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
+        const modifiedAddresses = this.analysisResults?.modifiedAddresses || 0;
         const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
 
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
         }
 
-        const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize, modifiedCount);
+        const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize, modifiedAddresses);
 
         // Sort all layouts by address
         layouts.sort((a, b) => a.vizStart - b.vizStart);
@@ -1135,7 +1136,16 @@ class UIController {
 
     // Add this new method after updateTechnicalInfo:
     updateModifiedMemoryCount() {
-        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
+        const allModified = this.analysisResults?.modifiedAddresses || [];
+
+        // Apply the same filtering as save/restore routines
+        const filtered = allModified.filter(addr => {
+            if (addr >= 0x0100 && addr <= 0x01FF) return false; // Stack
+            if (addr >= 0xD400 && addr <= 0xD7FF) return false; // SID I/O
+            return true;
+        });
+
+        const modifiedCount = filtered.length;
 
         // Check if the row already exists
         let modifiedRow = document.getElementById('modifiedMemoryRow');

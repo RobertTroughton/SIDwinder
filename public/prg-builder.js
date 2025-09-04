@@ -86,18 +86,23 @@ class SIDwinderPRGExporter {
     }
 
     calculateSaveRestoreSize(modifiedAddresses) {
-        // Filter out stack and I/O addresses
         const filtered = modifiedAddresses.filter(addr => {
             if (addr >= 0x0100 && addr <= 0x01FF) return false;
             if (addr >= 0xD400 && addr <= 0xD7FF) return false;
             return true;
         });
 
-        // Using optimized self-modifying code approach:
-        // Save routine: LDA addr, STA restore+1 (5 bytes per address) + RTS (1)
-        // Restore routine: LDA #$00, STA addr (5 bytes per address) + RTS (1)
-        const saveSize = filtered.length * 5 + 1;
-        const restoreSize = filtered.length * 5 + 1;
+        let saveSize = 1; // RTS
+        let restoreSize = 1; // RTS
+        for (const addr of filtered) {
+            if (addr < 256) {
+                saveSize += 5; // Save: LDA zp (2) + STA abs (3) = 5
+                restoreSize += 4; // Restore: LDA # (2) + STA zp (2) = 4
+            } else {
+                saveSize += 6; // Save: LDA abs (3) + STA abs (3) = 6
+                restoreSize += 5; // Restore: LDA # (2) + STA abs (3) = 5
+            }
+        }
 
         return {
             saveSize,
@@ -107,7 +112,7 @@ class SIDwinderPRGExporter {
         };
     }
 
-    selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddressCount = 0) {
+    selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
         const sidEnd = sidLoadAddress + sidSize;
 
@@ -119,15 +124,14 @@ class SIDwinderPRGExporter {
             let saveRestoreStart = vizStart;
             let saveRestoreEnd = vizStart;
 
-            if (modifiedAddressCount > 0) {
-                const sizes = this.calculateSaveRestoreSize(
-                    Array.from({ length: modifiedAddressCount }, (_, i) => i)
-                );
+            if (modifiedAddresses && modifiedAddresses.length > 0) {
+                // Use actual addresses to calculate real sizes
+                const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
 
                 if (layout.saveRestoreLocation === 'before') {
                     const saveRestoreAddr = layout.saveRestoreAddress ?
                         parseInt(layout.saveRestoreAddress) :
-                        vizStart - sizes.totalSize - 0x100;
+                        vizStart - sizes.totalSize;
                     saveRestoreStart = saveRestoreAddr;
                     saveRestoreEnd = saveRestoreAddr + sizes.totalSize;
                 } else {
@@ -135,6 +139,11 @@ class SIDwinderPRGExporter {
                     saveRestoreStart = vizEnd;
                     saveRestoreEnd = vizEnd + sizes.totalSize;
                 }
+            } else if (modifiedAddresses === null) {
+                // No modified addresses array provided - skip save/restore calculation
+                // This happens during initial config loading
+                saveRestoreStart = vizStart;
+                saveRestoreEnd = vizStart;
             }
 
             // Check for overlaps including save/restore routines
@@ -755,7 +764,7 @@ class SIDwinderPRGExporter {
             // Get the layout key from options (passed from UI) or select first valid one
             let layoutKey = options.layoutKey;
             if (!layoutKey) {
-                const validLayouts = this.selectValidLayouts(vizConfig, sidInfo.loadAddress, sidInfo.dataSize, modifiedCount);
+                const validLayouts = this.selectValidLayouts(vizConfig, sidInfo.loadAddress, sidInfo.dataSize, modifiedAddresses);
                 const firstValid = validLayouts.find(l => l.valid);
                 if (!firstValid) {
                     throw new Error(`No valid layout found for visualizer ${visualizerName}`);
