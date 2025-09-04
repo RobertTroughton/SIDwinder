@@ -85,7 +85,29 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
-    selectValidLayouts(vizConfig, sidLoadAddress, sidSize) {
+    calculateSaveRestoreSize(modifiedAddresses) {
+        // Filter out stack and I/O addresses
+        const filtered = modifiedAddresses.filter(addr => {
+            if (addr >= 0x0100 && addr <= 0x01FF) return false;
+            if (addr >= 0xD400 && addr <= 0xD7FF) return false;
+            return true;
+        });
+
+        // Using optimized self-modifying code approach:
+        // Save routine: LDA addr, STA restore+1 (5 bytes per address) + RTS (1)
+        // Restore routine: LDA #$00, STA addr (5 bytes per address) + RTS (1)
+        const saveSize = filtered.length * 5 + 1;
+        const restoreSize = filtered.length * 5 + 1;
+
+        return {
+            saveSize,
+            restoreSize,
+            totalSize: saveSize + restoreSize,
+            addressCount: filtered.length
+        };
+    }
+
+    selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddressCount = 0) {
         const validLayouts = [];
         const sidEnd = sidLoadAddress + sidSize;
 
@@ -93,7 +115,32 @@ class SIDwinderPRGExporter {
             const vizStart = parseInt(layout.baseAddress);
             const vizEnd = vizStart + parseInt(layout.size || '0x4000');
 
-            const hasOverlap = !(vizEnd <= sidLoadAddress || vizStart >= sidEnd);
+            // Calculate save/restore memory requirements
+            let saveRestoreStart = vizStart;
+            let saveRestoreEnd = vizStart;
+
+            if (modifiedAddressCount > 0) {
+                const sizes = this.calculateSaveRestoreSize(
+                    Array.from({ length: modifiedAddressCount }, (_, i) => i)
+                );
+
+                if (layout.saveRestoreLocation === 'before') {
+                    const saveRestoreAddr = layout.saveRestoreAddress ?
+                        parseInt(layout.saveRestoreAddress) :
+                        vizStart - sizes.totalSize - 0x100;
+                    saveRestoreStart = saveRestoreAddr;
+                    saveRestoreEnd = saveRestoreAddr + sizes.totalSize;
+                } else {
+                    // After visualizer
+                    saveRestoreStart = vizEnd;
+                    saveRestoreEnd = vizEnd + sizes.totalSize;
+                }
+            }
+
+            // Check for overlaps including save/restore routines
+            const effectiveStart = Math.min(vizStart, saveRestoreStart);
+            const effectiveEnd = Math.max(vizEnd, saveRestoreEnd);
+            const hasOverlap = !(effectiveEnd <= sidLoadAddress || effectiveStart >= sidEnd);
 
             // Format hex inline
             const sidStartHex = '$' + sidLoadAddress.toString(16).toUpperCase().padStart(4, '0');
@@ -105,6 +152,8 @@ class SIDwinderPRGExporter {
                 valid: !hasOverlap,
                 vizStart: vizStart,
                 vizEnd: vizEnd,
+                saveRestoreStart: saveRestoreStart,
+                saveRestoreEnd: saveRestoreEnd,
                 overlapReason: hasOverlap ?
                     `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
                     null
@@ -114,9 +163,9 @@ class SIDwinderPRGExporter {
         return validLayouts;
     }
 
-    generateSaveRoutine(modifiedAddresses, targetAddress) {
+    generateOptimizedSaveRoutine(modifiedAddresses, restoreRoutineAddr) {
         const code = [];
-        let storeAddr = targetAddress;
+        let restoreOffset = 0;
 
         const filtered = modifiedAddresses
             .filter(addr => {
@@ -127,28 +176,37 @@ class SIDwinderPRGExporter {
             .sort((a, b) => a - b);
 
         for (const addr of filtered) {
+            // Load from memory address
             if (addr < 256) {
-                code.push(0xA5);
+                code.push(0xA5); // LDA zp
                 code.push(addr);
             } else {
-                code.push(0xAD);
+                code.push(0xAD); // LDA abs
                 code.push(addr & 0xFF);
                 code.push((addr >> 8) & 0xFF);
             }
 
-            code.push(0x8D);
-            code.push(storeAddr & 0xFF);
-            code.push((storeAddr >> 8) & 0xFF);
-            storeAddr++;
+            // Store into restore routine (self-modifying code)
+            // Skip the LDA # opcode (1 byte) to get to the value byte
+            const targetAddr = restoreRoutineAddr + restoreOffset + 1;
+            code.push(0x8D); // STA abs
+            code.push(targetAddr & 0xFF);
+            code.push((targetAddr >> 8) & 0xFF);
+
+            // Calculate next offset based on what the restore routine will use
+            if (addr < 256) {
+                restoreOffset += 4; // LDA # (2) + STA zp (2)
+            } else {
+                restoreOffset += 5; // LDA # (2) + STA abs (3)
+            }
         }
 
-        code.push(0x60);
+        code.push(0x60); // RTS
         return new Uint8Array(code);
     }
 
-    generateRestoreRoutine(modifiedAddresses, sourceAddress) {
+    generateOptimizedRestoreRoutine(modifiedAddresses) {
         const code = [];
-        let loadAddr = sourceAddress;
 
         const filtered = modifiedAddresses
             .filter(addr => {
@@ -159,27 +217,26 @@ class SIDwinderPRGExporter {
             .sort((a, b) => a - b);
 
         for (const addr of filtered) {
-            code.push(0xAD);
-            code.push(loadAddr & 0xFF);
-            code.push((loadAddr >> 8) & 0xFF);
+            // LDA immediate (value will be filled by save routine)
+            code.push(0xA9); // LDA #
+            code.push(0x00); // Placeholder value
 
+            // Store to memory address
             if (addr < 256) {
-                code.push(0x85);
+                code.push(0x85); // STA zp (2 bytes)
                 code.push(addr);
             } else {
-                code.push(0x8D);
+                code.push(0x8D); // STA abs (3 bytes)
                 code.push(addr & 0xFF);
                 code.push((addr >> 8) & 0xFF);
             }
-
-            loadAddr++;
         }
 
-        code.push(0x60);
+        code.push(0x60); // RTS
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -252,6 +309,10 @@ class SIDwinderPRGExporter {
 
         const sidModel = (header.sidModel && header.sidModel.includes('8580')) ? 1 : 0;
         data[0xCA] = sidModel;
+
+        // Store modified address count at $xxCB
+        data[0xCB] = modifiedCount & 0xFF;
+        data[0xCC] = (modifiedCount >> 8) & 0xFF;
 
         // ZP usage data
         let zpString = 'NONE';
@@ -410,7 +471,7 @@ class SIDwinderPRGExporter {
         };
     }
 
-    async processVisualizerInputs(visualizerType, layoutKey = 'addr4000') {
+    async processVisualizerInputs(visualizerType, layoutKey = 'bank4000') {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
@@ -555,7 +616,7 @@ class SIDwinderPRGExporter {
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
 
-    async processVisualizerOptions(visualizerType, layoutKey = 'addr4000') {
+    async processVisualizerOptions(visualizerType, layoutKey = 'bank4000') {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
@@ -688,10 +749,13 @@ class SIDwinderPRGExporter {
             const vizConfig = await config.loadConfig(visualizerName);
             const configMaxCallsPerFrame = vizConfig?.maxCallsPerFrame || null;
 
+            // Get modified addresses count for layout validation
+            const modifiedCount = this.analyzer.analysisResults?.modifiedAddresses?.length || 0;
+
             // Get the layout key from options (passed from UI) or select first valid one
             let layoutKey = options.layoutKey;
             if (!layoutKey) {
-                const validLayouts = this.selectValidLayouts(vizConfig, sidInfo.loadAddress, sidInfo.dataSize);
+                const validLayouts = this.selectValidLayouts(vizConfig, sidInfo.loadAddress, sidInfo.dataSize, modifiedCount);
                 const firstValid = validLayouts.find(l => l.valid);
                 if (!firstValid) {
                     throw new Error(`No valid layout found for visualizer ${visualizerName}`);
@@ -732,35 +796,55 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Add save/restore routines
-            let saveRoutineAddr = this.alignToPage(nextAvailableAddress);
-            let restoreRoutineAddr = saveRoutineAddr;
-
-            let storageAddress;
+            // Add save/restore routines with optimized placement
+            let saveRoutineAddr = 0;
+            let restoreRoutineAddr = 0;
 
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                // Calculate sizes
-                const tempSaveRoutine = this.generateSaveRoutine(modifiedAddrs, 0x8000);
-                const tempRestoreRoutine = this.generateRestoreRoutine(modifiedAddrs, 0x8000);
-                const storageSpaceNeeded = modifiedAddrs.length;
+                // Generate routines to get their actual sizes
+                const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
+                const tempSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, 0); // Temp address
 
-                // Always place before visualizer base address
-                const baseAddress = parseInt(layout.baseAddress);
-                storageAddress = baseAddress - storageSpaceNeeded;
-                restoreRoutineAddr = storageAddress - tempRestoreRoutine.length;
-                saveRoutineAddr = restoreRoutineAddr - tempSaveRoutine.length;
+                // Determine placement from layout
+                if (layout.saveRestoreLocation === 'before' && layout.saveRestoreEndAddress) {
+                    // Place before visualizer, ending at specified address
+                    const endAddress = parseInt(layout.saveRestoreEndAddress);
+                    const totalSize = restoreRoutine.length + tempSaveRoutine.length;
 
-                // Generate final routines with correct storage address
-                const finalSaveRoutine = this.generateSaveRoutine(modifiedAddrs, storageAddress);
-                const finalRestoreRoutine = this.generateRestoreRoutine(modifiedAddrs, storageAddress);
+                    // Check if we have a max size constraint
+                    const maxSize = layout.saveRestoreMaxSize ? parseInt(layout.saveRestoreMaxSize) : 0x800;
+                    if (totalSize > maxSize) {
+                        throw new Error(`Save/restore routines (${totalSize} bytes) exceed maximum ${maxSize} bytes for this layout`);
+                    }
 
-                this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-                this.builder.addComponent(finalRestoreRoutine, restoreRoutineAddr, 'Restore Routine');
+                    // Place routines ending at the specified address
+                    restoreRoutineAddr = endAddress - totalSize;
+                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+
+                    // Regenerate save routine with correct restore address
+                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
+
+                    // Add components
+                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
+                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
+                } else {
+                    // Default: place after visualizer
+                    const baseAddress = parseInt(layout.baseAddress);
+                    const vizSize = parseInt(layout.size || '0x4000');
+
+                    restoreRoutineAddr = baseAddress + vizSize;
+                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+
+                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
+
+                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
+                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
+                }
             } else {
                 console.warn('No analysis results for save/restore routines');
-                const dummyRoutine = new Uint8Array([0x60]);
+                const dummyRoutine = new Uint8Array([0x60]); // RTS
                 saveRoutineAddr = 0x3F00;
                 restoreRoutineAddr = 0x3F80;
                 this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
@@ -782,7 +866,8 @@ class SIDwinderPRGExporter {
                 restoreRoutineAddr,
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
-                selectedSong
+                selectedSong,
+                modifiedCount
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');

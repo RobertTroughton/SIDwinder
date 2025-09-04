@@ -4,7 +4,7 @@
   "maxCallsPerFrame": 1,
 
   "layouts": {
-    "addr4000": {
+    "bank4000": {
       "binary": "prg/raistlinmirrorbarswithlogo-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
@@ -12,9 +12,12 @@
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
-      "borderColor": "0x400D"
+      "borderColor": "0x400D",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x4000",
+      "saveRestoreMaxSize": "0x3800"
     },
-    "addr8000": {
+    "bank8000": {
       "binary": "prg/raistlinmirrorbarswithlogo-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
@@ -22,7 +25,10 @@
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
-      "borderColor": "0x800D"
+      "borderColor": "0x800D",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x8000",
+      "saveRestoreMaxSize": "0x7800"
     }
   },
 
@@ -35,7 +41,7 @@
       "required": false,
       "default": "prg/default-logo.png",
       "memory": {
-        "addr4000": [
+        "bank4000": [
           {
             "name": "bitmap",
             "sourceOffset": "0x0002",
@@ -61,7 +67,7 @@
             "size": "0x0001"
           }
         ],
-        "addr8000": [
+        "bank8000": [
           {
             "name": "bitmap",
             "sourceOffset": "0x0002",

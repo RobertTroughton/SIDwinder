@@ -114,6 +114,31 @@ class UIController {
             numCallsElement.textContent = '1';
         }
 
+        const modifiedMemoryElement = document.getElementById('modifiedMemoryCount');
+        if (!modifiedMemoryElement) {
+            // Create the row in attract mode too
+            const infoPanels = document.getElementById('infoPanels');
+            const technicalPanel = infoPanels.querySelector('.panel:nth-child(2)');
+
+            const modifiedRow = document.createElement('div');
+            modifiedRow.id = 'modifiedMemoryRow';
+            modifiedRow.className = 'info-row';
+            modifiedRow.innerHTML = `
+        <span class="info-label">Modified Memory:</span>
+        <span class="info-value" id="modifiedMemoryCount">12 locations</span>
+    `;
+
+            // Find the Clock Type row to insert before it
+            const clockTypeRow = technicalPanel.querySelector('.info-row:nth-last-child(3)');
+            if (clockTypeRow) {
+                technicalPanel.insertBefore(modifiedRow, clockTypeRow);
+            } else {
+                technicalPanel.appendChild(modifiedRow);
+            }
+        } else {
+            modifiedMemoryElement.textContent = '12 locations';  // Example value for attract mode
+        }
+
         // Initialize visualizer grid with disabled state
         this.buildAttractModeVisualizerGrid();
     }
@@ -366,12 +391,11 @@ class UIController {
                 }
             });
 
-            // Store analysis results in the analyzer for PRG builder to access
             this.analyzer.analysisResults = this.analysisResults;
 
             // Update UI with analysis results
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
-
+            this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
 
             // Show panels - remove disabled state and add visible
@@ -384,7 +408,6 @@ class UIController {
             this.showExportSection();
 
             this.showModal(`Successfully analyzed: ${file.name}`, true);
-
         } catch (error) {
             this.showModal(`Error: ${error.message}`, false);
             console.error(error);
@@ -498,12 +521,25 @@ class UIController {
         const compatible = [];
         const incompatible = [];
 
+        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
         for (const viz of VISUALIZERS) {
-            const maxCalls = viz.configData?.maxCallsPerFrame || Infinity;
-            if (requiredCalls <= maxCalls) {
-                compatible.push(viz);
+            // Check if visualizer can handle this SID
+            if (viz.configData) {
+                const validLayouts = this.prgExporter.selectValidLayouts(
+                    viz.configData,
+                    this.sidHeader.loadAddress,
+                    this.analysisResults?.dataBytes || 0x2000,
+                    modifiedCount  // Pass modified count for accurate layout checking
+                );
+
+                // Mark visualizer as incompatible if no valid layouts
+                if (validLayouts.filter(l => l.valid).length === 0) {
+                    incompatible.push(viz);
+                } else {
+                    compatible.push(viz);
+                }
             } else {
-                incompatible.push(viz);
+                compatible.push(viz);
             }
         }
 
@@ -716,15 +752,18 @@ class UIController {
     `;
     }
 
+    // In ui.js, replace the createLayoutSelectorHTML function (around line 890):
+
     createLayoutSelectorHTML(visualizer, config) {
         const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
+        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
 
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
         }
 
-        const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize);
+        const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize, modifiedCount);
 
         // Sort all layouts by address
         layouts.sort((a, b) => a.vizStart - b.vizStart);
@@ -741,8 +780,23 @@ class UIController {
         let firstValidIndex = -1;
         layouts.forEach((layoutInfo, index) => {
             const layout = layoutInfo.layout;
-            const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-            const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+
+            // Calculate the full memory range including save/restore
+            let rangeStart, rangeEnd;
+            if (modifiedCount > 0 && layoutInfo.saveRestoreStart < layoutInfo.vizStart) {
+                // Save/restore is before visualizer
+                rangeStart = this.formatHex(layoutInfo.saveRestoreStart, 4);
+                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+            } else if (modifiedCount > 0 && layoutInfo.saveRestoreEnd > layoutInfo.vizEnd) {
+                // Save/restore is after visualizer
+                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+                rangeEnd = this.formatHex(layoutInfo.saveRestoreEnd - 1, 4);
+            } else {
+                // No save/restore or it fits within visualizer range
+                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
+            }
+            
             const isValid = layoutInfo.valid;
 
             // Track first valid layout for auto-selection
@@ -750,20 +804,23 @@ class UIController {
                 firstValidIndex = index;
             }
 
+            // Generate a more descriptive name based on the address
+            const bankName = `bank${(layoutInfo.vizStart >> 12).toString(16).toUpperCase()}000`;
+
             html += `
-            <label class="layout-radio-option ${!isValid ? 'disabled' : ''}" 
-                   ${!isValid ? `title="${layoutInfo.overlapReason}"` : ''}>
-                <input type="radio" 
-                       name="memory-layout" 
-                       value="${layoutInfo.key}" 
-                       ${isValid && index === firstValidIndex ? 'checked' : ''}
-                       ${!isValid ? 'disabled' : ''}>
-                <div class="layout-details">
-                    <span class="layout-name">${layout.name || layoutInfo.key}</span>
-                    <span class="layout-range">${rangeStart}-${rangeEnd}</span>
-                </div>
-            </label>
-        `;
+        <label class="layout-radio-option ${!isValid ? 'disabled' : ''}" 
+               ${!isValid ? `title="${layoutInfo.overlapReason}"` : ''}>
+            <input type="radio" 
+                   name="memory-layout" 
+                   value="${layoutInfo.key}" 
+                   ${isValid && index === firstValidIndex ? 'checked' : ''}
+                   ${!isValid ? 'disabled' : ''}>
+            <div class="layout-details">
+                <span class="layout-name">${layout.name || bankName}</span>
+                <span class="layout-range">${rangeStart}-${rangeEnd}</span>
+            </div>
+        </label>
+    `;
         });
 
         html += '</div>';
@@ -1071,6 +1128,44 @@ class UIController {
         this.elements.fileSize.textContent = `${header.fileSize} bytes`;
         this.elements.clockType.textContent = header.clockType;
         this.elements.sidModel.textContent = header.sidModel;
+
+        // Always show modified memory count - add this here
+        this.updateModifiedMemoryCount();
+    }
+
+    // Add this new method after updateTechnicalInfo:
+    updateModifiedMemoryCount() {
+        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
+
+        // Check if the row already exists
+        let modifiedRow = document.getElementById('modifiedMemoryRow');
+        if (!modifiedRow) {
+            // Create the row if it doesn't exist
+            const infoPanels = document.getElementById('infoPanels');
+            const technicalPanel = infoPanels.querySelector('.panel:nth-child(2)'); // Technical Details panel
+
+            modifiedRow = document.createElement('div');
+            modifiedRow.id = 'modifiedMemoryRow';
+            modifiedRow.className = 'info-row';
+            modifiedRow.innerHTML = `
+            <span class="info-label">Modified Memory:</span>
+            <span class="info-value" id="modifiedMemoryCount">-</span>
+        `;
+
+            // Insert before Clock Type row (which is third from last)
+            const clockRow = technicalPanel.querySelector('#clockType').closest('.info-row');
+            technicalPanel.insertBefore(modifiedRow, clockRow);
+        }
+
+        // Update the value
+        const countElement = document.getElementById('modifiedMemoryCount');
+        if (modifiedCount === 0) {
+            countElement.textContent = 'None';
+        } else if (modifiedCount === 1) {
+            countElement.textContent = '1 location';
+        } else {
+            countElement.textContent = `${modifiedCount} locations`;
+        }
     }
 
     updateSongTitle(header) {

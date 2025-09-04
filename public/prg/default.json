@@ -3,7 +3,7 @@
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
   "layouts": {
-    "addr4000": {
+    "bank4000": {
       "binary": "prg/default-4000.bin",
       "size": "0x1000",
       "baseAddress": "0x4000",
@@ -12,7 +12,7 @@
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x4FFF"
     },
-    "addr8000": {
+    "bank8000": {
       "binary": "prg/default-8000.bin",
       "size": "0x1000",
       "baseAddress": "0x8000",
@@ -21,7 +21,7 @@
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0x8FFF"
     },
-    "addrC000": {
+    "bankC000": {
       "binary": "prg/default-C000.bin",
       "size": "0x1000",
       "baseAddress": "0xC000",

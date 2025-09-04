@@ -4,7 +4,7 @@
   "version": "1.0",
 
   "layouts": {
-    "addr4000": {
+    "bank4000": {
       "binary": "prg/simplebitmap-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
@@ -15,7 +15,7 @@
       "borderColor": "0x400D",
       "backgroundColor": "0x400E"
     },
-    "addr8000": {
+    "bank8000": {
       "binary": "prg/simplebitmap-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
@@ -37,7 +37,7 @@
       "default": "prg/default-picture.kla",
       "description": "C64 Koala format image (10001 bytes)",
       "memory": {
-        "addr4000": [
+        "bank4000": [
           {
             "name": "bitmap",
             "sourceOffset": "0x0002",
@@ -63,7 +63,7 @@
             "size": "0x0001"
           }
         ],
-        "addr8000": [
+        "bank8000": [
           {
             "name": "bitmap",
             "sourceOffset": "0x0002",

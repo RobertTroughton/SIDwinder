@@ -2,7 +2,7 @@
   "name": "Simple Raster",
   "maxCallsPerFrame": 8,
   "layouts": {
-    "addr4000": {
+    "bank4000": {
       "binary": "prg/simpleraster-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x0600",
@@ -11,7 +11,7 @@
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x45FF"
     },
-    "addr8000": {
+    "bank8000": {
       "binary": "prg/simpleraster-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x0600",
@@ -20,7 +20,7 @@
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0x85FF"
     },
-    "addrC000": {
+    "bankC000": {
       "binary": "prg/simpleraster-C000.bin",
       "baseAddress": "0xC000",
       "size": "0x0600",

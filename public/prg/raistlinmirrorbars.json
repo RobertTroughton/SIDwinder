@@ -4,23 +4,29 @@
   "maxCallsPerFrame": 2,
 
   "layouts": {
-    "addr4000": {
+    "bank4000": {
       "binary": "prg/raistlinmirrorbars-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
-      "binaryDataEnd": "0x7FFF"
+      "binaryDataEnd": "0x7FFF",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x4000",
+      "saveRestoreMaxSize": "0x3800"
     },
-    "addr8000": {
+    "bank8000": {
       "binary": "prg/raistlinmirrorbars-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
-      "binaryDataEnd": "0xBFFF"
+      "binaryDataEnd": "0xBFFF",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x8000",
+      "saveRestoreMaxSize": "0x7800"
     }
   }
 }
