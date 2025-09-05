@@ -1,5 +1,25 @@
 ﻿// ui.js - UI Controller for SIDwinder Web with Visual Visualizer Selection and Image Previews
 
+// Global C64 color palette
+const C64_COLORS = [
+    { value: 0, name: 'Black', hex: '#000000' },
+    { value: 1, name: 'White', hex: '#FFFFFF' },
+    { value: 2, name: 'Red', hex: '#753d3d' },
+    { value: 3, name: 'Cyan', hex: '#7bb4b4' },
+    { value: 4, name: 'Purple', hex: '#7d4488' },
+    { value: 5, name: 'Green', hex: '#5c985c' },
+    { value: 6, name: 'Blue', hex: '#343383' },
+    { value: 7, name: 'Yellow', hex: '#cbcc7c' },
+    { value: 8, name: 'Orange', hex: '#7c552f' },
+    { value: 9, name: 'Brown', hex: '#523e00' },
+    { value: 10, name: 'Light Red', hex: '#a76f6f' },
+    { value: 11, name: 'Dark Grey', hex: '#4e4e4e' },
+    { value: 12, name: 'Grey', hex: '#767676' },
+    { value: 13, name: 'Light Green', hex: '#9fdb9f' },
+    { value: 14, name: 'Light Blue', hex: '#6d6cbc' },
+    { value: 15, name: 'Light Grey', hex: '#a3a3a3' }
+];
+
 class UIController {
     constructor() {
         this.analyzer = new SIDAnalyzer();
@@ -509,65 +529,65 @@ class UIController {
         }
     }
 
-buildVisualizerGrid() {
-    const grid = document.getElementById('visualizerGrid');
-    if (!grid) return;
+    buildVisualizerGrid() {
+        const grid = document.getElementById('visualizerGrid');
+        if (!grid) return;
 
-    grid.innerHTML = '';
+        grid.innerHTML = '';
 
-    const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
+        const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
 
-    // Separate visualizers into compatible and incompatible
-    const compatible = [];
-    const incompatible = [];
+        // Separate visualizers into compatible and incompatible
+        const compatible = [];
+        const incompatible = [];
 
-    // Get the actual modified addresses array
-    const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
+        // Get the actual modified addresses array
+        const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
 
-    for (const viz of VISUALIZERS) {
-        // Check if visualizer can handle this SID
-        if (viz.configData) {
-            const validLayouts = this.prgExporter.selectValidLayouts(
-                viz.configData,
-                this.sidHeader.loadAddress,
-                this.analysisResults?.dataBytes || 0x2000,
-                modifiedAddresses  // Pass actual addresses array, not count
-            );
+        for (const viz of VISUALIZERS) {
+            // Check if visualizer can handle this SID
+            if (viz.configData) {
+                const validLayouts = this.prgExporter.selectValidLayouts(
+                    viz.configData,
+                    this.sidHeader.loadAddress,
+                    this.analysisResults?.dataBytes || 0x2000,
+                    modifiedAddresses  // Pass actual addresses array, not count
+                );
 
-            // Mark visualizer as incompatible if no valid layouts
-            if (validLayouts.filter(l => l.valid).length === 0) {
-                incompatible.push(viz);
+                // Mark visualizer as incompatible if no valid layouts
+                if (validLayouts.filter(l => l.valid).length === 0) {
+                    incompatible.push(viz);
+                } else {
+                    compatible.push(viz);
+                }
             } else {
                 compatible.push(viz);
             }
-        } else {
-            compatible.push(viz);
         }
-    }
 
-    // Sort each group by name
-    compatible.sort((a, b) => a.name.localeCompare(b.name));
-    incompatible.sort((a, b) => a.name.localeCompare(b.name));
+        // Sort each group by name
+        compatible.sort((a, b) => a.name.localeCompare(b.name));
+        incompatible.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Add compatible visualizers
-    for (let i = 0; i < compatible.length; i++) {
-        const viz = compatible[i];
-        const card = this.createVisualizerCard(viz);
-        grid.appendChild(card);
+        // Add compatible visualizers
+        for (let i = 0; i < compatible.length; i++) {
+            const viz = compatible[i];
+            const card = this.createVisualizerCard(viz);
+            grid.appendChild(card);
 
-        // Auto-select the first compatible visualizer
-        if (i === 0) {
-            this.selectVisualizer(viz);
-            card.classList.add('selected');
+            // Auto-select the first compatible visualizer
+            if (i === 0) {
+                this.selectVisualizer(viz);
+                card.classList.add('selected');
+            }
         }
-    }
 
-    // Add separator if there are both compatible and incompatible visualizers
-    if (compatible.length > 0 && incompatible.length > 0) {
-        const separator = document.createElement('div');
-        separator.className = 'visualizer-separator';
-        separator.innerHTML = '<span>Incompatible with this SID (requires fewer calls/frame)</span>';
-        separator.style.cssText = `
+        // Add separator if there are both compatible and incompatible visualizers
+        if (compatible.length > 0 && incompatible.length > 0) {
+            const separator = document.createElement('div');
+            separator.className = 'visualizer-separator';
+            separator.innerHTML = '<span>Incompatible with this SID (requires fewer calls/frame)</span>';
+            separator.style.cssText = `
             grid-column: 1 / -1;
             text-align: center;
             padding: 20px;
@@ -576,15 +596,15 @@ buildVisualizerGrid() {
             border-top: 1px dashed #333;
             margin: 10px 0;
         `;
-        grid.appendChild(separator);
-    }
+            grid.appendChild(separator);
+        }
 
-    // Add incompatible visualizers
-    for (const viz of incompatible) {
-        const card = this.createVisualizerCard(viz);
-        grid.appendChild(card);
+        // Add incompatible visualizers
+        for (const viz of incompatible) {
+            const card = this.createVisualizerCard(viz);
+            grid.appendChild(card);
+        }
     }
-}
 
     createVisualizerCard(visualizer) {
         const card = document.createElement('div');
@@ -797,7 +817,7 @@ buildVisualizerGrid() {
                 rangeStart = this.formatHex(layoutInfo.vizStart, 4);
                 rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
             }
-            
+
             const isValid = layoutInfo.valid;
 
             // Track first valid layout for auto-selection
@@ -945,27 +965,8 @@ buildVisualizerGrid() {
     }
 
     createColorSliderHTML(config) {
-        const colors = [
-            { value: 0, name: 'Black', hex: '#000000' },
-            { value: 1, name: 'White', hex: '#FFFFFF' },
-            { value: 2, name: 'Red', hex: '#753d3d' },
-            { value: 3, name: 'Cyan', hex: '#7bb4b4' },
-            { value: 4, name: 'Purple', hex: '#7d4488' },
-            { value: 5, name: 'Green', hex: '#5c985c' },
-            { value: 6, name: 'Blue', hex: '#343383' },
-            { value: 7, name: 'Yellow', hex: '#cbcc7c' },
-            { value: 8, name: 'Orange', hex: '#7c552f' },
-            { value: 9, name: 'Brown', hex: '#523e00' },
-            { value: 10, name: 'Light Red', hex: '#a76f6f' },
-            { value: 11, name: 'Dark Grey', hex: '#4e4e4e' },
-            { value: 12, name: 'Grey', hex: '#767676' },
-            { value: 13, name: 'Light Green', hex: '#9fdb9f' },
-            { value: 14, name: 'Light Blue', hex: '#6d6cbc' },
-            { value: 15, name: 'Light Grey', hex: '#a3a3a3' }
-        ];
-
         const defaultValue = config.default || 0;
-        const defaultColor = colors[defaultValue];
+        const defaultColor = C64_COLORS[defaultValue];
 
         return `
         <label class="option-label">${config.label}</label>
@@ -979,9 +980,11 @@ buildVisualizerGrid() {
                        value="${defaultValue}"
                        data-config-id="${config.id}">
                 <div class="color-slider-track">
-                    ${colors.map(c => `
-                        <div class="color-segment" 
+                    ${C64_COLORS.map(c => `
+                        <div class="color-segment ${c.value === defaultValue ? 'selected' : ''}" 
                              style="background: ${c.hex}"
+                             data-value="${c.value}"
+                             data-name="${c.name}"
                              title="${c.value}: ${c.name}">
                         </div>
                     `).join('')}
@@ -1054,12 +1057,34 @@ buildVisualizerGrid() {
                 }
             });
         });
+
         // Color slider handlers
         document.querySelectorAll('.color-slider').forEach(slider => {
+            // Handle slider input changes (for programmatic changes)
             slider.addEventListener('input', (e) => {
                 this.updateColorDisplay(e.target);
+                this.updateColorSegmentSelection(e.target);
+            });
+
+            // Initialize the selection on load
+            this.updateColorSegmentSelection(slider);
+        });
+
+        // Handle direct clicks on color segments
+        document.querySelectorAll('.color-segment').forEach(segment => {
+            segment.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                const value = parseInt(e.target.dataset.value);
+                const slider = e.target.closest('.slider-wrapper').querySelector('.color-slider');
+                if (slider) {
+                    slider.value = value;
+                    // Trigger the input event manually
+                    const event = new Event('input', { bubbles: true });
+                    slider.dispatchEvent(event);
+                }
             });
         });
+
         // Textarea load/save handlers
         document.querySelectorAll('.load-text-btn').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -1074,35 +1099,35 @@ buildVisualizerGrid() {
         });
     }
 
-    updateColorDisplay(slider) {
-        const colors = [
-            { value: 0, name: 'Black', hex: '#000000' },
-            { value: 1, name: 'White', hex: '#FFFFFF' },
-            { value: 2, name: 'Red', hex: '#880000' },
-            { value: 3, name: 'Cyan', hex: '#AAFFEE' },
-            { value: 4, name: 'Purple', hex: '#CC44CC' },
-            { value: 5, name: 'Green', hex: '#00CC55' },
-            { value: 6, name: 'Blue', hex: '#0000AA' },
-            { value: 7, name: 'Yellow', hex: '#EEEE77' },
-            { value: 8, name: 'Orange', hex: '#DD8855' },
-            { value: 9, name: 'Brown', hex: '#664400' },
-            { value: 10, name: 'Light Red', hex: '#FF7777' },
-            { value: 11, name: 'Dark Grey', hex: '#333333' },
-            { value: 12, name: 'Grey', hex: '#777777' },
-            { value: 13, name: 'Light Green', hex: '#AAFF66' },
-            { value: 14, name: 'Light Blue', hex: '#0088FF' },
-            { value: 15, name: 'Light Grey', hex: '#BBBBBB' }
-        ];
-
+    updateColorSegmentSelection(slider) {
         const value = parseInt(slider.value);
-        const color = colors[value];
+        const wrapper = slider.closest('.slider-wrapper');
+        const selectionBox = wrapper.querySelector('.color-selection-box');
+        const track = wrapper.querySelector('.color-slider-track');
+
+        if (selectionBox && track) {
+            // Calculate position and width for the selection box
+            const segmentWidth = track.offsetWidth / 16;
+            const leftPosition = value * segmentWidth;
+
+            // Position the selection box
+            selectionBox.style.left = `${leftPosition}px`;
+            selectionBox.style.width = `${segmentWidth}px`;
+        }
+    }
+
+    updateColorDisplay(slider) {
+        const value = parseInt(slider.value);
+        const color = C64_COLORS[value];
         const displayEl = document.getElementById(`${slider.id}-display`);
 
         if (displayEl) {
             displayEl.innerHTML = `
             <span class="color-swatch" style="background: ${color.hex}"></span>
-            <span class="color-number">${value}</span>: 
-            <span class="color-name">${color.name}</span>
+            <span class="color-text">
+                <span class="color-number">${value}</span>: 
+                <span class="color-name">${color.name}</span>
+            </span>
         `;
         }
     }

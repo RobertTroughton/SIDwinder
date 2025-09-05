@@ -1138,76 +1138,6 @@ body {
     color: #333;
 }
 
-@media (max-width: 768px) {
-    .info-panels {
-        grid-template-columns: 1fr;
-    }
-
-    .header h1 {
-        font-size: 2em;
-    }
-
-    .main-content {
-        padding: 20px;
-    }
-
-    .section-group {
-        padding: 15px;
-    }
-
-    .export-buttons {
-        flex-direction: column;
-    }
-
-    .export-button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .visualizer-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-    }
-
-    .visualizer-preview {
-        height: 120px;
-    }
-
-    .visualizer-options-panel {
-        margin: 20px 10px;
-    }
-
-    .option-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .option-label {
-        flex: none;
-    }
-
-    .option-control {
-        width: 100%;
-    }
-
-    .layout-details {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
-    }
-
-    .image-preview-frame {
-        width: 280px;
-        height: 175px;
-    }
-
-    .preview-click-hint {
-        font-size: 12px;
-        padding: 6px 10px;
-    }
-}
-
 .compression-options {
     display: flex;
     flex-direction: column;
@@ -1271,7 +1201,8 @@ body {
 .slider-wrapper {
     flex: 1;
     position: relative;
-    height: 30px;
+    height: 40px; /* Increased height for selector space */
+    padding: 8px 0; /* Add vertical padding for selector */
 }
 
 .color-slider {
@@ -1286,6 +1217,7 @@ body {
     transform: translateY(-50%);
     z-index: 3;
     cursor: pointer;
+    pointer-events: none; /* Let clicks pass through to segments */
 }
 
 .color-slider-track {
@@ -1305,6 +1237,9 @@ body {
 .color-segment {
     flex: 1;
     position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+    pointer-events: auto;
 }
 
     .color-segment:not(:last-child)::after {
@@ -1317,52 +1252,60 @@ body {
         background: rgba(0, 0, 0, 0.2);
     }
 
+/* Animated selection box */
+.color-selection-box {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border: 3px solid #667eea;
+    border-radius: 8px;
+    pointer-events: none;
+    transition: left 0.3s ease, width 0.3s ease;
+    z-index: 2;
+    animation: pulse-selection 2s ease-in-out infinite;
+}
+
+@keyframes pulse-selection {
+    0%, 100% {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(102, 126, 234, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 20px rgba(102, 126, 234, 0.8);
+    }
+}
+
+.color-segment:hover:not(.selected) {
+    opacity: 0.8;
+}
+
 .color-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 26px;
-    height: 26px;
-    background: transparent;
-    border: 3px solid #667eea;
-    border-radius: 50%;
+    width: 0;
+    height: 0;
+    opacity: 0;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s;
 }
 
 .color-slider::-moz-range-thumb {
-    width: 26px;
-    height: 26px;
-    background: transparent;
-    border: 3px solid #667eea;
-    border-radius: 50%;
+    width: 0;
+    height: 0;
+    opacity: 0;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s;
-}
-
-.color-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
-    border-color: #764ba2;
-    border-width: 4px;
-}
-
-.color-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
-    border-color: #764ba2;
-    border-width: 4px;
+    border: none;
 }
 
 .color-slider::-webkit-slider-runnable-track {
     height: 30px;
     background: transparent;
+    cursor: pointer;
 }
 
 .color-slider::-moz-range-track {
     height: 30px;
     background: transparent;
+    cursor: pointer;
 }
 
 .color-value {
@@ -1452,25 +1395,101 @@ body {
     }
 
 @media (max-width: 768px) {
-    .logo-container {
-        flex-direction: column;
-        text-align: center;
-        padding: 1rem;
-    }
-
-    .logo {
-        height: 60px;
-        margin-right: 0;
-        margin-bottom: 1rem;
+    .info-panels {
+        grid-template-columns: 1fr;
     }
 
     .header h1 {
-        font-size: 2rem;
+        font-size: 2em;
     }
 
-    .header p,
-    .tagline {
-        font-size: 1rem;
+    .main-content {
+        padding: 20px;
+    }
+
+    .section-group {
+        padding: 15px;
+    }
+
+    .export-buttons {
+        flex-direction: column;
+    }
+
+    .export-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .visualizer-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .visualizer-preview {
+        height: 120px;
+    }
+
+    .visualizer-options-panel {
+        margin: 20px 10px;
+    }
+
+    .option-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .option-label {
+        flex: none;
+    }
+
+    .option-control {
+        width: 100%;
+    }
+
+    /* Color slider specific mobile styles - SOLUTION 1 */
+    .color-slider-control {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .slider-wrapper {
+        width: 100%;
+    }
+
+    .color-value {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border: 2px solid #667eea;
+    }
+
+    .color-swatch {
+        width: 24px;
+        height: 24px;
+    }
+
+    .color-text {
+        font-size: 1em;
+        font-weight: 500;
+    }
+
+    .layout-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .image-preview-frame {
+        width: 280px;
+        height: 175px;
+    }
+
+    .preview-click-hint {
+        font-size: 12px;
+        padding: 6px 10px;
     }
 }
 
@@ -1493,9 +1512,6 @@ body {
         padding: 0.2rem 0.6rem;
     }
 }
-
-
-
 
 .floating-notes-container {
     position: fixed;
