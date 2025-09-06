@@ -981,7 +981,7 @@ class UIController {
                        data-config-id="${config.id}">
                 <div class="color-slider-track">
                     ${C64_COLORS.map(c => `
-                        <div class="color-segment ${c.value === defaultValue ? 'selected' : ''}" 
+                        <div class="color-segment" 
                              style="background: ${c.hex}"
                              data-value="${c.value}"
                              data-name="${c.name}"
@@ -1063,11 +1063,7 @@ class UIController {
             // Handle slider input changes (for programmatic changes)
             slider.addEventListener('input', (e) => {
                 this.updateColorDisplay(e.target);
-                this.updateColorSegmentSelection(e.target);
             });
-
-            // Initialize the selection on load
-            this.updateColorSegmentSelection(slider);
         });
 
         // Handle direct clicks on color segments
@@ -1097,23 +1093,6 @@ class UIController {
                 this.saveScrollText(e.target.getAttribute('data-target'));
             });
         });
-    }
-
-    updateColorSegmentSelection(slider) {
-        const value = parseInt(slider.value);
-        const wrapper = slider.closest('.slider-wrapper');
-        const selectionBox = wrapper.querySelector('.color-selection-box');
-        const track = wrapper.querySelector('.color-slider-track');
-
-        if (selectionBox && track) {
-            // Calculate position and width for the selection box
-            const segmentWidth = track.offsetWidth / 16;
-            const leftPosition = value * segmentWidth;
-
-            // Position the selection box
-            selectionBox.style.left = `${leftPosition}px`;
-            selectionBox.style.width = `${segmentWidth}px`;
-        }
     }
 
     updateColorDisplay(slider) {

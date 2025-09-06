@@ -1201,8 +1201,7 @@ body {
 .slider-wrapper {
     flex: 1;
     position: relative;
-    height: 40px; /* Increased height for selector space */
-    padding: 8px 0; /* Add vertical padding for selector */
+    height: 30px;
 }
 
 .color-slider {
@@ -1217,7 +1216,7 @@ body {
     transform: translateY(-50%);
     z-index: 3;
     cursor: pointer;
-    pointer-events: none; /* Let clicks pass through to segments */
+    pointer-events: none;
 }
 
 .color-slider-track {
@@ -1252,32 +1251,10 @@ body {
         background: rgba(0, 0, 0, 0.2);
     }
 
-/* Animated selection box */
-.color-selection-box {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    border: 3px solid #667eea;
-    border-radius: 8px;
-    pointer-events: none;
-    transition: left 0.3s ease, width 0.3s ease;
-    z-index: 2;
-    animation: pulse-selection 2s ease-in-out infinite;
-}
-
-@keyframes pulse-selection {
-    0%, 100% {
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(102, 126, 234, 0.6);
+    .color-segment:hover {
+        opacity: 0.8;
+        transform: scaleY(1.1);
     }
-
-    50% {
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 20px rgba(102, 126, 234, 0.8);
-    }
-}
-
-.color-segment:hover:not(.selected) {
-    opacity: 0.8;
-}
 
 .color-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -1447,7 +1424,6 @@ body {
         width: 100%;
     }
 
-    /* Color slider specific mobile styles - SOLUTION 1 */
     .color-slider-control {
         flex-direction: column;
         gap: 12px;

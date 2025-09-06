@@ -112,7 +112,7 @@
       "id": "scrollText",
       "label": "Scroll Text",
       "type": "textarea",
-      "default": "SIDwinder  ---  Your one-stop shop for all your SID visualisation needs!!       ",
+      "default": "SIDquake  ---  Your one-stop shop for all your SID visualisation needs!!       ",
       "maxLength": 3072,
       "dataField": "scrollTextAddr",
       "description": "Text that scrolls across the screen",
