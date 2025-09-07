@@ -363,9 +363,46 @@ class SIDwinderPRGExporter {
             }
         });
 
-        let result = parts.join(', ');
-        if (result.length > 255) {
-            result = result.substring(0, 252) + '...';
+        // Build the string progressively, ensuring we don't break in the middle of a range
+        let result = '';
+        const maxLength = 20;
+        const ellipsis = '...';
+        const ellipsisLength = ellipsis.length;
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            const separator = i === 0 ? '' : ', ';
+            const testString = result + separator + part;
+
+            // Check if adding this part would exceed our limit
+            if (testString.length > maxLength) {
+                // If we haven't added anything yet, truncate the first part
+                if (result === '') {
+                    // This handles the edge case where even the first range is too long
+                    if (part.length > maxLength - ellipsisLength) {
+                        result = part.substring(0, maxLength - ellipsisLength) + ellipsis;
+                    } else {
+                        result = part;
+                    }
+                } else {
+                    // We have content, check if we can fit the ellipsis
+                    if (result.length <= maxLength - ellipsisLength) {
+                        result = result + ellipsis;
+                    } else {
+                        // Remove the last complete range and add ellipsis
+                        const lastComma = result.lastIndexOf(',');
+                        if (lastComma > 0 && lastComma <= maxLength - ellipsisLength) {
+                            result = result.substring(0, lastComma) + ellipsis;
+                        } else {
+                            // If we can't cleanly remove the last range, just truncate
+                            result = result.substring(0, maxLength - ellipsisLength) + ellipsis;
+                        }
+                    }
+                }
+                break;
+            }
+
+            result = testString;
         }
 
         return result;
