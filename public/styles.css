@@ -43,6 +43,7 @@ body {
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     box-sizing: border-box;
+    color: white;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -113,7 +114,6 @@ body {
 .header-info {
     display: flex;
     flex-direction: column;
-    color: white;
     position: relative;
 }
 
@@ -121,7 +121,6 @@ body {
     font-size: 2.5rem;
     font-weight: 700;
     margin: 0;
-    color: #ffffb0;
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     letter-spacing: -0.5px;
 }
@@ -129,7 +128,6 @@ body {
 .header p,
 .tagline {
     font-size: 1.1rem;
-    color: #f0f0c0;
     margin: 0.25rem 0 0.5rem 0;
     font-weight: 300;
     letter-spacing: 0.5px;
@@ -139,7 +137,6 @@ body {
 .version-badge {
     display: inline-block;
     background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
-    color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 15px;
     font-size: 0.75rem;
@@ -255,19 +252,16 @@ body {
 .upload-icon {
     font-size: 4em;
     margin-bottom: 20px;
-    color: #667eea;
     filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
 }
 
 .upload-text {
     font-size: 1.2em;
-    color: #ffffb0;
     margin-bottom: 10px;
     text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
 }
 
 .upload-subtext {
-    color: #ffe4b8;
     font-size: 0.9em;
 }
 
@@ -300,7 +294,6 @@ body {
 
 .song-title {
     font-size: 1.5em;
-    color: #ffffb0;
     font-weight: 600;
     margin-bottom: 5px;
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
@@ -308,7 +301,6 @@ body {
 
 .song-author {
     font-size: 1.1em;
-    color: #a8b9ff;
 }
 
 .info-panels {
@@ -339,7 +331,6 @@ body {
 }
 
 .panel h2 {
-    color: #ffffb0;
     margin-bottom: 20px;
     font-size: 1.3em;
     border-bottom: 2px solid rgba(0, 212, 255, 0.2);
@@ -364,11 +355,9 @@ body {
 
 .info-label {
     font-weight: 600;
-    color: #ffd8c8;
 }
 
 .info-value {
-    color: #ffffb0;
     font-family: 'Courier New', monospace;
     text-shadow: 0 0 3px rgba(0, 212, 255, 0.2);
 }
@@ -396,7 +385,6 @@ body {
         }
 
         .info-value.editable .edit-icon {
-            color: #667eea;
             font-size: 0.9em;
             opacity: 0.6;
             transition: opacity 0.2s;
@@ -425,7 +413,6 @@ body {
 }
 
 .export-hint {
-    color: #d5dce3;
     font-size: 0.9em;
     margin-top: 10px;
     font-style: italic;
@@ -451,7 +438,6 @@ body {
     }
 
     .export-section h2 {
-        color: #ffffb0;
         margin-bottom: 20px;
         font-size: 1.3em;
         border-bottom: 2px solid rgba(0, 212, 255, 0.2);
@@ -462,7 +448,6 @@ body {
     .export-section.disabled h2::after {
         content: ' (Load a SID file to enable)';
         font-size: 0.8em;
-        color: #f4f0c0;
         font-weight: normal;
     }
 
@@ -476,7 +461,6 @@ body {
 
     .song-selector-container label {
         margin-right: 10px;
-        color: #ffffb0;
         font-weight: 600;
     }
 
@@ -485,7 +469,6 @@ body {
         background: rgba(16, 20, 36, 0.9);
         border: 2px solid rgba(102, 126, 234, 0.3);
         border-radius: 6px;
-        color: #ffffb0;
         min-width: 200px;
         cursor: pointer;
         transition: all 0.2s;
@@ -504,7 +487,6 @@ body {
 
         .song-selector-container select option {
             background: #1a1f42;
-            color: #ffffb0;
         }
 
 .visualizer-grid {
@@ -555,7 +537,6 @@ body {
             left: 15px;
             right: 15px;
             font-size: 0.8em;
-            color: #ff6b6b;
             font-weight: 600;
             text-shadow: 0 0 3px rgba(255, 107, 107, 0.5);
         }
@@ -596,14 +577,12 @@ body {
 
     .visualizer-info h3 {
         margin: 0 0 8px 0;
-        color: #ffffb0;
         font-size: 1.1em;
         text-shadow: 0 0 3px rgba(0, 212, 255, 0.2);
     }
 
     .visualizer-info p {
         margin: 0;
-        color: #ffe4b8;
         font-size: 0.9em;
         line-height: 1.4;
     }
@@ -613,7 +592,6 @@ body {
     top: 10px;
     right: 10px;
     background: linear-gradient(135deg, #ffffb0 0%, #667eea 100%);
-    color: white;
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 0.8em;
@@ -641,7 +619,6 @@ body {
     grid-column: 1 / -1;
     text-align: center;
     padding: 20px;
-    color: #f4f0c0;
     font-style: italic;
     border-top: 1px dashed rgba(102, 126, 234, 0.3);
     margin: 10px 0;
@@ -678,7 +655,6 @@ body {
 
     .options-header h3 {
         margin: 0;
-        color: #ffffb0;
         font-size: 1.2em;
         font-weight: 600;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -701,7 +677,6 @@ body {
     font-size: 0.85em;
     font-weight: 600;
     text-transform: uppercase;
-    color: #d0d8e4;
     margin-bottom: 15px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(102, 126, 234, 0.2);
@@ -740,7 +715,6 @@ body {
 .option-label {
     flex: 0 0 140px;
     font-weight: 600;
-    color: #b8d0ff;
     font-size: 0.95em;
 }
 
@@ -775,7 +749,6 @@ body {
 }
 
     .layout-radio-option:hover:not(.disabled) {
-        border-color: #667eea;
         background: rgba(102, 126, 234, 0.1);
         transform: translateX(4px);
         box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
@@ -786,11 +759,9 @@ body {
         width: 18px;
         height: 18px;
         cursor: pointer;
-        accent-color: #ffffb0;
     }
 
     .layout-radio-option:has(input:checked) {
-        border-color: #ffffb0;
         background: rgba(0, 212, 255, 0.1);
         box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
     }
@@ -804,12 +775,10 @@ body {
 
 .layout-name {
     font-weight: 600;
-    color: #ffffb0;
 }
 
 .layout-range {
     font-family: 'Courier New', monospace;
-    color: #ffe4b8;
     font-size: 0.9em;
     background: rgba(0, 0, 0, 0.3);
     padding: 2px 8px;
@@ -825,14 +794,12 @@ body {
 
 .layout-divider {
     margin: 15px 0 10px;
-    color: #f4f0c0;
     font-size: 0.85em;
     font-style: italic;
 }
 
 .file-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -850,13 +817,11 @@ body {
     }
 
 .file-status {
-    color: #f4f0c0;
     font-size: 0.9em;
     font-style: italic;
 }
 
     .file-status.has-file {
-        color: #51cf66;
         font-style: normal;
         font-weight: 500;
         text-shadow: 0 0 3px rgba(81, 207, 102, 0.3);
@@ -869,7 +834,6 @@ body {
     font-size: 0.95em;
     transition: all 0.2s;
     background: rgba(10, 14, 39, 0.8);
-    color: #ffffb0;
 }
 
 .number-input {
@@ -885,7 +849,6 @@ body {
 
     .select-input option {
         background: #1a1f42;
-        color: #ffffb0;
     }
 
     .number-input:focus, .select-input:focus, .date-input:focus {
@@ -896,13 +859,11 @@ body {
     }
 
 .option-hint {
-    color: #f4f0c0;
     font-size: 0.85em;
     font-style: italic;
 }
 
 .date-preview {
-    color: #a8b9ff;
     font-size: 0.9em;
     padding: 4px 8px;
     background: rgba(10, 14, 39, 0.6);
@@ -915,7 +876,6 @@ body {
     background: rgba(255, 107, 107, 0.1);
     border: 1px solid rgba(255, 107, 107, 0.3);
     border-radius: 6px;
-    color: #ff8e8e;
     text-align: center;
     text-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
 }
@@ -981,7 +941,6 @@ body {
 }
 
 .preview-click-hint {
-    color: white;
     font-size: 14px;
     font-weight: 600;
     text-align: center;
@@ -1036,7 +995,6 @@ body {
 
 .preview-filename {
     font-weight: 600;
-    color: #a8b9ff;
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -1044,7 +1002,6 @@ body {
 }
 
 .preview-size {
-    color: #f4f0c0;
     font-family: monospace;
 }
 
@@ -1057,7 +1014,6 @@ body {
 
 .export-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
@@ -1114,21 +1070,18 @@ body {
 
     .export-status.success {
         background: rgba(81, 207, 102, 0.2);
-        color: #51cf66;
         border: 1px solid rgba(81, 207, 102, 0.3);
         box-shadow: inset 0 0 20px rgba(81, 207, 102, 0.1);
     }
 
     .export-status.error {
         background: rgba(255, 107, 107, 0.2);
-        color: #ff8e8e;
         border: 1px solid rgba(255, 107, 107, 0.3);
         box-shadow: inset 0 0 20px rgba(255, 107, 107, 0.1);
     }
 
     .export-status.info {
         background: rgba(0, 212, 255, 0.2);
-        color: #ffffb0;
         border: 1px solid rgba(0, 212, 255, 0.3);
         box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.1);
     }
@@ -1137,7 +1090,6 @@ body {
     display: none;
     text-align: center;
     padding: 20px;
-    color: #ffffb0;
 }
 
     .loading.active {
@@ -1192,13 +1144,11 @@ body {
     text-align: center;
     margin-top: 5px;
     font-size: 0.9em;
-    color: #ffe4b8;
 }
 
 .error-message {
     background: rgba(255, 107, 107, 0.1);
     border: 1px solid rgba(255, 107, 107, 0.3);
-    color: #ff8e8e;
     padding: 15px;
     border-radius: 10px;
     margin-top: 20px;
@@ -1253,7 +1203,7 @@ body {
 }
 
     .modal-icon.success {
-        color: #51cf66;
+        color: white;
     }
 
     .modal-icon.error {
@@ -1262,7 +1212,6 @@ body {
 
 .modal-message {
     font-size: 1.2em;
-    color: #a8b9ff;
 }
 
 .compression-options {
@@ -1283,7 +1232,6 @@ body {
 }
 
     .compression-radio-option:hover {
-        border-color: #667eea;
         background: rgba(102, 126, 234, 0.1);
         transform: translateX(4px);
         box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
@@ -1312,11 +1260,9 @@ body {
 
 .compression-name {
     font-weight: 600;
-    color: #ffffb0;
 }
 
 .compression-desc {
-    color: #f4f0c0;
     font-size: 0.9em;
 }
 
@@ -1446,12 +1392,7 @@ body {
 .color-number {
     font-family: 'Courier New', monospace;
     font-weight: bold;
-    color: #ffffb0;
     text-shadow: 0 0 3px rgba(0, 212, 255, 0.3);
-}
-
-.color-name {
-    color: #ffe4b8;
 }
 
 .textarea-container {
@@ -1468,7 +1409,6 @@ body {
         border: 2px solid rgba(102, 126, 234, 0.3);
         border-radius: 6px;
         background: rgba(10, 14, 39, 0.8);
-        color: #ffffb0;
         font-family: 'Courier New', monospace;
         font-size: 0.9em;
         resize: vertical;
@@ -1491,7 +1431,6 @@ body {
     padding: 6px 12px;
     font-size: 0.85em;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -1522,7 +1461,6 @@ body {
     pointer-events: none;
     font-size: 8rem;
     opacity: 0;
-    color: rgba(0, 212, 255, 0.15);
     text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
 }
 
