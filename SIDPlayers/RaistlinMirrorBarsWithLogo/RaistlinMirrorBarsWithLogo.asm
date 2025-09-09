@@ -487,8 +487,8 @@ heightColorTable:
 	.fill 4, $05
 	.fill 5, $0E
 	.fill 5, $0A
-	.fill 5, $0D
-	.fill 5, $07
+	.fill 6, $0D
+	.fill 7, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
