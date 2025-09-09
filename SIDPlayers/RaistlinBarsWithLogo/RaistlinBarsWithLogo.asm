@@ -86,7 +86,7 @@
 //; Calculated bar values
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 
 //; Color palette configuration
@@ -170,11 +170,11 @@ MainLoop:
 	lda visualizationUpdateFlag
 	beq MainLoop
 
-	jsr ApplySmoothing
-	jsr RenderBars
-
 	lda #$00
 	sta visualizationUpdateFlag
+
+	jsr ApplySmoothing
+	jsr RenderBars
 
 	lda currentScreenBuffer
 	eor #$01

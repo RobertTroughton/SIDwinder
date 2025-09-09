@@ -60,10 +60,10 @@ voiceReleaseLo:             .fill 3, 0
 multiply64Table:            .fill 4, i * 64
 
 .align 128
-div16:                      .fill 128, i / 16.0
+div16:                      .fill 128, floor(i / 8.0)
 
 .align 128
-div16mul3:                  .fill 128, ((3.0 * i) / 16.0)
+div16mul3:                  .fill 128, floor((3.0 * i) / 8.0)
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS
@@ -148,6 +148,9 @@ tempIndex:
         lda releaseRateLo, y
         sta voiceReleaseLo + voice
 
+//;        lda #MAX_BAR_HEIGHT
+//;        sta targetBarHeights, x
+
         pla
         lsr
         lsr
@@ -229,10 +232,11 @@ UpdateBarDecay:
 //; =============================================================================
 
 ApplySmoothing:
+
     ldx #0
 !loop:
+    clc
     lda barHeights, x
-    lsr
     ldy barHeights - 2, x
     adc div16, y
     ldy barHeights - 1, x
@@ -241,6 +245,10 @@ ApplySmoothing:
     adc div16mul3, y
     ldy barHeights + 2, x
     adc div16, y
+    cmp #MAX_BAR_HEIGHT
+    bcc !storeHeight+
+    lda #MAX_BAR_HEIGHT
+!storeHeight:
     sta smoothedHeights, x
 
     inx

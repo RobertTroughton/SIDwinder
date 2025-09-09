@@ -9,8 +9,8 @@ FreqToBarLo: .fill 256, file_freqTable.get(i + 0)
 FreqToBarMid: .fill 256, file_freqTable.get(i + 256)
 FreqToBarHi: .fill 256, file_freqTable.get(i + 512)
 
-.const SUSTAIN_MIN = 24     // Minimum bar height
-.const SUSTAIN_MAX = 127    // Maximum bar height
+.const SUSTAIN_MIN = MAX_BAR_HEIGHT / 6
+.const SUSTAIN_MAX = MAX_BAR_HEIGHT
 sustainToHeight:
     .fill 16, SUSTAIN_MIN + (i * (SUSTAIN_MAX - SUSTAIN_MIN)) / 15.0
 

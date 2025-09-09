@@ -42,8 +42,8 @@
 .const TOP_SPECTRUM_HEIGHT				= 9
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
-.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
-.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
@@ -63,7 +63,7 @@
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 
 //; =============================================================================
 //; INCLUDES
@@ -76,7 +76,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 250
+.var DEFAULT_RASTERTIMING_Y = 40
 
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
@@ -147,11 +147,12 @@ MainLoop:
 	lda visualizationUpdateFlag
 	beq MainLoop
 
-	jsr ApplySmoothing
-	jsr RenderBars
-
 	lda #$00
 	sta visualizationUpdateFlag
+
+	jsr ApplySmoothing
+
+	jsr RenderBars
 
 	lda currentScreenBuffer
 	eor #$01
@@ -312,11 +313,12 @@ NextIRQLdx:
 
 	jsr set_d011_and_d012
 
+	lda #$01
+	sta $d019
+
 	cpx #$00
 	bne !musicOnly+
 
-	lda #$01
-	sta $d019
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -342,9 +344,7 @@ RenderBars:
 	bmi !colorsDone+
 
 	ldx smoothedHeights, y
-	
 	lda heightColorTable, x
-	
 	cmp previousColors, y
 	beq !colorLoop-
 	sta previousColors, y
@@ -527,17 +527,17 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 //; =============================================================================
 
 heightColorTable:
-	.fill 5, $0B
-	.fill 5, $09
-	.fill 5, $02
-	.fill 5, $06
-	.fill 5, $08
-	.fill 5, $04
-	.fill 5, $05
-	.fill 5, $0E
-	.fill 5, $0A
-	.fill 5, $0D
-	.fill 32, $01
+	.fill 2, $0B
+	.fill 7, $09
+	.fill 7, $02
+	.fill 7, $06
+	.fill 7, $08
+	.fill 7, $04
+	.fill 7, $05
+	.fill 7, $0E
+	.fill 7, $0A
+	.fill 7, $0D
+	.fill 7, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping

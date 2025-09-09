@@ -47,8 +47,8 @@
 .const TOP_SPECTRUM_HEIGHT				= 6
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
-.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
-.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 
 .const SONG_TITLE_LINE					= 23
 .const SPECTRUM_START_LINE				= 11
@@ -71,7 +71,7 @@
 .const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_BANK * 8)
 
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 
 //; =============================================================================
 //; INCLUDES
@@ -477,7 +477,6 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 //; DATA SECTION - Height-Based Color Table
 //; =============================================================================
 
-//; Color table based on bar height with flickering transitions
 //; MAX_BAR_HEIGHT = 71 (TOP_SPECTRUM_HEIGHT * 8 - 1 = 9 * 8 - 1)
 //; We'll use groups of 4 entries for each height range
 heightColorTable:
@@ -492,6 +491,15 @@ heightColorTable:
 	.fill 3, $0A
 	.fill 3, $0D
 	.fill 32, $01
+	.fill 4, $02
+	.fill 4, $06
+	.fill 4, $08
+	.fill 4, $04
+	.fill 4, $05
+	.fill 5, $0E
+	.fill 5, $0A
+	.fill 5, $0D
+	.fill 5, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
