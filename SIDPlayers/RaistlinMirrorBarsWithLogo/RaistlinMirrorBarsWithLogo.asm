@@ -477,20 +477,9 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 //; DATA SECTION - Height-Based Color Table
 //; =============================================================================
 
-//; MAX_BAR_HEIGHT = 71 (TOP_SPECTRUM_HEIGHT * 8 - 1 = 9 * 8 - 1)
-//; We'll use groups of 4 entries for each height range
 heightColorTable:
-	.fill 3, $0B
-	.fill 3, $09
-	.fill 3, $02
-	.fill 3, $06
-	.fill 3, $08
-	.fill 3, $04
-	.fill 3, $05
-	.fill 3, $0E
-	.fill 3, $0A
-	.fill 3, $0D
-	.fill 32, $01
+	.fill 2, $0B
+	.fill 4, $09
 	.fill 4, $02
 	.fill 4, $06
 	.fill 4, $08
