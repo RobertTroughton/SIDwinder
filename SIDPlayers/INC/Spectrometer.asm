@@ -23,9 +23,6 @@ barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 barVoiceMap:                .fill NUM_FREQUENCY_BARS, 0
 
 .align NUM_FREQUENCY_BARS
-targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
-
-.align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 
 .align NUM_FREQUENCY_BARS
@@ -73,9 +70,9 @@ AnalyzeSIDRegisters:
     // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
-        bmi !skipVoice+
-/*        and #$08               // Check TEST bit and skip if set
-        bne !skipVoice+*/
+//;        bmi !skipVoice+
+        and #$08               // Check TEST bit and skip if set
+        bne !skipVoice+
 
         lda sidRegisterMirror + (voice * 7) + 4
         and #$01               // Check GATE bit and skip if off
@@ -154,7 +151,7 @@ tempIndex:
         lsr
         tay
         lda sustainToHeight, y
-        sta targetBarHeights, x
+        sta barHeights, x
         lda #voice
         sta barVoiceMap, x
 
@@ -170,41 +167,11 @@ UpdateBarDecay:
     ldx #NUM_FREQUENCY_BARS - 1
 
 !loop:
-    lda targetBarHeights, x
-    beq !justDecay+
-    
-    cmp barHeights, x
-    beq !clearTarget+
-    bcc !moveDown+
-    
-    lda barHeights, x
-    clc
-    adc #BAR_INCREASE_RATE
-    cmp targetBarHeights, x
-    bcc !storeHeight+
-    lda targetBarHeights, x
-    jmp !storeHeight+
-    
-!moveDown:
-    lda barHeights, x
-    sec
-    sbc #BAR_DECREASE_RATE
-    cmp targetBarHeights, x
-    bcs !storeHeight+
-    lda targetBarHeights, x
-    
-!storeHeight:
-    sta barHeights, x
-    lda #$00
-    sta barHeightsLo, x
-    
-!clearTarget:
-    lda #$00
-    sta targetBarHeights, x
-    jmp !next+
-    
-!justDecay:
     ldy barVoiceMap, x
+
+    lda barHeights, x
+    ora barHeightsLo, x
+    beq !next+
 
     sec
     lda barHeightsLo, x
@@ -212,11 +179,10 @@ UpdateBarDecay:
     sta barHeightsLo, x
     lda barHeights, x
     sbc voiceReleaseHi, y
-    bpl !positive+
-
+    bpl !skip+
     lda #$00
     sta barHeightsLo, x
-!positive:
+!skip:
     sta barHeights, x
 
 !next:
