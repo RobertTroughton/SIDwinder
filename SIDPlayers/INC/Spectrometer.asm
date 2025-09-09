@@ -47,11 +47,6 @@ barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
 
-.align NUM_FREQUENCY_BARS + 4
-.byte $00, $00
-quartBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
-.byte $00, $00
-
 
 //; =============================================================================
 //; VOICE STATE DATA
@@ -69,8 +64,7 @@ voiceReleaseLo:             .fill 3, 0
 //; CALCULATION TABLES
 //; =============================================================================
 
-halfValues:                      .fill MAX_BAR_HEIGHT + 1, floor(i * 45.0 / 100.0)
-quartValues:                     .fill MAX_BAR_HEIGHT + 1, floor(i * 15.0 / 100.0)
+halfValues:                      .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
 
 
 //; =============================================================================
@@ -83,6 +77,8 @@ AnalyzeSIDRegisters:
     lda sidRegisterMirror + (voice * 7) + 4
     and #$08
     bne AnalyzeFrequency
+
+    lda sidRegisterMirror + (voice * 7) + 4
     and #$01               // Check GATE bit and skip if off
     beq !skipVoice+
 
@@ -216,14 +212,11 @@ UpdateBars:
 
 ApplySmoothing:
 
-//; calculate half and quarter heights for smoothing
     ldx #0
 !loop:
     ldy barHeights, x
     lda halfValues, y
     sta halfBarHeights, x
-    lda quartValues, y
-    sta quartBarHeights, x
     inx
     cpx #NUM_FREQUENCY_BARS
     bne !loop-
@@ -235,8 +228,6 @@ ApplySmoothing:
     lda barHeights + 0, x
     adc halfBarHeights - 1, x
     adc halfBarHeights + 1, x
-    adc quartBarHeights - 2, x
-    adc quartBarHeights + 2, x
     cmp #MAX_BAR_HEIGHT
     bcc !skip+
     lda #MAX_BAR_HEIGHT
