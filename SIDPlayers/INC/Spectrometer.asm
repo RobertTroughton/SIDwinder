@@ -20,7 +20,7 @@
 barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 
 .align NUM_FREQUENCY_BARS
-barVoiceMap:                .fill NUM_FREQUENCY_BARS, $00
+barVoiceMap:                .fill NUM_FREQUENCY_BARS, $03
 
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
@@ -52,11 +52,13 @@ halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
 //; VOICE STATE DATA
 //; =============================================================================
 
-.align 3
+.align 4
 voiceReleaseHi:             .fill 3, 0
+                            .byte BAR_DECREASE_RATE
 
-.align 3
+.align 4
 voiceReleaseLo:             .fill 3, 0
+                            .byte 0
 
 //; =============================================================================
 //; CALCULATION TABLES
@@ -70,20 +72,30 @@ halfValues:                      .fill MAX_BAR_HEIGHT, floor(i * 30.0 / 100.0)
 //; =============================================================================
 
 AnalyzeSIDRegisters:
-    // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
-        lda sidRegisterMirror + (voice * 7) + 4
-        bmi !skipVoice+
-        and #$08               // Check TEST bit and skip if set
-        bne !skipVoice+
 
-        lda sidRegisterMirror + (voice * 7) + 4
-        and #$01               // Check GATE bit and skip if off
-        beq !skipVoice+
+    lda sidRegisterMirror + (voice * 7) + 4
+    and #$01
+    bne !stillActive+
+    
+    ldx #NUM_FREQUENCY_BARS-1
+!loop:
+    lda barVoiceMap, x
+    cmp #voice
+    bne !skip+
+    lda #0
+    sta targetBarHeights, x
+    lda #$03
+    sta barVoiceMap, x
+!skip:
+    dex
+    bpl !loop-
 
+!stillActive:
 
-
-
+    lda sidRegisterMirror + (voice * 7) + 4
+    and #$01               // Check GATE bit and skip if off
+    beq !skipVoice+
 
 AnalyzeFrequency:
 
@@ -138,7 +150,15 @@ tempIndex:
     lda FreqToBarHi, y
     tax
 
-    !gotBar:
+!gotBar:
+
+    lda barVoiceMap, x
+    cmp #$03
+    beq !setBar+
+    cmp #voice
+    bne !skipVoice+
+
+!setBar:
         lda sidRegisterMirror + (voice * 7) + 6
         and #$0f
         tay
@@ -155,7 +175,6 @@ tempIndex:
         tay
         lda sustainToHeight, y
         sta targetBarHeights, x
-
         lda #voice
         sta barVoiceMap, x
 
