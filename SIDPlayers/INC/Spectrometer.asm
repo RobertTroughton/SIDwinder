@@ -85,6 +85,7 @@ AnalyzeSIDRegisters:
 
 
 AnalyzeFrequency:
+
     ldy sidRegisterMirror + (voice * 7) + 1  // High byte of frequency
     
     cpy #$40
@@ -116,7 +117,7 @@ AnalyzeFrequency:
     sbc #$10                // Subtract 16 to get 0-47 range
     asl
     asl                     // * 4
-    sta !tempIndex+ + 1
+    sta tempIndex + 1
     lda sidRegisterMirror + (voice * 7) + 0
     lsr
     lsr
@@ -124,7 +125,7 @@ AnalyzeFrequency:
     lsr
     lsr
     lsr                     // Top 2 bits of low byte
-!tempIndex:
+tempIndex:
     ora #$00
     tax
     lda FreqToBarMid, x
@@ -135,10 +136,6 @@ AnalyzeFrequency:
     // High frequencies (>= 0x4000): just use high byte
     lda FreqToBarHi, y
     tax
-
-
-
-
 
     !gotBar:
         lda sidRegisterMirror + (voice * 7) + 6

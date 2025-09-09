@@ -2,8 +2,18 @@
 //; DATA SECTION - Lookup Tables
 //; =============================================================================
 
-.var SUSTAINBOOST = 8
-.align 16
+.var file_freqTable = LoadBinary("FreqTable.bin")
+
+.align 256
+FreqToBarLo: .fill 256, file_freqTable.get(i + 0)
+FreqToBarMid: .fill 256, file_freqTable.get(i + 256)
+FreqToBarHi: .fill 256, file_freqTable.get(i + 512)
+
+.const SUSTAIN_MIN = 24     // Minimum bar height
+.const SUSTAIN_MAX = 127    // Maximum bar height
+sustainToHeight:
+    .fill 16, SUSTAIN_MIN + (i * (SUSTAIN_MAX - SUSTAIN_MIN)) / 15.0
+
 releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
 							.byte <((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
 							.byte <((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
@@ -21,7 +31,6 @@ releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
 							.byte <((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
 							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
 
-.align 16
 releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
 							.byte >((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
 							.byte >((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
@@ -39,12 +48,3 @@ releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
 							.byte >((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
 							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
 
-.align 16
-sustainToHeight:			.fill 16, ((i + SUSTAINBOOST) * MAX_BAR_HEIGHT) / (16 - 1 + SUSTAINBOOST)
-
-.var file_freqTable = LoadBinary("FreqTable.bin")
-
-.align 256
-FreqToBarLo: .fill 256, file_freqTable.get(i + 0)
-FreqToBarMid: .fill 256, file_freqTable.get(i + 256)
-FreqToBarHi: .fill 256, file_freqTable.get(i + 512)
