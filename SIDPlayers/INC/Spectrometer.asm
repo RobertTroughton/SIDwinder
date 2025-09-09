@@ -73,25 +73,72 @@ AnalyzeSIDRegisters:
     // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
-        bmi !skipVoice+
-        and #$01
+        and #$08               // Check TEST bit and skip if set
+        bne !skipVoice+
+
+        lda sidRegisterMirror + (voice * 7) + 4
+        and #$01               // Check GATE bit and skip if off
         beq !skipVoice+
 
-        ldy sidRegisterMirror + (voice * 7) + 1
-        cpy #4
-        bcc !lowFreq+
 
-        ldx frequencyToBarHi, y
-        jmp !gotBar+
 
-    !lowFreq:
-        ldx sidRegisterMirror + (voice * 7) + 0
-        txa
-        lsr
-        lsr
-        ora multiply64Table, y
-        tay
-        ldx frequencyToBarLo, y
+
+
+AnalyzeFrequency:
+    ldy sidRegisterMirror + (voice * 7) + 1  // High byte of frequency
+    
+    cpy #$40
+    bcs !useHighTable+      // >= 0x4000: use high table
+    
+    cpy #$10
+    bcs !useMidTable+       // >= 0x1000: use mid table
+    
+    // Low frequencies (0x0000-0x0FFF): combine both bytes for index
+    tya
+    asl
+    asl
+    asl
+    asl                     // High byte * 16
+    ora sidRegisterMirror + (voice * 7) + 0  // Ignore low 4 bits of low byte
+    lsr
+    lsr
+    lsr
+    lsr                     // Divide by 16 to get 0-255 range
+    tax
+    lda FreqToBarLo, x
+    tax
+    jmp !gotBar+
+    
+!useMidTable:
+    // Mid frequencies (0x1000-0x3FFF): use high byte + top bits of low
+    tya
+    sec
+    sbc #$10                // Subtract 16 to get 0-47 range
+    asl
+    asl                     // * 4
+    sta !tempIndex+ + 1
+    lda sidRegisterMirror + (voice * 7) + 0
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr                     // Top 2 bits of low byte
+!tempIndex:
+    ora #$00
+    tax
+    lda FreqToBarMid, x
+    tax
+    jmp !gotBar+
+    
+!useHighTable:
+    // High frequencies (>= 0x4000): just use high byte
+    lda FreqToBarHi, y
+    tax
+
+
+
+
 
     !gotBar:
         lda sidRegisterMirror + (voice * 7) + 6
