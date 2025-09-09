@@ -73,8 +73,9 @@ AnalyzeSIDRegisters:
     // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
-        and #$08               // Check TEST bit and skip if set
-        bne !skipVoice+
+        bmi !skipVoice+
+/*        and #$08               // Check TEST bit and skip if set
+        bne !skipVoice+*/
 
         lda sidRegisterMirror + (voice * 7) + 4
         and #$01               // Check GATE bit and skip if off
@@ -139,8 +140,6 @@ tempIndex:
 
     !gotBar:
         lda sidRegisterMirror + (voice * 7) + 6
-        pha
-
         and #$0f
         tay
         lda releaseRateHi, y
@@ -148,10 +147,7 @@ tempIndex:
         lda releaseRateLo, y
         sta voiceReleaseLo + voice
 
-//;        lda #MAX_BAR_HEIGHT
-//;        sta targetBarHeights, x
-
-        pla
+        lda sidRegisterMirror + (voice * 7) + 6
         lsr
         lsr
         lsr
@@ -172,6 +168,7 @@ tempIndex:
 
 UpdateBarDecay:
     ldx #NUM_FREQUENCY_BARS - 1
+
 !loop:
     lda targetBarHeights, x
     beq !justDecay+

@@ -170,11 +170,12 @@ MainLoop:
 	lda visualizationUpdateFlag
 	beq MainLoop
 
+	jsr ApplySmoothing
+
+	jsr RenderBars
+
 	lda #$00
 	sta visualizationUpdateFlag
-
-	jsr ApplySmoothing
-	jsr RenderBars
 
 	lda currentScreenBuffer
 	eor #$01
@@ -298,8 +299,6 @@ SpectrometerD018:
 	sta $d018
 	lda #$08
 	sta $d016
-
-	inc visualizationUpdateFlag
 
 	lda #251
 	sta $d012
