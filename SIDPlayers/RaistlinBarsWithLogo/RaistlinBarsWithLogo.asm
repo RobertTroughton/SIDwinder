@@ -247,7 +247,7 @@ MainIRQ:
 
 	jsr PlayMusicWithAnalysis
 
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr UpdateColors
 	jsr UpdateSprites
 

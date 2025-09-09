@@ -1,16 +1,20 @@
 # SIDPlayers Assembly Files
 
-Total players found: 8
+Total players found: 9
 
 
 ## Player: Default
 Files: 1
 
 ### FILE: SIDPlayers/Default/Default.asm
-*Original size: 16804 bytes, Cleaned: 13945 bytes (reduced by 17.0%)*
+*Original size: 17025 bytes, Cleaned: 14165 bytes (reduced by 16.8%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
     jmp Initialize
 .var Display_Title_Colour           = $01
 .var Display_Artist_Colour          = $0c
@@ -656,25 +660,25 @@ Files: 6
 *Original size: 4960 bytes, Cleaned: 3995 bytes (reduced by 19.5%)*
 ```asm
 #importonce
-.var SIDInit						= BASE_ADDRESS + $00
-.var SIDPlay						= BASE_ADDRESS + $03
-.var BackupSIDMemory				= BASE_ADDRESS + $06
-.var RestoreSIDMemory				= BASE_ADDRESS + $09
-.var NumCallsPerFrame				= BASE_ADDRESS + $0c
-.var BorderColour					= BASE_ADDRESS + $0d
-.var BitmapScreenColour				= BASE_ADDRESS + $0e
-.var SongNumber						= BASE_ADDRESS + $0f
-.var SongName						= BASE_ADDRESS + $10
-.var ArtistName						= BASE_ADDRESS + $30
-.var CopyrightInfo					= BASE_ADDRESS + $50
-.var LoadAddress					= BASE_ADDRESS + $c0
-.var InitAddress					= BASE_ADDRESS + $c2
-.var PlayAddress					= BASE_ADDRESS + $c4
-.var EndAddress						= BASE_ADDRESS + $c6
-.var NumSongs						= BASE_ADDRESS + $c8
-.var ClockType						= BASE_ADDRESS + $c9
-.var SIDModel						= BASE_ADDRESS + $ca
-.var ZPUsageData					= BASE_ADDRESS + $e0
+.var SIDInit						= DATA_ADDRESS + $00
+.var SIDPlay						= DATA_ADDRESS + $03
+.var BackupSIDMemory				= DATA_ADDRESS + $06
+.var RestoreSIDMemory				= DATA_ADDRESS + $09
+.var NumCallsPerFrame				= DATA_ADDRESS + $0c
+.var BorderColour					= DATA_ADDRESS + $0d
+.var BitmapScreenColour				= DATA_ADDRESS + $0e
+.var SongNumber						= DATA_ADDRESS + $0f
+.var SongName						= DATA_ADDRESS + $10
+.var ArtistName						= DATA_ADDRESS + $30
+.var CopyrightInfo					= DATA_ADDRESS + $50
+.var LoadAddress					= DATA_ADDRESS + $c0
+.var InitAddress					= DATA_ADDRESS + $c2
+.var PlayAddress					= DATA_ADDRESS + $c4
+.var EndAddress						= DATA_ADDRESS + $c6
+.var NumSongs						= DATA_ADDRESS + $c8
+.var ClockType						= DATA_ADDRESS + $c9
+.var SIDModel						= DATA_ADDRESS + $ca
+.var ZPUsageData					= DATA_ADDRESS + $e0
 NMIFix:
 		lda #$35
 		sta $01
@@ -746,81 +750,49 @@ d011_values_ptr:
 ```
 
 ### FILE: SIDPlayers/INC/FreqTable.asm
-*Original size: 5067 bytes, Cleaned: 4576 bytes (reduced by 9.7%)*
+*Original size: 2363 bytes, Cleaned: 2159 bytes (reduced by 8.6%)*
 ```asm
-.var SUSTAINBOOST = 8
-.align 16
-releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-.align 16
-releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 2) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 3) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 4) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 6) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 9) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 11) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 12) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 15) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 38) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 75) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 120) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 150) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 450) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 750) + 64)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200) + 64)
-.align 16
-sustainToHeight:			.fill 16, ((i + SUSTAINBOOST) * MAX_BAR_HEIGHT) / (16 - 1 + SUSTAINBOOST)
+.var file_freqTable = LoadBinary("FreqTable.bin")
 .align 256
-frequencyToBarHi:
-.byte $00, $02, $06, $08, $0A, $0C, $0D, $0E, $0F, $0F, $10, $11, $12, $12, $12, $13
-.byte $14, $14, $14, $14, $15, $15, $16, $16, $16, $17, $17, $17, $17, $18, $18, $18
-.byte $18, $19, $19, $19, $19, $19, $19, $1A, $1A, $1A, $1A, $1A, $1B, $1B, $1B, $1B
-.byte $1B, $1C, $1C, $1C, $1C, $1C, $1C, $1C, $1C, $1C, $1C, $1D, $1D, $1D, $1D, $1D
-.byte $1D, $1D, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1E, $1F, $1F
-.byte $1F, $1F, $1F, $1F, $1F, $1F, $1F, $1F, $20, $20, $20, $20, $20, $20, $20, $20
-.byte $20, $20, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21
-.byte $21, $21, $21, $21, $21, $22, $22, $22, $22, $22, $22, $22, $22, $22, $22, $22
-.byte $22, $22, $22, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23
-.byte $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $24, $24, $24, $24
-.byte $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $25
-.byte $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25, $25
-.byte $25, $25, $25, $25, $25, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26
-.byte $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26
-.byte $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $27, $27, $27, $27, $27, $27
-.byte $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27, $27
-.align 256
-frequencyToBarLo:
-.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $01
-.byte $01, $01, $01, $01, $01, $01, $01, $01, $02, $02, $02, $02, $02, $02, $02, $02
-.byte $02, $02, $02, $03, $03, $03, $03, $03, $03, $03, $03, $03, $03, $03, $03, $03
-.byte $03, $03, $03, $03, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04
-.byte $04, $04, $04, $04, $05, $05, $05, $05, $05, $05, $05, $05, $05, $05, $05, $05
-.byte $05, $05, $05, $05, $05, $05, $05, $05, $05, $05, $05, $05, $06, $06, $06, $06
-.byte $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06
-.byte $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07, $07
-.byte $07, $07, $07, $07, $07, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08
-.byte $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08
-.byte $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $09, $09, $09, $09, $09, $09
-.byte $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09
+FreqToBarLo: .fill 256, file_freqTable.get(i + 0)
+FreqToBarMid: .fill 256, file_freqTable.get(i + 256)
+FreqToBarHi: .fill 256, file_freqTable.get(i + 512)
+.const SUSTAIN_MIN = MAX_BAR_HEIGHT / 6
+.const SUSTAIN_MAX = MAX_BAR_HEIGHT
+sustainToHeight:
+    .fill 16, SUSTAIN_MIN + (i * (SUSTAIN_MAX - SUSTAIN_MIN)) / 15.0
+releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 4.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 6.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 9.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 11.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 12.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 15.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 38.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 75.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 120.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 150.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 450.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
+							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
+releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 4.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 6.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 9.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 11.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 12.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 15.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 38.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 75.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 120.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 150.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 450.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
+							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
 ```
 
 ### FILE: SIDPlayers/INC/Keyboard.asm
@@ -1344,15 +1316,13 @@ PlayMusicWithAnalysis:
 ```
 
 ### FILE: SIDPlayers/INC/Spectrometer.asm
-*Original size: 5456 bytes, Cleaned: 3325 bytes (reduced by 39.1%)*
+*Original size: 6432 bytes, Cleaned: 3575 bytes (reduced by 44.4%)*
 ```asm
 #importonce
 .align NUM_FREQUENCY_BARS
 barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 .align NUM_FREQUENCY_BARS
-barVoiceMap:                .fill NUM_FREQUENCY_BARS, 0
-.align NUM_FREQUENCY_BARS
-targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
+barVoiceMap:                .fill NUM_FREQUENCY_BARS, $00
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -1361,49 +1331,82 @@ previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
 smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
+.align NUM_FREQUENCY_BARS
+targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
 .align NUM_FREQUENCY_BARS + 4
 .byte $00, $00
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
+.byte $00, $00
+.align NUM_FREQUENCY_BARS + 4
+.byte $00, $00
+halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
 .align 3
 voiceReleaseHi:             .fill 3, 0
 .align 3
 voiceReleaseLo:             .fill 3, 0
-.align 4
-multiply64Table:            .fill 4, i * 64
-.align 128
-div16:                      .fill 128, i / 16.0
-.align 128
-div16mul3:                  .fill 128, ((3.0 * i) / 16.0)
+halfValues:                      .fill MAX_BAR_HEIGHT, floor(i * 30.0 / 100.0)
 AnalyzeSIDRegisters:
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
         bmi !skipVoice+
+        and #$08
+        bne !skipVoice+
+        lda sidRegisterMirror + (voice * 7) + 4
         and #$01
         beq !skipVoice+
-        ldy sidRegisterMirror + (voice * 7) + 1
-        cpy #4
-        bcc !lowFreq+
-        ldx frequencyToBarHi, y
-        jmp !gotBar+
-    !lowFreq:
-        ldx sidRegisterMirror + (voice * 7) + 0
-        txa
-        lsr
-        lsr
-        ora multiply64Table, y
-        tay
-        ldx frequencyToBarLo, y
+AnalyzeFrequency:
+    ldy sidRegisterMirror + (voice * 7) + 1
+    cpy #$40
+    bcs !useHighTable+
+    cpy #$10
+    bcs !useMidTable+
+    tya
+    asl
+    asl
+    asl
+    asl
+    ora sidRegisterMirror + (voice * 7) + 0
+    lsr
+    lsr
+    lsr
+    lsr
+    tax
+    lda FreqToBarLo, x
+    tax
+    jmp !gotBar+
+!useMidTable:
+    tya
+    sec
+    sbc #$10
+    asl
+    asl
+    sta tempIndex + 1
+    lda sidRegisterMirror + (voice * 7) + 0
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+tempIndex:
+    ora #$00
+    tax
+    lda FreqToBarMid, x
+    tax
+    jmp !gotBar+
+!useHighTable:
+    lda FreqToBarHi, y
+    tax
     !gotBar:
         lda sidRegisterMirror + (voice * 7) + 6
-        pha
         and #$0f
         tay
         lda releaseRateHi, y
         sta voiceReleaseHi + voice
         lda releaseRateLo, y
         sta voiceReleaseLo + voice
-        pla
+        lda sidRegisterMirror + (voice * 7) + 6
         lsr
         lsr
         lsr
@@ -1416,37 +1419,26 @@ AnalyzeSIDRegisters:
     !skipVoice:
     }
     rts
-UpdateBarDecay:
-    ldx #NUM_FREQUENCY_BARS - 1
+UpdateBars:
+    ldx #0
 !loop:
     lda targetBarHeights, x
-    beq !justDecay+
-    cmp barHeights, x
-    beq !clearTarget+
-    bcc !moveDown+
+    beq !decay+
     lda barHeights, x
     clc
     adc #BAR_INCREASE_RATE
     cmp targetBarHeights, x
-    bcc !storeHeight+
-    lda targetBarHeights, x
-    jmp !storeHeight+
-!moveDown:
-    lda barHeights, x
-    sec
-    sbc #BAR_DECREASE_RATE
-    cmp targetBarHeights, x
-    bcs !storeHeight+
-    lda targetBarHeights, x
-!storeHeight:
-    sta barHeights, x
-    lda #$00
-    sta barHeightsLo, x
-!clearTarget:
-    lda #$00
+    bcc !skip+
+    ldy targetBarHeights, x
+    lda #0
     sta targetBarHeights, x
+    tya
+!skip:
+    sta barHeights, x
     jmp !next+
-!justDecay:
+!decay:
+    lda barHeights, x
+    beq !next+
     ldy barVoiceMap, x
     sec
     lda barHeightsLo, x
@@ -1454,28 +1446,35 @@ UpdateBarDecay:
     sta barHeightsLo, x
     lda barHeights, x
     sbc voiceReleaseHi, y
-    bpl !positive+
+    bpl !skip+
     lda #$00
     sta barHeightsLo, x
-!positive:
+!skip:
     sta barHeights, x
 !next:
-    dex
-    bpl !loop-
+    inx
+    cpx #NUM_FREQUENCY_BARS
+    bne !loop-
     rts
 ApplySmoothing:
     ldx #0
 !loop:
+    ldy barHeights, x
+    lda halfValues, y
+    sta halfBarHeights, x
+    inx
+    cpx #NUM_FREQUENCY_BARS
+    bne !loop-
+    ldx #0
+!loop:
+    clc
     lda barHeights, x
-    lsr
-    ldy barHeights - 2, x
-    adc div16, y
-    ldy barHeights - 1, x
-    adc div16mul3, y
-    ldy barHeights + 1, x
-    adc div16mul3, y
-    ldy barHeights + 2, x
-    adc div16, y
+    adc halfBarHeights - 1, x
+    adc halfBarHeights + 1, x
+    cmp #MAX_BAR_HEIGHT
+    bcc !skip+
+    lda #MAX_BAR_HEIGHT
+!skip:
     sta smoothedHeights, x
     inx
     cpx #NUM_FREQUENCY_BARS
@@ -1546,11 +1545,17 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 18140 bytes, Cleaned: 12668 bytes (reduced by 30.2%)*
+*Original size: 18289 bytes, Cleaned: 12756 bytes (reduced by 30.3%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
     jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 .const NUM_FREQUENCY_BARS				= 40
@@ -1563,8 +1568,6 @@ Files: 1
 .const SPECTRUM_START_LINE				= 3
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
 .const CHARSET_BANK						= 7
@@ -1579,7 +1582,7 @@ Files: 1
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
@@ -1589,7 +1592,7 @@ Files: 1
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 250
+.var DEFAULT_RASTERTIMING_Y = 108
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
@@ -1640,11 +1643,14 @@ MainLoop:
 	beq MainLoop
 	jsr ApplySmoothing
 	jsr RenderBars
-	lda #$00
-	sta visualizationUpdateFlag
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
+	lda #$00
+	sta visualizationUpdateFlag
 	jmp MainLoop
 SetupSystem:
 	lda #$35
@@ -1697,22 +1703,17 @@ MainIRQ:
     jsr set_d011_and_d012
 	jmp !done+
 !normalPlay:
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
 	inc visualizationUpdateFlag
 	inc frameCounter
 	bne !skip+
 	inc frame256Counter
 !skip:
 	jsr JustPlayMusic
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr UpdateColors
 	jsr UpdateSprites
 	jsr AnalyseMusic
+
 !done:
 	jsr NextIRQ
 	pla
@@ -1753,10 +1754,10 @@ NextIRQLdx:
 !notLast:
 	stx NextIRQLdx + 1
 	jsr set_d011_and_d012
-	cpx #$00
-	bne !musicOnly+
 	lda #$01
 	sta $d019
+	cpx #$00
+	bne !musicOnly+
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -1784,7 +1785,7 @@ RenderBars:
 	tax
 	lda darkerColorMap, x
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !colorLoop-
 !colorsDone:
@@ -2029,7 +2030,7 @@ colorPalettes:
 colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
 colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
 heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
+							.fill MAX_BAR_HEIGHT + 4, max(0, min(COLORS_PER_PALETTE - 1, floor((i * COLORS_PER_PALETTE) / MAX_BAR_HEIGHT)))
 heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
@@ -2082,11 +2083,17 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 17518 bytes, Cleaned: 12093 bytes (reduced by 31.0%)*
+*Original size: 17705 bytes, Cleaned: 12278 bytes (reduced by 30.7%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
-	jmp Initialize
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 .const NUM_FREQUENCY_BARS				= 40
@@ -2099,8 +2106,6 @@ Files: 1
 .const SPECTRUM_START_LINE				= 11
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 .const SCREEN0_BANK						= 12
@@ -2121,7 +2126,7 @@ Files: 1
 .const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_BANK * 8)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 .const NUM_COLOR_PALETTES				= 3
 .const COLORS_PER_PALETTE				= 8
@@ -2223,7 +2228,7 @@ MainIRQ:
 	sta SpectrometerD018 + 1
 	inc visualizationUpdateFlag
 	jsr PlayMusicWithAnalysis
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr UpdateColors
 	jsr UpdateSprites
 	inc frameCounter
@@ -2267,7 +2272,6 @@ SpectrometerD018:
 	sta $d018
 	lda #$08
 	sta $d016
-	inc visualizationUpdateFlag
 	lda #251
 	sta $d012
 	lda #<MainIRQ
@@ -2580,23 +2584,27 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 13153 bytes, Cleaned: 8686 bytes (reduced by 34.0%)*
+*Original size: 13317 bytes, Cleaned: 8849 bytes (reduced by 33.6%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
-	jmp Initialize
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .const NUM_FREQUENCY_BARS				= 40
 .const TOP_SPECTRUM_HEIGHT				= 9
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
-.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
-.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.6)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
 .const SPECTRUM_START_LINE				= 3
 .eval setSeed(55378008)
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
 .const CHARSET_BANK						= 7
@@ -2606,14 +2614,14 @@ Files: 1
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 250
+.var DEFAULT_RASTERTIMING_Y = 140
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
@@ -2662,13 +2670,19 @@ MainLoop:
     jsr CheckKeyboard
 	lda visualizationUpdateFlag
 	beq MainLoop
-	jsr ApplySmoothing
-	jsr RenderBars
 	lda #$00
 	sta visualizationUpdateFlag
+	jsr ApplySmoothing
+	jsr RenderBars
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
+	ldy currentScreenBuffer
+	lda D018Values, y
+	cmp $d018
+	beq !skip+
+	sta $d018
+!skip:
 	jmp MainLoop
 SetupSystem:
 	lda #$35
@@ -2720,19 +2734,13 @@ MainIRQ:
     jsr set_d011_and_d012
 	jmp !done+
 !normalPlay:
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
 	inc visualizationUpdateFlag
 	inc frameCounter
 	bne !skip+
 	inc frame256Counter
 !skip:
 	jsr JustPlayMusic
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr AnalyseMusic
 !done:
 	jsr NextIRQ
@@ -2777,10 +2785,10 @@ NextIRQLdx:
 !notLast:
 	stx NextIRQLdx + 1
 	jsr set_d011_and_d012
-	cpx #$00
-	bne !musicOnly+
 	lda #$01
 	sta $d019
+	cpx #$00
+	bne !musicOnly+
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -2938,17 +2946,13 @@ frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 heightColorTable:
-	.fill 5, $0B
-	.fill 5, $09
-	.fill 5, $02
-	.fill 5, $06
-	.fill 5, $08
-	.fill 5, $04
-	.fill 5, $05
-	.fill 5, $0E
-	.fill 5, $0A
-	.fill 5, $0D
-	.fill 32, $01
+	.fill 2, $0B
+	.fill 12, $09
+	.fill 12, $06
+	.fill 12, $04
+	.fill 11, $0E
+	.fill 11, $0D
+	.fill 12, $07
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
@@ -2987,23 +2991,27 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 12766 bytes, Cleaned: 8221 bytes (reduced by 35.6%)*
+*Original size: 12795 bytes, Cleaned: 8434 bytes (reduced by 34.1%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
-	jmp Initialize
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .const NUM_FREQUENCY_BARS				= 40
 .const LOGO_HEIGHT						= 10
 .const TOP_SPECTRUM_HEIGHT				= 6
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
-.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.5)
-.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.3)
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
+.const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 23
 .const SPECTRUM_START_LINE				= 11
 .eval setSeed(55378008)
-.const VIC_BANK							= floor((BASE_ADDRESS + $3fff) / $4000)
-.const VIC_BANK_ADDRESS					= VIC_BANK * $4000
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
 .const CHARSET_BANK						= 7
@@ -3017,7 +3025,7 @@ Files: 1
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 .const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_BANK * 8)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
-.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 8
+.const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -3117,7 +3125,7 @@ MainIRQ:
 	sta SpectrometerD018 + 1
 	inc visualizationUpdateFlag
 	jsr PlayMusicWithAnalysis
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	inc frameCounter
 	bne !skip+
 	inc frame256Counter
@@ -3309,17 +3317,17 @@ colorUpdateIndex:			.byte $00
 currentPalette:				.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 heightColorTable:
-	.fill 3, $0B
-	.fill 3, $09
-	.fill 3, $02
-	.fill 3, $06
-	.fill 3, $08
-	.fill 3, $04
-	.fill 3, $05
-	.fill 3, $0E
-	.fill 3, $0A
-	.fill 3, $0D
-	.fill 32, $01
+	.fill 2, $0B
+	.fill 4, $09
+	.fill 4, $02
+	.fill 4, $06
+	.fill 4, $08
+	.fill 4, $04
+	.fill 4, $05
+	.fill 5, $0E
+	.fill 5, $0A
+	.fill 6, $0D
+	.fill 7, $07
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
@@ -3362,31 +3370,26 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleBitmap/SimpleBitmap.asm
-*Original size: 4505 bytes, Cleaned: 3380 bytes (reduced by 25.0%)*
+*Original size: 4392 bytes, Cleaned: 3266 bytes (reduced by 25.6%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
-.var BASE_ADDRESS                   = LOAD_ADDRESS
-.var CODE_ADDRESS                   = BASE_ADDRESS + $100
-.var VIC_BANK_ADDRESS               = LOAD_ADDRESS
-.var VIC_BANK						= VIC_BANK_ADDRESS / $4000
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var BITMAP_BANK                    = 1
 .var SCREEN_BANK                    = 2
 .var COLOUR_BANK                    = 3
-.if (LOAD_ADDRESS == $c000) {
-    .eval BASE_ADDRESS              = $e000
-    .eval CODE_ADDRESS              = $e100
-    .eval BITMAP_BANK               = 0
-    .eval SCREEN_BANK               = 12
-    .eval COLOUR_BANK               = 13
-}
-* = CODE_ADDRESS "Main Code"
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
 .const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
 .const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
-    jmp Initialize
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
@@ -3484,8 +3487,9 @@ MusicIRQ:
     jsr CheckSpaceKey
     lda FastForwardActive
     bne !ffFrameLoop-
-    lda #$00
+    lda BorderColour
     sta $d020
+    lda #$00
     sta callCount + 1
     jmp !done+
 !normalPlay:
@@ -3517,15 +3521,371 @@ callCount:
 ```
 
 
+## Player: SimpleBitmapWithScroller
+Files: 1
+
+### FILE: SIDPlayers/SimpleBitmapWithScroller/SimpleBitmapWithScroller.asm
+*Original size: 9932 bytes, Cleaned: 7566 bytes (reduced by 23.8%)*
+```asm
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
+.var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS               = VIC_BANK * $4000
+.var BITMAP_BANK                    = 1
+.var SCREEN_BANK                    = 2
+.var COLOUR_BANK                    = 3
+.var SPRITES_INDEX                  = 0
+.var ScrollColour					= DATA_ADDRESS + $80
+.const DD00Value                        = 3 - VIC_BANK
+.const DD02Value                        = 60 + VIC_BANK
+.const D018Value                        = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
+.const BITMAP_MAP_DATA                  = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
+.const BITMAP_SCREEN_DATA               = VIC_BANK_ADDRESS + (SCREEN_BANK * $0400)
+.const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
+.const SPRITES_DATA                     = VIC_BANK_ADDRESS + (SPRITES_INDEX * 64)
+.const SCROLLTEXT_ADDR                  = VIC_BANK_ADDRESS + $0200
+#define INCLUDE_SPACE_FASTFORWARD
+#define INCLUDE_PLUS_MINUS_SONGCHANGE
+#define INCLUDE_09ALPHA_SONGCHANGE
+#define INCLUDE_F1_SHOWRASTERTIMINGBAR
+#define INCLUDE_RASTER_TIMING_CODE
+.var DEFAULT_RASTERTIMING_Y = 250
+.import source "../INC/Common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+Initialize:
+    sei
+    lda #$35
+    sta $01
+    jsr VSync
+    lda #$00
+    sta $d011
+    sta $d020
+    jsr InitializeVIC
+    lda BitmapScreenColour
+    sta $d021
+    jsr InitKeyboard
+    jsr CopyROMFont
+    lda SongNumber
+    sta CurrentSong
+    lda NumSongs
+    bne !skip+
+    lda #1
+    sta NumSongs
+!skip:
+    lda #0
+    sta ShowRasterBars
+    lda CurrentSong
+    tax
+    tay
+    jsr SIDInit
+    jsr NMIFix
+    ldy #$00
+!loop:
+    .for (var i = 0; i < 4; i++)
+    {
+        lda BITMAP_COLOUR_DATA + (i * 256), y
+        sta $d800 + (i * 256), y
+    }
+    iny
+    bne !loop-
+    ldy #$07
+!loop:
+    lda ScrollColour
+    sta $d027, y
+    dex
+    dey
+    bpl !loop-
+    jsr init_D011_D012_values
+    lda #<MusicIRQ
+    sta $fffe
+    lda #>MusicIRQ
+    sta $ffff
+    lda #$7f
+    sta $dc0d
+    lda $dc0d
+    lda #$01
+    sta $d01a
+    lda #$01
+    sta $d019
+    lda #DD00Value
+    sta $dd00
+    lda #DD02Value
+    sta $dd02
+    lda #D018Value
+    sta $d018
+    jsr VSync
+    lda BorderColour
+    sta $d020
+    lda #$3b
+    sta $d011
+    ldx #0
+    jsr set_d011_and_d012
+    cli
+MainLoop:
+    jsr CheckKeyboard
+    jmp MainLoop
+MusicIRQ:
+    pha
+    txa
+    pha
+    tya
+    pha
+    lda FastForwardActive
+    beq !normalPlay+
+!ffFrameLoop:
+    lda NumCallsPerFrame
+    sta FFCallCounter
+!ffCallLoop:
+    jsr SIDPlay
+    inc $d020
+    dec FFCallCounter
+    lda FFCallCounter
+    bne !ffCallLoop-
+    jsr CheckSpaceKey
+    lda FastForwardActive
+    bne !ffFrameLoop-
+    lda BorderColour
+    sta $d020
+    lda #$00
+    sta callCount + 1
+    jmp !done+
+!normalPlay:
+callCount:
+    ldx #0
+    inx
+    cpx NumCallsPerFrame
+    bne !justPlay+
+    ldx #0
+!justPlay:
+    stx callCount + 1
+    jsr JustPlayMusic
+!done:
+    jsr SpriteScroller
+    ldx callCount + 1
+    jsr set_d011_and_d012
+    asl $d019
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
+SpriteScroller:
+    ldx #$0e
+    dex
+    dex
+    bpl !skip+
+    jsr ScrollSprites
+    ldx #$0f
+!skip:
+    stx SpriteScroller + 1
+    txa
+    clc
+    sta $d000
+    adc #$30
+    sta $d002
+    adc #$30
+    sta $d004
+    adc #$30
+    sta $d006
+    adc #$30
+    sta $d008
+    adc #$30
+    sta $d00a
+    adc #$30
+    sta $d00c
+    eor #$70
+    sta $d00e
+    rts
+ScrollSprites:
+    ldy #$00
+!loop:
+    lda SPRITES_DATA + (0 * 64) + 1, y
+    sta SPRITES_DATA + (0 * 64) + 0, y
+    lda SPRITES_DATA + (0 * 64) + 2, y
+    sta SPRITES_DATA + (0 * 64) + 1, y
+    lda SPRITES_DATA + (1 * 64) + 0, y
+    sta SPRITES_DATA + (0 * 64) + 2, y
+    lda SPRITES_DATA + (1 * 64) + 1, y
+    sta SPRITES_DATA + (1 * 64) + 0, y
+    lda SPRITES_DATA + (1 * 64) + 2, y
+    sta SPRITES_DATA + (1 * 64) + 1, y
+    lda SPRITES_DATA + (2 * 64) + 0, y
+    sta SPRITES_DATA + (1 * 64) + 2, y
+    lda SPRITES_DATA + (2 * 64) + 1, y
+    sta SPRITES_DATA + (2 * 64) + 0, y
+    lda SPRITES_DATA + (2 * 64) + 2, y
+    sta SPRITES_DATA + (2 * 64) + 1, y
+    lda SPRITES_DATA + (3 * 64) + 0, y
+    sta SPRITES_DATA + (2 * 64) + 2, y
+    lda SPRITES_DATA + (3 * 64) + 1, y
+    sta SPRITES_DATA + (3 * 64) + 0, y
+    lda SPRITES_DATA + (3 * 64) + 2, y
+    sta SPRITES_DATA + (3 * 64) + 1, y
+    lda SPRITES_DATA + (4 * 64) + 0, y
+    sta SPRITES_DATA + (3 * 64) + 2, y
+    lda SPRITES_DATA + (4 * 64) + 1, y
+    sta SPRITES_DATA + (4 * 64) + 0, y
+    lda SPRITES_DATA + (4 * 64) + 2, y
+    sta SPRITES_DATA + (4 * 64) + 1, y
+    lda SPRITES_DATA + (5 * 64) + 0, y
+    sta SPRITES_DATA + (4 * 64) + 2, y
+    lda SPRITES_DATA + (5 * 64) + 1, y
+    sta SPRITES_DATA + (5 * 64) + 0, y
+    lda SPRITES_DATA + (5 * 64) + 2, y
+    sta SPRITES_DATA + (5 * 64) + 1, y
+    lda SPRITES_DATA + (6 * 64) + 0, y
+    sta SPRITES_DATA + (5 * 64) + 2, y
+    lda SPRITES_DATA + (6 * 64) + 1, y
+    sta SPRITES_DATA + (6 * 64) + 0, y
+    lda SPRITES_DATA + (6 * 64) + 2, y
+    sta SPRITES_DATA + (6 * 64) + 1, y
+    lda SPRITES_DATA + (7 * 64) + 0, y
+    sta SPRITES_DATA + (6 * 64) + 2, y
+    lda SPRITES_DATA + (7 * 64) + 1, y
+    sta SPRITES_DATA + (7 * 64) + 0, y
+    lda SPRITES_DATA + (7 * 64) + 2, y
+    sta SPRITES_DATA + (7 * 64) + 1, y
+    iny
+    iny
+    iny
+    cpy #(8 * 3)
+    beq !finished+
+    jmp !loop-
+!finished:
+ReadScroller:
+    lda SCROLLTEXT_ADDR
+    bne !notEnd+
+    lda #<SCROLLTEXT_ADDR
+    sta ReadScroller + 1
+    lda #>SCROLLTEXT_ADDR
+    sta ReadScroller + 2
+    bne ReadScroller
+!notEnd:
+    tax
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    ora #$58
+    sta InCharPtr + 2
+    txa
+    asl
+    asl
+    asl
+    sta InCharPtr + 1
+    ldx #7
+    ldy #(7 * 3)
+InCharPtr:
+    lda $abcd, x
+    sta SPRITES_DATA + (7 * 64) + 2, y
+    dey
+    dey
+    dey
+    dex
+    bpl InCharPtr
+    inc ReadScroller + 1
+    bne !skip+
+    inc ReadScroller + 2
+    rts
+.const SKIP_REGISTER = $e1
+InitializeVIC:
+	ldx #VICConfigEnd - VICConfigStart - 1
+!loop:
+	lda VICConfigStart, x
+	cmp #SKIP_REGISTER
+	beq !skip+
+	sta $d000, x
+!skip:
+	dex
+	bpl !loop-
+	rts
+CopyROMFont:
+    lda $01
+    pha
+    lda #$33
+    sta $01
+    ldx #$08
+    ldy #$00
+InPtr:
+    lda $d800, y
+OutPtr:
+    sta $5800, y
+    iny
+    bne InPtr
+    inc InPtr + 2
+    inc OutPtr + 2
+    dex
+    bne InPtr
+    pla
+    sta $01
+    rts
+VICConfigStart:
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $00, $ea
+	.byte $c0
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
+	.byte $ff
+	.byte $18
+	.byte $ff
+	.byte D018Value
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
+	.byte $00
+	.byte $00
+	.byte $ff
+	.byte $00
+	.byte $00
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
+	.byte $00, $00
+	.byte $00, $00, $00
+	.byte $01, $01, $01, $01
+	.byte $01, $01, $01, $01
+VICConfigEnd:
+* = SCROLLTEXT_ADDR "ScrollText"
+    .byte $53, $49, $44, $17, $09, $0e, $04, $05, $12, $20, $20, $2d, $2d, $2d, $20, $20, $00
+* = SPRITES_DATA "Sprite Data"
+    .fill $200, $00
+* = BITMAP_MAP_DATA "Bitmap MAP Data"
+    .fill $2000, $00
+* = BITMAP_SCREEN_DATA "Bitmap SCR Data"
+    .fill $3f8, $00
+    .fill 8, SPRITES_INDEX + i
+* = BITMAP_COLOUR_DATA "Bitmap COL Data"
+    .fill $400, $00
+```
+
+
 ## Player: SimpleRaster
 Files: 1
 
 ### FILE: SIDPlayers/SimpleRaster/SimpleRaster.asm
-*Original size: 4073 bytes, Cleaned: 1809 bytes (reduced by 55.6%)*
+*Original size: 4302 bytes, Cleaned: 2032 bytes (reduced by 52.8%)*
 ```asm
-.var BASE_ADDRESS = cmdLineVars.get("loadAddress").asNumber()
-* = BASE_ADDRESS + $100 "Main Code"
-	jmp Initialize
+.var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
+.var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
+.var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+* = DATA_ADDRESS "Data Block"
+    .fill $100, $00
+* = CODE_ADDRESS "Main Code"
+    jmp Initialize
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE

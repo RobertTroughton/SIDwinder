@@ -42,7 +42,7 @@
 .const TOP_SPECTRUM_HEIGHT				= 9
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
-.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
+.const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.6)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 
 .const SONG_TITLE_LINE					= 0
@@ -76,7 +76,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 40
+.var DEFAULT_RASTERTIMING_Y = 140
 
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
@@ -158,6 +158,13 @@ MainLoop:
 	eor #$01
 	sta currentScreenBuffer
 
+	ldy currentScreenBuffer
+	lda D018Values, y
+	cmp $d018
+	beq !skip+
+	sta $d018
+!skip:
+
 	jmp MainLoop
 
 //; =============================================================================
@@ -234,12 +241,6 @@ MainIRQ:
 	jmp !done+
 
 !normalPlay:
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
 
 	inc visualizationUpdateFlag
 
@@ -249,7 +250,7 @@ MainIRQ:
 !skip:
 
 	jsr JustPlayMusic
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr AnalyseMusic
 
 !done:
@@ -528,16 +529,12 @@ D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 heightColorTable:
 	.fill 2, $0B
-	.fill 7, $09
-	.fill 7, $02
-	.fill 7, $06
-	.fill 7, $08
-	.fill 7, $04
-	.fill 7, $05
-	.fill 7, $0E
-	.fill 7, $0A
-	.fill 7, $0D
-	.fill 7, $07
+	.fill 12, $09
+	.fill 12, $06
+	.fill 12, $04
+	.fill 11, $0E
+	.fill 11, $0D
+	.fill 12, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping

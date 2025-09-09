@@ -227,7 +227,7 @@ MainIRQ:
 
 	jsr PlayMusicWithAnalysis
 
-	jsr UpdateBarDecay
+	jsr UpdateBars
 
 	inc frameCounter
 	bne !skip+

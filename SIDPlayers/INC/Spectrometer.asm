@@ -20,7 +20,7 @@
 barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 
 .align NUM_FREQUENCY_BARS
-barVoiceMap:                .fill NUM_FREQUENCY_BARS, 0
+barVoiceMap:                .fill NUM_FREQUENCY_BARS, $00
 
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
@@ -34,10 +34,19 @@ previousColors:             .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
 smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
 
+.align NUM_FREQUENCY_BARS
+targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
+
 .align NUM_FREQUENCY_BARS + 4
 .byte $00, $00
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
+
+.align NUM_FREQUENCY_BARS + 4
+.byte $00, $00
+halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
+.byte $00, $00
+
 
 //; =============================================================================
 //; VOICE STATE DATA
@@ -53,14 +62,8 @@ voiceReleaseLo:             .fill 3, 0
 //; CALCULATION TABLES
 //; =============================================================================
 
-.align 4
-multiply64Table:            .fill 4, i * 64
+halfValues:                      .fill MAX_BAR_HEIGHT, floor(i * 30.0 / 100.0)
 
-.align 128
-div16:                      .fill 128, floor(i / 8.0)
-
-.align 128
-div16mul3:                  .fill 128, floor((3.0 * i) / 8.0)
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS
@@ -70,7 +73,7 @@ AnalyzeSIDRegisters:
     // This routine expects sidRegisterMirror to be populated by MusicPlayback.asm
     .for (var voice = 0; voice < 3; voice++) {
         lda sidRegisterMirror + (voice * 7) + 4
-//;        bmi !skipVoice+
+        bmi !skipVoice+
         and #$08               // Check TEST bit and skip if set
         bne !skipVoice+
 
@@ -151,7 +154,8 @@ tempIndex:
         lsr
         tay
         lda sustainToHeight, y
-        sta barHeights, x
+        sta targetBarHeights, x
+
         lda #voice
         sta barVoiceMap, x
 
@@ -163,16 +167,30 @@ tempIndex:
 //; BAR ANIMATION UPDATE
 //; =============================================================================
 
-UpdateBarDecay:
-    ldx #NUM_FREQUENCY_BARS - 1
-
+UpdateBars:
+    ldx #0
 !loop:
-    ldy barVoiceMap, x
+    lda targetBarHeights, x
+    beq !decay+
 
     lda barHeights, x
-    ora barHeightsLo, x
+    clc
+    adc #BAR_INCREASE_RATE
+    cmp targetBarHeights, x
+    bcc !skip+
+    ldy targetBarHeights, x
+    lda #0
+    sta targetBarHeights, x
+    tya
+!skip:
+    sta barHeights, x
+    jmp !next+
+    
+!decay:
+    lda barHeights, x
     beq !next+
 
+    ldy barVoiceMap, x
     sec
     lda barHeightsLo, x
     sbc voiceReleaseLo, y
@@ -186,8 +204,10 @@ UpdateBarDecay:
     sta barHeights, x
 
 !next:
-    dex
-    bpl !loop-
+    inx
+    cpx #NUM_FREQUENCY_BARS
+    bne !loop-
+
     rts
 
 //; =============================================================================
@@ -196,24 +216,28 @@ UpdateBarDecay:
 
 ApplySmoothing:
 
+//; calculate half and quarter heights for smoothing
+    ldx #0
+!loop:
+    ldy barHeights, x
+    lda halfValues, y
+    sta halfBarHeights, x
+    inx
+    cpx #NUM_FREQUENCY_BARS
+    bne !loop-
+
+//; apply smoothing algorithm
     ldx #0
 !loop:
     clc
     lda barHeights, x
-    ldy barHeights - 2, x
-    adc div16, y
-    ldy barHeights - 1, x
-    adc div16mul3, y
-    ldy barHeights + 1, x
-    adc div16mul3, y
-    ldy barHeights + 2, x
-    adc div16, y
+    adc halfBarHeights - 1, x
+    adc halfBarHeights + 1, x
     cmp #MAX_BAR_HEIGHT
-    bcc !storeHeight+
+    bcc !skip+
     lda #MAX_BAR_HEIGHT
-!storeHeight:
+!skip:
     sta smoothedHeights, x
-
     inx
     cpx #NUM_FREQUENCY_BARS
     bne !loop-

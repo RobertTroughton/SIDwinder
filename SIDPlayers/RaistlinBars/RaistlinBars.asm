@@ -87,7 +87,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 250
+.var DEFAULT_RASTERTIMING_Y = 108
 
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
@@ -161,12 +161,15 @@ MainLoop:
 	jsr ApplySmoothing
 	jsr RenderBars
 
-	lda #$00
-	sta visualizationUpdateFlag
-
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
+
+	lda #$00
+	sta visualizationUpdateFlag
 
 	jmp MainLoop
 
@@ -247,13 +250,6 @@ MainIRQ:
 	jmp !done+
 
 !normalPlay:
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
-
 	inc visualizationUpdateFlag
 
 	inc frameCounter
@@ -262,10 +258,14 @@ MainIRQ:
 !skip:
 
 	jsr JustPlayMusic
-	jsr UpdateBarDecay
+	jsr UpdateBars
 	jsr UpdateColors
 	jsr UpdateSprites
 	jsr AnalyseMusic
+
+/*	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018*/
 
 !done:
 	jsr NextIRQ
@@ -324,11 +324,12 @@ NextIRQLdx:
 
 	jsr set_d011_and_d012
 
+	lda #$01
+	sta $d019
+
 	cpx #$00
 	bne !musicOnly+
 
-	lda #$01
-	sta $d019
 	lda #<MainIRQ
 	sta $fffe
 	lda #>MainIRQ
@@ -366,7 +367,7 @@ RenderBars:
 	tax
 	lda darkerColorMap, x
 	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
-		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !colorLoop-
 
@@ -679,7 +680,7 @@ colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PA
 colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
 
 heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
+							.fill MAX_BAR_HEIGHT + 4, max(0, min(COLORS_PER_PALETTE - 1, floor((i * COLORS_PER_PALETTE) / MAX_BAR_HEIGHT)))
 
 heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 
