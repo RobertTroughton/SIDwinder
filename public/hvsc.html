@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HVSC SID Browser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -262,10 +263,13 @@
         <div class="browser-header">
             <div class="browser-title">HVSC SID Collection Browser</div>
             <div class="browser-controls">
-                <button class="btn" id="upBtn" onclick="navigateUp()">↑ Up</button>
-                <button class="btn" id="homeBtn" onclick="navigateHome()">⌂ Home</button>
+                <button class="btn" id="upBtn" onclick="navigateUp()" title="Go up one directory">
+                    <i class="fa-solid fa-arrow-up"></i> ..
+                </button>
+                <button class="btn" id="homeBtn" onclick="navigateHome()" title="Go to home">
+                    <i class="fa-regular fa-house"></i>
+                </button>
                 <input type="text" class="path-bar" id="pathBar" readonly>
-                <button class="btn btn-primary" id="selectBtn" onclick="selectSID()" disabled>Select SID</button>
             </div>
         </div>
         
@@ -276,29 +280,12 @@
                     <div class="loading">Loading directory</div>
                 </div>
             </div>
-            
-            <div class="preview-panel">
-                <div class="preview-title">File Information</div>
-                <div class="preview-content" id="preview">
-                    <div class="preview-item">
-                        <span class="preview-label">Name:</span>
-                        <span id="previewName">-</span>
-                    </div>
-                    <div class="preview-item">
-                        <span class="preview-label">Type:</span>
-                        <span id="previewType">-</span>
-                    </div>
-                    <div class="preview-item">
-                        <span class="preview-label">Path:</span>
-                        <div id="previewPath" style="word-break: break-all; margin-top: 4px;">-</div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <div class="status-bar">
             <span id="statusText">Ready</span>
             <span id="itemCount">0 items</span>
+            <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
         </div>
     </div>
 
@@ -325,7 +312,6 @@
             try {
                 // Build the URL based on environment
                 const url = `${HVSC_BASE}?path=${path}`;
-                console.log('Fetching from:', url);
                 
                 const response = await fetch(url);
                 
@@ -334,15 +320,13 @@
                 }
                 
                 const html = await response.text();
-                console.log('Response received, length:', html.length);
                 parseDirectory(html, path);
                 currentPath = path;
                 updatePathBar();
                 updateStatus('Ready');
             } catch (error) {
-                console.error('Error fetching directory:', error);
                 document.getElementById('fileList').innerHTML = 
-                    '<div class="error-message">Failed to load directory. Check console for details.</div>';
+                    '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
                 updateStatus('Error loading directory');
             }
         }
@@ -352,15 +336,11 @@
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
             
-            console.log('Parsing HTML for path:', path);
-            
             // Look for the directory listing table
-            // HVSC puts the listing in a table after an <h3> tag with the current directory name
             const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
             const tableMatch = html.match(tableRegex);
             
             if (tableMatch) {
-                console.log('Found directory listing table');
                 const tableContent = tableMatch[1];
                 
                 // Parse each row for links
@@ -387,7 +367,6 @@
                                 path: pathValue,
                                 isDirectory: true
                             });
-                            console.log('Found directory:', name);
                         }
                         // Process SID file links
                         else if (href.toLowerCase().includes('.sid')) {
@@ -401,13 +380,10 @@
                                 path: filePath,
                                 isDirectory: false
                             });
-                            console.log('Found SID file:', name);
                         }
                     }
                 }
             } else {
-                console.log('Directory table not found, trying alternative parsing...');
-                
                 // Fallback: look for any links with ?path= or .sid
                 const linkRegex = /<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/gi;
                 let match;
@@ -446,8 +422,6 @@
                 }
             }
             
-            console.log('Total entries found:', entries.length);
-            
             // Sort entries: directories first, then alphabetically
             entries.sort((a, b) => {
                 if (a.isDirectory !== b.isDirectory) {
@@ -485,14 +459,6 @@
             
             event.currentTarget.classList.add('selected');
             currentSelection = entry;
-            
-            // Update preview
-            document.getElementById('previewName').textContent = entry.name;
-            document.getElementById('previewType').textContent = entry.isDirectory ? 'Directory' : 'SID File';
-            document.getElementById('previewPath').textContent = entry.path;
-            
-            // Enable/disable select button
-            document.getElementById('selectBtn').disabled = entry.isDirectory;
         }
 
         function handleItemDoubleClick(entry) {
