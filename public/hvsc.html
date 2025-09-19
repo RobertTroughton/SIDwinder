@@ -130,6 +130,7 @@
             flex: 1;
             overflow-y: auto;
             background: #1a1a1a;
+            user-select: none;  /* Prevent text selection */
         }
 
         .file-item {
@@ -141,6 +142,7 @@
             transition: background 0.2s;
             border-bottom: 1px solid #2a2a2a;
             font-size: 14px;
+            user-select: none;  /* Prevent text selection */
         }
 
         .file-item:hover {
@@ -263,11 +265,11 @@
         <div class="browser-header">
             <div class="browser-title">HVSC SID Collection Browser</div>
             <div class="browser-controls">
-                <button class="btn" id="upBtn" onclick="navigateUp()" title="Go up one directory">
-                    <i class="fa-solid fa-arrow-up"></i> ..
-                </button>
                 <button class="btn" id="homeBtn" onclick="navigateHome()" title="Go to home">
-                    <i class="fa-regular fa-house"></i>
+                    <i class="fas fa-home"></i>
+                </button>
+                <button class="btn" id="upBtn" onclick="navigateUp()" title="Go up one directory">
+                    <i class="fas fa-level-up-alt"></i>
                 </button>
                 <input type="text" class="path-bar" id="pathBar" readonly>
             </div>
@@ -508,12 +510,16 @@
         }
 
         function navigateUp() {
-            if (currentPath && currentPath !== 'C64Music') {
-                const parts = currentPath.split('/');
-                parts.pop();
-                const parentPath = parts.join('/') || 'C64Music';
-                fetchDirectory(parentPath);
+            if (!currentPath || currentPath === '') {
+                return; // Already at root
             }
+            
+            // Split the path and remove the last segment
+            const parts = currentPath.split('/');
+            parts.pop(); // Remove current directory
+            
+            const parentPath = parts.join('/');
+            fetchDirectory(parentPath);
         }
 
         function navigateHome() {
@@ -521,8 +527,11 @@
         }
 
         function updatePathBar() {
-            document.getElementById('pathBar').value = '/' + currentPath;
-            document.getElementById('upBtn').disabled = !currentPath || currentPath === 'C64Music';
+            const pathDisplay = currentPath ? '/' + currentPath : '/';
+            document.getElementById('pathBar').value = pathDisplay;
+            
+            // Disable up button if at root
+            document.getElementById('upBtn').disabled = !currentPath || currentPath === '';
         }
 
         function updateStatus(message) {
