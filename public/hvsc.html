@@ -556,33 +556,40 @@
         }
 
         function selectSID() {
-            if (currentSelection && !currentSelection.isDirectory) {
-                // Build URLs based on environment
-                const baseUrl = window.location.hostname === 'localhost' 
-                    ? 'https://hvsc.etv.cx/' 
-                    : '/api/hvsc/';
-                const sidUrl = baseUrl + 'download/' + currentSelection.path;
-                
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'sid-selected',
-                        name: currentSelection.name,
-                        path: currentSelection.path,
-                        url: sidUrl
-                    }, '*');
-                    
-                    updateStatus('SID selected: ' + currentSelection.name);
-                    
-                    // Optionally close the window
-                    setTimeout(() => {
-                        window.close();
-                    }, 500);
-                } else {
-                    // If not in popup, just log or handle differently
-                    console.log('Selected SID:', sidUrl);
-                    alert('Selected: ' + currentSelection.name + '\nURL: ' + sidUrl);
-                }
-            }
+        	if (currentSelection && !currentSelection.isDirectory) {
+        		// Build correct URL format: base + C64Music/ + path
+        		const baseUrl = window.location.hostname === 'localhost' 
+        			? 'https://hvsc.etv.cx/' 
+        			: '/api/hvsc/';
+        		
+        		// Ensure the path starts with C64Music/
+        		let fullPath = currentSelection.path;
+        		if (!fullPath.startsWith('C64Music/')) {
+        			fullPath = 'C64Music/' + fullPath;
+        		}
+        		
+        		const sidUrl = baseUrl + fullPath;
+        		
+        		if (window.opener) {
+        			window.opener.postMessage({
+        				type: 'sid-selected',
+        				name: currentSelection.name,
+        				path: currentSelection.path,
+        				url: sidUrl
+        			}, '*');
+        			
+        			updateStatus('SID selected: ' + currentSelection.name);
+        			
+        			// Optionally close the window
+        			setTimeout(() => {
+        				window.close();
+        			}, 500);
+        		} else {
+        			// If not in popup, just log or handle differently
+        			console.log('Selected SID:', sidUrl);
+        			alert('Selected: ' + currentSelection.name + '\nURL: ' + sidUrl);
+        		}
+        	}
         }
 
         // Handle Enter key for quick selection
