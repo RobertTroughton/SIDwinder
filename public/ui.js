@@ -38,20 +38,10 @@ class UIController {
 
     cacheElements() {
         return {
-            // Upload container elements
-            uploadContainer: document.querySelector('.upload-container'),
-            uploadMethods: document.querySelectorAll('.upload-method'),
-            uploadPanels: document.querySelectorAll('.upload-panel'),
-
-            // Individual panels
-            dragDropPanel: document.getElementById('dragDropPanel'),
-            browsePanel: document.getElementById('browsePanel'),
-            hvscPanel: document.getElementById('hvscPanel'),
-
             // Upload elements
             uploadSection: document.getElementById('uploadSection'),
-            browseButton: document.getElementById('browseButton'),
-            hvscButton: document.getElementById('hvscButton'),
+            uploadBtn: document.getElementById('uploadBtn'),
+            hvscBtn: document.getElementById('hvscBtn'),
             hvscSelected: document.getElementById('hvscSelected'),
             selectedFile: document.getElementById('selectedFile'),
 
@@ -98,25 +88,17 @@ class UIController {
     }
 
     initEventListeners() {
-        // Upload method selector
-        this.elements.uploadMethods.forEach(method => {
-            method.addEventListener('click', (e) => {
-                const selectedMethod = e.currentTarget.dataset.method;
-                this.switchUploadMethod(selectedMethod);
-            });
-        });
-
-        // Browse button
-        this.elements.browseButton.addEventListener('click', () => {
+        // Upload button
+        this.elements.uploadBtn.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
 
         // HVSC button
-        this.elements.hvscButton.addEventListener('click', () => {
+        this.elements.hvscBtn.addEventListener('click', () => {
             this.openHVSCBrowser();
         });
 
-        // File upload (old drag & drop section click)
+        // Drag & drop section click
         this.elements.uploadSection.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
@@ -152,31 +134,6 @@ class UIController {
         this.initializeAttractMode();
     }
 
-    switchUploadMethod(method) {
-        // Update method tabs
-        this.elements.uploadMethods.forEach(m => {
-            m.classList.toggle('active', m.dataset.method === method);
-        });
-
-        // Update panels
-        this.elements.uploadPanels.forEach(panel => {
-            panel.classList.remove('active');
-        });
-
-        // Show the selected panel
-        switch (method) {
-            case 'drag-drop':
-                this.elements.dragDropPanel.classList.add('active');
-                break;
-            case 'browse':
-                this.elements.browsePanel.classList.add('active');
-                break;
-            case 'hvsc':
-                this.elements.hvscPanel.classList.add('active');
-                break;
-        }
-    }
-
     openHVSCBrowser() {
         // Calculate center position
         const width = 950;
@@ -184,9 +141,9 @@ class UIController {
         const left = (window.screen.width - width) / 2;
         const top = (window.screen.height - height) / 2;
 
-        // Open the HVSC browser in a popup window
+        // Use the hvsc.html file instead of hvsc-browser.html
         this.hvscBrowserWindow = window.open(
-            'hvsc-browser.html',
+            'hvsc.html',
             'hvscBrowser',
             `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
@@ -483,6 +440,8 @@ class UIController {
     async handleFileSelect(event) {
         const file = event.target.files[0];
         if (file) {
+            // Hide HVSC selection if it was shown
+            this.elements.hvscSelected.style.display = 'none';
             await this.processFile(file);
         }
     }
