@@ -31,13 +31,30 @@ class UIController {
         this.originalMetadata = {}; // Store original metadata for comparison
         this.selectedVisualizer = null;
         this.visualizerConfig = null;
+        this.hvscBrowserWindow = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
     }
 
     cacheElements() {
         return {
+            // Upload container elements
+            uploadContainer: document.querySelector('.upload-container'),
+            uploadMethods: document.querySelectorAll('.upload-method'),
+            uploadPanels: document.querySelectorAll('.upload-panel'),
+
+            // Individual panels
+            dragDropPanel: document.getElementById('dragDropPanel'),
+            browsePanel: document.getElementById('browsePanel'),
+            hvscPanel: document.getElementById('hvscPanel'),
+
+            // Upload elements
             uploadSection: document.getElementById('uploadSection'),
+            browseButton: document.getElementById('browseButton'),
+            hvscButton: document.getElementById('hvscButton'),
+            hvscSelected: document.getElementById('hvscSelected'),
+            selectedFile: document.getElementById('selectedFile'),
+
             fileInput: document.getElementById('fileInput'),
             songTitleSection: document.getElementById('songTitleSection'),
             songTitle: document.getElementById('songTitle'),
@@ -81,7 +98,25 @@ class UIController {
     }
 
     initEventListeners() {
-        // File upload
+        // Upload method selector
+        this.elements.uploadMethods.forEach(method => {
+            method.addEventListener('click', (e) => {
+                const selectedMethod = e.currentTarget.dataset.method;
+                this.switchUploadMethod(selectedMethod);
+            });
+        });
+
+        // Browse button
+        this.elements.browseButton.addEventListener('click', () => {
+            this.elements.fileInput.click();
+        });
+
+        // HVSC button
+        this.elements.hvscButton.addEventListener('click', () => {
+            this.openHVSCBrowser();
+        });
+
+        // File upload (old drag & drop section click)
         this.elements.uploadSection.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
@@ -106,8 +141,99 @@ class UIController {
         // Editable fields
         this.setupEditableFields();
 
+        // Listen for messages from HVSC browser window
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'sid-selected') {
+                this.handleHVSCSelection(e.data);
+            }
+        });
+
         // Initialize the UI in "attract mode"
         this.initializeAttractMode();
+    }
+
+    switchUploadMethod(method) {
+        // Update method tabs
+        this.elements.uploadMethods.forEach(m => {
+            m.classList.toggle('active', m.dataset.method === method);
+        });
+
+        // Update panels
+        this.elements.uploadPanels.forEach(panel => {
+            panel.classList.remove('active');
+        });
+
+        // Show the selected panel
+        switch (method) {
+            case 'drag-drop':
+                this.elements.dragDropPanel.classList.add('active');
+                break;
+            case 'browse':
+                this.elements.browsePanel.classList.add('active');
+                break;
+            case 'hvsc':
+                this.elements.hvscPanel.classList.add('active');
+                break;
+        }
+    }
+
+    openHVSCBrowser() {
+        // Calculate center position
+        const width = 950;
+        const height = 650;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+
+        // Open the HVSC browser in a popup window
+        this.hvscBrowserWindow = window.open(
+            'hvsc-browser.html',
+            'hvscBrowser',
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        // Focus the window if it was already open
+        if (this.hvscBrowserWindow) {
+            this.hvscBrowserWindow.focus();
+        }
+    }
+
+    async handleHVSCSelection(data) {
+        console.log('HVSC selection received:', data);
+
+        // Update UI to show selected file
+        this.elements.hvscSelected.style.display = 'block';
+        this.elements.selectedFile.textContent = data.name;
+
+        // Close the browser window
+        if (this.hvscBrowserWindow) {
+            this.hvscBrowserWindow.close();
+            this.hvscBrowserWindow = null;
+        }
+
+        // Download the SID file from HVSC
+        this.showLoading(true);
+        this.showModal('Downloading SID from HVSC...', true);
+
+        try {
+            // Fetch the SID file
+            const response = await fetch(data.url);
+            if (!response.ok) {
+                throw new Error('Failed to download SID file');
+            }
+
+            const blob = await response.blob();
+
+            // Create a File object from the blob
+            const file = new File([blob], data.name, { type: 'application/octet-stream' });
+
+            // Process the file as if it was uploaded
+            await this.processFile(file);
+
+        } catch (error) {
+            console.error('Error downloading HVSC file:', error);
+            this.showModal('Failed to download SID from HVSC', false);
+            this.showLoading(false);
+        }
     }
 
     initializeAttractMode() {

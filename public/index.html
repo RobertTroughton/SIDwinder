@@ -35,12 +35,55 @@
         </div>
 
         <div class="main-content">
-            <!-- File Upload Section -->
-            <div class="upload-section" id="uploadSection">
-                <div class="upload-icon">📂</div>
-                <div class="upload-text">Drop your SID file here</div>
-                <div class="upload-subtext">or click to browse</div>
-                <input type="file" id="fileInput" accept=".sid">
+            <!-- Enhanced Upload Section with Three Options -->
+            <div class="upload-container">
+                <div class="upload-method-selector">
+                    <div class="upload-method active" data-method="drag-drop">
+                        <div class="method-icon">📂</div>
+                        <div class="method-label">Drag & Drop</div>
+                    </div>
+                    <div class="upload-method" data-method="browse">
+                        <div class="method-icon">📁</div>
+                        <div class="method-label">Browse</div>
+                    </div>
+                    <div class="upload-method" data-method="hvsc">
+                        <div class="method-icon">🎵</div>
+                        <div class="method-label">HVSC</div>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Area (default) -->
+                <div class="upload-panel active" id="dragDropPanel">
+                    <div class="upload-section" id="uploadSection">
+                        <div class="upload-icon">📂</div>
+                        <div class="upload-text">Drop your SID file here</div>
+                        <div class="upload-subtext">or use the options above</div>
+                    </div>
+                </div>
+
+                <!-- Browse Panel -->
+                <div class="upload-panel" id="browsePanel">
+                    <div class="browse-section">
+                        <div class="browse-icon">📁</div>
+                        <button class="browse-button" id="browseButton">Select SID File</button>
+                        <div class="browse-subtext">Choose a SID file from your computer</div>
+                    </div>
+                </div>
+
+                <!-- HVSC Panel -->
+                <div class="upload-panel" id="hvscPanel">
+                    <div class="hvsc-section">
+                        <div class="hvsc-icon">🎵</div>
+                        <button class="hvsc-button" id="hvscButton">Browse HVSC Collection</button>
+                        <div class="hvsc-subtext">Select from the High Voltage SID Collection</div>
+                        <div class="hvsc-selected" id="hvscSelected" style="display: none;">
+                            <span class="selected-label">Selected:</span>
+                            <span class="selected-file" id="selectedFile"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="file" id="fileInput" accept=".sid" style="display: none;">
             </div>
 
             <!-- Song Title Display -->
