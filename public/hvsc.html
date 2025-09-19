@@ -358,7 +358,7 @@
                         let name = linkMatch[2].trim();
                         
                         // Process directory links
-                        if (href.startsWith('?path=')) {
+                        if (href.startsWith('?path=') && !href.includes('info=')) {
                             const pathValue = decodeURIComponent(href.substring(6));
                             name = name.replace(/\/$/, ''); // Remove trailing slash
                             
@@ -368,18 +368,43 @@
                                 isDirectory: true
                             });
                         }
-                        // Process SID file links
+                        // Process SID file links (both formats)
                         else if (href.toLowerCase().includes('.sid')) {
-                            let filePath = href;
+                            let filePath = '';
+                            let fileName = name;
+                            
+                            // Format 1: /download/path/to/file.sid
                             if (href.startsWith('/download/')) {
                                 filePath = href.substring(10);
+                                // Extract filename from path if name is generic
+                                if (name === 'info' || name === 'download') {
+                                    fileName = filePath.split('/').pop();
+                                }
+                            }
+                            // Format 2: ?info=please&path=path/to/file.sid
+                            else if (href.includes('info=please')) {
+                                const pathMatch = href.match(/path=([^&]+)/);
+                                if (pathMatch) {
+                                    filePath = decodeURIComponent(pathMatch[1]);
+                                    // Extract filename from path
+                                    fileName = filePath.split('/').pop();
+                                }
+                            }
+                            // Format 3: Direct path
+                            else if (href.startsWith('/')) {
+                                filePath = href.substring(1);
+                                if (name === 'info') {
+                                    fileName = filePath.split('/').pop();
+                                }
                             }
                             
-                            entries.push({
-                                name: name,
-                                path: filePath,
-                                isDirectory: false
-                            });
+                            if (filePath) {
+                                entries.push({
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false
+                                });
+                            }
                         }
                     }
                 }
@@ -398,7 +423,7 @@
                         continue;
                     }
                     
-                    if (href.startsWith('?path=')) {
+                    if (href.startsWith('?path=') && !href.includes('info=')) {
                         const pathValue = decodeURIComponent(href.substring(6));
                         text = text.replace(/\/$/, '');
                         
@@ -408,16 +433,29 @@
                             isDirectory: true
                         });
                     } else if (href.toLowerCase().includes('.sid')) {
-                        let filePath = href;
+                        let filePath = '';
+                        let fileName = text;
+                        
                         if (href.startsWith('/download/')) {
                             filePath = href.substring(10);
+                            if (text === 'info' || text === 'download') {
+                                fileName = filePath.split('/').pop();
+                            }
+                        } else if (href.includes('info=please')) {
+                            const pathMatch = href.match(/path=([^&]+)/);
+                            if (pathMatch) {
+                                filePath = decodeURIComponent(pathMatch[1]);
+                                fileName = filePath.split('/').pop();
+                            }
                         }
                         
-                        entries.push({
-                            name: text,
-                            path: filePath,
-                            isDirectory: false
-                        });
+                        if (filePath) {
+                            entries.push({
+                                name: fileName,
+                                path: filePath,
+                                isDirectory: false
+                            });
+                        }
                     }
                 }
             }
