@@ -303,9 +303,10 @@
     </div>
 
     <script>
-        // Configuration - Using Netlify proxy
-        const HVSC_BASE = '/api/hvsc/';  // This will be proxied through Netlify
-        const DIRECT_HVSC = 'https://hvsc.etv.cx/';  // For download links
+        // Configuration
+        const HVSC_BASE = window.location.hostname === 'localhost' 
+            ? 'https://hvsc.etv.cx/'  // Direct for local testing
+            : '/api/hvsc/';  // Proxied through Netlify in production
         
         let currentPath = 'C64Music';
         let currentSelection = null;
@@ -321,9 +322,10 @@
             document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
             
             try {
-                // Use Netlify proxy endpoint
+                // Build the URL based on environment
                 const url = `${HVSC_BASE}?path=${path}`;
-                console.log('Fetching:', url);
+                console.log('Fetching from:', url);
+                
                 const response = await fetch(url);
                 
                 if (!response.ok) {
@@ -463,16 +465,18 @@
 
         function selectSID() {
             if (currentSelection && !currentSelection.isDirectory) {
-                // Send message back to parent window
-                const sidUrl = DIRECT_HVSC + 'download/' + currentSelection.path;
+                // Build URLs based on environment
+                const baseUrl = window.location.hostname === 'localhost' 
+                    ? 'https://hvsc.etv.cx/' 
+                    : '/api/hvsc/';
+                const sidUrl = baseUrl + 'download/' + currentSelection.path;
                 
                 if (window.opener) {
                     window.opener.postMessage({
                         type: 'sid-selected',
                         name: currentSelection.name,
                         path: currentSelection.path,
-                        url: sidUrl,
-                        proxyUrl: '/api/hvsc/download/' + currentSelection.path  // Proxied URL
+                        url: sidUrl
                     }, '*');
                     
                     updateStatus('SID selected: ' + currentSelection.name);
