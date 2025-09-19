@@ -525,8 +525,14 @@
                 return; // Already at root
             }
             
+            // Remove trailing slash if present
+            let cleanPath = currentPath;
+            if (cleanPath.endsWith('/')) {
+                cleanPath = cleanPath.slice(0, -1);
+            }
+            
             // Split the path and remove the last segment
-            const parts = currentPath.split('/');
+            const parts = cleanPath.split('/');
             parts.pop(); // Remove current directory
             
             const parentPath = parts.join('/');
