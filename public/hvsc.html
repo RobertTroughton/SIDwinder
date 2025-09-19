@@ -303,9 +303,9 @@
     </div>
 
     <script>
-        // Configuration
-        const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-        const HVSC_BASE = 'https://hvsc.etv.cx/';
+        // Configuration - Using Netlify proxy
+        const HVSC_BASE = '/api/hvsc/';  // This will be proxied through Netlify
+        const DIRECT_HVSC = 'https://hvsc.etv.cx/';  // For download links
         
         let currentPath = 'C64Music';
         let currentSelection = null;
@@ -321,8 +321,9 @@
             document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
             
             try {
-                // Use a CORS proxy to fetch the content
-                const url = `${PROXY_URL}${encodeURIComponent(HVSC_BASE + '?path=' + path)}`;
+                // Use Netlify proxy endpoint
+                const url = `${HVSC_BASE}?path=${path}`;
+                console.log('Fetching:', url);
                 const response = await fetch(url);
                 
                 if (!response.ok) {
@@ -330,14 +331,15 @@
                 }
                 
                 const html = await response.text();
+                console.log('Response received, length:', html.length);
                 parseDirectory(html, path);
                 currentPath = path;
                 updatePathBar();
                 updateStatus('Ready');
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error fetching directory:', error);
                 document.getElementById('fileList').innerHTML = 
-                    '<div class="error-message">Failed to load directory. The HVSC server might be unavailable or you may need to configure a CORS proxy.</div>';
+                    '<div class="error-message">Failed to load directory. Check console for details.</div>';
                 updateStatus('Error loading directory');
             }
         }
@@ -462,14 +464,15 @@
         function selectSID() {
             if (currentSelection && !currentSelection.isDirectory) {
                 // Send message back to parent window
-                const sidUrl = HVSC_BASE + 'download/' + currentSelection.path;
+                const sidUrl = DIRECT_HVSC + 'download/' + currentSelection.path;
                 
                 if (window.opener) {
                     window.opener.postMessage({
                         type: 'sid-selected',
                         name: currentSelection.name,
                         path: currentSelection.path,
-                        url: sidUrl
+                        url: sidUrl,
+                        proxyUrl: '/api/hvsc/download/' + currentSelection.path  // Proxied URL
                     }, '*');
                     
                     updateStatus('SID selected: ' + currentSelection.name);
