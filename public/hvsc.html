@@ -354,90 +354,99 @@
             
             console.log('Parsing HTML for path:', path);
             
-            // Look for all links in the entire HTML
-            const allLinksRegex = /<a\s+href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/gi;
-            const allLinks = [];
-            let match;
+            // Look for the directory listing table
+            // HVSC puts the listing in a table after an <h3> tag with the current directory name
+            const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
+            const tableMatch = html.match(tableRegex);
             
-            while ((match = allLinksRegex.exec(html)) !== null) {
-                allLinks.push({
-                    href: match[1],
-                    text: match[2].trim()
-                });
-            }
-            
-            console.log('Total links found in HTML:', allLinks.length);
-            
-            // Filter for relevant links
-            allLinks.forEach(link => {
-                const href = link.href;
-                const name = link.text;
+            if (tableMatch) {
+                console.log('Found directory listing table');
+                const tableContent = tableMatch[1];
                 
-                // Log all links that contain "path=" to see what we're dealing with
-                if (href.includes('path=')) {
-                    console.log('Path link found:', name, '→', href);
-                }
+                // Parse each row for links
+                const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+                let rowMatch;
                 
-                // Directory links (with ?path=)
-                if (href.startsWith('?path=') || href.startsWith('/?path=')) {
-                    const pathStart = href.indexOf('path=') + 5;
-                    const pathValue = decodeURIComponent(href.substring(pathStart));
+                while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+                    const row = rowMatch[1];
                     
-                    // Skip navigation and parent directory
-                    if (name && !['Home', 'About', 'HVSC', 'SidSearch', '..', '.'].includes(name)) {
-                        // Only add if it's a subfolder of current path or a navigation target
-                        if (pathValue.startsWith(path) || pathValue.includes('/')) {
+                    // Look for links in this row
+                    const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
+                    
+                    if (linkMatch) {
+                        const href = linkMatch[1];
+                        let name = linkMatch[2].trim();
+                        
+                        // Process directory links
+                        if (href.startsWith('?path=')) {
+                            const pathValue = decodeURIComponent(href.substring(6));
+                            name = name.replace(/\/$/, ''); // Remove trailing slash
+                            
                             entries.push({
                                 name: name,
                                 path: pathValue,
                                 isDirectory: true
                             });
-                            console.log('Added directory:', name, 'with path:', pathValue);
+                            console.log('Found directory:', name);
+                        }
+                        // Process SID file links
+                        else if (href.toLowerCase().includes('.sid')) {
+                            let filePath = href;
+                            if (href.startsWith('/download/')) {
+                                filePath = href.substring(10);
+                            }
+                            
+                            entries.push({
+                                name: name,
+                                path: filePath,
+                                isDirectory: false
+                            });
+                            console.log('Found SID file:', name);
                         }
                     }
                 }
-                // SID file links
-                else if (href.toLowerCase().includes('.sid')) {
-                    let filePath = href;
-                    if (href.startsWith('/download/')) {
-                        filePath = href.substring(10);
-                    } else if (href.startsWith('/')) {
-                        filePath = href.substring(1);
+            } else {
+                console.log('Directory table not found, trying alternative parsing...');
+                
+                // Fallback: look for any links with ?path= or .sid
+                const linkRegex = /<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/gi;
+                let match;
+                
+                while ((match = linkRegex.exec(html)) !== null) {
+                    const href = match[1];
+                    let text = match[2].trim();
+                    
+                    // Skip navigation links
+                    if (text === 'Home' || text === 'About' || text === 'HVSC' || 
+                        text === 'SidSearch' || text === '..' || text === '.') {
+                        continue;
                     }
                     
-                    entries.push({
-                        name: name,
-                        path: filePath,
-                        isDirectory: false
-                    });
-                    console.log('Added SID file:', name);
-                }
-            });
-            
-            // Log what we found
-            console.log('Total entries parsed:', entries.length);
-            console.log('Directories:', entries.filter(e => e.isDirectory).length);
-            console.log('Files:', entries.filter(e => !e.isDirectory).length);
-            
-            // If we still have no entries, let's check if we're on the wrong page
-            if (entries.length === 0) {
-                console.log('WARNING: No entries found. The HTML might not contain the expected directory listing.');
-                console.log('Checking HTML for "MUSICIANS" or letter directories...');
-                
-                // Look for any hint of the directory structure
-                if (html.includes('/?path=C64Music/MUSICIANS/A')) {
-                    console.log('Found reference to MUSICIANS/A - the structure exists but parsing failed');
-                }
-                if (html.includes('<table')) {
-                    console.log('HTML contains tables - might need different parsing');
-                }
-                
-                // Show a sample of the HTML after the menu to help debug
-                const mainIdx = html.indexOf('</ul>');  // End of menu
-                if (mainIdx > 0) {
-                    console.log('HTML after menu (first 500 chars):', html.substring(mainIdx, mainIdx + 500));
+                    if (href.startsWith('?path=')) {
+                        const pathValue = decodeURIComponent(href.substring(6));
+                        text = text.replace(/\/$/, '');
+                        
+                        entries.push({
+                            name: text,
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                    } else if (href.toLowerCase().includes('.sid')) {
+                        let filePath = href;
+                        if (href.startsWith('/download/')) {
+                            filePath = href.substring(10);
+                        }
+                        
+                        entries.push({
+                            name: text,
+                            path: filePath,
+                            isDirectory: false
+                        });
+                    }
                 }
             }
+            
+            console.log('Total entries found:', entries.length);
             
             // Sort entries: directories first, then alphabetically
             entries.sort((a, b) => {
