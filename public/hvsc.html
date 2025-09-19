@@ -314,7 +314,8 @@
 
         // Initialize on load
         window.onload = function() {
-            fetchDirectory(currentPath);
+            // Start by fetching the C64Music directory with its full path
+            fetchDirectory('C64Music/MUSICIANS');
         };
 
         async function fetchDirectory(path) {
@@ -351,63 +352,62 @@
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
             
-            console.log('Parsing HTML, first 500 chars:', html.substring(0, 500));
+            console.log('Parsing HTML for path:', path);
+            console.log('First 1000 chars:', html.substring(0, 1000));
             
-            // Parse directories - look for links with trailing slash
-            const dirRegex = /<a href="\?path=([^"]+)">([^<]+)\/<\/a>/g;
-            let match;
-            let dirCount = 0;
+            // Look for table rows with file/directory information
+            // The HVSC site uses a table structure
+            const tableRowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
+            const rows = html.match(tableRowRegex) || [];
             
-            while ((match = dirRegex.exec(html)) !== null) {
-                const entryPath = match[1];
-                const entryName = match[2];
+            console.log('Found table rows:', rows.length);
+            
+            rows.forEach(row => {
+                // Look for links within the row
+                const linkMatch = row.match(/<a href="([^"]+)">([^<]+)<\/a>/);
                 
-                // Skip parent directory and special entries
-                if (entryName !== '..' && entryName !== '.' && entryName) {
-                    entries.push({
-                        name: entryName,
-                        path: entryPath,
-                        isDirectory: true
-                    });
-                    dirCount++;
+                if (linkMatch) {
+                    const href = linkMatch[1];
+                    const name = linkMatch[2].trim();
+                    
+                    // Skip navigation and external links
+                    if (name === 'Home' || name === 'About' || name === 'HVSC' || 
+                        name === 'SidSearch' || href.startsWith('http') || 
+                        name === '..' || name === '.') {
+                        return;
+                    }
+                    
+                    // Check if it's a directory (ends with /)
+                    if (href.startsWith('/?path=')) {
+                        const pathValue = href.substring(7); // Remove '/?path='
+                        entries.push({
+                            name: name,
+                            path: decodeURIComponent(pathValue),
+                            isDirectory: true
+                        });
+                        console.log('Added directory:', name);
+                    } 
+                    // Check if it's a SID file download
+                    else if (href.includes('.sid') || href.includes('.SID')) {
+                        // Extract path from download link
+                        let filePath = href;
+                        if (href.startsWith('/download/')) {
+                            filePath = href.substring(10); // Remove '/download/'
+                        } else if (href.startsWith('/')) {
+                            filePath = href.substring(1); // Remove leading '/'
+                        }
+                        
+                        entries.push({
+                            name: name,
+                            path: filePath,
+                            isDirectory: false
+                        });
+                        console.log('Added SID file:', name);
+                    }
                 }
-            }
-            console.log('Found directories:', dirCount);
+            });
             
-            // Parse files - look for download links
-            const fileRegex = /<a href="\/download\/([^"]+)">([^<]+)<\/a>/g;
-            let fileCount = 0;
-            
-            while ((match = fileRegex.exec(html)) !== null) {
-                const entryPath = match[1];
-                const entryName = match[2];
-                
-                // Only include .sid files
-                if (entryName.toLowerCase().endsWith('.sid')) {
-                    entries.push({
-                        name: entryName,
-                        path: entryPath,
-                        isDirectory: false
-                    });
-                    fileCount++;
-                }
-            }
-            console.log('Found files:', fileCount);
-            
-            // If no entries found, let's try alternative parsing
-            if (entries.length === 0) {
-                console.log('No entries found with primary regex, trying alternative patterns...');
-                
-                // Try to find any anchor tags
-                const allLinks = html.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/gi);
-                console.log('Total anchor tags found:', allLinks ? allLinks.length : 0);
-                
-                if (allLinks) {
-                    allLinks.forEach(link => {
-                        console.log('Found link:', link);
-                    });
-                }
-            }
+            console.log('Total entries found:', entries.length);
             
             // Sort entries: directories first, then alphabetically
             entries.sort((a, b) => {
@@ -474,7 +474,7 @@
         }
 
         function navigateHome() {
-            fetchDirectory('C64Music');
+            fetchDirectory('C64Music/MUSICIANS');
         }
 
         function updatePathBar() {
