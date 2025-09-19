@@ -285,7 +285,6 @@
         </div>
         
         <div class="status-bar">
-            <span id="statusText">Ready</span>
             <span id="itemCount">0 items</span>
             <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
         </div>
@@ -308,7 +307,6 @@
         };
 
         async function fetchDirectory(path) {
-            updateStatus('Loading directory...');
             document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
             
             try {
@@ -323,13 +321,11 @@
                 
                 const html = await response.text();
                 parseDirectory(html, path);
-                currentPath = path;
+                currentPath = path;  // Update current path AFTER successful parse
                 updatePathBar();
-                updateStatus('Ready');
             } catch (error) {
                 document.getElementById('fileList').innerHTML = 
                     '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
-                updateStatus('Error loading directory');
             }
         }
 
@@ -488,7 +484,22 @@
                 fileList.appendChild(item);
             });
             
-            document.getElementById('itemCount').textContent = `${entries.length} items`;
+            // Update item count - only count SID files
+            const sidCount = entries.filter(e => !e.isDirectory).length;
+            const dirCount = entries.filter(e => e.isDirectory).length;
+            
+            let countText = '';
+            if (sidCount > 0 && dirCount > 0) {
+                countText = `${sidCount} SID files, ${dirCount} folders`;
+            } else if (sidCount > 0) {
+                countText = `${sidCount} SID file${sidCount !== 1 ? 's' : ''}`;
+            } else if (dirCount > 0) {
+                countText = `${dirCount} folder${dirCount !== 1 ? 's' : ''}`;
+            } else {
+                countText = 'Empty folder';
+            }
+            
+            document.getElementById('itemCount').textContent = countText;
         }
 
         function handleItemClick(entry) {
