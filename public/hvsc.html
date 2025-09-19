@@ -314,8 +314,8 @@
 
         // Initialize on load
         window.onload = function() {
-            // Start by fetching the C64Music directory with its full path
-            fetchDirectory('C64Music/MUSICIANS');
+            // Start at root to see what directories are available
+            fetchDirectory('');
         };
 
         async function fetchDirectory(path) {
@@ -504,7 +504,7 @@
         }
 
         function navigateHome() {
-            fetchDirectory('C64Music/MUSICIANS');
+            fetchDirectory('');
         }
 
         function updatePathBar() {
