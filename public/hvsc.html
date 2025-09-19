@@ -351,9 +351,12 @@
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
             
+            console.log('Parsing HTML, first 500 chars:', html.substring(0, 500));
+            
             // Parse directories - look for links with trailing slash
             const dirRegex = /<a href="\?path=([^"]+)">([^<]+)\/<\/a>/g;
             let match;
+            let dirCount = 0;
             
             while ((match = dirRegex.exec(html)) !== null) {
                 const entryPath = match[1];
@@ -366,11 +369,14 @@
                         path: entryPath,
                         isDirectory: true
                     });
+                    dirCount++;
                 }
             }
+            console.log('Found directories:', dirCount);
             
             // Parse files - look for download links
             const fileRegex = /<a href="\/download\/([^"]+)">([^<]+)<\/a>/g;
+            let fileCount = 0;
             
             while ((match = fileRegex.exec(html)) !== null) {
                 const entryPath = match[1];
@@ -382,6 +388,23 @@
                         name: entryName,
                         path: entryPath,
                         isDirectory: false
+                    });
+                    fileCount++;
+                }
+            }
+            console.log('Found files:', fileCount);
+            
+            // If no entries found, let's try alternative parsing
+            if (entries.length === 0) {
+                console.log('No entries found with primary regex, trying alternative patterns...');
+                
+                // Try to find any anchor tags
+                const allLinks = html.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/gi);
+                console.log('Total anchor tags found:', allLinks ? allLinks.length : 0);
+                
+                if (allLinks) {
+                    allLinks.forEach(link => {
+                        console.log('Found link:', link);
                     });
                 }
             }
