@@ -21,11 +21,6 @@ window.hvscBrowser = (function () {
         const encodedPath = encodeURIComponent(path);
         const url = `${HVSC_BASE}?path=${encodedPath}`;
 
-        console.log('Requesting URL:', url);
-        console.log('Decoded path:', decodeURIComponent(encodedPath));
-
-        console.log('Requesting URL:', url);
-
         document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
 
         try {
@@ -36,7 +31,6 @@ window.hvscBrowser = (function () {
             }
 
             const html = await response.text();
-            console.log('Response for path "' + path + '" - First 500 chars:', html.substring(0, 500));
 
             parseDirectory(html, path);
             currentPath = path;
@@ -58,7 +52,6 @@ window.hvscBrowser = (function () {
         const tableMatch = html.match(tableRegex);
 
         if (tableMatch) {
-            console.log('Found table');
             const tableContent = tableMatch[1];
 
             // Parse each row for links
@@ -72,8 +65,6 @@ window.hvscBrowser = (function () {
                 if (linkMatch) {
                     const href = linkMatch[1];
                     let name = linkMatch[2].trim();
-
-                    console.log('Table link:', href, '-> Text:', name);
 
                     // Process directory links
                     if (href.startsWith('?path=') && !href.includes('info=')) {
@@ -97,7 +88,6 @@ window.hvscBrowser = (function () {
                             path: href,
                             isDirectory: false
                         });
-                        console.log('Found direct SID link:', fileName);
                     }
                     else if (href.includes('info=please') && href.includes('.sid')) {
                         const pathMatch = href.match(/path=([^&]+)/);
@@ -111,15 +101,12 @@ window.hvscBrowser = (function () {
                                     path: filePath,
                                     isDirectory: false
                                 });
-                                console.log('Found SID from info link:', fileName);
                             }
                         }
                     }
                 }
             }
         } else {
-            console.log('No table found - trying alternative parsing');
-
             // Alternative: Look for ALL links with ?path= or .sid
             const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
             let match;
@@ -136,8 +123,6 @@ window.hvscBrowser = (function () {
                     continue;
                 }
 
-                console.log('Found link:', href, '-> Text:', linkText);
-
                 // Directory links
                 if (href.includes('?path=') && !href.includes('info=')) {
                     const pathMatch = href.match(/\?path=([^&]*)/);
@@ -151,7 +136,6 @@ window.hvscBrowser = (function () {
                             path: pathValue,
                             isDirectory: true
                         });
-                        console.log('Added directory:', linkText);
                     }
                 }
                 // SID files
@@ -166,7 +150,6 @@ window.hvscBrowser = (function () {
                                 path: filePath,
                                 isDirectory: false
                             });
-                            console.log('Added SID file:', fileName);
                         }
                     }
                 }
@@ -213,8 +196,6 @@ window.hvscBrowser = (function () {
         }
 
         document.getElementById('itemCount').textContent = countText;
-
-        console.log('Total entries:', entries.length);
     }
 
     function handleItemClick(entry) {

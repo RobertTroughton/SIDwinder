@@ -162,7 +162,6 @@ class UIController {
     }
 
     async handleHVSCSelection(data) {
-        console.log('HVSC selection received:', data);
 
         this.elements.hvscSelected.style.display = 'block';
         this.elements.selectedFile.textContent = data.name;
