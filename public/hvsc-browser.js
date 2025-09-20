@@ -39,19 +39,86 @@ window.hvscBrowser = (function () {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        // Debug: Log the first part of the HTML to see what we're getting
-        console.log('Path:', path);
-        console.log('HTML length:', html.length);
-        console.log('First 1000 chars:', html.substring(0, 1000));
-
-        // Also check if we're getting any .sid references at all
-        const sidCountDebug = (html.match(/\.sid/gi) || []).length;
-        console.log('Number of .sid references found in HTML:', sidCountDebug);
-
-        // Look for the directory listing table
         const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
-        
+
+        if (tableMatch) {
+            const tableContent = tableMatch[1];
+            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+            let rowMatch;
+
+            while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+                const row = rowMatch[1];
+                const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
+
+                if (linkMatch) {
+                    const href = linkMatch[1];
+                    let name = linkMatch[2].trim();
+
+                    // Debug each link found
+                    console.log('Processing link - href:', href, 'name:', name);
+
+                    // Check for directories
+                    if (href.startsWith('?path=')) {
+                        const pathValue = decodeURIComponent(href.substring(6));
+                        name = name.replace(/\/$/, '');
+
+                        // Skip if it's not actually a directory navigation
+                        if (!href.includes('info=')) {
+                            entries.push({
+                                name: name,
+                                path: pathValue,
+                                isDirectory: true
+                            });
+                            console.log('Added directory:', name);
+                        }
+                    }
+                    // Check for SID files - the issue might be here
+                    else if (href.toLowerCase().includes('.sid') || name.toLowerCase().includes('.sid')) {
+                        console.log('Found SID file link:', href, 'name:', name);
+
+                        let filePath = '';
+                        let fileName = name;
+
+                        // The HVSC server might be using a different format
+                        // Let's check what format we're actually getting
+                        if (href.startsWith('/download/')) {
+                            filePath = href.substring(10);
+                            fileName = filePath.split('/').pop();
+                            console.log('Download format - path:', filePath);
+                        } else if (href.includes('info=please')) {
+                            const pathMatch = href.match(/path=([^&]+)/);
+                            if (pathMatch) {
+                                filePath = decodeURIComponent(pathMatch[1]);
+                                fileName = filePath.split('/').pop();
+                                console.log('Info format - path:', filePath);
+                            }
+                        } else {
+                            // This might be the issue - direct .sid links
+                            // They might just be the filename without path
+                            console.log('Unknown format - using href as-is:', href);
+                            filePath = path + '/' + href.replace(/^\//, '');
+                            fileName = href.split('/').pop();
+                        }
+
+                        if (filePath || fileName.endsWith('.sid')) {
+                            entries.push({
+                                name: fileName,
+                                path: filePath || (path + '/' + fileName),
+                                isDirectory: false
+                            });
+                            console.log('Added SID file:', fileName, 'with path:', filePath);
+                        } else {
+                            console.log('Skipped SID file - no valid path');
+                        }
+                    }
+                }
+            }
+        }
+
+        console.log('Total entries found:', entries.length);
+        console.log('Entries:', entries);
+
         if (tableMatch) {
             const tableContent = tableMatch[1];
             
