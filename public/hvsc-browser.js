@@ -4,13 +4,13 @@ window.hvscBrowser = (function () {
         ? 'https://hvsc.etv.cx/'
         : '/api/hvsc/';
     
-    let currentPath = '';
+    let currentPath = 'C64Music';
     let currentSelection = null;
     let entries = [];
 
     // Initialize on load
     window.onload = function() {
-        fetchDirectory('');
+        fetchDirectory('C64Music');
     };
 
     async function fetchDirectory(path) {
@@ -173,24 +173,24 @@ window.hvscBrowser = (function () {
     }
 
     function navigateUp() {
-        if (!currentPath || currentPath === '') {
+        if (!currentPath || currentPath === '' || currentPath === 'C64Music') {
             return;
         }
-        
+
         let cleanPath = currentPath;
         if (cleanPath.endsWith('/')) {
             cleanPath = cleanPath.slice(0, -1);
         }
-        
+
         const parts = cleanPath.split('/');
         parts.pop();
-        
+
         const parentPath = parts.join('/');
-        fetchDirectory(parentPath);
+        fetchDirectory(parentPath || 'C64Music');
     }
 
     function navigateHome() {
-        fetchDirectory('');
+        fetchDirectory('C64Music');
     }
 
     function updatePathBar() {
