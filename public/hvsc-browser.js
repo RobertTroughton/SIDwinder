@@ -53,8 +53,8 @@ window.hvscBrowser = (function () {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        // First try to find the table
-        const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
+        // Look for ANY table, not just width="99%"
+        const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
 
         if (tableMatch) {
