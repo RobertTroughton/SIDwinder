@@ -1,9 +1,7 @@
 window.hvscBrowser = (function () {
-    // Configuration
-    const HVSC_BASE = window.location.hostname === 'localhost'
-        ? 'https://hvsc.etv.cx/'
-        : '/api/hvsc/';
-        
+
+    const HVSC_BASE = '/.netlify/functions/hvsc';
+
     let currentPath = 'C64Music';
     let currentSelection = null;
     let entries = [];
