@@ -38,7 +38,16 @@ window.hvscBrowser = (function () {
         entries = [];
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
-        
+
+        // Debug: Log the first part of the HTML to see what we're getting
+        console.log('Path:', path);
+        console.log('HTML length:', html.length);
+        console.log('First 1000 chars:', html.substring(0, 1000));
+
+        // Also check if we're getting any .sid references at all
+        const sidCount = (html.match(/\.sid/gi) || []).length;
+        console.log('Number of .sid references found in HTML:', sidCount);
+
         // Look for the directory listing table
         const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
