@@ -12,12 +12,21 @@ window.hvscBrowser = (function () {
     };
 
     async function fetchDirectory(path) {
-        // Clean the path - remove trailing slashes
+        // Clean the path
         if (path.endsWith('/')) {
             path = path.slice(0, -1);
         }
 
-        const url = `${HVSC_BASE}?path=${path}`;
+        // Build URL differently - append path with query string
+        let url;
+        if (path) {
+            // For subdirectories, we need to pass the path as a query parameter
+            url = `${HVSC_BASE}?path=${path}`;
+        } else {
+            // For root
+            url = HVSC_BASE;
+        }
+
         console.log('Requesting URL:', url);
 
         document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
