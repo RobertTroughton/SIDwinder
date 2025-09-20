@@ -49,7 +49,7 @@ window.hvscBrowser = (function () {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        // Look for the directory listing table - this is the key!
+        // First try to find the table
         const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
 
@@ -63,8 +63,6 @@ window.hvscBrowser = (function () {
 
             while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
                 const row = rowMatch[1];
-
-                // Look for links in this row
                 const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
 
                 if (linkMatch) {
@@ -76,22 +74,17 @@ window.hvscBrowser = (function () {
                     // Process directory links
                     if (href.startsWith('?path=') && !href.includes('info=')) {
                         let pathValue = decodeURIComponent(href.substring(6));
-
-                        // Remove trailing slash from the path value
                         if (pathValue.endsWith('/')) {
                             pathValue = pathValue.slice(0, -1);
                         }
-
-                        name = name.replace(/\/$/, ''); // Remove trailing slash from name
+                        name = name.replace(/\/$/, '');
 
                         entries.push({
                             name: name,
                             path: pathValue,
                             isDirectory: true
                         });
-                        console.log('Added directory:', name, 'with path:', pathValue);
                     }
-
                     // Process SID file links
                     else if (href.includes('info=please') && href.includes('.sid')) {
                         const pathMatch = href.match(/path=([^&]+)/);
@@ -108,12 +101,62 @@ window.hvscBrowser = (function () {
                 }
             }
         } else {
-            console.log('No table found - might be on homepage');
-            // The fallback code for when there's no table means we're on the wrong page
-            return;
+            console.log('No table found - trying alternative parsing');
+
+            // Alternative: Look for ALL links with ?path= or .sid
+            const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
+            let match;
+
+            while ((match = linkRegex.exec(html)) !== null) {
+                const href = match[1];
+                const linkText = match[2].trim();
+
+                // Skip navigation and external links
+                if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
+                    linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
+                    linkText === 'Parent Directory' || href.startsWith('http://') ||
+                    href.startsWith('https://') || href === '#') {
+                    continue;
+                }
+
+                console.log('Found link:', href, '-> Text:', linkText);
+
+                // Directory links
+                if (href.includes('?path=') && !href.includes('info=')) {
+                    const pathMatch = href.match(/\?path=([^&]*)/);
+                    if (pathMatch) {
+                        let pathValue = decodeURIComponent(pathMatch[1]);
+                        if (pathValue.endsWith('/')) {
+                            pathValue = pathValue.slice(0, -1);
+                        }
+                        entries.push({
+                            name: linkText.replace(/\/$/, ''),
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                        console.log('Added directory:', linkText);
+                    }
+                }
+                // SID files
+                else if (href.includes('info=please') || linkText.endsWith('.sid')) {
+                    if (href.includes('path=')) {
+                        const pathMatch = href.match(/path=([^&]+)/);
+                        if (pathMatch) {
+                            const filePath = decodeURIComponent(pathMatch[1]);
+                            const fileName = filePath.split('/').pop();
+                            entries.push({
+                                name: fileName,
+                                path: filePath,
+                                isDirectory: false
+                            });
+                            console.log('Added SID file:', fileName);
+                        }
+                    }
+                }
+            }
         }
 
-        // Sort and render entries...
+        // Sort and render entries
         entries.sort((a, b) => {
             if (a.isDirectory !== b.isDirectory) {
                 return b.isDirectory - a.isDirectory;
@@ -153,6 +196,8 @@ window.hvscBrowser = (function () {
         }
 
         document.getElementById('itemCount').textContent = countText;
+
+        console.log('Total entries:', entries.length);
     }
 
     function handleItemClick(entry) {
