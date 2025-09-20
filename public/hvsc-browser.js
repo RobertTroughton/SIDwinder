@@ -65,15 +65,23 @@ window.hvscBrowser = (function () {
 
                     // Process directory links
                     if (href.startsWith('?path=') && !href.includes('info=')) {
-                        const pathValue = decodeURIComponent(href.substring(6));
-                        name = name.replace(/\/$/, ''); // Remove trailing slash
+                        let pathValue = decodeURIComponent(href.substring(6));
+
+                        // Remove trailing slash from the path value
+                        if (pathValue.endsWith('/')) {
+                            pathValue = pathValue.slice(0, -1);
+                        }
+
+                        name = name.replace(/\/$/, ''); // Remove trailing slash from name
 
                         entries.push({
                             name: name,
                             path: pathValue,
                             isDirectory: true
                         });
+                        console.log('Added directory:', name, 'with path:', pathValue);
                     }
+
                     // Process SID file links
                     else if (href.includes('info=please') && href.includes('.sid')) {
                         const pathMatch = href.match(/path=([^&]+)/);
@@ -148,7 +156,12 @@ window.hvscBrowser = (function () {
 
     function handleItemDoubleClick(entry) {
         if (entry.isDirectory) {
-            fetchDirectory(entry.path);
+            // Remove any trailing slashes from the path before fetching
+            let cleanPath = entry.path;
+            if (cleanPath.endsWith('/')) {
+                cleanPath = cleanPath.slice(0, -1);
+            }
+            fetchDirectory(cleanPath);
         } else {
             selectSID();
         }
