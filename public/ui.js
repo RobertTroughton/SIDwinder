@@ -1127,7 +1127,7 @@ class UIController {
         document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"]):not([accept*=".koa"])').forEach(input => {
             input.addEventListener('change', (e) => {
                 const statusEl = document.getElementById(`${e.target.id}-status`);
-                if (e.target.files.length > 0) {
+                if (statusEl && e.target.files.length > 0) {
                     statusEl.textContent = e.target.files[0].name;
                     statusEl.classList.add('has-file');
                 }
