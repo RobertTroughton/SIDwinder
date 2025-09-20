@@ -154,9 +154,11 @@ class UIController {
         const modal = document.getElementById('hvscModal');
         modal.classList.add('visible');
 
-        // Initialize the HVSC browser if not already done
-        if (!window.hvscBrowserInitialized) {
-            hvscBrowser.fetchDirectory('');
+        // Initialize HVSC browser on first open
+        if (typeof hvscBrowser.initializeHVSC === 'function') {
+            hvscBrowser.initializeHVSC();
+        } else if (!window.hvscBrowserInitialized) {
+            hvscBrowser.fetchDirectory('C64Music');
             window.hvscBrowserInitialized = true;
         }
     }

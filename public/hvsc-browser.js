@@ -6,10 +6,16 @@ window.hvscBrowser = (function () {
     let currentSelection = null;
     let entries = [];
 
-    // Initialize on load
-    window.onload = function() {
-        fetchDirectory('C64Music');
-    };
+    // Add an initialization flag
+    let hvscInitialized = false;
+
+    // Add an init function
+    function initializeHVSC() {
+        if (!hvscInitialized) {
+            fetchDirectory('C64Music');
+            hvscInitialized = true;
+        }
+    }
 
     async function fetchDirectory(path) {
         // Clean the path
