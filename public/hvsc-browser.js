@@ -14,22 +14,32 @@ window.hvscBrowser = (function () {
     };
 
     async function fetchDirectory(path) {
+        // Clean the path - remove trailing slashes
+        if (path.endsWith('/')) {
+            path = path.slice(0, -1);
+        }
+
+        const url = `${HVSC_BASE}?path=${path}`;
+        console.log('Requesting URL:', url);
+
         document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
-        
+
         try {
-            const url = `${HVSC_BASE}?path=${path}`;
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch directory');
             }
-            
+
             const html = await response.text();
+            console.log('Response for path "' + path + '" - First 500 chars:', html.substring(0, 500));
+
             parseDirectory(html, path);
             currentPath = path;
             updatePathBar();
         } catch (error) {
-            document.getElementById('fileList').innerHTML = 
+            console.error('Fetch error:', error);
+            document.getElementById('fileList').innerHTML =
                 '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
         }
     }
