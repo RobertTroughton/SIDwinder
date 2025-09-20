@@ -39,198 +39,92 @@ window.hvscBrowser = (function () {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
-        const tableMatch = html.match(tableRegex);
+        // Find all links in the HTML
+        const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
+        let match;
 
-        if (tableMatch) {
-            const tableContent = tableMatch[1];
-            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-            let rowMatch;
+        while ((match = linkRegex.exec(html)) !== null) {
+            const href = match[1];
+            const linkText = match[2].trim();
 
-            while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
-                const row = rowMatch[1];
-                const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
-
-                if (linkMatch) {
-                    const href = linkMatch[1];
-                    let name = linkMatch[2].trim();
-
-                    // Debug each link found
-                    console.log('Processing link - href:', href, 'name:', name);
-
-                    // Check for directories
-                    if (href.startsWith('?path=')) {
-                        const pathValue = decodeURIComponent(href.substring(6));
-                        name = name.replace(/\/$/, '');
-
-                        // Skip if it's not actually a directory navigation
-                        if (!href.includes('info=')) {
-                            entries.push({
-                                name: name,
-                                path: pathValue,
-                                isDirectory: true
-                            });
-                            console.log('Added directory:', name);
-                        }
-                    }
-                    // Check for SID files - the issue might be here
-                    else if (href.toLowerCase().includes('.sid') || name.toLowerCase().includes('.sid')) {
-                        console.log('Found SID file link:', href, 'name:', name);
-
-                        let filePath = '';
-                        let fileName = name;
-
-                        // The HVSC server might be using a different format
-                        // Let's check what format we're actually getting
-                        if (href.startsWith('/download/')) {
-                            filePath = href.substring(10);
-                            fileName = filePath.split('/').pop();
-                            console.log('Download format - path:', filePath);
-                        } else if (href.includes('info=please')) {
-                            const pathMatch = href.match(/path=([^&]+)/);
-                            if (pathMatch) {
-                                filePath = decodeURIComponent(pathMatch[1]);
-                                fileName = filePath.split('/').pop();
-                                console.log('Info format - path:', filePath);
-                            }
-                        } else {
-                            // This might be the issue - direct .sid links
-                            // They might just be the filename without path
-                            console.log('Unknown format - using href as-is:', href);
-                            filePath = path + '/' + href.replace(/^\//, '');
-                            fileName = href.split('/').pop();
-                        }
-
-                        if (filePath || fileName.endsWith('.sid')) {
-                            entries.push({
-                                name: fileName,
-                                path: filePath || (path + '/' + fileName),
-                                isDirectory: false
-                            });
-                            console.log('Added SID file:', fileName, 'with path:', filePath);
-                        } else {
-                            console.log('Skipped SID file - no valid path');
-                        }
-                    }
-                }
+            // Skip navigation links
+            if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
+                linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
+                linkText === 'Parent Directory' || href === '#') {
+                continue;
             }
-        }
 
-        console.log('Total entries found:', entries.length);
-        console.log('Entries:', entries);
+            console.log('Found link:', href, '-> Text:', linkText);
 
-        if (tableMatch) {
-            const tableContent = tableMatch[1];
-            
-            // Parse each row for links
-            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-            let rowMatch;
-            
-            while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
-                const row = rowMatch[1];
-                
-                // Look for links in this row
-                const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
-                
-                if (linkMatch) {
-                    const href = linkMatch[1];
-                    let name = linkMatch[2].trim();
-                    
-                    // Process directory links
-                    if (href.startsWith('?path=')) {
-                        const pathValue = decodeURIComponent(href.substring(6));
-                        name = name.replace(/\/$/, ''); // Remove trailing slash
-                        
-                        entries.push({
-                            name: name,
-                            path: pathValue,
-                            isDirectory: true
-                        });
-                    }
-                    // Process SID file links
-                    else if (href.toLowerCase().includes('.sid')) {
-                        let filePath = '';
-                        let fileName = name;
-                        
-                        if (href.startsWith('/download/')) {
-                            filePath = href.substring(10);
-                            if (name === 'info' || name === 'download') {
-                                fileName = filePath.split('/').pop();
-                            }
-                        } else if (href.includes('info=please')) {
-                            const pathMatch = href.match(/path=([^&]+)/);
-                            if (pathMatch) {
-                                filePath = decodeURIComponent(pathMatch[1]);
-                                fileName = filePath.split('/').pop();
-                            }
-                        }
-                        
-                        if (filePath) {
-                            entries.push({
-                                name: fileName,
-                                path: filePath,
-                                isDirectory: false
-                            });
-                        }
-                    }
-                }
+            // Check if it's a directory (path parameter without info)
+            if (href.startsWith('?path=') && !href.includes('info=')) {
+                const pathValue = decodeURIComponent(href.substring(6));
+                entries.push({
+                    name: linkText.replace(/\/$/, ''),
+                    path: pathValue,
+                    isDirectory: true
+                });
             }
-        } else {
-            // Fallback parsing for different HTML structure
-            const linkRegex = /<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/gi;
-            let match;
-            
-            while ((match = linkRegex.exec(html)) !== null) {
-                const href = match[1];
-                let text = match[2].trim();
-                
-                if (text === 'Home' || text === 'About' || text === 'HVSC' || 
-                    text === 'SidSearch' || text === '..' || text === '.') {
-                    continue;
+            // Check if it's a SID file - be more flexible
+            else if (linkText.toLowerCase().endsWith('.sid')) {
+                // The href might be just the filename, or a path, or a query
+                let filePath = '';
+
+                if (href.includes('?info=please')) {
+                    // Format: ?info=please&path=...
+                    const pathMatch = href.match(/path=([^&]+)/);
+                    if (pathMatch) {
+                        filePath = decodeURIComponent(pathMatch[1]);
+                    }
+                } else if (href.startsWith('/')) {
+                    // Absolute path
+                    filePath = href.substring(1);
+                } else if (href.endsWith('.sid')) {
+                    // Just the filename - combine with current path
+                    filePath = path ? path + '/' + href : href;
                 }
-                
-                if (href.startsWith('?path=')) {
-                    const pathValue = decodeURIComponent(href.substring(6));
-                    text = text.replace(/\/$/, '');
-                    
+
+                if (filePath) {
                     entries.push({
-                        name: text,
-                        path: pathValue,
-                        isDirectory: true
+                        name: linkText,
+                        path: filePath,
+                        isDirectory: false
                     });
+                    console.log('Added SID:', linkText, 'Path:', filePath);
                 }
             }
         }
-        
-        // Sort and render entries
+
+        // Sort entries: directories first, then alphabetically
         entries.sort((a, b) => {
             if (a.isDirectory !== b.isDirectory) {
                 return b.isDirectory - a.isDirectory;
             }
             return a.name.localeCompare(b.name);
         });
-        
+
+        // Render entries
         entries.forEach(entry => {
             const item = document.createElement('div');
             item.className = 'file-item' + (entry.isDirectory ? ' directory' : '');
-            
+
             const icon = entry.isDirectory ? '📁' : '🎵';
-            
+
             item.innerHTML = `
-                <span class="file-icon">${icon}</span>
-                <span class="file-name">${entry.name}</span>
-            `;
-            
+            <span class="file-icon">${icon}</span>
+            <span class="file-name">${entry.name}</span>
+        `;
+
             item.onclick = () => handleItemClick(entry);
             item.ondblclick = () => handleItemDoubleClick(entry);
-            
+
             fileList.appendChild(item);
         });
-        
-        // Update item count
+
+        // Update counts
         const sidCount = entries.filter(e => !e.isDirectory).length;
         const dirCount = entries.filter(e => e.isDirectory).length;
-        
+
         let countText = '';
         if (sidCount > 0 && dirCount > 0) {
             countText = `${sidCount} SID files, ${dirCount} folders`;
@@ -241,8 +135,10 @@ window.hvscBrowser = (function () {
         } else {
             countText = 'Empty folder';
         }
-        
+
         document.getElementById('itemCount').textContent = countText;
+
+        console.log('Final entries:', entries.length, entries);
     }
 
     function handleItemClick(entry) {
