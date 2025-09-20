@@ -45,8 +45,8 @@ window.hvscBrowser = (function () {
         console.log('First 1000 chars:', html.substring(0, 1000));
 
         // Also check if we're getting any .sid references at all
-        const sidCount = (html.match(/\.sid/gi) || []).length;
-        console.log('Number of .sid references found in HTML:', sidCount);
+        const sidCountDebug = (html.match(/\.sid/gi) || []).length;
+        console.log('Number of .sid references found in HTML:', sidCountDebug);
 
         // Look for the directory listing table
         const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
