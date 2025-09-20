@@ -167,50 +167,23 @@ class UIController {
         this.elements.hvscSelected.style.display = 'block';
         this.elements.selectedFile.textContent = data.name;
 
-        // Close the modal instead of the window
         const modal = document.getElementById('hvscModal');
         modal.classList.remove('visible');
 
-        // Rest of the existing code...
         this.showLoading(true);
         this.showModal('Downloading SID from HVSC...', true);
 
         try {
-            // The correct URL format is /api/hvsc/C64Music/path/to/file.sid
-            // or https://hvsc.etv.cx/C64Music/path/to/file.sid
-            let downloadUrl = data.url;
+            // The URL is already properly formatted from selectSID
+            const response = await fetch(data.url);
 
-            // If the URL has /download/ in it, we need to fix it
-            if (downloadUrl.includes('/download/')) {
-                // Remove /download/ and ensure C64Music/ is at the start of the path
-                const baseUrl = window.location.hostname === 'localhost'
-                    ? 'https://hvsc.etv.cx/'
-                    : '/api/hvsc/';
-
-                // Extract just the path part after /download/
-                const pathMatch = downloadUrl.match(/\/download\/(.+)$/);
-                if (pathMatch) {
-                    const filePath = pathMatch[1];
-                    // Add C64Music/ if not present
-                    const fullPath = filePath.startsWith('C64Music/') ? filePath : 'C64Music/' + filePath;
-                    downloadUrl = baseUrl + fullPath;
-                }
-            }
-
-            console.log('Fetching from:', downloadUrl);
-
-            // Fetch the SID file
-            const response = await fetch(downloadUrl);
             if (!response.ok) {
                 throw new Error('Failed to download SID file');
             }
 
             const blob = await response.blob();
-
-            // Create a File object from the blob
             const file = new File([blob], data.name, { type: 'application/octet-stream' });
 
-            // Process the file as if it was uploaded
             await this.processFile(file);
 
         } catch (error) {

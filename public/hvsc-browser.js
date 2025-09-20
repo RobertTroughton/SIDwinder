@@ -268,12 +268,9 @@ window.hvscBrowser = (function () {
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
-            const baseUrl = window.location.hostname === 'localhost'
-                ? 'https://hvsc.etv.cx/'
-                : '/api/hvsc/';
-            const sidUrl = baseUrl + 'download/' + currentSelection.path;
+            // Use the Netlify function for downloading
+            const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
 
-            // Post message to parent window (now same window)
             window.postMessage({
                 type: 'sid-selected',
                 name: currentSelection.name,
@@ -281,7 +278,6 @@ window.hvscBrowser = (function () {
                 url: sidUrl
             }, '*');
 
-            // Close modal
             const modal = document.getElementById('hvscModal');
             if (modal) {
                 modal.classList.remove('visible');
