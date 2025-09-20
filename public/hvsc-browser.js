@@ -19,15 +19,12 @@ window.hvscBrowser = (function () {
             path = path.slice(0, -1);
         }
 
-        // Build URL differently - append path with query string
-        let url;
-        if (path) {
-            // For subdirectories, we need to pass the path as a query parameter
-            url = `${HVSC_BASE}?path=${path}`;
-        } else {
-            // For root
-            url = HVSC_BASE;
-        }
+        // Try URL encoding the path parameter
+        const encodedPath = encodeURIComponent(path);
+        const url = `${HVSC_BASE}?path=${encodedPath}`;
+
+        console.log('Requesting URL:', url);
+        console.log('Decoded path:', decodeURIComponent(encodedPath));
 
         console.log('Requesting URL:', url);
 
