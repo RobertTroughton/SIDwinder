@@ -90,16 +90,29 @@ window.hvscBrowser = (function () {
                         });
                     }
                     // Process SID file links
+                    else if (href.includes('.sid') && !href.includes('info=')) {
+                        let fileName = href.split('/').pop();
+                        entries.push({
+                            name: fileName,
+                            path: href,
+                            isDirectory: false
+                        });
+                        console.log('Found direct SID link:', fileName);
+                    }
                     else if (href.includes('info=please') && href.includes('.sid')) {
                         const pathMatch = href.match(/path=([^&]+)/);
                         if (pathMatch) {
                             const filePath = decodeURIComponent(pathMatch[1]);
                             const fileName = filePath.split('/').pop();
-                            entries.push({
-                                name: fileName,
-                                path: filePath,
-                                isDirectory: false
-                            });
+
+                            if (!entries.find(e => e.name === fileName)) {
+                                entries.push({
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false
+                                });
+                                console.log('Found SID from info link:', fileName);
+                            }
                         }
                     }
                 }
