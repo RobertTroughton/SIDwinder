@@ -6,6 +6,7 @@
     <title>SIDquake - C64 SID Music Linker</title>
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <!-- Genesis Project Common Header -->
@@ -283,6 +284,43 @@
         window.dispatchEvent(new Event('tscrunch-ready'));
     </script>
 
+    <!-- Add this before the closing </body> tag in index.html -->
+    <div class="hvsc-modal" id="hvscModal">
+        <div class="hvsc-modal-content">
+            <button class="hvsc-modal-close" id="hvscModalClose">✕</button>
+            <div class="hvsc-modal-body">
+                <div class="browser-container" style="height: 100%; background: transparent;">
+                    <div class="browser-header">
+                        <div class="browser-title">HVSC SID Collection Browser</div>
+                        <div class="browser-controls">
+                            <button class="btn" id="homeBtn" onclick="hvscBrowser.navigateHome()" title="Go to home">
+                                <i class="fas fa-home"></i>
+                            </button>
+                            <button class="btn" id="upBtn" onclick="hvscBrowser.navigateUp()" title="Go up one directory">
+                                <i class="fas fa-level-up-alt"></i>
+                            </button>
+                            <input type="text" class="path-bar" id="pathBar" readonly>
+                        </div>
+                    </div>
+
+                    <div class="browser-content">
+                        <div class="file-panel">
+                            <div class="panel-header">Files & Directories</div>
+                            <div class="file-list" id="fileList">
+                                <div class="loading">Loading directory</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-bar">
+                        <span id="itemCount">0 items</span>
+                        <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Regular scripts -->
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
@@ -290,6 +328,7 @@
     <script src="image-preview-manager.js"></script>
     <script src="compressor-manager.js"></script>
     <script src="prg-builder.js"></script>
+    <script src="hvsc-browser.js"></script>
     <script src="ui.js"></script>
     <script src="visualizer-registry.js"></script>
     <script src="visualizer-configs.js"></script>

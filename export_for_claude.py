@@ -6,6 +6,7 @@ import tiktoken
 source_dirs = ["src", "include"]  # adjust as needed
 exclude_dirs = ["test", "third_party", "build"]
 output_file = "claude_input.md"
+TOKEN_MODEL = "gpt-4"  # tiktoken proxy for Claude-ish length
 
 # === COMMENT STRIPPING ===
 def strip_comments(code):
@@ -16,10 +17,24 @@ def strip_comments(code):
 def remove_blank_lines(code):
     return "\n".join(line for line in code.splitlines() if line.strip())
 
-def estimate_tokens(text):
-    enc = tiktoken.encoding_for_model("gpt-4")
-    return len(enc.encode(text))
-
+def estimate_tokens(text: str, model: str = TOKEN_MODEL) -> int:
+    """
+    Best-effort token estimate:
+    1) Try model-specific encoding
+    2) Fallback to cl100k_base
+    3) Fallback to ~1 token per 4 chars
+    """
+    try:
+        enc = tiktoken.encoding_for_model(model)
+    except Exception:
+        try:
+            enc = tiktoken.get_encoding("cl100k_base")
+        except Exception:
+            return max(1, len(text) // 4)
+    try:
+        return len(enc.encode(text))
+    except Exception:
+        return max(1, len(text) // 4)
 def should_exclude(path):
     return any(part in exclude_dirs for part in path.parts)
 
@@ -46,9 +61,16 @@ def generate_output():
             print(f"Failed to read {path}: {e}")
 
     final_text = "\n\n".join(blocks)
+
+    token_count = estimate_tokens(final_text)
     Path(output_file).write_text(final_text, encoding="utf-8")
-    print(f"Estimated tokens: {estimate_tokens(final_text)}")
+    print(f"Estimated tokens: {token_count:,}")
     print(f"Wrote: {output_file}")
+
+    if token_count > 100000:
+        print(f"\nWARNING: Token count ({token_count:,}) may exceed Claude's context limit!")
+        print("Consider splitting into multiple files or being selective about which players to include.")
+
 
 if __name__ == "__main__":
     generate_output()

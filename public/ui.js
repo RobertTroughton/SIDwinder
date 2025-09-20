@@ -130,44 +130,48 @@ class UIController {
             }
         });
 
+        const closeBtn = document.getElementById('hvscModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                document.getElementById('hvscModal').classList.remove('visible');
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('hvscModal');
+                if (modal.classList.contains('visible')) {
+                    modal.classList.remove('visible');
+                }
+            }
+        });
+
         // Initialize the UI in "attract mode"
         this.initializeAttractMode();
     }
 
     openHVSCBrowser() {
-        // Calculate center position
-        const width = 950;
-        const height = 650;
-        const left = (window.screen.width - width) / 2;
-        const top = (window.screen.height - height) / 2;
+        const modal = document.getElementById('hvscModal');
+        modal.classList.add('visible');
 
-        // Use the hvsc.html file instead of hvsc-browser.html
-        this.hvscBrowserWindow = window.open(
-            'hvsc.html',
-            'hvscBrowser',
-            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-        );
-
-        // Focus the window if it was already open
-        if (this.hvscBrowserWindow) {
-            this.hvscBrowserWindow.focus();
+        // Initialize the HVSC browser if not already done
+        if (!window.hvscBrowserInitialized) {
+            hvscBrowser.fetchDirectory('');
+            window.hvscBrowserInitialized = true;
         }
     }
 
     async handleHVSCSelection(data) {
         console.log('HVSC selection received:', data);
 
-        // Update UI to show selected file
         this.elements.hvscSelected.style.display = 'block';
         this.elements.selectedFile.textContent = data.name;
 
-        // Close the browser window
-        if (this.hvscBrowserWindow) {
-            this.hvscBrowserWindow.close();
-            this.hvscBrowserWindow = null;
-        }
+        // Close the modal instead of the window
+        const modal = document.getElementById('hvscModal');
+        modal.classList.remove('visible');
 
-        // Download the SID file from HVSC
+        // Rest of the existing code...
         this.showLoading(true);
         this.showModal('Downloading SID from HVSC...', true);
 

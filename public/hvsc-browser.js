@@ -1,4 +1,4 @@
-const hvscBrowser = (function() {
+window.hvscBrowser = (function () {
     // Configuration
     const HVSC_BASE = window.location.hostname === 'localhost' 
         ? 'https://hvsc.etv.cx/'
@@ -215,24 +215,23 @@ const hvscBrowser = (function() {
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
-            const baseUrl = window.location.hostname === 'localhost' 
-                ? 'https://hvsc.etv.cx/' 
+            const baseUrl = window.location.hostname === 'localhost'
+                ? 'https://hvsc.etv.cx/'
                 : '/api/hvsc/';
             const sidUrl = baseUrl + 'download/' + currentSelection.path;
-            
-            if (window.opener) {
-                window.opener.postMessage({
-                    type: 'sid-selected',
-                    name: currentSelection.name,
-                    path: currentSelection.path,
-                    url: sidUrl
-                }, '*');
-                
-                setTimeout(() => {
-                    window.close();
-                }, 500);
-            } else {
-                alert('Selected: ' + currentSelection.name + '\nURL: ' + sidUrl);
+
+            // Post message to parent window (now same window)
+            window.postMessage({
+                type: 'sid-selected',
+                name: currentSelection.name,
+                path: currentSelection.path,
+                url: sidUrl
+            }, '*');
+
+            // Close modal
+            const modal = document.getElementById('hvscModal');
+            if (modal) {
+                modal.classList.remove('visible');
             }
         }
     }
@@ -251,6 +250,7 @@ const hvscBrowser = (function() {
     // Public API
     return {
         navigateUp: navigateUp,
-        navigateHome: navigateHome
+        navigateHome: navigateHome,
+        fetchDirectory: fetchDirectory
     };
 })();

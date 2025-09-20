@@ -6,6 +6,7 @@ import tiktoken
 sidplayers_dir = "SIDPlayers"  # The main SIDPlayers directory
 output_file = "claude_sidplayers.md"
 file_extension = "*.asm"  # Looking for assembly files
+TOKEN_MODEL = "gpt-4"  # tiktoken proxy for Claude-ish length
 
 # === COMMENT STRIPPING FOR ASM FILES ===
 def strip_asm_comments(code):
@@ -64,14 +65,24 @@ def remove_excessive_blank_lines(code):
     
     return '\n'.join(result)
 
-def estimate_tokens(text):
-    """Estimate token count for the text"""
+def estimate_tokens(text: str, model: str = TOKEN_MODEL) -> int:
+    """
+    Best-effort token estimate:
+    1) Try model-specific encoding
+    2) Fallback to cl100k_base
+    3) Fallback to ~1 token per 4 chars
+    """
     try:
-        enc = tiktoken.encoding_for_model("gpt-4")
+        enc = tiktoken.encoding_for_model(model)
+    except Exception:
+        try:
+            enc = tiktoken.get_encoding("cl100k_base")
+        except Exception:
+            return max(1, len(text) // 4)
+    try:
         return len(enc.encode(text))
-    except:
-        # Fallback: rough estimate of 1 token per 4 characters
-        return len(text) // 4
+    except Exception:
+        return max(1, len(text) // 4)
 
 def collect_asm_files():
     """Recursively collect all .asm files from SIDPlayers directory"""
@@ -166,29 +177,14 @@ def generate_output():
     # Combine all blocks
     final_text = "\n".join(blocks)
     
-    # Write output file
-    Path(output_file).write_text(final_text, encoding="utf-8")
-    
-    # Print summary
-    total_files = sum(len(files) for files in player_files.values())
     token_count = estimate_tokens(final_text)
-    
-    print(f"=" * 50)
-    print(f"SIDPlayers Export Summary")
-    print(f"=" * 50)
-    print(f"Players found: {len(player_files)}")
-    print(f"Total ASM files: {total_files}")
-    print(f"Output file: {output_file}")
-    print(f"Output size: {len(final_text):,} characters")
+    Path(output_file).write_text(final_text, encoding="utf-8")
     print(f"Estimated tokens: {token_count:,}")
-    
+    print(f"Wrote: {output_file}")
+
     if token_count > 100000:
         print(f"\nWARNING: Token count ({token_count:,}) may exceed Claude's context limit!")
         print("Consider splitting into multiple files or being selective about which players to include.")
     
-    print(f"\nPlayers exported:")
-    for player_name in sorted(player_files.keys()):
-        print(f"  - {player_name}: {len(player_files[player_name])} files")
-
 if __name__ == "__main__":
     generate_output()
