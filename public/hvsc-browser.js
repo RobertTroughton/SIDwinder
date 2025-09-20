@@ -50,37 +50,51 @@ window.hvscBrowser = (function () {
             // Skip navigation links
             if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
                 linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
-                linkText === 'Parent Directory' || href === '#') {
+                linkText === 'Parent Directory' || href === '#' || linkText === 'info' ||
+                linkText === 'download') {
                 continue;
             }
 
             console.log('Found link:', href, '-> Text:', linkText);
 
-            // Check if it's a directory (path parameter without info)
-            if (href.startsWith('?path=') && !href.includes('info=')) {
-                const pathValue = decodeURIComponent(href.substring(6));
-                entries.push({
-                    name: linkText.replace(/\/$/, ''),
-                    path: pathValue,
-                    isDirectory: true
-                });
-            }
-            // Check if it's a SID file - be more flexible
-            else if (linkText.toLowerCase().endsWith('.sid')) {
-                // The href might be just the filename, or a path, or a query
-                let filePath = '';
-
-                if (href.includes('?info=please')) {
-                    // Format: ?info=please&path=...
-                    const pathMatch = href.match(/path=([^&]+)/);
-                    if (pathMatch) {
-                        filePath = decodeURIComponent(pathMatch[1]);
+            // Check if it's a directory (has ?path= but NOT info=please)
+            if (href.includes('?path=') && !href.includes('info=please')) {
+                const pathMatch = href.match(/\?path=([^&]*)/);
+                if (pathMatch) {
+                    const pathValue = decodeURIComponent(pathMatch[1]);
+                    // Only add if it's not empty and not the current path
+                    if (pathValue && pathValue !== path) {
+                        entries.push({
+                            name: linkText.replace(/\/$/, ''),
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                        console.log('Added directory:', linkText, 'Path:', pathValue);
                     }
-                } else if (href.startsWith('/')) {
-                    // Absolute path
+                }
+            }
+            // Check if it's a SID file info link (has both path= and info=please)
+            else if (href.includes('info=please') && href.includes('.sid')) {
+                const pathMatch = href.match(/path=([^&]+)/);
+                if (pathMatch) {
+                    const filePath = decodeURIComponent(pathMatch[1]);
+                    const fileName = filePath.split('/').pop();
+                    entries.push({
+                        name: fileName,
+                        path: filePath,
+                        isDirectory: false
+                    });
+                    console.log('Added SID from info link:', fileName, 'Path:', filePath);
+                }
+            }
+            // Check if link text itself indicates a SID file
+            else if (linkText.toLowerCase().endsWith('.sid')) {
+                // Build the full path
+                let filePath = '';
+                if (href.startsWith('/')) {
                     filePath = href.substring(1);
-                } else if (href.endsWith('.sid')) {
-                    // Just the filename - combine with current path
+                } else if (!href.includes('?')) {
+                    // Just a filename, combine with current path
                     filePath = path ? path + '/' + href : href;
                 }
 
@@ -90,7 +104,7 @@ window.hvscBrowser = (function () {
                         path: filePath,
                         isDirectory: false
                     });
-                    console.log('Added SID:', linkText, 'Path:', filePath);
+                    console.log('Added SID from text:', linkText, 'Path:', filePath);
                 }
             }
         }
@@ -138,7 +152,7 @@ window.hvscBrowser = (function () {
 
         document.getElementById('itemCount').textContent = countText;
 
-        console.log('Final entries:', entries.length, entries);
+        console.log('Final entries:', entries.length, 'Directories:', dirCount, 'Files:', sidCount);
     }
 
     function handleItemClick(entry) {
