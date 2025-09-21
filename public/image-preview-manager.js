@@ -1,11 +1,166 @@
-// image-preview-manager.js - Enhanced image preview system for SIDwinder
-// Replaces file buttons with clickable image previews
+﻿// image-preview-manager.js - Enhanced image preview system with modal gallery
+// Replaces file buttons with clickable image previews and modal gallery selection
+
+class GalleryModal {
+    constructor() {
+        this.modal = null;
+        this.currentConfig = null;
+        this.currentContainer = null;
+        this.selectedItem = null;
+        this.initialized = false;
+    }
+
+    init() {
+        if (this.initialized) return;
+
+        this.modal = document.getElementById('galleryModal');
+        if (!this.modal) {
+            console.warn('Gallery modal element not found in DOM');
+            return;
+        }
+
+        const closeBtn = document.getElementById('galleryModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal && this.modal.classList.contains('visible')) {
+                this.close();
+            }
+        });
+
+        // Close on click outside
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
+            }
+        });
+
+        this.initialized = true;
+    }
+
+    open(config, container) {
+        if (!this.initialized) this.init();
+        if (!this.modal) return;
+
+        this.currentConfig = config;
+        this.currentContainer = container;
+        this.selectedItem = null;
+
+        // Set subtitle
+        const subtitle = document.getElementById('gallerySubtitle');
+        if (subtitle) {
+            subtitle.textContent = `Select ${config.label || 'an image'}`;
+        }
+
+        // Build gallery grid
+        this.buildGallery(config.gallery);
+
+        // Show modal
+        this.modal.classList.add('visible');
+    }
+
+    buildGallery(galleryItems) {
+        const gridContainer = document.getElementById('galleryGridContainer');
+        if (!gridContainer) return;
+
+        gridContainer.innerHTML = '';
+
+        if (!galleryItems || galleryItems.length === 0) {
+            gridContainer.innerHTML = '<div class="gallery-loading">No images available</div>';
+            this.updateItemCount(0);
+            return;
+        }
+
+        galleryItems.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'gallery-item-card';
+            card.dataset.file = item.file;
+            card.dataset.name = item.name;
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="gallery-item-preview">
+                    <img src="${item.file}" alt="${item.name}" />
+                </div>
+                <div class="gallery-item-info">
+                    <div class="gallery-item-name">${item.name}</div>
+                </div>
+                <div class="gallery-item-selected-badge">✓ Selected</div>
+            `;
+
+            card.addEventListener('click', () => this.selectItem(card, item));
+            gridContainer.appendChild(card);
+        });
+
+        this.updateItemCount(galleryItems.length);
+    }
+
+    selectItem(card, item) {
+        // Clear previous selection
+        document.querySelectorAll('.gallery-item-card').forEach(c => {
+            c.classList.remove('selected');
+        });
+
+        // Mark as selected
+        card.classList.add('selected');
+        this.selectedItem = item;
+
+        // Apply selection after a brief delay for visual feedback
+        setTimeout(() => {
+            this.applySelection(item);
+            this.close();
+        }, 200);
+    }
+
+    async applySelection(item) {
+        if (!this.currentContainer || !this.currentConfig) return;
+
+        // This calls the existing loadGalleryImage method from ImagePreviewManager
+        if (window.imagePreviewManager) {
+            await window.imagePreviewManager.loadGalleryImage(
+                this.currentContainer,
+                this.currentConfig,
+                item.file,
+                item.name
+            );
+        }
+    }
+
+    updateItemCount(count) {
+        const countElement = document.getElementById('galleryItemCount');
+        if (countElement) {
+            countElement.textContent = `${count} image${count !== 1 ? 's' : ''}`;
+        }
+    }
+
+    close() {
+        if (this.modal) {
+            this.modal.classList.remove('visible');
+        }
+        this.currentConfig = null;
+        this.currentContainer = null;
+        this.selectedItem = null;
+    }
+}
 
 class ImagePreviewManager {
     constructor() {
         this.previewCache = new Map();
         this.defaultImages = new Map();
         this.loadingPromises = new Map();
+        this.galleryModal = null;
+    }
+
+    // Initialize gallery modal on first use
+    initGalleryModal() {
+        if (!this.galleryModal) {
+            this.galleryModal = new GalleryModal();
+            this.galleryModal.init();
+        }
+        return this.galleryModal;
     }
 
     // Create a preview element for an image input
@@ -46,16 +201,6 @@ class ImagePreviewManager {
                             <i class="fas fa-images"></i>
                             Choose from Gallery
                         </button>
-                    </div>
-                    <div class="image-gallery-panel" style="display: none;">
-                        <div class="gallery-grid">
-                            ${config.gallery.map((item, index) => `
-                                <div class="gallery-item" data-file="${item.file}" data-name="${item.name}">
-                                    <img src="${item.file}" alt="${item.name}">
-                                    <span class="gallery-item-name">${item.name}</span>
-                                </div>
-                            `).join('')}
-                        </div>
                     </div>
                 ` : ''}
             </div>
@@ -127,25 +272,47 @@ class ImagePreviewManager {
 
     attachGalleryHandlers(container, config) {
         const toggleBtn = container.querySelector('.gallery-btn');
-        const galleryPanel = container.querySelector('.image-gallery-panel');
 
-        if (toggleBtn && galleryPanel) {
+        if (toggleBtn && config.gallery && config.gallery.length > 0) {
             toggleBtn.addEventListener('click', () => {
-                const isVisible = galleryPanel.style.display !== 'none';
-                galleryPanel.style.display = isVisible ? 'none' : 'block';
-                toggleBtn.classList.toggle('active', !isVisible);
-            });
-
-            container.querySelectorAll('.gallery-item').forEach(item => {
-                item.addEventListener('click', async () => {
-                    const filename = item.dataset.file;
-                    const name = item.dataset.name;
-                    await this.loadGalleryImage(container, config, filename, name);
-                    galleryPanel.style.display = 'none';
-                    toggleBtn.classList.remove('active');
-                });
+                const modal = this.initGalleryModal();
+                modal.open(config, container);
             });
         }
+    }
+
+    // Check if file is valid based on config
+    isValidImageFile(file, config) {
+        if (!config.accept) return true;
+
+        const acceptTypes = config.accept.split(',').map(t => t.trim());
+
+        // Check MIME type
+        for (const acceptType of acceptTypes) {
+            if (acceptType.startsWith('.')) {
+                // Extension check
+                if (file.name.toLowerCase().endsWith(acceptType.toLowerCase())) {
+                    return true;
+                }
+            } else if (acceptType.includes('*')) {
+                // Wildcard MIME type (e.g., image/*)
+                const [type, subtype] = acceptType.split('/');
+                if (file.type.startsWith(type + '/')) {
+                    return true;
+                }
+            } else if (file.type === acceptType) {
+                // Exact MIME type match
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Show error message (implement as needed)
+    showError(container, message) {
+        console.error(message);
+        // Could add visual error feedback here
     }
 
     // Load and display default image
@@ -177,7 +344,7 @@ class ImagePreviewManager {
 
                 // Check if it's a PNG file
                 if (config.default.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
-                    // Create preview from PNG data directly (not via File object)
+                    // Create preview from PNG data directly
                     const preview = await this.createPreviewFromPNGData(fileData);
                     this.previewCache.set(config.default, preview);
 
@@ -234,7 +401,6 @@ class ImagePreviewManager {
                 sizeInfo.textContent = preview.sizeText;
 
                 // Store this selection in the file input for later processing
-                // Create a File object from the data
                 const blob = new Blob([fileData], { type: 'image/png' });
                 const file = new File([blob], name + '.png', { type: 'image/png' });
 
@@ -276,7 +442,7 @@ class ImagePreviewManager {
         }
     }
 
-    // Load default file using VisualizerConfig
+    // Rest of the existing methods remain the same...
     async loadDefaultFile(defaultPath) {
         if (!window.currentVisualizerConfig) {
             window.currentVisualizerConfig = new VisualizerConfig();
@@ -284,7 +450,6 @@ class ImagePreviewManager {
         return await window.currentVisualizerConfig.loadDefaultFile(defaultPath);
     }
 
-    // Handle file selection
     async handleFileChange(event, config) {
         const file = event.target.files[0];
 
@@ -327,7 +492,6 @@ class ImagePreviewManager {
         }
     }
 
-    // Create preview from PNG file
     async createPreviewFromPNG(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -335,15 +499,12 @@ class ImagePreviewManager {
             const ctx = canvas.getContext('2d');
 
             img.onload = () => {
-                // Set canvas to C64 resolution
                 canvas.width = 320;
                 canvas.height = 200;
 
-                // Draw and scale the image
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(img, 0, 0, 320, 200);
 
-                // Get the data URL for preview
                 const dataUrl = canvas.toDataURL();
 
                 resolve({
@@ -356,18 +517,15 @@ class ImagePreviewManager {
                 reject(new Error('Invalid PNG file'));
             };
 
-            // Create object URL for the image
             const objectUrl = URL.createObjectURL(file);
             img.src = objectUrl;
 
-            // Clean up object URL after loading
             img.addEventListener('load', () => {
                 URL.revokeObjectURL(objectUrl);
             }, { once: true });
         });
     }
 
-    // Create preview from PNG binary data
     async createPreviewFromPNGData(pngData) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -375,17 +533,14 @@ class ImagePreviewManager {
             const ctx = canvas.getContext('2d');
 
             img.onload = () => {
-                // Set canvas to C64 resolution
                 canvas.width = 320;
                 canvas.height = 200;
 
-                // Draw with pixelated rendering
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(img, 0, 0, 320, 200);
 
                 const dataUrl = canvas.toDataURL();
 
-                // Revoke the blob URL after we're done
                 URL.revokeObjectURL(img.src);
 
                 resolve({
@@ -399,27 +554,37 @@ class ImagePreviewManager {
                 reject(new Error('Invalid PNG data'));
             };
 
-            // Create blob from Uint8Array data
             const blob = new Blob([pngData], { type: 'image/png' });
             const blobUrl = URL.createObjectURL(blob);
             img.src = blobUrl;
         });
     }
 
-    // Check if binary data is a PNG file (magic number: 89 50 4E 47 0D 0A 1A 0A)
+    // Create preview from binary data
+    async createPreviewFromData(data, filename) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 320;
+        canvas.height = 200;
+
+        this.renderBinaryPlaceholder(ctx, filename);
+
+        return {
+            dataUrl: canvas.toDataURL(),
+            sizeText: `${(data.length / 1024).toFixed(1)}KB (Binary)`
+        };
+    }
+
     isPNGFile(data) {
         if (data.length < 8) return false;
         return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
 
-    // Render placeholder for binary files
     renderBinaryPlaceholder(ctx, filename) {
-        // Fill with a dark pattern
         ctx.fillStyle = '#222';
         ctx.fillRect(0, 0, 320, 200);
 
-        // Add some pattern
         ctx.strokeStyle = '#444';
         ctx.lineWidth = 1;
         for (let i = 0; i < 320; i += 16) {
@@ -435,7 +600,6 @@ class ImagePreviewManager {
             ctx.stroke();
         }
 
-        // Add text
         ctx.fillStyle = '#888';
         ctx.font = '16px monospace';
         ctx.textAlign = 'center';
@@ -446,7 +610,6 @@ class ImagePreviewManager {
         ctx.fillText(shortName, 160, 110);
     }
 
-    // Determine file type from data
     getFileType(data) {
         if (this.isPNGFile(data)) {
             return 'PNG';
@@ -454,7 +617,6 @@ class ImagePreviewManager {
         return 'Binary';
     }
 
-    // Show error placeholder
     showErrorPlaceholder(img) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -475,5 +637,7 @@ class ImagePreviewManager {
     }
 }
 
-// Export the manager
+// Export the manager and make it available globally
 window.ImagePreviewManager = ImagePreviewManager;
+// Create a global instance for convenience
+window.imagePreviewManager = new ImagePreviewManager();

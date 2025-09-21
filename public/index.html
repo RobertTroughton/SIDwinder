@@ -284,7 +284,7 @@
         window.dispatchEvent(new Event('tscrunch-ready'));
     </script>
 
-    <!-- Add this before the closing </body> tag in index.html -->
+    <!-- HVSC Modal -->
     <div class="hvsc-modal" id="hvscModal">
         <div class="hvsc-modal-content">
             <button class="hvsc-modal-close" id="hvscModalClose">✕</button>
@@ -315,6 +315,31 @@
                     <div class="status-bar">
                         <span id="itemCount">0 items</span>
                         <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div class="gallery-modal" id="galleryModal">
+        <div class="gallery-modal-content">
+            <button class="gallery-modal-close" id="galleryModalClose">✕</button>
+            <div class="gallery-modal-body">
+                <div class="gallery-container">
+                    <div class="gallery-header">
+                        <div class="gallery-title">🎨 Image Gallery</div>
+                        <div class="gallery-subtitle" id="gallerySubtitle">Select an image</div>
+                    </div>
+
+                    <div class="gallery-content">
+                        <div class="gallery-grid-container" id="galleryGridContainer">
+                        </div>
+                    </div>
+
+                    <div class="gallery-status-bar">
+                        <span id="galleryItemCount">0 items</span>
+                        <span style="margin-left: auto; color: #888; font-size: 11px;">Click to select an image</span>
                     </div>
                 </div>
             </div>

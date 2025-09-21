@@ -54,6 +54,30 @@
           "file": "PNG/Bitmaps/razorback-riders.png"
         },
         {
+          "name": "Violators (by Talent)",
+          "file": "PNG/Bitmaps/talent-violators.png"
+        },
+        {
+          "name": "Panic Attack (by The Sarge)",
+          "file": "PNG/Bitmaps/TheSarge-PanicAttack.png"
+        },
+        {
+          "name": "Propaganda (by Facet)",
+          "file": "PNG/Bitmaps/Facet-Propaganda.png"
+        },
+        {
+          "name": "Extend (by Sulevi)",
+          "file": "PNG/Bitmaps/Sulevi-Extend.png"
+        },
+        {
+          "name": "Dragonslayer (by Mermaid)",
+          "file": "PNG/Bitmaps/Mermaid-Dragonslayer.png"
+        },
+        {
+          "name": "Ode to Parrot (by Mirage)",
+          "file": "PNG/Bitmaps/Mirage-OdeToParrot.png"
+        },
+        {
           "name": "Zebra (by redcrab)",
           "file": "PNG/Bitmaps/redcrab-Zebra.png"
         }

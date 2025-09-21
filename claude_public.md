@@ -979,6 +979,7 @@
     <script src="visualizer-registry.js"></script>
     <script src="visualizer-configs.js"></script>
     <script src="floating-notes.js"></script>
+    <script src="text-drop-zone.js"></script>
 
 </body>
 </html>
@@ -2096,16 +2097,6 @@ body {
     opacity: 1;
 }
 
-.preview-click-hint {
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    text-align: center;
-    padding: 8px 12px;
-    background: rgba(102, 126, 234, 0.9);
-    border-radius: 4px;
-}
-
 .image-preview-loading {
     position: absolute;
     top: 0;
@@ -2118,35 +2109,6 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-}
-
-.preview-spinner {
-    width: 24px;
-    height: 24px;
-    border: 3px solid #dee2e6;
-    border-top: 3px solid #667eea;
-    border-radius: 50%;
-    animation: preview-spin 1s linear infinite;
-}
-
-@keyframes preview-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.image-preview-info {
-    padding: 8px 12px;
-    background: white;
-    border-top: 1px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85em;
 }
 
 .preview-filename {
@@ -2696,11 +2658,6 @@ body {
         width: 280px;
         height: 175px;
     }
-
-    .preview-click-hint {
-        font-size: 12px;
-        padding: 6px 10px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -3192,16 +3149,6 @@ body {
         transform: scale(1.02);
     }
 
-.preview-overlay-content {
-    text-align: center;
-}
-
-    .preview-overlay-content i {
-        font-size: 24px;
-        margin-bottom: 8px;
-        opacity: 0.8;
-    }
-
 .image-gallery-toggle {
     margin-top: 10px;
     text-align: center;
@@ -3279,58 +3226,78 @@ body {
 
 .text-drop-zone {
     position: relative;
+    padding: 12px;
+    background: rgba(102, 126, 234, 0.03);
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 8px;
+    transition: all 0.3s ease;
 }
+
+    .text-drop-zone:hover {
+        border-color: rgba(102, 126, 234, 0.5);
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+.text-drop-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #667eea;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+    .text-drop-hint i {
+        opacity: 0.7;
+    }
+
+.text-drop-zone textarea {
+    width: 100%;
+    background: white;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s;
+}
+
+    .text-drop-zone textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
 
 .text-drop-indicator {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(102, 126, 234, 0.95);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 20px 30px;
-    border-radius: 8px;
+    padding: 24px 36px;
+    border-radius: 12px;
     font-weight: 600;
+    font-size: 1.1em;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 10;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
-.text-drop-zone.drag-active .text-drop-indicator {
-    opacity: 1;
+.text-drop-zone.drag-active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
 }
 
-.text-drop-zone.drag-active textarea {
-    opacity: 0.3;
-}
+    .text-drop-zone.drag-active .text-drop-indicator {
+        opacity: 1;
+    }
 
-.text-preset-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: center;
-}
+    .text-drop-zone.drag-active textarea {
+        opacity: 0.2;
+    }
 
-.preset-label {
-    font-size: 0.85em;
-    color: #666;
-}
-
-.preset-btn {
-    padding: 4px 10px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    font-size: 0.85em;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-    .preset-btn:hover {
-        background: #667eea;
-        color: white;
-        border-color: #667eea;
+    .text-drop-zone.drag-active .text-drop-hint {
+        opacity: 0.2;
     }
 ```
 
@@ -5785,6 +5752,70 @@ var SIDwinderModule=(()=>{var _scriptName=typeof document!="undefined"?document.
 ```
 
 
+### FILE: public/text-drop-zone.js
+```js
+class TextDropZone {
+    static create(textareaId, config = {}) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'text-drop-zone';
+        textarea.parentNode.insertBefore(wrapper, textarea);
+        wrapper.appendChild(textarea);
+
+        const dropIndicator = document.createElement('div');
+        dropIndicator.className = 'text-drop-indicator';
+        dropIndicator.innerHTML = '<i class="fas fa-file-alt"></i> Drop text file here';
+        wrapper.appendChild(dropIndicator);
+
+        const dropHint = document.createElement('div');
+        dropHint.className = 'text-drop-hint';
+        dropHint.innerHTML = '<i class="fas fa-upload"></i> Drag & drop .txt file or type below';
+        wrapper.insertBefore(dropHint, textarea);
+
+        if (textareaId.toLowerCase().includes('scroll')) {
+            textarea.rows = 6; 
+        }
+
+        this.attachDragDrop(wrapper, textarea);
+    }
+
+    static attachDragDrop(wrapper, textarea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            wrapper.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            wrapper.addEventListener(eventName, () => {
+                wrapper.classList.add('drag-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            wrapper.addEventListener(eventName, () => {
+                wrapper.classList.remove('drag-active');
+            });
+        });
+
+        wrapper.addEventListener('drop', async (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file && (file.type.startsWith('text/') || file.name.endsWith('.txt'))) {
+                const text = await file.text();
+                textarea.value = text;
+                textarea.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+}
+
+window.TextDropZone = TextDropZone;
+```
+
+
 ### FILE: public/ui.js
 ```js
 ﻿
@@ -6815,20 +6846,22 @@ class UIController {
 
         if (config && config.inputs) {
             config.inputs.forEach(inputConfig => {
-                const isImageInput = inputConfig.accept && (
-                    inputConfig.accept.includes('image/') ||
-                    inputConfig.accept.includes('.png')
-                );
-
+                const isImageInput = inputConfig.accept && (inputConfig.accept.includes('image/') || inputConfig.accept.includes('.png'));
                 if (isImageInput) {
                     const container = document.getElementById(`${inputConfig.id}-preview-container`);
                     if (container) {
-                        
                         const previewElement = window.imagePreviewManager.createImagePreview(inputConfig);
                         container.appendChild(previewElement);
-
                         window.imagePreviewManager.loadDefaultImage(inputConfig);
                     }
+                }
+            });
+        }
+
+        if (config && config.options) {
+            config.options.forEach(optionConfig => {
+                if (optionConfig.type === 'textarea') {
+                    TextDropZone.create(optionConfig.id);
                 }
             });
         }
