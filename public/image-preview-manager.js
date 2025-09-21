@@ -12,26 +12,52 @@ class ImagePreviewManager {
     createImagePreview(config) {
         const container = document.createElement('div');
         container.className = 'image-preview-container';
+
+        const hasGallery = config.gallery && config.gallery.length > 0;
+
         container.innerHTML = `
-            <div class="image-preview-wrapper" data-input-id="${config.id}">
-                <div class="image-preview-frame">
-                    <img class="image-preview-img" 
-                         src="" 
-                         alt="${config.label} preview"
-                         width="320" 
-                         height="200">
-                    <div class="image-preview-overlay">
-                        <div class="preview-click-hint">Click to change image</div>
+            <div class="image-preview-wrapper ${hasGallery ? 'with-gallery' : ''}" data-input-id="${config.id}">
+                <div class="image-preview-drop-zone">
+                    <div class="image-preview-frame">
+                        <img class="image-preview-img" 
+                             src="" 
+                             alt="${config.label} preview"
+                             width="320" 
+                             height="200">
+                        <div class="image-preview-overlay">
+                            <div class="preview-overlay-content">
+                                <i class="fas fa-upload"></i>
+                                <div class="preview-click-hint">Click to browse or drag image here</div>
+                            </div>
+                        </div>
+                        <div class="image-preview-loading">
+                            <div class="preview-spinner"></div>
+                            <div>Loading...</div>
+                        </div>
                     </div>
-                    <div class="image-preview-loading">
-                        <div class="preview-spinner"></div>
-                        <div>Loading...</div>
+                    <div class="image-preview-info">
+                        <span class="preview-filename">Loading default...</span>
+                        <span class="preview-size"></span>
                     </div>
                 </div>
-                <div class="image-preview-info">
-                    <span class="preview-filename">Loading default...</span>
-                    <span class="preview-size"></span>
-                </div>
+                ${hasGallery ? `
+                    <div class="image-gallery-toggle">
+                        <button type="button" class="gallery-btn">
+                            <i class="fas fa-images"></i>
+                            Choose from Gallery
+                        </button>
+                    </div>
+                    <div class="image-gallery-panel" style="display: none;">
+                        <div class="gallery-grid">
+                            ${config.gallery.map((item, index) => `
+                                <div class="gallery-item" data-file="${item.file}" data-name="${item.name}">
+                                    <img src="${item.file}" alt="${item.name}">
+                                    <span class="gallery-item-name">${item.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
             </div>
             <input type="file" 
                    id="${config.id}" 
@@ -39,11 +65,15 @@ class ImagePreviewManager {
                    style="display: none;">
         `;
 
+        this.attachDragDropHandlers(container, config);
+        this.attachGalleryHandlers(container, config);
+
         // Set up click handler
         const wrapper = container.querySelector('.image-preview-wrapper');
         const fileInput = container.querySelector('input[type="file"]');
 
-        wrapper.addEventListener('click', () => {
+        const previewFrame = wrapper.querySelector('.image-preview-frame');
+        previewFrame.addEventListener('click', () => {
             fileInput.click();
         });
 
@@ -53,6 +83,69 @@ class ImagePreviewManager {
         });
 
         return container;
+    }
+
+    attachDragDropHandlers(container, config) {
+        const dropZone = container.querySelector('.image-preview-drop-zone');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-active');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (this.isValidImageFile(file, config)) {
+                    const fileInput = container.querySelector(`#${config.id}`);
+                    if (fileInput) {
+                        delete fileInput.dataset.gallerySelected;
+                        delete fileInput.dataset.galleryFile;
+                    }
+                    this.handleFileChange({ target: { files: [file] } }, config);
+                } else {
+                    this.showError(container, 'Please drop a valid image file');
+                }
+            }
+        });
+    }
+
+    attachGalleryHandlers(container, config) {
+        const toggleBtn = container.querySelector('.gallery-btn');
+        const galleryPanel = container.querySelector('.image-gallery-panel');
+
+        if (toggleBtn && galleryPanel) {
+            toggleBtn.addEventListener('click', () => {
+                const isVisible = galleryPanel.style.display !== 'none';
+                galleryPanel.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.classList.toggle('active', !isVisible);
+            });
+
+            container.querySelectorAll('.gallery-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const filename = item.dataset.file;
+                    const name = item.dataset.name;
+                    await this.loadGalleryImage(container, config, filename, name);
+                    galleryPanel.style.display = 'none';
+                    toggleBtn.classList.remove('active');
+                });
+            });
+        }
     }
 
     // Load and display default image
@@ -66,7 +159,6 @@ class ImagePreviewManager {
         const loadingDiv = wrapper.querySelector('.image-preview-loading');
 
         try {
-            // Show loading state
             loadingDiv.style.display = 'flex';
 
             if (config.default) {
@@ -80,35 +172,104 @@ class ImagePreviewManager {
                     return;
                 }
 
-                // Check if we're already loading this image
-                if (this.loadingPromises.has(config.default)) {
-                    await this.loadingPromises.get(config.default);
-                    return;
-                }
-
                 // Load the default file
-                const loadPromise = this.loadDefaultFile(config.default);
-                this.loadingPromises.set(config.default, loadPromise);
+                const fileData = await this.loadDefaultFile(config.default);
 
-                const fileData = await loadPromise;
-                const preview = await this.createPreviewFromData(fileData, config.default);
+                // Check if it's a PNG file
+                if (config.default.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+                    // Create preview from PNG data directly (not via File object)
+                    const preview = await this.createPreviewFromPNGData(fileData);
+                    this.previewCache.set(config.default, preview);
 
-                // Cache the preview
-                this.previewCache.set(config.default, preview);
+                    img.src = preview.dataUrl;
+                    info.textContent = `Default: ${config.default.split('/').pop()}`;
+                    sizeInfo.textContent = preview.sizeText;
+                } else {
+                    // Handle other file types
+                    const preview = await this.createPreviewFromData(fileData, config.default);
+                    this.previewCache.set(config.default, preview);
 
-                img.src = preview.dataUrl;
-                info.textContent = `Default: ${config.default.split('/').pop()}`;
-                sizeInfo.textContent = preview.sizeText;
-
-                // Clean up loading promise
-                this.loadingPromises.delete(config.default);
+                    img.src = preview.dataUrl;
+                    info.textContent = `Default: ${config.default.split('/').pop()}`;
+                    sizeInfo.textContent = preview.sizeText;
+                }
             }
         } catch (error) {
             console.error('Error loading default image:', error);
             info.textContent = 'Error loading default';
             sizeInfo.textContent = '';
+            this.showErrorPlaceholder(img);
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
 
-            // Show a placeholder error image
+    async loadGalleryImage(container, config, filename, name) {
+        const wrapper = container.querySelector(`[data-input-id="${config.id}"]`);
+        if (!wrapper) return;
+
+        const img = wrapper.querySelector('.image-preview-img');
+        const info = wrapper.querySelector('.preview-filename');
+        const sizeInfo = wrapper.querySelector('.preview-size');
+        const loadingDiv = wrapper.querySelector('.image-preview-loading');
+
+        try {
+            loadingDiv.style.display = 'flex';
+
+            // Load the gallery file
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`Failed to load gallery image: ${filename}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const fileData = new Uint8Array(arrayBuffer);
+
+            // Check if it's a PNG file
+            if (filename.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+                const preview = await this.createPreviewFromPNGData(fileData);
+
+                img.src = preview.dataUrl;
+                info.textContent = name;
+                sizeInfo.textContent = preview.sizeText;
+
+                // Store this selection in the file input for later processing
+                // Create a File object from the data
+                const blob = new Blob([fileData], { type: 'image/png' });
+                const file = new File([blob], name + '.png', { type: 'image/png' });
+
+                // Store the file in the input element using DataTransfer
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                const fileInput = container.querySelector(`#${config.id}`);
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                    fileInput.dataset.gallerySelected = 'true';
+                    fileInput.dataset.galleryFile = filename;
+                }
+            } else {
+                const preview = await this.createPreviewFromData(fileData, name);
+
+                img.src = preview.dataUrl;
+                info.textContent = name;
+                sizeInfo.textContent = preview.sizeText;
+
+                // Store the file data for non-PNG files too
+                const blob = new Blob([fileData], { type: 'application/octet-stream' });
+                const file = new File([blob], name, { type: 'application/octet-stream' });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                const fileInput = container.querySelector(`#${config.id}`);
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                }
+            }
+
+        } catch (error) {
+            console.error('Error loading gallery image:', error);
+            info.textContent = `Error: ${name}`;
+            sizeInfo.textContent = error.message;
             this.showErrorPlaceholder(img);
         } finally {
             loadingDiv.style.display = 'none';
@@ -126,6 +287,13 @@ class ImagePreviewManager {
     // Handle file selection
     async handleFileChange(event, config) {
         const file = event.target.files[0];
+
+        const fileInput = event.target;
+        if (fileInput) {
+            delete fileInput.dataset.gallerySelected;
+            delete fileInput.dataset.galleryFile;
+        }
+
         const wrapper = document.querySelector(`[data-input-id="${config.id}"]`);
         if (!wrapper) return;
 
@@ -142,13 +310,7 @@ class ImagePreviewManager {
             let previewData;
 
             if (file.type === 'image/png') {
-                // Handle PNG files
                 previewData = await this.createPreviewFromPNG(file);
-            } else {
-                // Handle binary files (like .koa)
-                const arrayBuffer = await file.arrayBuffer();
-                const fileData = new Uint8Array(arrayBuffer);
-                previewData = await this.createPreviewFromData(fileData, file.name);
             }
 
             img.src = previewData.dataUrl;
@@ -217,20 +379,19 @@ class ImagePreviewManager {
                 canvas.width = 320;
                 canvas.height = 200;
 
-                // Draw and scale the image
+                // Draw with pixelated rendering
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(img, 0, 0, 320, 200);
 
-                // Get the data URL for preview
                 const dataUrl = canvas.toDataURL();
+
+                // Revoke the blob URL after we're done
+                URL.revokeObjectURL(img.src);
 
                 resolve({
                     dataUrl: dataUrl,
                     sizeText: `${(pngData.length / 1024).toFixed(1)}KB (PNG)`
                 });
-
-                // Clean up blob URL
-                URL.revokeObjectURL(img.src);
             };
 
             img.onerror = () => {
@@ -238,37 +399,11 @@ class ImagePreviewManager {
                 reject(new Error('Invalid PNG data'));
             };
 
-            // Create blob from PNG data and set as image source
+            // Create blob from Uint8Array data
             const blob = new Blob([pngData], { type: 'image/png' });
             const blobUrl = URL.createObjectURL(blob);
             img.src = blobUrl;
         });
-    }
-
-    // Create preview from binary data (like .koa files or PNG files)
-    async createPreviewFromData(fileData, filename) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 320;
-        canvas.height = 200;
-
-        try {
-            // Check if this is a PNG file by magic number
-            if (this.isPNGFile(fileData)) {
-                return await this.createPreviewFromPNGData(fileData);
-            } else {
-                // Show a generic binary file placeholder
-                this.renderBinaryPlaceholder(ctx, filename);
-            }
-        } catch (error) {
-            console.error('Error rendering preview:', error);
-            this.renderBinaryPlaceholder(ctx, filename);
-        }
-
-        return {
-            dataUrl: canvas.toDataURL(),
-            sizeText: `${(fileData.length / 1024).toFixed(1)}KB (${this.getFileType(fileData)})`
-        };
     }
 
     // Check if binary data is a PNG file (magic number: 89 50 4E 47 0D 0A 1A 0A)

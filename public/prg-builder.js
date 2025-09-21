@@ -553,11 +553,11 @@ class SIDwinderPRGExporter {
                         const result = await converter.convertPNGToC64(file);
                         fileData = result.data;
 
-                        // Verify standard KOA structure
+                        // Verify standard C64 bitmap structure
                         if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                            // Valid KOA format detected
+                            // Valid format detected
                         } else {
-                            console.warn('Unexpected KOA format - this may cause issues');
+                            console.warn('Unexpected C64 image format - this may cause issues');
                         }
                     } catch (pngError) {
                         console.error('PNG conversion failed:', pngError);
@@ -601,9 +601,9 @@ class SIDwinderPRGExporter {
                             fileData = result.data;
 
                             if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                                console.log('Default PNG converted to valid KOA format');
+                                console.log('Default PNG converted to valid C64 image format');
                             } else {
-                                console.warn('Default PNG conversion resulted in unexpected KOA format');
+                                console.warn('Default PNG conversion resulted in unexpected C64 image format');
                             }
                         } catch (pngError) {
                             console.error('Default PNG conversion failed:', pngError);

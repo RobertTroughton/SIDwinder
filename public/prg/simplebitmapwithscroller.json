@@ -34,13 +34,35 @@
 
   "inputs": [
     {
-      "id": "koala",
-      "label": "Image File",
+      "id": "bitmap-input",
+      "label": "Bitmap Image",
       "type": "file",
-      "accept": ".png,.koa,.kla",
+      "accept": ".png",
       "required": false,
-      "default": "prg/default-picture.png",
-      "description": "C64 Koala format image (10001 bytes)",
+      "default": "PNG/Bitmaps/0-default.png",
+      "description": "C64 format PNG image",
+      "gallery": [
+        {
+          "name": "Joke Face (by Pal)",
+          "file": "PNG/Bitmaps/Pal-JokeFace.png"
+        },
+        {
+          "name": "Hawkeye (by Robin Levy)",
+          "file": "PNG/Bitmaps/RobinLevy-Hawkeye.png"
+        },
+        {
+          "name": "Crow (by Jon Egg)",
+          "file": "PNG/Bitmaps/jonegg-crow.png"
+        },
+        {
+          "name": "Riders (by Razorback)",
+          "file": "PNG/Bitmaps/razorback-riders.png"
+        },
+        {
+          "name": "Zebra (by redcrab)",
+          "file": "PNG/Bitmaps/redcrab-Zebra.png"
+        }
+      ],
       "memory": {
         "bank4000": [
           {

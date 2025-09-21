@@ -1,5 +1,4 @@
 ﻿// png-converter.js - JavaScript interface for PNG to C64 conversion
-
 class PNGConverter {
     constructor(wasmModule) {
         this.Module = wasmModule;
@@ -27,29 +26,23 @@ class PNGConverter {
             throw new Error('PNG converter not initialized');
         }
 
-        // Validate file type
         if (!file.type.startsWith('image/png')) {
             throw new Error('File must be a PNG image');
         }
 
         try {
-            // Load and decode PNG using Canvas API
             const imageData = await this.loadPNGImageData(file);
 
-            // Validate dimensions
             if (!((imageData.width === 320 && imageData.height === 200) || (imageData.width === 384 && imageData.height === 272))) {
                 throw new Error(`Image must be 320x200 pixels (got ${imageData.width}x${imageData.height})`);
             }
 
-            // Allocate memory for image data
-            const dataSize = imageData.width * imageData.height * 4; // RGBA
+            const dataSize = imageData.width * imageData.height * 4;
             const dataPtr = this.Module._malloc(dataSize);
 
             try {
-                // Copy image data to WASM memory
                 this.Module.HEAPU8.set(imageData.data, dataPtr);
 
-                // Set image data in converter
                 const setResult = this.Module.ccall(
                     'png_converter_set_image',
                     'number',
@@ -61,7 +54,6 @@ class PNGConverter {
                     throw new Error('Failed to set image data in converter');
                 }
 
-                // Convert the image
                 const convertResult = this.Module.ccall(
                     'png_converter_convert',
                     'number',
@@ -73,7 +65,6 @@ class PNGConverter {
                     throw new Error('Image contains too many colors per 8x8 character cell (max 4 colors allowed)');
                 }
 
-                // Get the selected background color
                 const backgroundColor = this.Module.ccall(
                     'png_converter_get_background_color',
                     'number',
@@ -81,7 +72,6 @@ class PNGConverter {
                     []
                 );
 
-                // Get color matching statistics
                 const exactPtr = this.Module._malloc(4);
                 const distancePtr = this.Module._malloc(4);
 
@@ -96,41 +86,39 @@ class PNGConverter {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
                 }
-                const koalaSize = 10003; // Standard KOA file size
-                const koalaPtr = this.Module._malloc(koalaSize);
+                const c64BitmapSize = 10003;
+                const bitmapPtr = this.Module._malloc(c64BitmapSize);
 
                 try {
                     const actualSize = this.Module.ccall(
-                        'png_converter_create_koala',
+                        'png_converter_create_c64_bitmap',
                         'number',
                         ['number'],
-                        [koalaPtr]
+                        [bitmapPtr]
                     );
 
-                    // Copy result to JavaScript array
-                    const koalaData = new Uint8Array(actualSize);
-                    koalaData.set(this.Module.HEAPU8.subarray(koalaPtr, koalaPtr + actualSize));
+                    const bitmapData = new Uint8Array(actualSize);
+                    bitmapData.set(this.Module.HEAPU8.subarray(bitmapPtr, bitmapPtr + actualSize));
 
-                    // Verify structure
                     if (actualSize !== 10003) {
-                        console.warn(`Unexpected KOA file size: ${actualSize} (should be 10003)`);
+                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10003)`);
                     }
-                    if (koalaData[0] !== 0x00 || koalaData[1] !== 0x60) {
-                        console.warn(`Unexpected load address: ${koalaData[1].toString(16)}${koalaData[0].toString(16)} (should be $6000)`);
+                    if (bitmapData[0] !== 0x00 || bitmapData[1] !== 0x60) {
+                        console.warn(`Unexpected load address: ${bitmapData[1].toString(16)}${bitmapData[0].toString(16)} (should be $6000)`);
                     }
 
                     return {
                         success: true,
-                        data: koalaData,
+                        data: bitmapData,
                         backgroundColor: backgroundColor,
                         backgroundColorName: this.getColorName(backgroundColor),
-                        format: 'KOA',
+                        format: 'C64_BITMAP',
                         width: 320,
                         height: 200
                     };
 
                 } finally {
-                    this.Module._free(koalaPtr);
+                    this.Module._free(bitmapPtr);
                 }
 
             } finally {
@@ -149,17 +137,14 @@ class PNGConverter {
 
             img.onload = () => {
                 try {
-                    // Create canvas to get image data
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
                     canvas.width = img.width;
                     canvas.height = img.height;
 
-                    // Draw image to canvas
                     ctx.drawImage(img, 0, 0);
 
-                    // Get image data (RGBA)
                     const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
                     resolve(imageData);
@@ -173,11 +158,9 @@ class PNGConverter {
                 reject(new Error('Failed to load PNG image'));
             };
 
-            // Create object URL and load image
             const url = URL.createObjectURL(file);
             img.src = url;
 
-            // Clean up URL when done
             img.onload = (originalOnLoad => function (...args) {
                 URL.revokeObjectURL(url);
                 return originalOnLoad.apply(this, args);
@@ -200,7 +183,6 @@ class PNGConverter {
         return colorNames[colorIndex] || 'Unknown';
     }
 
-    // Get individual component data (for advanced users)
     async getComponentData() {
         if (!this.initialized) {
             throw new Error('PNG converter not initialized');
@@ -211,25 +193,22 @@ class PNGConverter {
         const colPtr = this.Module._malloc(1000);
 
         try {
-            // Get bitmap data
             this.Module.ccall('png_converter_get_map_data', 'number', ['number'], [mapPtr]);
             const mapData = new Uint8Array(8000);
             mapData.set(this.Module.HEAPU8.subarray(mapPtr, mapPtr + 8000));
 
-            // Get screen memory
             this.Module.ccall('png_converter_get_scr_data', 'number', ['number'], [scrPtr]);
             const scrData = new Uint8Array(1000);
             scrData.set(this.Module.HEAPU8.subarray(scrPtr, scrPtr + 1000));
 
-            // Get color memory
             this.Module.ccall('png_converter_get_col_data', 'number', ['number'], [colPtr]);
             const colData = new Uint8Array(1000);
             colData.set(this.Module.HEAPU8.subarray(colPtr, colPtr + 1000));
 
             return {
-                bitmap: mapData,    // 8000 bytes - bitmap data
-                screen: scrData,    // 1000 bytes - screen memory
-                color: colData,     // 1000 bytes - color memory
+                bitmap: mapData,
+                screen: scrData,
+                color: colData,
                 background: this.Module.ccall('png_converter_get_background_color', 'number', [], [])
             };
 
@@ -248,5 +227,4 @@ class PNGConverter {
     }
 }
 
-// Export for global use
 window.PNGConverter = PNGConverter;

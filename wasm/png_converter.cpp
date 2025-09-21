@@ -14,12 +14,6 @@ struct C64Palette {
     uint32_t colors[16]; // RGB values as 0xRRGGBB
 };
 
-// Color names for reference
-static const char* COLOR_NAMES[16] = {
-    "Black", "White", "Red", "Cyan", "Purple", "Green", "Blue", "Yellow",
-    "Orange", "Brown", "Light Red", "Dark Grey", "Grey", "Light Green", "Light Blue", "Light Grey"
-};
-
 // Available C64 Palettes - Easy to copy/paste new ones here
 // Put your preferred palette first as it will be the default
 static const C64Palette AVAILABLE_PALETTES[] = {
@@ -504,28 +498,28 @@ public:
         return true;
     }
 
-    // Create KOA-compatible file data
-    std::vector<uint8_t> createKoalaFile() {
-        std::vector<uint8_t> koalaData;
-        koalaData.reserve(10003); // Standard Koala file size
+    // Create C64-compatible file data
+    std::vector<uint8_t> createC64BitmapFile() {
+        std::vector<uint8_t> bitmapData;
+        bitmapData.reserve(10003); // Standard C64 bitmap file size
 
         // Load address (0x6000) - little endian
-        koalaData.push_back(0x00);
-        koalaData.push_back(0x60);
+        bitmapData.push_back(0x00);
+        bitmapData.push_back(0x60);
 
         // Bitmap data (8000 bytes) - starts at offset 2
-        koalaData.insert(koalaData.end(), mapData.begin(), mapData.end());
+        bitmapData.insert(bitmapData.end(), mapData.begin(), mapData.end());
 
         // Screen memory (1000 bytes) - starts at offset 8002  
-        koalaData.insert(koalaData.end(), scrData.begin(), scrData.end());
+        bitmapData.insert(bitmapData.end(), scrData.begin(), scrData.end());
 
         // Color memory (1000 bytes) - starts at offset 9002
-        koalaData.insert(koalaData.end(), colData.begin(), colData.end());
+        bitmapData.insert(bitmapData.end(), colData.begin(), colData.end());
 
         // Background color (1 byte) - at offset 10002
-        koalaData.push_back(backgroundColor);
+        bitmapData.push_back(backgroundColor);
 
-        return koalaData;
+        return bitmapData;
     }
 
     // Get individual components
@@ -566,15 +560,15 @@ extern "C" {
         return converter->convert() ? 1 : 0;
     }
 
-    // Create Koala file
-    int png_converter_create_koala(uint8_t* output) {
+    // Create c64 bitmap file
+    int png_converter_create_c64_bitmap(uint8_t* output) {
         if (!converter) return 0;
 
-        auto koalaData = converter->createKoalaFile();
-        for (size_t i = 0; i < koalaData.size(); i++) {
-            output[i] = koalaData[i];
+        auto c64BitmapData = converter->createC64BitmapFile();
+        for (size_t i = 0; i < c64BitmapData.size(); i++) {
+            output[i] = c64BitmapData[i];
         }
-        return koalaData.size();
+        return c64BitmapData.size();
     }
 
     // Get background color that was selected
