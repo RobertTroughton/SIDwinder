@@ -537,8 +537,8 @@ class SIDwinderPRGExporter {
                 // Check if this is a PNG file that needs conversion
                 if (file.type === 'image/png' && file.name.toLowerCase().endsWith('.png')) {
                     // Check for PNG converter availability
-                    if (typeof EnhancedImageLoader === 'undefined') {
-                        console.error('EnhancedImageLoader not available');
+                    if (typeof PNGConverter === 'undefined') {
+                        console.error('PNGConverter not available');
                         throw new Error('PNG converter not loaded. Please refresh the page and try again.');
                     }
 
@@ -548,13 +548,14 @@ class SIDwinderPRGExporter {
                     }
 
                     try {
-                        const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
-                        const result = await enhancedLoader.loadImageFile(file);
+                        const converter = new PNGConverter(window.SIDwinderModule);
+                        converter.init();
+                        const result = await converter.convertPNGToC64(file);
                         fileData = result.data;
 
                         // Verify standard KOA structure
                         if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                            //;                            console.log('Valid KOA format detected');
+                            // Valid KOA format detected
                         } else {
                             console.warn('Unexpected KOA format - this may cause issues');
                         }
@@ -579,8 +580,8 @@ class SIDwinderPRGExporter {
                     // Check if the default file is a PNG that needs conversion
                     if (inputConfig.default.toLowerCase().endsWith('.png') && this.isPNGFile(rawFileData)) {
                         // Check for PNG converter availability
-                        if (typeof EnhancedImageLoader === 'undefined') {
-                            console.error('EnhancedImageLoader not available');
+                        if (typeof PNGConverter === 'undefined') {
+                            console.error('PNGConverter not available');
                             throw new Error('PNG converter not loaded. Please refresh the page and try again.');
                         }
 
@@ -594,11 +595,11 @@ class SIDwinderPRGExporter {
                             const blob = new Blob([rawFileData], { type: 'image/png' });
                             const file = new File([blob], inputConfig.default.split('/').pop(), { type: 'image/png' });
 
-                            const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
-                            const result = await enhancedLoader.loadImageFile(file);
+                            const converter = new PNGConverter(window.SIDwinderModule);
+                            converter.init();
+                            const result = await converter.convertPNGToC64(file);
                             fileData = result.data;
 
-                            // Verify standard KOA structure
                             if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
                                 console.log('Default PNG converted to valid KOA format');
                             } else {
@@ -609,7 +610,7 @@ class SIDwinderPRGExporter {
                             throw new Error(`Default PNG conversion failed: ${pngError.message}`);
                         }
                     } else {
-                        // Use the raw file data (for .koa, .kla, or other binary files)
+                        // Use the raw file data for other binary files
                         fileData = rawFileData;
                     }
                 } catch (defaultError) {
@@ -626,17 +627,14 @@ class SIDwinderPRGExporter {
                     const targetAddress = parseInt(memConfig.targetAddress);
                     const size = parseInt(memConfig.size);
 
-                    // Handle Koala file structure - skip load address if present
-                    let adjustedOffset = sourceOffset;
-
                     // Bounds checking
-                    if (adjustedOffset >= fileData.length) {
-                        console.warn(`Offset ${adjustedOffset} exceeds file size ${fileData.length} for component ${memConfig.name}`);
+                    if (sourceOffset >= fileData.length) {
+                        console.warn(`Offset ${sourceOffset} exceeds file size ${fileData.length} for component ${memConfig.name}`);
                         continue;
                     }
 
-                    const endOffset = Math.min(adjustedOffset + size, fileData.length);
-                    const data = fileData.slice(adjustedOffset, endOffset);
+                    const endOffset = Math.min(sourceOffset + size, fileData.length);
+                    const data = fileData.slice(sourceOffset, endOffset);
 
                     if (data.length === 0) {
                         console.warn(`No data extracted for component ${memConfig.name}`);

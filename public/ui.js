@@ -935,46 +935,45 @@ class UIController {
     }
 
     createFileInputHTML(config) {
-        // Check if this is an image input that should use preview
+        // Check if this is an image input that should use preview - PNG only now
         const isImageInput = config.accept && (
             config.accept.includes('image/') ||
-            config.accept.includes('.png') ||
-            config.accept.includes('.koa')
+            config.accept.includes('.png')
         );
 
         if (isImageInput) {
             // Create a container for the image preview
             return `
-            <div class="option-row option-row-full">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <div id="${config.id}-preview-container" class="image-input-container">
-                        <!-- Preview will be inserted here -->
-                    </div>
+        <div class="option-row option-row-full">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <div id="${config.id}-preview-container" class="image-input-container">
+                    <!-- Preview will be inserted here -->
                 </div>
             </div>
-        `;
+        </div>
+    `;
         } else {
             // Use traditional file input for non-image files
             return `
-            <div class="option-row">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <input type="file" 
-                           id="${config.id}" 
-                           accept="${config.accept}" 
-                           style="display: none;">
-                    <button type="button" 
-                            class="file-button" 
-                            data-file-input="${config.id}">
-                        Choose File
-                    </button>
-                    <span class="file-status" id="${config.id}-status">
-                        ${config.default ? 'Using default' : 'No file selected'}
-                    </span>
-                </div>
+        <div class="option-row">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="file" 
+                       id="${config.id}" 
+                       accept="${config.accept}" 
+                       style="display: none;">
+                <button type="button" 
+                        class="file-button" 
+                        data-file-input="${config.id}">
+                    Choose File
+                </button>
+                <span class="file-status" id="${config.id}-status">
+                    ${config.default ? 'Using default' : 'No file selected'}
+                </span>
             </div>
-        `;
+        </div>
+    `;
         }
     }
 
@@ -1098,8 +1097,7 @@ class UIController {
             config.inputs.forEach(inputConfig => {
                 const isImageInput = inputConfig.accept && (
                     inputConfig.accept.includes('image/') ||
-                    inputConfig.accept.includes('.png') ||
-                    inputConfig.accept.includes('.koa')
+                    inputConfig.accept.includes('.png')
                 );
 
                 if (isImageInput) {
@@ -1124,7 +1122,7 @@ class UIController {
             });
         });
 
-        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"]):not([accept*=".koa"])').forEach(input => {
+        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"])').forEach(input => {
             input.addEventListener('change', (e) => {
                 const statusEl = document.getElementById(`${e.target.id}-status`);
                 if (statusEl && e.target.files.length > 0) {

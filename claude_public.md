@@ -3438,9 +3438,14 @@ window.hvscBrowser = (function () {
     let currentSelection = null;
     let entries = [];
 
-    window.onload = function() {
-        fetchDirectory('C64Music');
-    };
+    let hvscInitialized = false;
+
+    function initializeHVSC() {
+        if (!hvscInitialized) {
+            fetchDirectory('C64Music');
+            hvscInitialized = true;
+        }
+    }
 
     async function fetchDirectory(path) {
         
@@ -3944,10 +3949,6 @@ class ImagePreviewManager {
             
             if (this.isPNGFile(fileData)) {
                 return await this.createPreviewFromPNGData(fileData);
-            }
-            
-            else if (this.isKoalaFile(fileData)) {
-                await this.renderKoalaPreview(ctx, fileData);
             } else {
                 
                 this.renderBinaryPlaceholder(ctx, filename);
@@ -3967,80 +3968,6 @@ class ImagePreviewManager {
         if (data.length < 8) return false;
         return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
-    }
-
-    isKoalaFile(data) {
-        return data.length === 10003 && data[0] === 0x00 && data[1] === 0x60;
-    }
-
-    async renderKoalaPreview(ctx, koalaData) {
-        
-        const palette = [
-            [0x00, 0x00, 0x00], 
-            [0xFF, 0xFF, 0xFF], 
-            [0x75, 0x3D, 0x3D], 
-            [0x7B, 0xB4, 0xB4], 
-            [0x7D, 0x44, 0x88], 
-            [0x5C, 0x98, 0x5C], 
-            [0x34, 0x33, 0x83], 
-            [0xCB, 0xCC, 0x7C], 
-            [0x7C, 0x55, 0x2F], 
-            [0x52, 0x3E, 0x00], 
-            [0xA7, 0x6F, 0x6F], 
-            [0x4E, 0x4E, 0x4E], 
-            [0x76, 0x76, 0x76], 
-            [0x9F, 0xDB, 0x9F], 
-            [0x6D, 0x6C, 0xBC], 
-            [0xA3, 0xA3, 0xA3]  
-        ];
-
-        const mapData = koalaData.slice(2, 8002);      
-        const scrData = koalaData.slice(8002, 9002);   
-        const colData = koalaData.slice(9002, 10002);  
-        const bgColor = koalaData[10002];              
-
-        const imageData = ctx.createImageData(320, 200);
-        const pixels = imageData.data;
-
-        for (let charY = 0; charY < 25; charY++) {
-            for (let charX = 0; charX < 40; charX++) {
-                const screenIndex = charY * 40 + charX;
-                const scrByte = scrData[screenIndex];
-                const colByte = colData[screenIndex];
-
-                const color1 = (scrByte >> 4) & 0x0F;
-                const color2 = scrByte & 0x0F;
-                const color3 = colByte & 0x0F;
-                const colors = [bgColor, color1, color2, color3];
-
-                for (let y = 0; y < 8; y++) {
-                    const bitmapIndex = screenIndex * 8 + y;
-                    const bitmapByte = mapData[bitmapIndex];
-
-                    for (let x = 0; x < 8; x += 2) {
-                        const pixelX = charX * 8 + x;
-                        const pixelY = charY * 8 + y;
-
-                        const colorIndex = (bitmapByte >> (6 - x)) & 0x03;
-                        const colorValue = colors[colorIndex] & 0x0F;
-                        const rgb = palette[colorValue];
-
-                        for (let px = 0; px < 2; px++) {
-                            const finalX = pixelX + px;
-                            if (finalX < 320 && pixelY < 200) {
-                                const pixelIndex = (pixelY * 320 + finalX) * 4;
-                                pixels[pixelIndex] = rgb[0];     
-                                pixels[pixelIndex + 1] = rgb[1]; 
-                                pixels[pixelIndex + 2] = rgb[2]; 
-                                pixels[pixelIndex + 3] = 255;    
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
     }
 
     renderBinaryPlaceholder(ctx, filename) {
@@ -4076,9 +4003,6 @@ class ImagePreviewManager {
     getFileType(data) {
         if (this.isPNGFile(data)) {
             return 'PNG';
-        }
-        if (this.isKoalaFile(data)) {
-            return 'Koala';
         }
         return 'Binary';
     }
@@ -4343,80 +4267,7 @@ class PNGConverter {
     }
 }
 
-class EnhancedImageLoader {
-    constructor(wasmModule) {
-        this.pngConverter = new PNGConverter(wasmModule);
-        this.pngConverter.init();
-    }
-
-    async loadImageFile(file) {
-        const fileName = file.name.toLowerCase();
-
-        if (fileName.endsWith('.png')) {
-            return await this.loadPNG(file);
-        } else if (fileName.endsWith('.koa') || fileName.endsWith('.kla')) {
-            return await this.loadKoala(file);
-        } else {
-            throw new Error('Unsupported file format. Please use PNG, KOA, or KLA files.');
-        }
-    }
-
-    async loadPNG(file) {
-        try {
-            const result = await this.pngConverter.convertPNGToC64(file);
-            return result;
-
-        } catch (error) {
-            console.error('PNG loading failed:', error.message);
-            throw new Error(`PNG conversion failed: ${error.message}`);
-        }
-    }
-
-    async loadKoala(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-
-                    if (data.length < 10003) {
-                        throw new Error('Invalid Koala file: too small');
-                    }
-
-                    const loadAddr = data[0] | (data[1] << 8);
-                    if (loadAddr !== 0x6000) {
-                        console.warn(`Unusual Koala load address: $${loadAddr.toString(16).toUpperCase()}`);
-                    }
-
-                    resolve({
-                        success: true,
-                        data: data,
-                        format: file.name.toLowerCase().endsWith('.koa') ? 'KOA' : 'KLA',
-                        width: 320,
-                        height: 200
-                    });
-
-                } catch (error) {
-                    reject(new Error(`Failed to load Koala file: ${error.message}`));
-                }
-            };
-
-            reader.onerror = () => {
-                reject(new Error('Failed to read file'));
-            };
-
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    cleanup() {
-        this.pngConverter.cleanup();
-    }
-}
-
 window.PNGConverter = PNGConverter;
-window.EnhancedImageLoader = EnhancedImageLoader;
 ```
 
 
@@ -4939,8 +4790,8 @@ class SIDwinderPRGExporter {
 
                 if (file.type === 'image/png' && file.name.toLowerCase().endsWith('.png')) {
                     
-                    if (typeof EnhancedImageLoader === 'undefined') {
-                        console.error('EnhancedImageLoader not available');
+                    if (typeof PNGConverter === 'undefined') {
+                        console.error('PNGConverter not available');
                         throw new Error('PNG converter not loaded. Please refresh the page and try again.');
                     }
 
@@ -4950,8 +4801,9 @@ class SIDwinderPRGExporter {
                     }
 
                     try {
-                        const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
-                        const result = await enhancedLoader.loadImageFile(file);
+                        const converter = new PNGConverter(window.SIDwinderModule);
+                        converter.init();
+                        const result = await converter.convertPNGToC64(file);
                         fileData = result.data;
 
                         if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
@@ -4979,8 +4831,8 @@ class SIDwinderPRGExporter {
 
                     if (inputConfig.default.toLowerCase().endsWith('.png') && this.isPNGFile(rawFileData)) {
                         
-                        if (typeof EnhancedImageLoader === 'undefined') {
-                            console.error('EnhancedImageLoader not available');
+                        if (typeof PNGConverter === 'undefined') {
+                            console.error('PNGConverter not available');
                             throw new Error('PNG converter not loaded. Please refresh the page and try again.');
                         }
 
@@ -4994,8 +4846,9 @@ class SIDwinderPRGExporter {
                             const blob = new Blob([rawFileData], { type: 'image/png' });
                             const file = new File([blob], inputConfig.default.split('/').pop(), { type: 'image/png' });
 
-                            const enhancedLoader = new EnhancedImageLoader(window.SIDwinderModule);
-                            const result = await enhancedLoader.loadImageFile(file);
+                            const converter = new PNGConverter(window.SIDwinderModule);
+                            converter.init();
+                            const result = await converter.convertPNGToC64(file);
                             fileData = result.data;
 
                             if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
@@ -5025,15 +4878,13 @@ class SIDwinderPRGExporter {
                     const targetAddress = parseInt(memConfig.targetAddress);
                     const size = parseInt(memConfig.size);
 
-                    let adjustedOffset = sourceOffset;
-
-                    if (adjustedOffset >= fileData.length) {
-                        console.warn(`Offset ${adjustedOffset} exceeds file size ${fileData.length} for component ${memConfig.name}`);
+                    if (sourceOffset >= fileData.length) {
+                        console.warn(`Offset ${sourceOffset} exceeds file size ${fileData.length} for component ${memConfig.name}`);
                         continue;
                     }
 
-                    const endOffset = Math.min(adjustedOffset + size, fileData.length);
-                    const data = fileData.slice(adjustedOffset, endOffset);
+                    const endOffset = Math.min(sourceOffset + size, fileData.length);
+                    const data = fileData.slice(sourceOffset, endOffset);
 
                     if (data.length === 0) {
                         console.warn(`No data extracted for component ${memConfig.name}`);
@@ -5799,8 +5650,10 @@ class UIController {
         const modal = document.getElementById('hvscModal');
         modal.classList.add('visible');
 
-        if (!window.hvscBrowserInitialized) {
-            hvscBrowser.fetchDirectory('');
+        if (typeof hvscBrowser.initializeHVSC === 'function') {
+            hvscBrowser.initializeHVSC();
+        } else if (!window.hvscBrowserInitialized) {
+            hvscBrowser.fetchDirectory('C64Music');
             window.hvscBrowserInitialized = true;
         }
     }
@@ -6522,43 +6375,42 @@ class UIController {
         
         const isImageInput = config.accept && (
             config.accept.includes('image/') ||
-            config.accept.includes('.png') ||
-            config.accept.includes('.koa')
+            config.accept.includes('.png')
         );
 
         if (isImageInput) {
             
             return `
-            <div class="option-row option-row-full">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <div id="${config.id}-preview-container" class="image-input-container">
-                        <!-- Preview will be inserted here -->
-                    </div>
+        <div class="option-row option-row-full">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <div id="${config.id}-preview-container" class="image-input-container">
+                    <!-- Preview will be inserted here -->
                 </div>
             </div>
-        `;
+        </div>
+    `;
         } else {
             
             return `
-            <div class="option-row">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <input type="file" 
-                           id="${config.id}" 
-                           accept="${config.accept}" 
-                           style="display: none;">
-                    <button type="button" 
-                            class="file-button" 
-                            data-file-input="${config.id}">
-                        Choose File
-                    </button>
-                    <span class="file-status" id="${config.id}-status">
-                        ${config.default ? 'Using default' : 'No file selected'}
-                    </span>
-                </div>
+        <div class="option-row">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="file" 
+                       id="${config.id}" 
+                       accept="${config.accept}" 
+                       style="display: none;">
+                <button type="button" 
+                        class="file-button" 
+                        data-file-input="${config.id}">
+                    Choose File
+                </button>
+                <span class="file-status" id="${config.id}-status">
+                    ${config.default ? 'Using default' : 'No file selected'}
+                </span>
             </div>
-        `;
+        </div>
+    `;
         }
     }
 
@@ -6681,8 +6533,7 @@ class UIController {
             config.inputs.forEach(inputConfig => {
                 const isImageInput = inputConfig.accept && (
                     inputConfig.accept.includes('image/') ||
-                    inputConfig.accept.includes('.png') ||
-                    inputConfig.accept.includes('.koa')
+                    inputConfig.accept.includes('.png')
                 );
 
                 if (isImageInput) {
@@ -6705,10 +6556,10 @@ class UIController {
             });
         });
 
-        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"]):not([accept*=".koa"])').forEach(input => {
+        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"])').forEach(input => {
             input.addEventListener('change', (e) => {
                 const statusEl = document.getElementById(`${e.target.id}-status`);
-                if (e.target.files.length > 0) {
+                if (statusEl && e.target.files.length > 0) {
                     statusEl.textContent = e.target.files[0].name;
                     statusEl.classList.add('has-file');
                 }

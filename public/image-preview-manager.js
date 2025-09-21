@@ -256,10 +256,6 @@ class ImagePreviewManager {
             // Check if this is a PNG file by magic number
             if (this.isPNGFile(fileData)) {
                 return await this.createPreviewFromPNGData(fileData);
-            }
-            // Check if this looks like a Koala file
-            else if (this.isKoalaFile(fileData)) {
-                await this.renderKoalaPreview(ctx, fileData);
             } else {
                 // Show a generic binary file placeholder
                 this.renderBinaryPlaceholder(ctx, filename);
@@ -280,88 +276,6 @@ class ImagePreviewManager {
         if (data.length < 8) return false;
         return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
-    }
-
-    // Check if binary data is a Koala file
-    isKoalaFile(data) {
-        return data.length === 10003 && data[0] === 0x00 && data[1] === 0x60;
-    }
-
-    // Render Koala file as preview image
-    async renderKoalaPreview(ctx, koalaData) {
-        // C64 color palette (same as in png_converter.cpp)
-        const palette = [
-            [0x00, 0x00, 0x00], // Black
-            [0xFF, 0xFF, 0xFF], // White  
-            [0x75, 0x3D, 0x3D], // Red
-            [0x7B, 0xB4, 0xB4], // Cyan
-            [0x7D, 0x44, 0x88], // Purple
-            [0x5C, 0x98, 0x5C], // Green
-            [0x34, 0x33, 0x83], // Blue
-            [0xCB, 0xCC, 0x7C], // Yellow
-            [0x7C, 0x55, 0x2F], // Orange
-            [0x52, 0x3E, 0x00], // Brown
-            [0xA7, 0x6F, 0x6F], // Light Red
-            [0x4E, 0x4E, 0x4E], // Dark Grey
-            [0x76, 0x76, 0x76], // Grey
-            [0x9F, 0xDB, 0x9F], // Light Green
-            [0x6D, 0x6C, 0xBC], // Light Blue
-            [0xA3, 0xA3, 0xA3]  // Light Grey
-        ];
-
-        // Extract data sections
-        const mapData = koalaData.slice(2, 8002);      // Bitmap data
-        const scrData = koalaData.slice(8002, 9002);   // Screen memory  
-        const colData = koalaData.slice(9002, 10002);  // Color memory
-        const bgColor = koalaData[10002];              // Background color
-
-        // Render the bitmap
-        const imageData = ctx.createImageData(320, 200);
-        const pixels = imageData.data;
-
-        for (let charY = 0; charY < 25; charY++) {
-            for (let charX = 0; charX < 40; charX++) {
-                const screenIndex = charY * 40 + charX;
-                const scrByte = scrData[screenIndex];
-                const colByte = colData[screenIndex];
-
-                // Extract colors for this character cell
-                const color1 = (scrByte >> 4) & 0x0F;
-                const color2 = scrByte & 0x0F;
-                const color3 = colByte & 0x0F;
-                const colors = [bgColor, color1, color2, color3];
-
-                // Render 8x8 character cell
-                for (let y = 0; y < 8; y++) {
-                    const bitmapIndex = screenIndex * 8 + y;
-                    const bitmapByte = mapData[bitmapIndex];
-
-                    for (let x = 0; x < 8; x += 2) {
-                        const pixelX = charX * 8 + x;
-                        const pixelY = charY * 8 + y;
-
-                        // Extract 2-bit color index
-                        const colorIndex = (bitmapByte >> (6 - x)) & 0x03;
-                        const colorValue = colors[colorIndex] & 0x0F;
-                        const rgb = palette[colorValue];
-
-                        // Set both pixels in the pair (multicolor mode)
-                        for (let px = 0; px < 2; px++) {
-                            const finalX = pixelX + px;
-                            if (finalX < 320 && pixelY < 200) {
-                                const pixelIndex = (pixelY * 320 + finalX) * 4;
-                                pixels[pixelIndex] = rgb[0];     // R
-                                pixels[pixelIndex + 1] = rgb[1]; // G
-                                pixels[pixelIndex + 2] = rgb[2]; // B
-                                pixels[pixelIndex + 3] = 255;    // A
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
     }
 
     // Render placeholder for binary files
@@ -401,9 +315,6 @@ class ImagePreviewManager {
     getFileType(data) {
         if (this.isPNGFile(data)) {
             return 'PNG';
-        }
-        if (this.isKoalaFile(data)) {
-            return 'Koala';
         }
         return 'Binary';
     }
