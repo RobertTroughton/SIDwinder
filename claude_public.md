@@ -3177,6 +3177,161 @@ body {
     .file-list::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
+
+.image-preview-drop-zone {
+    position: relative;
+    transition: all 0.3s ease;
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+    .image-preview-drop-zone.drag-active {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+        transform: scale(1.02);
+    }
+
+.preview-overlay-content {
+    text-align: center;
+}
+
+    .preview-overlay-content i {
+        font-size: 24px;
+        margin-bottom: 8px;
+        opacity: 0.8;
+    }
+
+.image-gallery-toggle {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.gallery-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+    .gallery-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .gallery-btn.active {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+.image-gallery-panel {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.gallery-item {
+    cursor: pointer;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    background: white;
+    border: 2px solid #e0e0e0;
+}
+
+    .gallery-item:hover {
+        background: rgba(102, 126, 234, 0.1);
+        transform: scale(1.05);
+        border-color: #667eea;
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 320/200;
+        object-fit: contain;
+        border-radius: 4px;
+        background: #000;
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: pixelated;
+    }
+
+.gallery-item-name {
+    font-size: 0.8em;
+    color: #495057;
+    display: block;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.text-drop-zone {
+    position: relative;
+}
+
+.text-drop-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(102, 126, 234, 0.95);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.text-drop-zone.drag-active .text-drop-indicator {
+    opacity: 1;
+}
+
+.text-drop-zone.drag-active textarea {
+    opacity: 0.3;
+}
+
+.text-preset-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.preset-label {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.preset-btn {
+    padding: 4px 10px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .preset-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
 ```
 
 
@@ -3726,26 +3881,52 @@ class ImagePreviewManager {
     createImagePreview(config) {
         const container = document.createElement('div');
         container.className = 'image-preview-container';
+
+        const hasGallery = config.gallery && config.gallery.length > 0;
+
         container.innerHTML = `
-            <div class="image-preview-wrapper" data-input-id="${config.id}">
-                <div class="image-preview-frame">
-                    <img class="image-preview-img" 
-                         src="" 
-                         alt="${config.label} preview"
-                         width="320" 
-                         height="200">
-                    <div class="image-preview-overlay">
-                        <div class="preview-click-hint">Click to change image</div>
+            <div class="image-preview-wrapper ${hasGallery ? 'with-gallery' : ''}" data-input-id="${config.id}">
+                <div class="image-preview-drop-zone">
+                    <div class="image-preview-frame">
+                        <img class="image-preview-img" 
+                             src="" 
+                             alt="${config.label} preview"
+                             width="320" 
+                             height="200">
+                        <div class="image-preview-overlay">
+                            <div class="preview-overlay-content">
+                                <i class="fas fa-upload"></i>
+                                <div class="preview-click-hint">Click to browse or drag image here</div>
+                            </div>
+                        </div>
+                        <div class="image-preview-loading">
+                            <div class="preview-spinner"></div>
+                            <div>Loading...</div>
+                        </div>
                     </div>
-                    <div class="image-preview-loading">
-                        <div class="preview-spinner"></div>
-                        <div>Loading...</div>
+                    <div class="image-preview-info">
+                        <span class="preview-filename">Loading default...</span>
+                        <span class="preview-size"></span>
                     </div>
                 </div>
-                <div class="image-preview-info">
-                    <span class="preview-filename">Loading default...</span>
-                    <span class="preview-size"></span>
-                </div>
+                ${hasGallery ? `
+                    <div class="image-gallery-toggle">
+                        <button type="button" class="gallery-btn">
+                            <i class="fas fa-images"></i>
+                            Choose from Gallery
+                        </button>
+                    </div>
+                    <div class="image-gallery-panel" style="display: none;">
+                        <div class="gallery-grid">
+                            ${config.gallery.map((item, index) => `
+                                <div class="gallery-item" data-file="${item.file}" data-name="${item.name}">
+                                    <img src="${item.file}" alt="${item.name}">
+                                    <span class="gallery-item-name">${item.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
             </div>
             <input type="file" 
                    id="${config.id}" 
@@ -3753,10 +3934,14 @@ class ImagePreviewManager {
                    style="display: none;">
         `;
 
+        this.attachDragDropHandlers(container, config);
+        this.attachGalleryHandlers(container, config);
+
         const wrapper = container.querySelector('.image-preview-wrapper');
         const fileInput = container.querySelector('input[type="file"]');
 
-        wrapper.addEventListener('click', () => {
+        const previewFrame = wrapper.querySelector('.image-preview-frame');
+        previewFrame.addEventListener('click', () => {
             fileInput.click();
         });
 
@@ -3765,6 +3950,69 @@ class ImagePreviewManager {
         });
 
         return container;
+    }
+
+    attachDragDropHandlers(container, config) {
+        const dropZone = container.querySelector('.image-preview-drop-zone');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-active');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (this.isValidImageFile(file, config)) {
+                    const fileInput = container.querySelector(`#${config.id}`);
+                    if (fileInput) {
+                        delete fileInput.dataset.gallerySelected;
+                        delete fileInput.dataset.galleryFile;
+                    }
+                    this.handleFileChange({ target: { files: [file] } }, config);
+                } else {
+                    this.showError(container, 'Please drop a valid image file');
+                }
+            }
+        });
+    }
+
+    attachGalleryHandlers(container, config) {
+        const toggleBtn = container.querySelector('.gallery-btn');
+        const galleryPanel = container.querySelector('.image-gallery-panel');
+
+        if (toggleBtn && galleryPanel) {
+            toggleBtn.addEventListener('click', () => {
+                const isVisible = galleryPanel.style.display !== 'none';
+                galleryPanel.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.classList.toggle('active', !isVisible);
+            });
+
+            container.querySelectorAll('.gallery-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const filename = item.dataset.file;
+                    const name = item.dataset.name;
+                    await this.loadGalleryImage(container, config, filename, name);
+                    galleryPanel.style.display = 'none';
+                    toggleBtn.classList.remove('active');
+                });
+            });
+        }
     }
 
     async loadDefaultImage(config) {
@@ -3777,7 +4025,6 @@ class ImagePreviewManager {
         const loadingDiv = wrapper.querySelector('.image-preview-loading');
 
         try {
-            
             loadingDiv.style.display = 'flex';
 
             if (config.default) {
@@ -3791,30 +4038,96 @@ class ImagePreviewManager {
                     return;
                 }
 
-                if (this.loadingPromises.has(config.default)) {
-                    await this.loadingPromises.get(config.default);
-                    return;
+                const fileData = await this.loadDefaultFile(config.default);
+
+                if (config.default.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+                    
+                    const preview = await this.createPreviewFromPNGData(fileData);
+                    this.previewCache.set(config.default, preview);
+
+                    img.src = preview.dataUrl;
+                    info.textContent = `Default: ${config.default.split('/').pop()}`;
+                    sizeInfo.textContent = preview.sizeText;
+                } else {
+                    
+                    const preview = await this.createPreviewFromData(fileData, config.default);
+                    this.previewCache.set(config.default, preview);
+
+                    img.src = preview.dataUrl;
+                    info.textContent = `Default: ${config.default.split('/').pop()}`;
+                    sizeInfo.textContent = preview.sizeText;
                 }
-
-                const loadPromise = this.loadDefaultFile(config.default);
-                this.loadingPromises.set(config.default, loadPromise);
-
-                const fileData = await loadPromise;
-                const preview = await this.createPreviewFromPNG(fileData, config.default);
-
-                this.previewCache.set(config.default, preview);
-
-                img.src = preview.dataUrl;
-                info.textContent = `Default: ${config.default.split('/').pop()}`;
-                sizeInfo.textContent = preview.sizeText;
-
-                this.loadingPromises.delete(config.default);
             }
         } catch (error) {
             console.error('Error loading default image:', error);
             info.textContent = 'Error loading default';
             sizeInfo.textContent = '';
+            this.showErrorPlaceholder(img);
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
 
+    async loadGalleryImage(container, config, filename, name) {
+        const wrapper = container.querySelector(`[data-input-id="${config.id}"]`);
+        if (!wrapper) return;
+
+        const img = wrapper.querySelector('.image-preview-img');
+        const info = wrapper.querySelector('.preview-filename');
+        const sizeInfo = wrapper.querySelector('.preview-size');
+        const loadingDiv = wrapper.querySelector('.image-preview-loading');
+
+        try {
+            loadingDiv.style.display = 'flex';
+
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`Failed to load gallery image: ${filename}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const fileData = new Uint8Array(arrayBuffer);
+
+            if (filename.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+                const preview = await this.createPreviewFromPNGData(fileData);
+
+                img.src = preview.dataUrl;
+                info.textContent = name;
+                sizeInfo.textContent = preview.sizeText;
+
+                const blob = new Blob([fileData], { type: 'image/png' });
+                const file = new File([blob], name + '.png', { type: 'image/png' });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                const fileInput = container.querySelector(`#${config.id}`);
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                    fileInput.dataset.gallerySelected = 'true';
+                    fileInput.dataset.galleryFile = filename;
+                }
+            } else {
+                const preview = await this.createPreviewFromData(fileData, name);
+
+                img.src = preview.dataUrl;
+                info.textContent = name;
+                sizeInfo.textContent = preview.sizeText;
+
+                const blob = new Blob([fileData], { type: 'application/octet-stream' });
+                const file = new File([blob], name, { type: 'application/octet-stream' });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                const fileInput = container.querySelector(`#${config.id}`);
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                }
+            }
+
+        } catch (error) {
+            console.error('Error loading gallery image:', error);
+            info.textContent = `Error: ${name}`;
+            sizeInfo.textContent = error.message;
             this.showErrorPlaceholder(img);
         } finally {
             loadingDiv.style.display = 'none';
@@ -3830,6 +4143,13 @@ class ImagePreviewManager {
 
     async handleFileChange(event, config) {
         const file = event.target.files[0];
+
+        const fileInput = event.target;
+        if (fileInput) {
+            delete fileInput.dataset.gallerySelected;
+            delete fileInput.dataset.galleryFile;
+        }
+
         const wrapper = document.querySelector(`[data-input-id="${config.id}"]`);
         if (!wrapper) return;
 
@@ -3914,12 +4234,12 @@ class ImagePreviewManager {
 
                 const dataUrl = canvas.toDataURL();
 
+                URL.revokeObjectURL(img.src);
+
                 resolve({
                     dataUrl: dataUrl,
                     sizeText: `${(pngData.length / 1024).toFixed(1)}KB (PNG)`
                 });
-
-                URL.revokeObjectURL(img.src);
             };
 
             img.onerror = () => {

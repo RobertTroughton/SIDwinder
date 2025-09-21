@@ -1095,21 +1095,22 @@ class UIController {
         // Set up image previews for image inputs
         if (config && config.inputs) {
             config.inputs.forEach(inputConfig => {
-                const isImageInput = inputConfig.accept && (
-                    inputConfig.accept.includes('image/') ||
-                    inputConfig.accept.includes('.png')
-                );
-
+                const isImageInput = inputConfig.accept && (inputConfig.accept.includes('image/') || inputConfig.accept.includes('.png'));
                 if (isImageInput) {
                     const container = document.getElementById(`${inputConfig.id}-preview-container`);
                     if (container) {
-                        // Create and insert the preview element
                         const previewElement = window.imagePreviewManager.createImagePreview(inputConfig);
                         container.appendChild(previewElement);
-
-                        // Load the default image
                         window.imagePreviewManager.loadDefaultImage(inputConfig);
                     }
+                }
+            });
+        }
+
+        if (config && config.options) {
+            config.options.forEach(optionConfig => {
+                if (optionConfig.type === 'textarea') {
+                    TextDropZone.create(optionConfig.id);
                 }
             });
         }
