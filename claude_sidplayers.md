@@ -1316,7 +1316,7 @@ PlayMusicWithAnalysis:
 ```
 
 ### FILE: SIDPlayers/INC/Spectrometer.asm
-*Original size: 6293 bytes, Cleaned: 3624 bytes (reduced by 42.4%)*
+*Original size: 7159 bytes, Cleaned: 3672 bytes (reduced by 48.7%)*
 ```asm
 #importonce
 .align NUM_FREQUENCY_BARS
@@ -1367,11 +1367,14 @@ AnalyzeFrequency:
     asl
     asl
     asl
-    ora sidRegisterMirror + (voice * 7) + 0
+    sta tempIndex + 1
+    lda sidRegisterMirror + (voice * 7) + 0
     lsr
     lsr
     lsr
     lsr
+tempIndex:
+    ora #$00
     tax
     lda FreqToBarLo, x
     tax
@@ -1382,7 +1385,7 @@ AnalyzeFrequency:
     sbc #$10
     asl
     asl
-    sta tempIndex + 1
+    sta tempIndex2 + 1
     lda sidRegisterMirror + (voice * 7) + 0
     lsr
     lsr
@@ -1390,7 +1393,7 @@ AnalyzeFrequency:
     lsr
     lsr
     lsr
-tempIndex:
+tempIndex2:
     ora #$00
     tax
     lda FreqToBarMid, x
