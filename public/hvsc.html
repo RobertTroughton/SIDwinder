@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVSC SID Browser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .browser-container {
+            background: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .browser-header {
+            background: #2d2d2d;
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .browser-title {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .browser-title::before {
+            content: '🎵';
+            font-size: 20px;
+        }
+
+        .browser-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #5a5a5a;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+        }
+
+        .btn-primary:hover {
+            background: #7b8ff5;
+        }
+
+        .path-bar {
+            flex: 1;
+            background: #3a3a3a;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .browser-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .file-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #444;
+        }
+
+        .file-panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            background: #2a2a2a;
+            color: #aaa;
+            padding: 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #444;
+        }
+
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #1a1a1a;
+            user-select: none;  /* Prevent text selection */
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            color: #ccc;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 14px;
+            user-select: none;  /* Prevent text selection */
+        }
+
+        .file-item:hover {
+            background: #2a2a2a;
+        }
+
+        .file-item.selected {
+            background: #3a3a6a;
+            color: #fff;
+        }
+
+        .file-item.directory {
+            color: #88aaff;
+            font-weight: 500;
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .file-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #888;
+            margin-left: 10px;
+        }
+
+        .status-bar {
+            background: #2d2d2d;
+            color: #aaa;
+            padding: 8px 15px;
+            font-size: 12px;
+            border-top: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1s steps(3, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .preview-panel {
+            width: 300px;
+            background: #252525;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .preview-title {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .preview-content {
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .preview-item {
+            margin-bottom: 8px;
+        }
+
+        .preview-label {
+            color: #888;
+            display: inline-block;
+            width: 80px;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Scrollbar styling */
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="browser-container">
+        <div class="browser-header">
+            <div class="browser-title">HVSC SID Collection Browser</div>
+            <div class="browser-controls">
+                <button class="btn" id="homeBtn" onclick="navigateHome()" title="Go to home">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button class="btn" id="upBtn" onclick="navigateUp()" title="Go up one directory">
+                    <i class="fas fa-level-up-alt"></i>
+                </button>
+                <input type="text" class="path-bar" id="pathBar" readonly>
+            </div>
+        </div>
+        
+        <div class="browser-content">
+            <div class="file-panel">
+                <div class="panel-header">Files & Directories</div>
+                <div class="file-list" id="fileList">
+                    <div class="loading">Loading directory</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <span id="itemCount">0 items</span>
+            <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const HVSC_BASE = window.location.hostname === 'localhost' 
+            ? 'https://hvsc.etv.cx/'  // Direct for local testing
+            : '/api/hvsc/';  // Proxied through Netlify in production
+        
+        let currentPath = 'C64Music';
+        let currentSelection = null;
+        let entries = [];
+
+        // Initialize on load
+        window.onload = function() {
+            // Start at root to see what directories are available
+            fetchDirectory('');
+        };
+
+        async function fetchDirectory(path) {
+            document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
+            
+            try {
+                // Build the URL based on environment
+                const url = `${HVSC_BASE}?path=${path}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch directory');
+                }
+                
+                const html = await response.text();
+                parseDirectory(html, path);
+                currentPath = path;  // Update current path AFTER successful parse
+                updatePathBar();
+            } catch (error) {
+                document.getElementById('fileList').innerHTML = 
+                    '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
+            }
+        }
+
+        function parseDirectory(html, path) {
+            entries = [];
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            // Look for the directory listing table
+            const tableRegex = /<table[^>]*width="99%"[^>]*>([\s\S]*?)<\/table>/i;
+            const tableMatch = html.match(tableRegex);
+            
+            if (tableMatch) {
+                const tableContent = tableMatch[1];
+                
+                // Parse each row for links
+                const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+                let rowMatch;
+                
+                while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+                    const row = rowMatch[1];
+                    
+                    // Look for links in this row
+                    const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
+                    
+                    if (linkMatch) {
+                        const href = linkMatch[1];
+                        let name = linkMatch[2].trim();
+                        
+                        // Process directory links
+                        if (href.startsWith('?path=') && !href.includes('info=')) {
+                            const pathValue = decodeURIComponent(href.substring(6));
+                            name = name.replace(/\/$/, ''); // Remove trailing slash
+                            
+                            entries.push({
+                                name: name,
+                                path: pathValue,
+                                isDirectory: true
+                            });
+                        }
+                        // Process SID file links (both formats)
+                        else if (href.toLowerCase().includes('.sid')) {
+                            let filePath = '';
+                            let fileName = name;
+                            
+                            // Format 1: /download/path/to/file.sid
+                            if (href.startsWith('/download/')) {
+                                filePath = href.substring(10);
+                                // Extract filename from path if name is generic
+                                if (name === 'info' || name === 'download') {
+                                    fileName = filePath.split('/').pop();
+                                }
+                            }
+                            // Format 2: ?info=please&path=path/to/file.sid
+                            else if (href.includes('info=please')) {
+                                const pathMatch = href.match(/path=([^&]+)/);
+                                if (pathMatch) {
+                                    filePath = decodeURIComponent(pathMatch[1]);
+                                    // Extract filename from path
+                                    fileName = filePath.split('/').pop();
+                                }
+                            }
+                            // Format 3: Direct path
+                            else if (href.startsWith('/')) {
+                                filePath = href.substring(1);
+                                if (name === 'info') {
+                                    fileName = filePath.split('/').pop();
+                                }
+                            }
+                            
+                            if (filePath) {
+                                entries.push({
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false
+                                });
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Fallback: look for any links with ?path= or .sid
+                const linkRegex = /<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/gi;
+                let match;
+                
+                while ((match = linkRegex.exec(html)) !== null) {
+                    const href = match[1];
+                    let text = match[2].trim();
+                    
+                    // Skip navigation links
+                    if (text === 'Home' || text === 'About' || text === 'HVSC' || 
+                        text === 'SidSearch' || text === '..' || text === '.') {
+                        continue;
+                    }
+                    
+                    if (href.startsWith('?path=') && !href.includes('info=')) {
+                        const pathValue = decodeURIComponent(href.substring(6));
+                        text = text.replace(/\/$/, '');
+                        
+                        entries.push({
+                            name: text,
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                    } else if (href.toLowerCase().includes('.sid')) {
+                        let filePath = '';
+                        let fileName = text;
+                        
+                        if (href.startsWith('/download/')) {
+                            filePath = href.substring(10);
+                            if (text === 'info' || text === 'download') {
+                                fileName = filePath.split('/').pop();
+                            }
+                        } else if (href.includes('info=please')) {
+                            const pathMatch = href.match(/path=([^&]+)/);
+                            if (pathMatch) {
+                                filePath = decodeURIComponent(pathMatch[1]);
+                                fileName = filePath.split('/').pop();
+                            }
+                        }
+                        
+                        if (filePath) {
+                            entries.push({
+                                name: fileName,
+                                path: filePath,
+                                isDirectory: false
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Sort entries: directories first, then alphabetically
+            entries.sort((a, b) => {
+                if (a.isDirectory !== b.isDirectory) {
+                    return b.isDirectory - a.isDirectory;
+                }
+                return a.name.localeCompare(b.name);
+            });
+            
+            // Render entries
+            entries.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'file-item' + (entry.isDirectory ? ' directory' : '');
+                
+                const icon = entry.isDirectory ? '📁' : '🎵';
+                
+                item.innerHTML = `
+                    <span class="file-icon">${icon}</span>
+                    <span class="file-name">${entry.name}</span>
+                `;
+                
+                item.onclick = () => handleItemClick(entry);
+                item.ondblclick = () => handleItemDoubleClick(entry);
+                
+                fileList.appendChild(item);
+            });
+            
+            // Update item count - only count SID files
+            const sidCount = entries.filter(e => !e.isDirectory).length;
+            const dirCount = entries.filter(e => e.isDirectory).length;
+            
+            let countText = '';
+            if (sidCount > 0 && dirCount > 0) {
+                countText = `${sidCount} SID files, ${dirCount} folders`;
+            } else if (sidCount > 0) {
+                countText = `${sidCount} SID file${sidCount !== 1 ? 's' : ''}`;
+            } else if (dirCount > 0) {
+                countText = `${dirCount} folder${dirCount !== 1 ? 's' : ''}`;
+            } else {
+                countText = 'Empty folder';
+            }
+            
+            document.getElementById('itemCount').textContent = countText;
+        }
+
+        function handleItemClick(entry) {
+            // Update selection
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            event.currentTarget.classList.add('selected');
+            currentSelection = entry;
+        }
+
+        function handleItemDoubleClick(entry) {
+            if (entry.isDirectory) {
+                fetchDirectory(entry.path);
+            } else {
+                selectSID();
+            }
+        }
+
+        function navigateUp() {
+            if (!currentPath || currentPath === '') {
+                return; // Already at root
+            }
+            
+            // Remove trailing slash if present
+            let cleanPath = currentPath;
+            if (cleanPath.endsWith('/')) {
+                cleanPath = cleanPath.slice(0, -1);
+            }
+            
+            // Split the path and remove the last segment
+            const parts = cleanPath.split('/');
+            parts.pop(); // Remove current directory
+            
+            const parentPath = parts.join('/');
+            fetchDirectory(parentPath);
+        }
+
+        function navigateHome() {
+            fetchDirectory('');
+        }
+
+        function updatePathBar() {
+            const pathDisplay = currentPath ? '/' + currentPath : '/';
+            document.getElementById('pathBar').value = pathDisplay;
+            
+            // Disable up button if at root
+            document.getElementById('upBtn').disabled = !currentPath || currentPath === '';
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        function selectSID() {
+        	if (currentSelection && !currentSelection.isDirectory) {
+        		// Build correct URL format: base + C64Music/ + path
+        		const baseUrl = window.location.hostname === 'localhost' 
+        			? 'https://hvsc.etv.cx/' 
+        			: '/api/hvsc/';
+        		
+        		// Ensure the path starts with C64Music/
+        		let fullPath = currentSelection.path;
+        		if (!fullPath.startsWith('C64Music/')) {
+        			fullPath = 'C64Music/' + fullPath;
+        		}
+        		
+        		const sidUrl = baseUrl + fullPath;
+        		
+        		if (window.opener) {
+        			window.opener.postMessage({
+        				type: 'sid-selected',
+        				name: currentSelection.name,
+        				path: currentSelection.path,
+        				url: sidUrl
+        			}, '*');
+        			
+        			updateStatus('SID selected: ' + currentSelection.name);
+        			
+        			// Optionally close the window
+        			setTimeout(() => {
+        				window.close();
+        			}, 500);
+        		} else {
+        			// If not in popup, just log or handle differently
+        			console.log('Selected SID:', sidUrl);
+        			alert('Selected: ' + currentSelection.name + '\nURL: ' + sidUrl);
+        		}
+        	}
+        }
+
+        // Handle Enter key for quick selection
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && currentSelection) {
+                if (currentSelection.isDirectory) {
+                    fetchDirectory(currentSelection.path);
+                } else {
+                    selectSID();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

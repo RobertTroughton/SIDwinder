@@ -92,21 +92,49 @@ AnalyzeFrequency:
     cpy #$10
     bcs !useMidTable+       // >= 0x1000: use mid table
     
-    // Low frequencies (0x0000-0x0FFF): combine both bytes for index
-    tya
+    // FIXED: Low frequencies (0x0000-0x0FFF)
+    // We need to create an index from both bytes properly
+    // The table expects: (freq >> 4) as index (0-255)
+    
+    // Method 1: If we can use both registers
+    tya                     // High byte in A
     asl
     asl
     asl
-    asl                     // High byte * 16
-    ora sidRegisterMirror + (voice * 7) + 0  // Ignore low 4 bits of low byte
+    asl
+    sta tempIndex + 1       // Store high nibble
+    lda sidRegisterMirror + (voice * 7) + 0  // Low byte
     lsr
     lsr
     lsr
-    lsr                     // Divide by 16 to get 0-255 range
+    lsr                     // Low byte >> 4 (top nibble)
+tempIndex:
+    ora #$00                // OR with (high byte << 4)
     tax
     lda FreqToBarLo, x
     tax
     jmp !gotBar+
+    
+    // Alternative Method 2: If we want to be more compact
+    // This properly combines high and low bytes:
+    // index = (high_byte << 4) | (low_byte >> 4)
+    //
+    // tya                  // High byte in A  
+    // asl
+    // asl
+    // asl
+    // asl                  // High byte << 4 (now in top nibble)
+    // sta tempByte         // Save it
+    // lda sidRegisterMirror + (voice * 7) + 0  // Low byte
+    // lsr
+    // lsr  
+    // lsr
+    // lsr                  // Low byte >> 4 (top nibble to bottom)
+    // ora tempByte         // Combine them
+    // tax
+    // lda FreqToBarLo, x
+    // tax
+    // jmp !gotBar+
     
 !useMidTable:
     // Mid frequencies (0x1000-0x3FFF): use high byte + top bits of low
@@ -115,7 +143,7 @@ AnalyzeFrequency:
     sbc #$10                // Subtract 16 to get 0-47 range
     asl
     asl                     // * 4
-    sta tempIndex + 1
+    sta tempIndex2 + 1
     lda sidRegisterMirror + (voice * 7) + 0
     lsr
     lsr
@@ -123,7 +151,7 @@ AnalyzeFrequency:
     lsr
     lsr
     lsr                     // Top 2 bits of low byte
-tempIndex:
+tempIndex2:
     ora #$00
     tax
     lda FreqToBarMid, x

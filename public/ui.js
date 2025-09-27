@@ -31,13 +31,20 @@ class UIController {
         this.originalMetadata = {}; // Store original metadata for comparison
         this.selectedVisualizer = null;
         this.visualizerConfig = null;
+        this.hvscBrowserWindow = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
     }
 
     cacheElements() {
         return {
+            // Upload elements
             uploadSection: document.getElementById('uploadSection'),
+            uploadBtn: document.getElementById('uploadBtn'),
+            hvscBtn: document.getElementById('hvscBtn'),
+            hvscSelected: document.getElementById('hvscSelected'),
+            selectedFile: document.getElementById('selectedFile'),
+
             fileInput: document.getElementById('fileInput'),
             songTitleSection: document.getElementById('songTitleSection'),
             songTitle: document.getElementById('songTitle'),
@@ -81,7 +88,17 @@ class UIController {
     }
 
     initEventListeners() {
-        // File upload
+        // Upload button
+        this.elements.uploadBtn.addEventListener('click', () => {
+            this.elements.fileInput.click();
+        });
+
+        // HVSC button
+        this.elements.hvscBtn.addEventListener('click', () => {
+            this.openHVSCBrowser();
+        });
+
+        // Drag & drop section click
         this.elements.uploadSection.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
@@ -106,8 +123,75 @@ class UIController {
         // Editable fields
         this.setupEditableFields();
 
+        // Listen for messages from HVSC browser window
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'sid-selected') {
+                this.handleHVSCSelection(e.data);
+            }
+        });
+
+        const closeBtn = document.getElementById('hvscModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                document.getElementById('hvscModal').classList.remove('visible');
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('hvscModal');
+                if (modal.classList.contains('visible')) {
+                    modal.classList.remove('visible');
+                }
+            }
+        });
+
         // Initialize the UI in "attract mode"
         this.initializeAttractMode();
+    }
+
+    openHVSCBrowser() {
+        const modal = document.getElementById('hvscModal');
+        modal.classList.add('visible');
+
+        // Initialize HVSC browser on first open
+        if (typeof hvscBrowser.initializeHVSC === 'function') {
+            hvscBrowser.initializeHVSC();
+        } else if (!window.hvscBrowserInitialized) {
+            hvscBrowser.fetchDirectory('C64Music');
+            window.hvscBrowserInitialized = true;
+        }
+    }
+
+    async handleHVSCSelection(data) {
+
+        this.elements.hvscSelected.style.display = 'block';
+        this.elements.selectedFile.textContent = data.name;
+
+        const modal = document.getElementById('hvscModal');
+        modal.classList.remove('visible');
+
+        this.showLoading(true);
+        this.showModal('Downloading SID from HVSC...', true);
+
+        try {
+            // The URL is already properly formatted from selectSID
+            const response = await fetch(data.url);
+
+            if (!response.ok) {
+                throw new Error('Failed to download SID file');
+            }
+
+            const blob = await response.blob();
+            const file = new File([blob], data.name, { type: 'application/octet-stream' });
+
+            await this.processFile(file);
+
+        } catch (error) {
+            console.error('Error downloading HVSC file:', error);
+            this.showModal('Failed to download SID from HVSC', false);
+            this.showLoading(false);
+        }
     }
 
     initializeAttractMode() {
@@ -357,6 +441,8 @@ class UIController {
     async handleFileSelect(event) {
         const file = event.target.files[0];
         if (file) {
+            // Hide HVSC selection if it was shown
+            this.elements.hvscSelected.style.display = 'none';
             await this.processFile(file);
         }
     }
@@ -849,46 +935,45 @@ class UIController {
     }
 
     createFileInputHTML(config) {
-        // Check if this is an image input that should use preview
+        // Check if this is an image input that should use preview - PNG only now
         const isImageInput = config.accept && (
             config.accept.includes('image/') ||
-            config.accept.includes('.png') ||
-            config.accept.includes('.koa')
+            config.accept.includes('.png')
         );
 
         if (isImageInput) {
             // Create a container for the image preview
             return `
-            <div class="option-row option-row-full">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <div id="${config.id}-preview-container" class="image-input-container">
-                        <!-- Preview will be inserted here -->
-                    </div>
+        <div class="option-row option-row-full">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <div id="${config.id}-preview-container" class="image-input-container">
+                    <!-- Preview will be inserted here -->
                 </div>
             </div>
-        `;
+        </div>
+    `;
         } else {
             // Use traditional file input for non-image files
             return `
-            <div class="option-row">
-                <label class="option-label">${config.label}</label>
-                <div class="option-control">
-                    <input type="file" 
-                           id="${config.id}" 
-                           accept="${config.accept}" 
-                           style="display: none;">
-                    <button type="button" 
-                            class="file-button" 
-                            data-file-input="${config.id}">
-                        Choose File
-                    </button>
-                    <span class="file-status" id="${config.id}-status">
-                        ${config.default ? 'Using default' : 'No file selected'}
-                    </span>
-                </div>
+        <div class="option-row">
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <input type="file" 
+                       id="${config.id}" 
+                       accept="${config.accept}" 
+                       style="display: none;">
+                <button type="button" 
+                        class="file-button" 
+                        data-file-input="${config.id}">
+                    Choose File
+                </button>
+                <span class="file-status" id="${config.id}-status">
+                    ${config.default ? 'Using default' : 'No file selected'}
+                </span>
             </div>
-        `;
+        </div>
+    `;
         }
     }
 
@@ -1010,22 +1095,22 @@ class UIController {
         // Set up image previews for image inputs
         if (config && config.inputs) {
             config.inputs.forEach(inputConfig => {
-                const isImageInput = inputConfig.accept && (
-                    inputConfig.accept.includes('image/') ||
-                    inputConfig.accept.includes('.png') ||
-                    inputConfig.accept.includes('.koa')
-                );
-
+                const isImageInput = inputConfig.accept && (inputConfig.accept.includes('image/') || inputConfig.accept.includes('.png'));
                 if (isImageInput) {
                     const container = document.getElementById(`${inputConfig.id}-preview-container`);
                     if (container) {
-                        // Create and insert the preview element
                         const previewElement = window.imagePreviewManager.createImagePreview(inputConfig);
                         container.appendChild(previewElement);
-
-                        // Load the default image
                         window.imagePreviewManager.loadDefaultImage(inputConfig);
                     }
+                }
+            });
+        }
+
+        if (config && config.options) {
+            config.options.forEach(optionConfig => {
+                if (optionConfig.type === 'textarea') {
+                    TextDropZone.create(optionConfig.id);
                 }
             });
         }
@@ -1038,10 +1123,10 @@ class UIController {
             });
         });
 
-        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"]):not([accept*=".koa"])').forEach(input => {
+        document.querySelectorAll('input[type="file"]:not([accept*="image"]):not([accept*=".png"])').forEach(input => {
             input.addEventListener('change', (e) => {
                 const statusEl = document.getElementById(`${e.target.id}-status`);
-                if (e.target.files.length > 0) {
+                if (statusEl && e.target.files.length > 0) {
                     statusEl.textContent = e.target.files[0].name;
                     statusEl.classList.add('has-file');
                 }
