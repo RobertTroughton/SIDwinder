@@ -353,6 +353,7 @@ InCharPtr:
     inc ReadScroller + 1
     bne !skip+
     inc ReadScroller + 2
+!skip:
 
     rts
    
