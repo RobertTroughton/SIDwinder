@@ -1110,7 +1110,110 @@ class UIController {
         if (config && config.options) {
             config.options.forEach(optionConfig => {
                 if (optionConfig.type === 'textarea') {
+                    const textarea = document.getElementById(optionConfig.id);
+                    if (!textarea) return;
+
+                    // Create the drop zone
                     TextDropZone.create(optionConfig.id);
+
+                    // Initialize sanitizer
+                    if (!window.petsciiSanitizer) {
+                        window.petsciiSanitizer = new PETSCIISanitizer();
+                    }
+
+                    // Add warning display element if it doesn't exist
+                    if (!document.getElementById(`${optionConfig.id}-warnings`)) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.id = `${optionConfig.id}-warnings`;
+                        warningDiv.className = 'textarea-warnings';
+                        warningDiv.style.cssText = `
+                        margin-top: 5px;
+                        padding: 8px;
+                        background: #fff3cd;
+                        border: 1px solid #ffc107;
+                        border-radius: 4px;
+                        color: #856404;
+                        font-size: 0.85em;
+                        display: none;
+                    `;
+                        textarea.parentNode.appendChild(warningDiv);
+                    }
+
+                    // Add character counter if maxLength is specified
+                    if (optionConfig.maxLength) {
+                        const counterDiv = document.createElement('div');
+                        counterDiv.id = `${optionConfig.id}-counter`;
+                        counterDiv.className = 'textarea-counter';
+                        counterDiv.style.cssText = `
+                        margin-top: 3px;
+                        text-align: right;
+                        color: #6c757d;
+                        font-size: 0.85em;
+                    `;
+                        textarea.parentNode.appendChild(counterDiv);
+                    }
+
+                    // Real-time validation function
+                    const validateTextarea = () => {
+                        const text = textarea.value;
+                        const warningDiv = document.getElementById(`${optionConfig.id}-warnings`);
+                        const counterDiv = document.getElementById(`${optionConfig.id}-counter`);
+
+                        // Sanitize the text
+                        const result = window.petsciiSanitizer.sanitize(text, {
+                            maxLength: optionConfig.maxLength,
+                            preserveNewlines: false,
+                            reportUnknown: true
+                        });
+
+                        // Update character counter
+                        if (counterDiv && optionConfig.maxLength) {
+                            const remaining = optionConfig.maxLength - text.length;
+                            counterDiv.textContent = `${text.length} / ${optionConfig.maxLength} characters`;
+
+                            if (remaining < 0) {
+                                counterDiv.style.color = '#dc3545';
+                            } else if (remaining < 20) {
+                                counterDiv.style.color = '#ffc107';
+                            } else {
+                                counterDiv.style.color = '#6c757d';
+                            }
+                        }
+
+                        // Show warnings
+                        if (result.hasWarnings && warningDiv) {
+                            let warningHTML = '<strong>⚠️ Character compatibility issues:</strong><br>';
+
+                            result.warnings.forEach(warning => {
+                                if (warning.type === 'unknown_characters') {
+                                    warningHTML += `Found incompatible characters: `;
+                                    warning.characters.forEach((char, idx) => {
+                                        if (idx > 0) warningHTML += ', ';
+                                        warningHTML += `"${char}"`;
+                                    });
+                                    warningHTML += '<br>These will be replaced with spaces on export.';
+                                } else if (warning.type === 'truncated') {
+                                    warningHTML += `Text will be truncated to ${optionConfig.maxLength} characters.`;
+                                }
+                            });
+
+                            warningDiv.innerHTML = warningHTML;
+                            warningDiv.style.display = 'block';
+                        } else if (warningDiv) {
+                            warningDiv.style.display = 'none';
+                        }
+                    };
+
+                    // Attach event listeners
+                    textarea.addEventListener('input', validateTextarea);
+                    textarea.addEventListener('paste', () => {
+                        setTimeout(validateTextarea, 10); // Small delay to let paste complete
+                    });
+
+                    // Initial validation if there's default text
+                    if (textarea.value) {
+                        validateTextarea();
+                    }
                 }
             });
         }

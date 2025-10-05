@@ -660,6 +660,8 @@ class SIDwinderPRGExporter {
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
 
+    // Add this to your prg-builder.js file, updating the existing processVisualizerOptions method
+
     async processVisualizerOptions(visualizerType, layoutKey = 'bank4000') {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
@@ -674,13 +676,17 @@ class SIDwinderPRGExporter {
             return [];
         }
 
+        // Initialize sanitizer if not already done
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
         const optionComponents = [];
 
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
             if (!element) continue;
 
-            // Check if this option maps to a layout field
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
 
@@ -700,10 +706,15 @@ class SIDwinderPRGExporter {
                         formattedDate = `${day}${suffix} ${month} ${year}`;
                     }
 
-                    const data = this.stringToPETSCII(
-                        this.centerString(formattedDate, 32),
-                        32
-                    );
+                    // Sanitize the date string
+                    const sanitized = this.sanitizer.sanitize(formattedDate, {
+                        maxLength: 32,
+                        padToLength: 32,
+                        center: true,
+                        reportUnknown: false
+                    });
+
+                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
 
                     optionComponents.push({
                         data: data,
@@ -721,18 +732,29 @@ class SIDwinderPRGExporter {
                         loadAddress: targetAddress,
                         name: `option_${optionConfig.id}`
                     });
+
                 } else if (optionConfig.type === 'textarea') {
                     const textValue = element.value || optionConfig.default || '';
 
-                    // Convert to PETSCII and null-terminate
-                    const data = new Uint8Array(Math.min(textValue.length + 1, 255));
+                    // Sanitize the textarea content
+                    const sanitized = this.sanitizer.sanitize(textValue, {
+                        maxLength: optionConfig.maxLength || 255,
+                        preserveNewlines: false,  // Convert newlines to spaces for scrolltext
+                        reportUnknown: true
+                    });
 
-                    for (let i = 0; i < textValue.length && i < data.length - 1; i++) {
-                        let petscii = textValue.charCodeAt(i);
-                        if (petscii >= 97 && petscii <= 122) petscii -= 96; // Convert to uppercase
-                        data[i] = petscii & 0xFF;
+                    // Show warnings if any problematic characters were found
+                    if (sanitized.hasWarnings) {
+                        this.sanitizer.showWarningDialog(sanitized.warnings);
                     }
-                    data[Math.min(textValue.length, data.length - 1)] = 0x00; // Null terminator
+
+                    // Convert to PETSCII bytes
+                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+
+                    // Add null terminator
+                    const data = new Uint8Array(petsciiData.length + 1);
+                    data.set(petsciiData);
+                    data[data.length - 1] = 0x00; // Null terminator
 
                     optionComponents.push({
                         data: data,
@@ -744,6 +766,41 @@ class SIDwinderPRGExporter {
         }
 
         return optionComponents;
+    }
+
+    // Update the existing stringToPETSCII function to use the sanitizer
+    stringToPETSCII(str, length) {
+        // Initialize sanitizer if not already done
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
+        // Sanitize the string
+        const sanitized = this.sanitizer.sanitize(str || '', {
+            maxLength: length,
+            padToLength: length,
+            center: false,
+            reportUnknown: false  // Don't report for metadata fields
+        });
+
+        // Convert to PETSCII bytes
+        return this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+    }
+
+    // Update the centerString method to use sanitizer
+    centerString(str, length) {
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
+        const sanitized = this.sanitizer.sanitize(str || '', {
+            maxLength: length,
+            padToLength: length,
+            center: true,
+            reportUnknown: false
+        });
+
+        return sanitized.text;
     }
 
     async createPRG(options = {}) {

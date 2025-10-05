@@ -10,11 +10,11 @@
       "size": "0x4000",
       "dataAddress": "0x5000",
       "sysAddress": "0x5100",
-      "binaryDataStart": "0x4000",
+      "binaryDataStart": "0x2800",
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x500D",
       "backgroundColor": "0x500E",
-      "scrollTextAddr": "0x4200",
+      "scrollTextAddr": "0x2800",
       "scrollColor": "0x5080"
     },
     "bank8000": {
@@ -23,11 +23,11 @@
       "size": "0x4000",
       "dataAddress": "0x9000",
       "sysAddress": "0x9100",
-      "binaryDataStart": "0x8000",
+      "binaryDataStart": "0x6800",
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x900D",
       "backgroundColor": "0x900E",
-      "scrollTextAddr": "0x8200",
+      "scrollTextAddr": "0x6800",
       "scrollColor": "0x9080"
     }
   },
@@ -159,7 +159,7 @@
       "label": "Scroll Text",
       "type": "textarea",
       "default": "SIDquake  ---  Your one-stop shop for all your SID visualisation needs!!       ",
-      "maxLength": 3072,
+      "maxLength": 6144,
       "dataField": "scrollTextAddr",
       "description": "Text that scrolls across the screen",
       "loadSave": true

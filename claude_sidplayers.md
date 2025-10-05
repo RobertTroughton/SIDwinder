@@ -3529,7 +3529,7 @@ callCount:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleBitmapWithScroller/SimpleBitmapWithScroller.asm
-*Original size: 9932 bytes, Cleaned: 7566 bytes (reduced by 23.8%)*
+*Original size: 9939 bytes, Cleaned: 7573 bytes (reduced by 23.8%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3798,6 +3798,7 @@ InCharPtr:
     inc ReadScroller + 1
     bne !skip+
     inc ReadScroller + 2
+!skip:
     rts
 .const SKIP_REGISTER = $e1
 InitializeVIC:

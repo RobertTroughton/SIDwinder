@@ -32,7 +32,7 @@
 .const BITMAP_COLOUR_DATA               = VIC_BANK_ADDRESS + (COLOUR_BANK * $0400)
 .const SPRITES_DATA                     = VIC_BANK_ADDRESS + (SPRITES_INDEX * 64)
 
-.const SCROLLTEXT_ADDR                  = VIC_BANK_ADDRESS + $0200
+.const SCROLLTEXT_ADDR                  = VIC_BANK_ADDRESS - $1800
 
 // =============================================================================
 // INCLUDES
@@ -353,6 +353,7 @@ InCharPtr:
     inc ReadScroller + 1
     bne !skip+
     inc ReadScroller + 2
+!skip:
 
     rts
    
