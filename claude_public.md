@@ -679,6 +679,7 @@
                     <li><a href="https://c64gfx.com">C64GFX</a></li>
                     <li><a href="https://c64demo.com">C64Demo</a></li>
                     <li><a href="https://sidquake.c64demo.com" class="active">SIDquake</a></li>
+                    <li><a href="https://dirquake.c64demo.com" class="active">DIRquake</a></li>
                 </ul>
             </nav>
         </div>
@@ -962,6 +963,30 @@
                     <div class="status-bar">
                         <span id="itemCount">0 items</span>
                         <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="gallery-modal" id="galleryModal">
+        <div class="gallery-modal-content">
+            <button class="gallery-modal-close" id="galleryModalClose">✕</button>
+            <div class="gallery-modal-body">
+                <div class="gallery-container">
+                    <div class="gallery-header">
+                        <div class="gallery-title">🎨 Image Gallery</div>
+                        <div class="gallery-subtitle" id="gallerySubtitle">Select an image</div>
+                    </div>
+
+                    <div class="gallery-content">
+                        <div class="gallery-grid-container" id="galleryGridContainer">
+                        </div>
+                    </div>
+
+                    <div class="gallery-status-bar">
+                        <span id="galleryItemCount">0 items</span>
+                        <span style="margin-left: auto; color: #888; font-size: 11px;">Click to select an image</span>
                     </div>
                 </div>
             </div>
@@ -3174,56 +3199,6 @@ body {
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
 
-.image-gallery-panel {
-    margin-top: 15px;
-    padding: 15px;
-    background: rgba(102, 126, 234, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(102, 126, 234, 0.2);
-}
-
-.gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 12px;
-}
-
-.gallery-item {
-    cursor: pointer;
-    text-align: center;
-    padding: 8px;
-    border-radius: 6px;
-    transition: all 0.2s;
-    background: white;
-    border: 2px solid #e0e0e0;
-}
-
-    .gallery-item:hover {
-        background: rgba(102, 126, 234, 0.1);
-        transform: scale(1.05);
-        border-color: #667eea;
-    }
-
-    .gallery-item img {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 320/200;
-        object-fit: contain;
-        border-radius: 4px;
-        background: #000;
-        image-rendering: pixelated;
-        image-rendering: -moz-crisp-edges;
-        image-rendering: pixelated;
-    }
-
-.gallery-item-name {
-    font-size: 0.8em;
-    color: #495057;
-    display: block;
-    margin-top: 6px;
-    font-weight: 500;
-}
-
 .text-drop-zone {
     position: relative;
     padding: 12px;
@@ -3299,6 +3274,235 @@ body {
     .text-drop-zone.drag-active .text-drop-hint {
         opacity: 0.2;
     }
+
+.gallery-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+    .gallery-modal.visible {
+        display: flex;
+    }
+
+.gallery-modal-content {
+    background: #1e1e1e;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 950px;
+    height: 90vh;
+    max-height: 650px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.gallery-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    border: 2px solid #666;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 100;
+}
+
+    .gallery-modal-close:hover {
+        background: #ff3333;
+        transform: scale(1.1);
+        border-color: #ff6666;
+    }
+
+.gallery-modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.gallery-container {
+    background: #1e1e1e;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.gallery-header {
+    background: #2d2d2d;
+    padding: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.gallery-title {
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gallery-subtitle {
+    color: #aaa;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.gallery-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #1a1a1a;
+    padding: 20px;
+}
+
+.gallery-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.gallery-item-card {
+    background: #2a2a2a;
+    border: 2px solid #3a3a3a;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+    .gallery-item-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        border-color: #667eea;
+    }
+
+    .gallery-item-card.selected {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+.gallery-item-preview {
+    width: 100%;
+    aspect-ratio: 320/200;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+    .gallery-item-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+    }
+
+.gallery-item-info {
+    padding: 10px;
+    background: #2a2a2a;
+}
+
+.gallery-item-name {
+    color: #ccc;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-item-selected-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    display: none;
+}
+
+.gallery-item-card.selected .gallery-item-selected-badge {
+    display: block;
+}
+
+.gallery-status-bar {
+    background: #2d2d2d;
+    color: #aaa;
+    padding: 8px 15px;
+    font-size: 12px;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+}
+
+.gallery-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gallery-content::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.gallery-content::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+    .gallery-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+.gallery-loading {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+    .gallery-loading::after {
+        content: '...';
+        animation: dots 1s steps(3, end) infinite;
+    }
+
+@keyframes dots {
+    0%, 20% {
+        content: '.';
+    }
+
+    40% {
+        content: '..';
+    }
+
+    60%, 100% {
+        content: '...';
+    }
+}
 ```
 
 
@@ -3838,11 +4042,159 @@ window.hvscBrowser = (function () {
 
 ### FILE: public/image-preview-manager.js
 ```js
+﻿
+
+class GalleryModal {
+    constructor() {
+        this.modal = null;
+        this.currentConfig = null;
+        this.currentContainer = null;
+        this.selectedItem = null;
+        this.initialized = false;
+    }
+
+    init() {
+        if (this.initialized) return;
+
+        this.modal = document.getElementById('galleryModal');
+        if (!this.modal) {
+            console.warn('Gallery modal element not found in DOM');
+            return;
+        }
+
+        const closeBtn = document.getElementById('galleryModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal && this.modal.classList.contains('visible')) {
+                this.close();
+            }
+        });
+
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
+            }
+        });
+
+        this.initialized = true;
+    }
+
+    open(config, container) {
+        if (!this.initialized) this.init();
+        if (!this.modal) return;
+
+        this.currentConfig = config;
+        this.currentContainer = container;
+        this.selectedItem = null;
+
+        const subtitle = document.getElementById('gallerySubtitle');
+        if (subtitle) {
+            subtitle.textContent = `Select ${config.label || 'an image'}`;
+        }
+
+        this.buildGallery(config.gallery);
+
+        this.modal.classList.add('visible');
+    }
+
+    buildGallery(galleryItems) {
+        const gridContainer = document.getElementById('galleryGridContainer');
+        if (!gridContainer) return;
+
+        gridContainer.innerHTML = '';
+
+        if (!galleryItems || galleryItems.length === 0) {
+            gridContainer.innerHTML = '<div class="gallery-loading">No images available</div>';
+            this.updateItemCount(0);
+            return;
+        }
+
+        galleryItems.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'gallery-item-card';
+            card.dataset.file = item.file;
+            card.dataset.name = item.name;
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="gallery-item-preview">
+                    <img src="${item.file}" alt="${item.name}" />
+                </div>
+                <div class="gallery-item-info">
+                    <div class="gallery-item-name">${item.name}</div>
+                </div>
+                <div class="gallery-item-selected-badge">✓ Selected</div>
+            `;
+
+            card.addEventListener('click', () => this.selectItem(card, item));
+            gridContainer.appendChild(card);
+        });
+
+        this.updateItemCount(galleryItems.length);
+    }
+
+    selectItem(card, item) {
+        
+        document.querySelectorAll('.gallery-item-card').forEach(c => {
+            c.classList.remove('selected');
+        });
+
+        card.classList.add('selected');
+        this.selectedItem = item;
+
+        setTimeout(() => {
+            this.applySelection(item);
+            this.close();
+        }, 200);
+    }
+
+    async applySelection(item) {
+        if (!this.currentContainer || !this.currentConfig) return;
+
+        if (window.imagePreviewManager) {
+            await window.imagePreviewManager.loadGalleryImage(
+                this.currentContainer,
+                this.currentConfig,
+                item.file,
+                item.name
+            );
+        }
+    }
+
+    updateItemCount(count) {
+        const countElement = document.getElementById('galleryItemCount');
+        if (countElement) {
+            countElement.textContent = `${count} image${count !== 1 ? 's' : ''}`;
+        }
+    }
+
+    close() {
+        if (this.modal) {
+            this.modal.classList.remove('visible');
+        }
+        this.currentConfig = null;
+        this.currentContainer = null;
+        this.selectedItem = null;
+    }
+}
+
 class ImagePreviewManager {
     constructor() {
         this.previewCache = new Map();
         this.defaultImages = new Map();
         this.loadingPromises = new Map();
+        this.galleryModal = null;
+    }
+
+    initGalleryModal() {
+        if (!this.galleryModal) {
+            this.galleryModal = new GalleryModal();
+            this.galleryModal.init();
+        }
+        return this.galleryModal;
     }
 
     createImagePreview(config) {
@@ -3882,16 +4234,6 @@ class ImagePreviewManager {
                             <i class="fas fa-images"></i>
                             Choose from Gallery
                         </button>
-                    </div>
-                    <div class="image-gallery-panel" style="display: none;">
-                        <div class="gallery-grid">
-                            ${config.gallery.map((item, index) => `
-                                <div class="gallery-item" data-file="${item.file}" data-name="${item.name}">
-                                    <img src="${item.file}" alt="${item.name}">
-                                    <span class="gallery-item-name">${item.name}</span>
-                                </div>
-                            `).join('')}
-                        </div>
                     </div>
                 ` : ''}
             </div>
@@ -3961,25 +4303,44 @@ class ImagePreviewManager {
 
     attachGalleryHandlers(container, config) {
         const toggleBtn = container.querySelector('.gallery-btn');
-        const galleryPanel = container.querySelector('.image-gallery-panel');
 
-        if (toggleBtn && galleryPanel) {
+        if (toggleBtn && config.gallery && config.gallery.length > 0) {
             toggleBtn.addEventListener('click', () => {
-                const isVisible = galleryPanel.style.display !== 'none';
-                galleryPanel.style.display = isVisible ? 'none' : 'block';
-                toggleBtn.classList.toggle('active', !isVisible);
-            });
-
-            container.querySelectorAll('.gallery-item').forEach(item => {
-                item.addEventListener('click', async () => {
-                    const filename = item.dataset.file;
-                    const name = item.dataset.name;
-                    await this.loadGalleryImage(container, config, filename, name);
-                    galleryPanel.style.display = 'none';
-                    toggleBtn.classList.remove('active');
-                });
+                const modal = this.initGalleryModal();
+                modal.open(config, container);
             });
         }
+    }
+
+    isValidImageFile(file, config) {
+        if (!config.accept) return true;
+
+        const acceptTypes = config.accept.split(',').map(t => t.trim());
+
+        for (const acceptType of acceptTypes) {
+            if (acceptType.startsWith('.')) {
+                
+                if (file.name.toLowerCase().endsWith(acceptType.toLowerCase())) {
+                    return true;
+                }
+            } else if (acceptType.includes('*')) {
+                
+                const [type, subtype] = acceptType.split('/');
+                if (file.type.startsWith(type + '/')) {
+                    return true;
+                }
+            } else if (file.type === acceptType) {
+                
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    showError(container, message) {
+        console.error(message);
+        
     }
 
     async loadDefaultImage(config) {
@@ -4157,7 +4518,6 @@ class ImagePreviewManager {
             const ctx = canvas.getContext('2d');
 
             img.onload = () => {
-                
                 canvas.width = 320;
                 canvas.height = 200;
 
@@ -4192,7 +4552,6 @@ class ImagePreviewManager {
             const ctx = canvas.getContext('2d');
 
             img.onload = () => {
-                
                 canvas.width = 320;
                 canvas.height = 200;
 
@@ -4220,6 +4579,20 @@ class ImagePreviewManager {
         });
     }
 
+    async createPreviewFromData(data, filename) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 320;
+        canvas.height = 200;
+
+        this.renderBinaryPlaceholder(ctx, filename);
+
+        return {
+            dataUrl: canvas.toDataURL(),
+            sizeText: `${(data.length / 1024).toFixed(1)}KB (Binary)`
+        };
+    }
+
     isPNGFile(data) {
         if (data.length < 8) return false;
         return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
@@ -4227,7 +4600,6 @@ class ImagePreviewManager {
     }
 
     renderBinaryPlaceholder(ctx, filename) {
-        
         ctx.fillStyle = '#222';
         ctx.fillRect(0, 0, 320, 200);
 
@@ -4284,6 +4656,8 @@ class ImagePreviewManager {
 }
 
 window.ImagePreviewManager = ImagePreviewManager;
+
+window.imagePreviewManager = new ImagePreviewManager();
 ```
 
 
