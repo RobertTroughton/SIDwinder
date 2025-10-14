@@ -1,8 +1,7 @@
-// visualizer-configs.js - Visualizer configuration loader
-
 class VisualizerConfig {
     constructor() {
         this.configs = new Map();
+        this.galleryCache = new Map(); // Cache loaded galleries
     }
 
     async loadConfig(visualizerId) {
@@ -20,11 +19,87 @@ class VisualizerConfig {
 
             const config = await response.json();
 
-            // No longer modify the visualizer object - just return the config
+            // Process inputs to merge galleries
+            if (config.inputs) {
+                for (const input of config.inputs) {
+                    if (input.galleryFiles || input.gallery) {
+                        input.gallery = await this.loadAndMergeGalleries(
+                            input.galleryFiles || [],
+                            input.gallery || []
+                        );
+                    }
+                }
+            }
+
             return config;
         } catch (error) {
             console.error(`Error loading config for ${visualizerId}:`, error);
             return null;
+        }
+    }
+
+    async loadAndMergeGalleries(galleryFiles, inlineGallery) {
+        const mergedGallery = [];
+        const seenFiles = new Set();
+
+        // Load external gallery files
+        for (const galleryFile of galleryFiles) {
+            try {
+                const items = await this.loadGalleryFile(galleryFile);
+                for (const item of items) {
+                    if (!seenFiles.has(item.file)) {
+                        mergedGallery.push(item);
+                        seenFiles.add(item.file);
+                    }
+                }
+            } catch (error) {
+                console.warn(`Failed to load gallery file ${galleryFile}:`, error);
+            }
+        }
+
+        // Add inline gallery items
+        for (const item of inlineGallery) {
+            if (!seenFiles.has(item.file)) {
+                mergedGallery.push(item);
+                seenFiles.add(item.file);
+            }
+        }
+
+        return mergedGallery;
+    }
+
+    async loadGalleryFile(galleryFile) {
+        // Check cache first
+        if (this.galleryCache.has(galleryFile)) {
+            return this.galleryCache.get(galleryFile);
+        }
+
+        try {
+            const response = await fetch(galleryFile);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const items = await response.json();
+
+            // Validate format
+            if (!Array.isArray(items)) {
+                throw new Error('Gallery file must contain an array');
+            }
+
+            // Validate each item
+            for (const item of items) {
+                if (!item.name || !item.file) {
+                    throw new Error('Gallery items must have "name" and "file" properties');
+                }
+            }
+
+            // Cache the result
+            this.galleryCache.set(galleryFile, items);
+            return items;
+        } catch (error) {
+            console.error(`Error loading gallery file ${galleryFile}:`, error);
+            return [];
         }
     }
 
@@ -65,7 +140,11 @@ class VisualizerConfig {
 
         return regions;
     }
+
+    // Clear the gallery cache if needed
+    clearGalleryCache() {
+        this.galleryCache.clear();
+    }
 }
 
-// Export globally
 window.VisualizerConfig = VisualizerConfig;

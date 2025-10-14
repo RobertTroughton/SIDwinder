@@ -679,7 +679,7 @@
                     <li><a href="https://c64gfx.com">C64GFX</a></li>
                     <li><a href="https://c64demo.com">C64Demo</a></li>
                     <li><a href="https://sidquake.c64demo.com" class="active">SIDquake</a></li>
-                    <li><a href="https://dirquake.c64demo.com" class="active">DIRquake</a></li>
+                    <li><a href="https://dirquake.c64demo.com">DIRquake</a></li>
                 </ul>
             </nav>
         </div>
@@ -1005,6 +1005,7 @@
     <script src="visualizer-configs.js"></script>
     <script src="floating-notes.js"></script>
     <script src="text-drop-zone.js"></script>
+    <script src="petscii-sanitizer.js"></script>
 
 </body>
 </html>
@@ -4661,6 +4662,237 @@ window.imagePreviewManager = new ImagePreviewManager();
 ```
 
 
+### FILE: public/petscii-sanitizer.js
+```js
+class PETSCIISanitizer {
+    constructor() {
+        
+        this.charMap = {
+            
+            0x201C: 34,  
+            0x201D: 34,  
+            0x201E: 34,  
+
+            0x2018: 39,  
+            0x2019: 39,  
+            0x201A: 39,  
+
+            0x2010: 45,  
+            0x2011: 45,  
+            0x2012: 45,  
+            0x2013: 45,  
+            0x2014: 45,  
+            0x2015: 45,  
+            0x2212: 45,  
+
+            0x00A0: 32,  
+            0x2000: 32,  
+            0x2001: 32,  
+            0x2002: 32,  
+            0x2003: 32,  
+            0x2004: 32,  
+            0x2005: 32,  
+            0x2006: 32,  
+            0x2007: 32,  
+            0x2008: 32,  
+            0x2009: 32,  
+            0x200A: 32,  
+            0x202F: 32,  
+            0x205F: 32,  
+
+            0x2022: 42,  
+            0x00B7: 46,  
+        };
+
+        this.warnings = [];
+    }
+
+    sanitize(text, options = {}) {
+        const {
+            maxLength = null,
+            padToLength = null,
+            center = false,
+            reportUnknown = true
+        } = options;
+
+        this.warnings = [];
+        if (!text) {
+            return {
+                text: padToLength ? ' '.repeat(padToLength) : '',
+                warnings: [],
+                hasWarnings: false,
+                originalLength: 0,
+                sanitizedLength: padToLength || 0
+            };
+        }
+
+        const unknownChars = new Set();
+        const result = [];
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const code = char.charCodeAt(0);
+
+            if (code === 0x2026) {
+                result.push(46, 46, 46); 
+            }
+            
+            else if (this.charMap[code] !== undefined) {
+                result.push(this.charMap[code]);
+            }
+            
+            else if (code === 10 || code === 13) {
+                result.push(32); 
+            }
+            
+            else if (code === 9) {
+                result.push(32); 
+            }
+            
+            else if (code >= 32 && code <= 126) {
+                result.push(code);
+            }
+            
+            else if (code >= 0x00E0 && code <= 0x00FF) {
+                
+                if ((code >= 0x00E0 && code <= 0x00E6) || code === 0x00E0) result.push(97); 
+                else if (code >= 0x00E8 && code <= 0x00EB) result.push(101); 
+                else if (code >= 0x00EC && code <= 0x00EF) result.push(105); 
+                else if ((code >= 0x00F2 && code <= 0x00F6) || code === 0x00F8) result.push(111); 
+                else if (code >= 0x00F9 && code <= 0x00FC) result.push(117); 
+                else if (code === 0x00F1) result.push(110); 
+                else if (code === 0x00E7) result.push(99); 
+                else if (code === 0x00FD || code === 0x00FF) result.push(121); 
+                else result.push(32); 
+            }
+            
+            else if (code >= 0x00C0 && code <= 0x00DF) {
+                
+                if (code >= 0x00C0 && code <= 0x00C6) result.push(65); 
+                else if (code >= 0x00C8 && code <= 0x00CB) result.push(69); 
+                else if (code >= 0x00CC && code <= 0x00CF) result.push(73); 
+                else if ((code >= 0x00D2 && code <= 0x00D6) || code === 0x00D8) result.push(79); 
+                else if (code >= 0x00D9 && code <= 0x00DC) result.push(85); 
+                else if (code === 0x00D1) result.push(78); 
+                else if (code === 0x00C7) result.push(67); 
+                else if (code === 0x00DD) result.push(89); 
+                else result.push(32); 
+            }
+            
+            else {
+                unknownChars.add(char);
+                result.push(32); 
+            }
+        }
+
+        let sanitized = String.fromCharCode(...result);
+
+        if (reportUnknown && unknownChars.size > 0) {
+            const charList = Array.from(unknownChars).map(c => {
+                const code = c.charCodeAt(0);
+                if (code >= 32 && code < 127) {
+                    return `"${c}"`;
+                } else {
+                    return `U+${code.toString(16).toUpperCase().padStart(4, '0')}`;
+                }
+            });
+
+            this.warnings.push({
+                type: 'unknown_characters',
+                message: `Replaced ${unknownChars.size} incompatible character(s) with spaces`,
+                characters: charList
+            });
+        }
+
+        if (maxLength && sanitized.length > maxLength) {
+            sanitized = sanitized.substring(0, maxLength);
+            this.warnings.push({
+                type: 'truncated',
+                message: `Text truncated to ${maxLength} characters`,
+                originalLength: text.length
+            });
+        }
+
+        if (padToLength && sanitized.length < padToLength) {
+            if (center) {
+                const totalPadding = padToLength - sanitized.length;
+                const leftPad = Math.floor(totalPadding / 2);
+                const rightPad = totalPadding - leftPad;
+                sanitized = ' '.repeat(leftPad) + sanitized + ' '.repeat(rightPad);
+            } else {
+                sanitized = sanitized.padEnd(padToLength, ' ');
+            }
+        }
+
+        return {
+            text: sanitized,
+            warnings: this.warnings,
+            hasWarnings: this.warnings.length > 0,
+            originalLength: text.length,
+            sanitizedLength: sanitized.length
+        };
+    }
+
+    toPETSCIIBytes(text, lowercase = true) {
+        const bytes = [];
+
+        for (let i = 0; i < text.length; i++) {
+            const code = text.charCodeAt(i);
+            let petscii;
+
+            if (lowercase) {
+                
+                if (code >= 65 && code <= 90) {
+                    
+                    petscii = code;
+                } else if (code >= 97 && code <= 122) {
+                    
+                    petscii = code - 96;
+                } else if (code >= 32 && code <= 64) {
+                    
+                    petscii = code;
+                } else if (code >= 91 && code <= 96) {
+                    
+                    petscii = code;
+                } else if (code >= 123 && code <= 126) {
+                    
+                    petscii = code;
+                } else {
+                    
+                    petscii = 32;
+                }
+            } else {
+                
+                if (code >= 97 && code <= 122) {
+                    
+                    petscii = code - 32;
+                } else if (code >= 32 && code <= 126) {
+                    
+                    petscii = code;
+                } else {
+                    
+                    petscii = 32;
+                }
+            }
+
+            bytes.push(petscii & 0xFF);
+        }
+
+        return new Uint8Array(bytes);
+    }
+
+    showWarningDialog(warnings) {
+        if (!warnings || warnings.length === 0) return;
+
+        console.warn('PETSCII Sanitization Warnings:');
+        warnings.forEach(w => console.warn(`  - ${w.message}`));
+    }
+}
+
+window.PETSCIISanitizer = PETSCIISanitizer;
+```
+
+
 ### FILE: public/png-converter.js
 ```js
 ﻿
@@ -5548,6 +5780,10 @@ class SIDwinderPRGExporter {
             return [];
         }
 
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
         const optionComponents = [];
 
         for (const optionConfig of vizConfig.options) {
@@ -5573,10 +5809,14 @@ class SIDwinderPRGExporter {
                         formattedDate = `${day}${suffix} ${month} ${year}`;
                     }
 
-                    const data = this.stringToPETSCII(
-                        this.centerString(formattedDate, 32),
-                        32
-                    );
+                    const sanitized = this.sanitizer.sanitize(formattedDate, {
+                        maxLength: 32,
+                        padToLength: 32,
+                        center: true,
+                        reportUnknown: false
+                    });
+
+                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
 
                     optionComponents.push({
                         data: data,
@@ -5594,17 +5834,25 @@ class SIDwinderPRGExporter {
                         loadAddress: targetAddress,
                         name: `option_${optionConfig.id}`
                     });
+
                 } else if (optionConfig.type === 'textarea') {
                     const textValue = element.value || optionConfig.default || '';
 
-                    const data = new Uint8Array(Math.min(textValue.length + 1, 255));
+                    const sanitized = this.sanitizer.sanitize(textValue, {
+                        maxLength: optionConfig.maxLength || 255,
+                        preserveNewlines: false,  
+                        reportUnknown: true
+                    });
 
-                    for (let i = 0; i < textValue.length && i < data.length - 1; i++) {
-                        let petscii = textValue.charCodeAt(i);
-                        if (petscii >= 97 && petscii <= 122) petscii -= 96; 
-                        data[i] = petscii & 0xFF;
+                    if (sanitized.hasWarnings) {
+                        this.sanitizer.showWarningDialog(sanitized.warnings);
                     }
-                    data[Math.min(textValue.length, data.length - 1)] = 0x00; 
+
+                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+
+                    const data = new Uint8Array(petsciiData.length + 1);
+                    data.set(petsciiData);
+                    data[data.length - 1] = 0x00; 
 
                     optionComponents.push({
                         data: data,
@@ -5616,6 +5864,37 @@ class SIDwinderPRGExporter {
         }
 
         return optionComponents;
+    }
+
+    stringToPETSCII(str, length) {
+        
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
+        const sanitized = this.sanitizer.sanitize(str || '', {
+            maxLength: length,
+            padToLength: length,
+            center: false,
+            reportUnknown: false  
+        });
+
+        return this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+    }
+
+    centerString(str, length) {
+        if (!this.sanitizer) {
+            this.sanitizer = new PETSCIISanitizer();
+        }
+
+        const sanitized = this.sanitizer.sanitize(str || '', {
+            maxLength: length,
+            padToLength: length,
+            center: true,
+            reportUnknown: false
+        });
+
+        return sanitized.text;
     }
 
     async createPRG(options = {}) {
@@ -7235,7 +7514,100 @@ class UIController {
         if (config && config.options) {
             config.options.forEach(optionConfig => {
                 if (optionConfig.type === 'textarea') {
+                    const textarea = document.getElementById(optionConfig.id);
+                    if (!textarea) return;
+
                     TextDropZone.create(optionConfig.id);
+
+                    if (!window.petsciiSanitizer) {
+                        window.petsciiSanitizer = new PETSCIISanitizer();
+                    }
+
+                    if (!document.getElementById(`${optionConfig.id}-warnings`)) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.id = `${optionConfig.id}-warnings`;
+                        warningDiv.className = 'textarea-warnings';
+                        warningDiv.style.cssText = `
+                        margin-top: 5px;
+                        padding: 8px;
+                        background: #fff3cd;
+                        border: 1px solid #ffc107;
+                        border-radius: 4px;
+                        color: #856404;
+                        font-size: 0.85em;
+                        display: none;
+                    `;
+                        textarea.parentNode.appendChild(warningDiv);
+                    }
+
+                    if (optionConfig.maxLength) {
+                        const counterDiv = document.createElement('div');
+                        counterDiv.id = `${optionConfig.id}-counter`;
+                        counterDiv.className = 'textarea-counter';
+                        counterDiv.style.cssText = `
+                        margin-top: 3px;
+                        text-align: right;
+                        color: #6c757d;
+                        font-size: 0.85em;
+                    `;
+                        textarea.parentNode.appendChild(counterDiv);
+                    }
+
+                    const validateTextarea = () => {
+                        const text = textarea.value;
+                        const warningDiv = document.getElementById(`${optionConfig.id}-warnings`);
+                        const counterDiv = document.getElementById(`${optionConfig.id}-counter`);
+
+                        const result = window.petsciiSanitizer.sanitize(text, {
+                            maxLength: optionConfig.maxLength,
+                            preserveNewlines: false,
+                            reportUnknown: true
+                        });
+
+                        if (counterDiv && optionConfig.maxLength) {
+                            const remaining = optionConfig.maxLength - text.length;
+                            counterDiv.textContent = `${text.length} / ${optionConfig.maxLength} characters`;
+
+                            if (remaining < 0) {
+                                counterDiv.style.color = '#dc3545';
+                            } else if (remaining < 20) {
+                                counterDiv.style.color = '#ffc107';
+                            } else {
+                                counterDiv.style.color = '#6c757d';
+                            }
+                        }
+
+                        if (result.hasWarnings && warningDiv) {
+                            let warningHTML = '<strong>⚠️ Character compatibility issues:</strong><br>';
+
+                            result.warnings.forEach(warning => {
+                                if (warning.type === 'unknown_characters') {
+                                    warningHTML += `Found incompatible characters: `;
+                                    warning.characters.forEach((char, idx) => {
+                                        if (idx > 0) warningHTML += ', ';
+                                        warningHTML += `"${char}"`;
+                                    });
+                                    warningHTML += '<br>These will be replaced with spaces on export.';
+                                } else if (warning.type === 'truncated') {
+                                    warningHTML += `Text will be truncated to ${optionConfig.maxLength} characters.`;
+                                }
+                            });
+
+                            warningDiv.innerHTML = warningHTML;
+                            warningDiv.style.display = 'block';
+                        } else if (warningDiv) {
+                            warningDiv.style.display = 'none';
+                        }
+                    };
+
+                    textarea.addEventListener('input', validateTextarea);
+                    textarea.addEventListener('paste', () => {
+                        setTimeout(validateTextarea, 10); 
+                    });
+
+                    if (textarea.value) {
+                        validateTextarea();
+                    }
                 }
             });
         }
@@ -7696,6 +8068,7 @@ document.addEventListener('DOMContentLoaded', () => {
 class VisualizerConfig {
     constructor() {
         this.configs = new Map();
+        this.galleryCache = new Map(); 
     }
 
     async loadConfig(visualizerId) {
@@ -7713,10 +8086,81 @@ class VisualizerConfig {
 
             const config = await response.json();
 
+            if (config.inputs) {
+                for (const input of config.inputs) {
+                    if (input.galleryFiles || input.gallery) {
+                        input.gallery = await this.loadAndMergeGalleries(
+                            input.galleryFiles || [],
+                            input.gallery || []
+                        );
+                    }
+                }
+            }
+
             return config;
         } catch (error) {
             console.error(`Error loading config for ${visualizerId}:`, error);
             return null;
+        }
+    }
+
+    async loadAndMergeGalleries(galleryFiles, inlineGallery) {
+        const mergedGallery = [];
+        const seenFiles = new Set();
+
+        for (const galleryFile of galleryFiles) {
+            try {
+                const items = await this.loadGalleryFile(galleryFile);
+                for (const item of items) {
+                    if (!seenFiles.has(item.file)) {
+                        mergedGallery.push(item);
+                        seenFiles.add(item.file);
+                    }
+                }
+            } catch (error) {
+                console.warn(`Failed to load gallery file ${galleryFile}:`, error);
+            }
+        }
+
+        for (const item of inlineGallery) {
+            if (!seenFiles.has(item.file)) {
+                mergedGallery.push(item);
+                seenFiles.add(item.file);
+            }
+        }
+
+        return mergedGallery;
+    }
+
+    async loadGalleryFile(galleryFile) {
+        
+        if (this.galleryCache.has(galleryFile)) {
+            return this.galleryCache.get(galleryFile);
+        }
+
+        try {
+            const response = await fetch(galleryFile);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const items = await response.json();
+
+            if (!Array.isArray(items)) {
+                throw new Error('Gallery file must contain an array');
+            }
+
+            for (const item of items) {
+                if (!item.name || !item.file) {
+                    throw new Error('Gallery items must have "name" and "file" properties');
+                }
+            }
+
+            this.galleryCache.set(galleryFile, items);
+            return items;
+        } catch (error) {
+            console.error(`Error loading gallery file ${galleryFile}:`, error);
+            return [];
         }
     }
 
@@ -7756,6 +8200,10 @@ class VisualizerConfig {
         }
 
         return regions;
+    }
+
+    clearGalleryCache() {
+        this.galleryCache.clear();
     }
 }
 

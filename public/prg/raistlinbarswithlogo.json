@@ -41,67 +41,8 @@
       "required": false,
       "default": "PNG/Logos/0-default.png",
       "description": "C64 format PNG image",
+      "galleryFiles": [ "prg/galleries/logos.json" ],
       "gallery": [
-        {
-          "name": "Acrouzet (by Facet)",
-          "file": "PNG/Logos/facet-acrouzet.png"
-        },
-        {
-          "name": "MCH (by Facet)",
-          "file": "PNG/Logos/facet-mch.png"
-        },
-        {
-          "name": "Mr. Mouse (by Facet)",
-          "file": "PNG/Logos/facet-mrmouse.png"
-        },
-        {
-          "name": "psych858o (by Facet)",
-          "file": "PNG/Logos/facet-psych858o.png"
-        },
-        {
-          "name": "psych858o and Stinsen (by Facet)",
-          "file": "PNG/Logos/facet-psychoandstinsen.png"
-        },
-        {
-          "name": "Stinsen (by Facet)",
-          "file": "PNG/Logos/facet-stinsen.png"
-        },
-        {
-          "name": "Celtic Design (by redcrab)",
-          "file": "PNG/Logos/redcrab-celticdesign.png"
-        },
-        {
-          "name": "Celtic Design 2 (by redcrab)",
-          "file": "PNG/Logos/redcrab-celticdesign2.png"
-        },
-        {
-          "name": "Leaf (by redcrab)",
-          "file": "PNG/Logos/redcrab-leaf.png"
-        },
-        {
-          "name": "MCH (by redcrab)",
-          "file": "PNG/Logos/redcrab-mch.png"
-        },
-        {
-          "name": "psych858o (by redcrab)",
-          "file": "PNG/Logos/redcrab-psych858o.png"
-        },
-        {
-          "name": "Steel (by redcrab)",
-          "file": "PNG/Logos/redcrab-steel.png"
-        },
-        {
-          "name": "Steel 2 (by redcrab)",
-          "file": "PNG/Logos/redcrab-steel2.png"
-        },
-        {
-          "name": "Stinsen (by redcrab)",
-          "file": "PNG/Logos/redcrab-stinsen.png"
-        },
-        {
-          "name": "Stinsen and Steel (by redcrab)",
-          "file": "PNG/Logos/redcrab-stinsensteel.png"
-        },
         {
           "name": "Maniacs (by Peter van Triel)",
           "file": "PNG/Logos/petervantriel-maniacs.png"
