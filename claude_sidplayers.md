@@ -1590,7 +1590,7 @@ Files: 1
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 108
+.var DEFAULT_RASTERTIMING_Y = 232
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
@@ -1713,8 +1713,8 @@ MainIRQ:
 	inc frame256Counter
 !skip:
 	jsr JustPlayMusic
-	jsr UpdateBars
 	jsr UpdateColors
+	jsr UpdateBars
 	jsr UpdateSprites
 	jsr AnalyseMusic
 !done:
@@ -2630,7 +2630,7 @@ Files: 1
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 140
+.var DEFAULT_RASTERTIMING_Y = 232
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
