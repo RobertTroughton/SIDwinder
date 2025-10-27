@@ -23,15 +23,6 @@ barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 barVoiceMap:                .fill NUM_FREQUENCY_BARS, $03
 
 .align NUM_FREQUENCY_BARS
-previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
-
-.align NUM_FREQUENCY_BARS
-previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
-
-.align NUM_FREQUENCY_BARS
-previousColors:             .fill NUM_FREQUENCY_BARS, 255
-
-.align NUM_FREQUENCY_BARS
 smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
 
 .align NUM_FREQUENCY_BARS
@@ -65,7 +56,6 @@ voiceReleaseLo:             .fill 3, 0
 //; =============================================================================
 
 halfValues:                      .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
-
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS

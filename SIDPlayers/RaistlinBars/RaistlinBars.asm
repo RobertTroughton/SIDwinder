@@ -87,7 +87,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 108
+.var DEFAULT_RASTERTIMING_Y = 232
 
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
@@ -95,6 +95,19 @@
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+
+//; =============================================================================
+//; DATA
+//; =============================================================================
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 
 //; =============================================================================
 //; INITIALIZATION
@@ -164,9 +177,6 @@ MainLoop:
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
-	ldy currentScreenBuffer
-	lda D018Values, y
-	sta $d018
 
 	lda #$00
 	sta visualizationUpdateFlag
@@ -225,6 +235,10 @@ MainIRQ:
 	lda #$35
 	sta $01
 
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
+
 	lda FastForwardActive
 	beq !normalPlay+
 	
@@ -258,14 +272,10 @@ MainIRQ:
 !skip:
 
 	jsr JustPlayMusic
-	jsr UpdateBars
 	jsr UpdateColors
+	jsr UpdateBars
 	jsr UpdateSprites
 	jsr AnalyseMusic
-
-/*	ldy currentScreenBuffer
-	lda D018Values, y
-	sta $d018*/
 
 !done:
 	jsr NextIRQ

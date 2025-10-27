@@ -110,6 +110,19 @@
 .import source "../INC/FreqTable.asm"
 
 //; =============================================================================
+//; DATA
+//; =============================================================================
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
+
+//; =============================================================================
 //; INITIALIZATION
 //; =============================================================================
 

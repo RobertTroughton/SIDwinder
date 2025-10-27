@@ -76,7 +76,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 140
+.var DEFAULT_RASTERTIMING_Y = 232
 
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
@@ -84,6 +84,19 @@
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+
+//; =============================================================================
+//; DATA
+//; =============================================================================
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 
 //; =============================================================================
 //; INITIALIZATION
@@ -158,13 +171,6 @@ MainLoop:
 	eor #$01
 	sta currentScreenBuffer
 
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
-
 	jmp MainLoop
 
 //; =============================================================================
@@ -215,6 +221,10 @@ MainIRQ:
 	pha
 	lda #$35
 	sta $01
+
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
 
 	lda FastForwardActive
 	beq !normalPlay+
@@ -339,23 +349,21 @@ NextIRQLdx:
 //; =============================================================================
 
 RenderBars:
-	ldy #NUM_FREQUENCY_BARS
+	ldy #NUM_FREQUENCY_BARS - 1
 !colorLoop:
-	dey
-	bmi !colorsDone+
-
 	ldx smoothedHeights, y
 	lda heightColorTable, x
 	cmp previousColors, y
-	beq !colorLoop-
-	sta previousColors, y
+	beq !skip+
 
+	sta previousColors, y
 	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
-	jmp !colorLoop-
+!skip:
 
-!colorsDone:
+	dey
+	bpl !colorLoop-
 
 	lda currentScreenBuffer
 	beq !renderScreen1+

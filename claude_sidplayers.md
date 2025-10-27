@@ -1316,19 +1316,13 @@ PlayMusicWithAnalysis:
 ```
 
 ### FILE: SIDPlayers/INC/Spectrometer.asm
-*Original size: 7159 bytes, Cleaned: 3672 bytes (reduced by 48.7%)*
+*Original size: 6903 bytes, Cleaned: 3420 bytes (reduced by 50.5%)*
 ```asm
 #importonce
 .align NUM_FREQUENCY_BARS
 barHeightsLo:               .fill NUM_FREQUENCY_BARS, 0
 .align NUM_FREQUENCY_BARS
 barVoiceMap:                .fill NUM_FREQUENCY_BARS, $03
-.align NUM_FREQUENCY_BARS
-previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
-.align NUM_FREQUENCY_BARS
-previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
-.align NUM_FREQUENCY_BARS
-previousColors:             .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
 smoothedHeights:            .fill NUM_FREQUENCY_BARS, 0
 .align NUM_FREQUENCY_BARS
@@ -1549,7 +1543,7 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 18289 bytes, Cleaned: 12756 bytes (reduced by 30.3%)*
+*Original size: 18659 bytes, Cleaned: 13007 bytes (reduced by 30.3%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -1603,6 +1597,12 @@ Files: 1
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 	jsr VSync
@@ -1650,9 +1650,6 @@ MainLoop:
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
-	ldy currentScreenBuffer
-	lda D018Values, y
-	sta $d018
 	lda #$00
 	sta visualizationUpdateFlag
 	jmp MainLoop
@@ -1687,6 +1684,9 @@ MainIRQ:
 	pha
 	lda #$35
 	sta $01
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
 	lda FastForwardActive
 	beq !normalPlay+
 !ffFrameLoop:
@@ -1717,7 +1717,6 @@ MainIRQ:
 	jsr UpdateColors
 	jsr UpdateSprites
 	jsr AnalyseMusic
-
 !done:
 	jsr NextIRQ
 	pla
@@ -2087,7 +2086,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 17705 bytes, Cleaned: 12278 bytes (reduced by 30.7%)*
+*Original size: 18134 bytes, Cleaned: 12530 bytes (reduced by 30.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2144,6 +2143,12 @@ Files: 1
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 	jsr VSync
@@ -2588,7 +2593,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 13317 bytes, Cleaned: 8849 bytes (reduced by 33.6%)*
+*Original size: 13690 bytes, Cleaned: 9046 bytes (reduced by 33.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2632,6 +2637,12 @@ Files: 1
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 	jsr VSync
@@ -2681,12 +2692,6 @@ MainLoop:
 	lda currentScreenBuffer
 	eor #$01
 	sta currentScreenBuffer
-	ldy currentScreenBuffer
-	lda D018Values, y
-	cmp $d018
-	beq !skip+
-	sta $d018
-!skip:
 	jmp MainLoop
 SetupSystem:
 	lda #$35
@@ -2718,6 +2723,9 @@ MainIRQ:
 	pha
 	lda #$35
 	sta $01
+	ldy currentScreenBuffer
+	lda D018Values, y
+	sta $d018
 	lda FastForwardActive
 	beq !normalPlay+
 !ffFrameLoop:
@@ -2805,20 +2813,19 @@ NextIRQLdx:
 	sta $ffff
 	rts
 RenderBars:
-	ldy #NUM_FREQUENCY_BARS
+	ldy #NUM_FREQUENCY_BARS - 1
 !colorLoop:
-	dey
-	bmi !colorsDone+
 	ldx smoothedHeights, y
 	lda heightColorTable, x
 	cmp previousColors, y
-	beq !colorLoop-
+	beq !skip+
 	sta previousColors, y
 	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
 		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
-	jmp !colorLoop-
-!colorsDone:
+!skip:
+	dey
+	bpl !colorLoop-
 	lda currentScreenBuffer
 	beq !renderScreen1+
 	jmp RenderToScreen0
@@ -2995,7 +3002,7 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 12795 bytes, Cleaned: 8434 bytes (reduced by 34.1%)*
+*Original size: 13224 bytes, Cleaned: 8686 bytes (reduced by 34.3%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3040,6 +3047,12 @@ Files: 1
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
+.align NUM_FREQUENCY_BARS
+previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 	jsr VSync
