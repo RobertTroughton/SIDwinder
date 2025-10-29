@@ -5245,42 +5245,23 @@ class SIDwinderPRGExporter {
 
     selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
-        const sidEnd = sidLoadAddress + sidSize;
+        
+        let effectiveSidStart = sidLoadAddress - 6; 
+        let effectiveSidEnd = sidLoadAddress + sidSize;
+        
+        if (modifiedAddresses && modifiedAddresses.length > 0) {
+            const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
+            effectiveSidEnd += sizes.totalSize; 
+        }
 
         for (const [key, layout] of Object.entries(vizConfig.layouts)) {
             const vizStart = parseInt(layout.baseAddress);
             const vizEnd = vizStart + parseInt(layout.size || '0x4000');
 
-            let saveRestoreStart = vizStart;
-            let saveRestoreEnd = vizStart;
+            const hasOverlap = !(vizEnd <= effectiveSidStart || vizStart >= effectiveSidEnd);
 
-            if (modifiedAddresses && modifiedAddresses.length > 0) {
-                
-                const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
-
-                if (layout.saveRestoreLocation === 'before') {
-                    const saveRestoreAddr = layout.saveRestoreAddress ?
-                        parseInt(layout.saveRestoreAddress) :
-                        vizStart - sizes.totalSize;
-                    saveRestoreStart = saveRestoreAddr;
-                    saveRestoreEnd = saveRestoreAddr + sizes.totalSize;
-                } else {
-                    
-                    saveRestoreStart = vizEnd;
-                    saveRestoreEnd = vizEnd + sizes.totalSize;
-                }
-            } else if (modifiedAddresses === null) {
-                
-                saveRestoreStart = vizStart;
-                saveRestoreEnd = vizStart;
-            }
-
-            const effectiveStart = Math.min(vizStart, saveRestoreStart);
-            const effectiveEnd = Math.max(vizEnd, saveRestoreEnd);
-            const hasOverlap = !(effectiveEnd <= sidLoadAddress || effectiveStart >= sidEnd);
-
-            const sidStartHex = '$' + sidLoadAddress.toString(16).toUpperCase().padStart(4, '0');
-            const sidEndHex = '$' + sidEnd.toString(16).toUpperCase().padStart(4, '0');
+            const sidStartHex = '$' + effectiveSidStart.toString(16).toUpperCase().padStart(4, '0');
+            const sidEndHex = '$' + effectiveSidEnd.toString(16).toUpperCase().padStart(4, '0');
 
             validLayouts.push({
                 key: key,
@@ -5288,10 +5269,10 @@ class SIDwinderPRGExporter {
                 valid: !hasOverlap,
                 vizStart: vizStart,
                 vizEnd: vizEnd,
-                saveRestoreStart: saveRestoreStart,
-                saveRestoreEnd: saveRestoreEnd,
+                saveRestoreStart: effectiveSidEnd - (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
+                saveRestoreEnd: effectiveSidEnd,
                 overlapReason: hasOverlap ?
-                    `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
+                    `Overlaps with SID+routines (${sidStartHex}-${sidEndHex})` :
                     null
             });
         }
@@ -5987,50 +5968,62 @@ class SIDwinderPRGExporter {
 
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
+            let saveJmpAddr = 0;
+            let restoreJmpAddr = 0;
 
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
+                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
-                const tempSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, 0); 
+                
+                restoreRoutineAddr = sidEndAddress;
+                
+                saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+                
+                const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
 
-                if (layout.saveRestoreLocation === 'before' && layout.saveRestoreEndAddress) {
-                    
-                    const endAddress = parseInt(layout.saveRestoreEndAddress);
-                    const totalSize = restoreRoutine.length + tempSaveRoutine.length;
+                this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
+                this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
 
-                    const maxSize = layout.saveRestoreMaxSize ? parseInt(layout.saveRestoreMaxSize) : 0x800;
-                    if (totalSize > maxSize) {
-                        throw new Error(`Save/restore routines (${totalSize} bytes) exceed maximum ${maxSize} bytes for this layout`);
-                    }
+                restoreJmpAddr = actualSidAddress - 6;
+                saveJmpAddr = actualSidAddress - 3;
+                
+                const restoreJmp = new Uint8Array([
+                    0x4C,  
+                    restoreRoutineAddr & 0xFF,
+                    (restoreRoutineAddr >> 8) & 0xFF
+                ]);
+                
+                const saveJmp = new Uint8Array([
+                    0x4C,  
+                    saveRoutineAddr & 0xFF,
+                    (saveRoutineAddr >> 8) & 0xFF
+                ]);
 
-                    restoreRoutineAddr = endAddress - totalSize;
-                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-
-                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
-
-                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
-                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-                } else {
-                    
-                    const baseAddress = parseInt(layout.baseAddress);
-                    const vizSize = parseInt(layout.size || '0x4000');
-
-                    restoreRoutineAddr = baseAddress + vizSize;
-                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-
-                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
-
-                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
-                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-                }
+                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Restore JMP');
+                this.builder.addComponent(saveJmp, saveJmpAddr, 'Save JMP');
+                
             } else {
                 console.warn('No analysis results for save/restore routines');
                 const dummyRoutine = new Uint8Array([0x60]); 
-                saveRoutineAddr = 0x3F00;
-                restoreRoutineAddr = 0x3F80;
-                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
+                
+                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                restoreRoutineAddr = sidEndAddress;
+                saveRoutineAddr = restoreRoutineAddr + 1;
+                
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
+                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
+                
+                restoreJmpAddr = actualSidAddress - 6;
+                saveJmpAddr = actualSidAddress - 3;
+                
+                const restoreJmp = new Uint8Array([0x4C, restoreRoutineAddr & 0xFF, (restoreRoutineAddr >> 8) & 0xFF]);
+                const saveJmp = new Uint8Array([0x4C, saveRoutineAddr & 0xFF, (saveRoutineAddr >> 8) & 0xFF]);
+                
+                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Dummy Restore JMP');
+                this.builder.addComponent(saveJmp, saveJmpAddr, 'Dummy Save JMP');
             }
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
@@ -6044,8 +6037,8 @@ class SIDwinderPRGExporter {
                 },
                 this.analyzer.analysisResults,
                 header,
-                saveRoutineAddr,
-                restoreRoutineAddr,
+                saveJmpAddr,      
+                restoreJmpAddr,   
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,

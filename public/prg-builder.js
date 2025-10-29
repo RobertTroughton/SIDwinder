@@ -114,46 +114,27 @@ class SIDwinderPRGExporter {
 
     selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
-        const sidEnd = sidLoadAddress + sidSize;
+        
+        // NEW ARCHITECTURE: Save/restore routines go at end of SID, JMPs go before SID
+        // So effective SID range is: (sidLoadAddress - 6) to (sidLoadAddress + sidSize + routineSize)
+        let effectiveSidStart = sidLoadAddress - 6; // Space for 2 JMP instructions
+        let effectiveSidEnd = sidLoadAddress + sidSize;
+        
+        if (modifiedAddresses && modifiedAddresses.length > 0) {
+            const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
+            effectiveSidEnd += sizes.totalSize; // Add space for routines at end
+        }
 
         for (const [key, layout] of Object.entries(vizConfig.layouts)) {
             const vizStart = parseInt(layout.baseAddress);
             const vizEnd = vizStart + parseInt(layout.size || '0x4000');
 
-            // Calculate save/restore memory requirements
-            let saveRestoreStart = vizStart;
-            let saveRestoreEnd = vizStart;
-
-            if (modifiedAddresses && modifiedAddresses.length > 0) {
-                // Use actual addresses to calculate real sizes
-                const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
-
-                if (layout.saveRestoreLocation === 'before') {
-                    const saveRestoreAddr = layout.saveRestoreAddress ?
-                        parseInt(layout.saveRestoreAddress) :
-                        vizStart - sizes.totalSize;
-                    saveRestoreStart = saveRestoreAddr;
-                    saveRestoreEnd = saveRestoreAddr + sizes.totalSize;
-                } else {
-                    // After visualizer
-                    saveRestoreStart = vizEnd;
-                    saveRestoreEnd = vizEnd + sizes.totalSize;
-                }
-            } else if (modifiedAddresses === null) {
-                // No modified addresses array provided - skip save/restore calculation
-                // This happens during initial config loading
-                saveRestoreStart = vizStart;
-                saveRestoreEnd = vizStart;
-            }
-
-            // Check for overlaps including save/restore routines
-            const effectiveStart = Math.min(vizStart, saveRestoreStart);
-            const effectiveEnd = Math.max(vizEnd, saveRestoreEnd);
-            const hasOverlap = !(effectiveEnd <= sidLoadAddress || effectiveStart >= sidEnd);
+            // Check for overlaps - just visualizer vs expanded SID range
+            const hasOverlap = !(vizEnd <= effectiveSidStart || vizStart >= effectiveSidEnd);
 
             // Format hex inline
-            const sidStartHex = '$' + sidLoadAddress.toString(16).toUpperCase().padStart(4, '0');
-            const sidEndHex = '$' + sidEnd.toString(16).toUpperCase().padStart(4, '0');
+            const sidStartHex = '$' + effectiveSidStart.toString(16).toUpperCase().padStart(4, '0');
+            const sidEndHex = '$' + effectiveSidEnd.toString(16).toUpperCase().padStart(4, '0');
 
             validLayouts.push({
                 key: key,
@@ -161,10 +142,10 @@ class SIDwinderPRGExporter {
                 valid: !hasOverlap,
                 vizStart: vizStart,
                 vizEnd: vizEnd,
-                saveRestoreStart: saveRestoreStart,
-                saveRestoreEnd: saveRestoreEnd,
+                saveRestoreStart: effectiveSidEnd - (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
+                saveRestoreEnd: effectiveSidEnd,
                 overlapReason: hasOverlap ?
-                    `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
+                    `Overlaps with SID+routines (${sidStartHex}-${sidEndHex})` :
                     null
             });
         }
@@ -897,63 +878,81 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // Add save/restore routines with optimized placement
+            // NEW ARCHITECTURE: Place save/restore routines at end of SID data
+            // and add JMP vectors just before SID load address
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
+            let saveJmpAddr = 0;
+            let restoreJmpAddr = 0;
 
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
+                // Calculate where routines will go: right after the SID data
+                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
-                const tempSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, 0); // Temp address
+                
+                // Place restore routine first, right after SID
+                restoreRoutineAddr = sidEndAddress;
+                
+                // Place save routine after restore routine
+                saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+                
+                // Regenerate save routine with correct restore address
+                const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
 
-                // Determine placement from layout
-                if (layout.saveRestoreLocation === 'before' && layout.saveRestoreEndAddress) {
-                    // Place before visualizer, ending at specified address
-                    const endAddress = parseInt(layout.saveRestoreEndAddress);
-                    const totalSize = restoreRoutine.length + tempSaveRoutine.length;
+                // Add the actual routines at end of SID
+                this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
+                this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
 
-                    // Check if we have a max size constraint
-                    const maxSize = layout.saveRestoreMaxSize ? parseInt(layout.saveRestoreMaxSize) : 0x800;
-                    if (totalSize > maxSize) {
-                        throw new Error(`Save/restore routines (${totalSize} bytes) exceed maximum ${maxSize} bytes for this layout`);
-                    }
+                // Create JMP instructions that will go just before SID load address
+                // JMP to restore routine at (sidLoadAddress - 6)
+                // JMP to save routine at (sidLoadAddress - 3)
+                restoreJmpAddr = actualSidAddress - 6;
+                saveJmpAddr = actualSidAddress - 3;
+                
+                const restoreJmp = new Uint8Array([
+                    0x4C,  // JMP
+                    restoreRoutineAddr & 0xFF,
+                    (restoreRoutineAddr >> 8) & 0xFF
+                ]);
+                
+                const saveJmp = new Uint8Array([
+                    0x4C,  // JMP
+                    saveRoutineAddr & 0xFF,
+                    (saveRoutineAddr >> 8) & 0xFF
+                ]);
 
-                    // Place routines ending at the specified address
-                    restoreRoutineAddr = endAddress - totalSize;
-                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-
-                    // Regenerate save routine with correct restore address
-                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
-
-                    // Add components
-                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
-                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-                } else {
-                    // Default: place after visualizer
-                    const baseAddress = parseInt(layout.baseAddress);
-                    const vizSize = parseInt(layout.size || '0x4000');
-
-                    restoreRoutineAddr = baseAddress + vizSize;
-                    saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-
-                    const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
-
-                    this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
-                    this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-                }
+                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Restore JMP');
+                this.builder.addComponent(saveJmp, saveJmpAddr, 'Save JMP');
+                
             } else {
                 console.warn('No analysis results for save/restore routines');
                 const dummyRoutine = new Uint8Array([0x60]); // RTS
-                saveRoutineAddr = 0x3F00;
-                restoreRoutineAddr = 0x3F80;
-                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
+                
+                // Even with dummy routines, use the new architecture
+                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                restoreRoutineAddr = sidEndAddress;
+                saveRoutineAddr = restoreRoutineAddr + 1;
+                
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
+                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
+                
+                restoreJmpAddr = actualSidAddress - 6;
+                saveJmpAddr = actualSidAddress - 3;
+                
+                const restoreJmp = new Uint8Array([0x4C, restoreRoutineAddr & 0xFF, (restoreRoutineAddr >> 8) & 0xFF]);
+                const saveJmp = new Uint8Array([0x4C, saveRoutineAddr & 0xFF, (saveRoutineAddr >> 8) & 0xFF]);
+                
+                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Dummy Restore JMP');
+                this.builder.addComponent(saveJmp, saveJmpAddr, 'Dummy Save JMP');
             }
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
 
+            // The data block should point to the JMP instructions, not the routines directly
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -963,8 +962,8 @@ class SIDwinderPRGExporter {
                 },
                 this.analyzer.analysisResults,
                 header,
-                saveRoutineAddr,
-                restoreRoutineAddr,
+                saveJmpAddr,      // Point to JMP instruction, not the routine itself
+                restoreJmpAddr,   // Point to JMP instruction, not the routine itself
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,

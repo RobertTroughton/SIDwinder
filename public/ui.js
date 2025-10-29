@@ -112,6 +112,14 @@ class UIController {
             this.exportModifiedSID();
         });
 
+        // Save/Restore checkbox - re-check when toggled
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        if (addSaveRestoreCheckbox) {
+            addSaveRestoreCheckbox.addEventListener('change', () => {
+                this.checkForModifications();
+            });
+        }
+
         // Export PRG button
         this.elements.exportPRGButton.addEventListener('click', () => {
             this.exportPRGWithVisualizer();
@@ -427,14 +435,19 @@ class UIController {
             currentAuthor !== this.originalMetadata.author ||
             currentCopyright !== this.originalMetadata.copyright;
 
+        // Check if save/restore checkbox is checked
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        const checkboxChecked = addSaveRestoreCheckbox ? addSaveRestoreCheckbox.checked : false;
+
         this.hasModifications = hasChanges;
 
-        // Enable/disable export button
-        this.elements.exportModifiedSIDButton.disabled = !hasChanges;
+        // Enable button if either: metadata changed OR checkbox is checked
+        const shouldEnable = hasChanges || checkboxChecked;
+        this.elements.exportModifiedSIDButton.disabled = !shouldEnable;
 
         // Show/hide hint
         if (this.elements.exportHint) {
-            this.elements.exportHint.style.display = hasChanges ? 'none' : 'block';
+            this.elements.exportHint.style.display = shouldEnable ? 'none' : 'block';
         }
     }
 
@@ -866,6 +879,40 @@ class UIController {
         const modifiedAddresses = this.analysisResults?.modifiedAddresses || 0;
         const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
 
+        // Calculate SID memory range with save/restore functions
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        const hasSaveRestore = addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked && modifiedCount > 0;
+        
+        let sidStart = sidLoadAddress;
+        let sidEnd = sidLoadAddress + sidSize - 1;
+        
+        if (hasSaveRestore) {
+            // SID starts 6 bytes earlier due to prepended JMPs (2 load addr + 2*3 JMP)
+            sidStart = sidLoadAddress - 6;
+            
+            // Calculate save/restore routine sizes
+            const filteredAddrs = Array.from(modifiedAddresses).filter(addr => {
+                if (addr >= 0x0100 && addr <= 0x01FF) return false; // Skip stack
+                if (addr >= 0xD400 && addr <= 0xD7FF) return false; // Skip SID registers
+                return true;
+            });
+            
+            // Restore: LDA # (2) + STA zp/abs (2 or 3) = 4 or 5 bytes per address, +1 RTS
+            const restoreSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 4 : 5), 0) + 1;
+            
+            // Save: LDA zp/abs (2 or 3) + STA abs (3) = 5 or 6 bytes per address, +1 RTS
+            const saveSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 5 : 6), 0) + 1;
+            
+            // The save/restore routines are placed after the original SID code
+            // Original code occupies: loadAddress to (loadAddress + actualCodeSize - 1)
+            // We need to account for the fact that sidSize might include the original load address bytes
+            // Assume it does (typical case), so actual code size is sidSize - 2
+            const actualCodeSize = sidSize - 2;
+            const saveRestoreStart = sidLoadAddress + actualCodeSize;
+            
+            sidEnd = saveRestoreStart + restoreSize + saveSize - 1;
+        }
+
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
         }
@@ -882,27 +929,23 @@ class UIController {
         }
 
         let html = '<div class="layout-options">';
+        
+        // Show SID memory range at the top
+        html += `
+        <div class="sid-memory-info">
+            <span class="sid-memory-label">SID Memory:</span>
+            <span class="sid-memory-range">${this.formatHex(sidStart, 4)}-${this.formatHex(sidEnd, 4)}</span>
+        </div>
+        `;
 
         // All layouts in one list
         let firstValidIndex = -1;
         layouts.forEach((layoutInfo, index) => {
             const layout = layoutInfo.layout;
 
-            // Calculate the full memory range including save/restore
-            let rangeStart, rangeEnd;
-            if (modifiedCount > 0 && layoutInfo.saveRestoreStart < layoutInfo.vizStart) {
-                // Save/restore is before visualizer
-                rangeStart = this.formatHex(layoutInfo.saveRestoreStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
-            } else if (modifiedCount > 0 && layoutInfo.saveRestoreEnd > layoutInfo.vizEnd) {
-                // Save/restore is after visualizer
-                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.saveRestoreEnd - 1, 4);
-            } else {
-                // No save/restore or it fits within visualizer range
-                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
-            }
+            // Show only the visualizer's memory range (no save/restore)
+            const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+            const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
 
             const isValid = layoutInfo.valid;
 
@@ -1426,10 +1469,23 @@ class UIController {
             return;
         }
 
+        // Check if we should add save/restore functions
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        let finalData = modifiedData;
+        
+        if (addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked) {
+            // Add save/restore functions to the SID
+            finalData = this.addSaveRestoreFunctionsToSID(modifiedData);
+            if (!finalData) {
+                this.showExportStatus('Failed to add save/restore functions', 'error');
+                return;
+            }
+        }
+
         const baseName = this.currentFileName ?
             this.currentFileName.replace('.sid', '') : 'modified';
 
-        this.downloadFile(modifiedData, `${baseName}_edited.sid`);
+        this.downloadFile(finalData, `${baseName}_edited.sid`);
         this.showExportStatus('SID file exported successfully!', 'success');
 
         // Update the original metadata to reflect the saved state
@@ -1445,6 +1501,189 @@ class UIController {
         if (this.elements.exportHint) {
             this.elements.exportHint.style.display = 'block';
         }
+    }
+
+    addSaveRestoreFunctionsToSID(sidData) {
+        // This function adds save/restore routines to a SID file
+        // The SID file format has a header followed by the actual C64 code/data
+        
+        if (!this.analyzer.analysisResults || !this.analyzer.analysisResults.modifiedAddresses) {
+            console.warn('No analysis results, cannot add save/restore functions');
+            return sidData; // Return unmodified if no analysis
+        }
+
+        try {
+            // Parse the SID header to get load address and data size
+            const header = this.sidHeader || this.analyzer.sidHeader;
+            if (!header) {
+                console.error('No SID header available');
+                return null;
+            }
+
+            const loadAddress = header.loadAddress;
+            const dataOffset = header.dataOffset || 0x7C; // Standard v2 header size
+            
+            // Extract the original SID data (without header)
+            const originalData = sidData.slice(dataOffset);
+            
+            // Check if originalData starts with load address bytes
+            // If the original header had loadAddress == 0, the data section starts with load address bytes
+            // We need to skip these as we'll write our own
+            let codeData = originalData;
+            let hasLoadAddressBytes = false;
+            
+            // Check if data starts with load address bytes that match the header's loadAddress
+            if (originalData.length >= 2) {
+                const dataLoadAddr = originalData[0] | (originalData[1] << 8);
+                // If header said 0, or if the bytes match the header's load address, skip them
+                if (dataLoadAddr === loadAddress || (sidData[8] === 0 && sidData[9] === 0)) {
+                    codeData = originalData.slice(2);
+                    hasLoadAddressBytes = true;
+                }
+            }
+            
+            const dataSize = codeData.length;
+
+            // Generate save/restore routines
+            const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses)
+                .filter(addr => {
+                    if (addr >= 0x0100 && addr <= 0x01FF) return false; // Skip stack
+                    if (addr >= 0xD400 && addr <= 0xD7FF) return false; // Skip SID registers
+                    return true;
+                })
+                .sort((a, b) => a - b);
+
+            if (modifiedAddrs.length === 0) {
+                console.warn('No modified addresses to save/restore');
+                return sidData; // Return unmodified
+            }
+
+            // Calculate addresses for new components
+            // The routines go after the original code
+            const sidEndAddress = loadAddress + dataSize;
+            const restoreRoutineAddr = sidEndAddress;
+            
+            // Generate restore routine
+            const restoreRoutine = this.generateRestoreRoutineBytes(modifiedAddrs);
+            const saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+            
+            // Generate save routine
+            const saveRoutine = this.generateSaveRoutineBytes(modifiedAddrs, restoreRoutineAddr);
+            
+            // Generate JMP vectors
+            const restoreJmpAddr = loadAddress - 6;
+            const saveJmpAddr = loadAddress - 3;
+            
+            const restoreJmp = new Uint8Array([
+                0x4C, // JMP
+                restoreRoutineAddr & 0xFF,
+                (restoreRoutineAddr >> 8) & 0xFF
+            ]);
+            
+            const saveJmp = new Uint8Array([
+                0x4C, // JMP
+                saveRoutineAddr & 0xFF,
+                (saveRoutineAddr >> 8) & 0xFF
+            ]);
+
+            // Build the new SID file
+            // We CAN change the load address because init/play are absolute addresses
+            // So: load at (original-8), which includes load address bytes + JMPs, then original SID, then routines
+            const newLoadAddress = restoreJmpAddr;
+            const newDataSize = 2 + 6 + dataSize + restoreRoutine.length + saveRoutine.length;
+            
+            // Create new data array: header + load address bytes + JMPs + original data + routines
+            const newSIDData = new Uint8Array(dataOffset + newDataSize);
+            
+            // Copy original header
+            newSIDData.set(sidData.slice(0, dataOffset));
+            
+            // Keep load address in header as $00, $00 (bytes 8-9 for v2)
+            // This tells the loader to read the load address from the data section
+            newSIDData[8] = 0x00;
+            newSIDData[9] = 0x00;
+            
+            // Build data section: load address bytes + JMPs + original data + routines
+            let offset = dataOffset;
+            // First write the load address bytes (little-endian)
+            newSIDData[offset++] = newLoadAddress & 0xFF;
+            newSIDData[offset++] = (newLoadAddress >> 8) & 0xFF;
+            // Then the JMP table
+            newSIDData.set(restoreJmp, offset);
+            offset += 3;
+            newSIDData.set(saveJmp, offset);
+            offset += 3;
+            newSIDData.set(codeData, offset);
+            offset += dataSize;
+            newSIDData.set(restoreRoutine, offset);
+            offset += restoreRoutine.length;
+            newSIDData.set(saveRoutine, offset);
+
+            console.log(`Added save/restore functions to SID:`);
+            console.log(`  New load address: $${newLoadAddress.toString(16).toUpperCase()}`);
+            console.log(`  Restore JMP at: $${restoreJmpAddr.toString(16).toUpperCase()} -> $${restoreRoutineAddr.toString(16).toUpperCase()}`);
+            console.log(`  Save JMP at: $${saveJmpAddr.toString(16).toUpperCase()} -> $${saveRoutineAddr.toString(16).toUpperCase()}`);
+            console.log(`  Call restore with: JSR $${restoreJmpAddr.toString(16).toUpperCase()}`);
+            console.log(`  Call save with: JSR $${saveJmpAddr.toString(16).toUpperCase()}`);
+
+            return newSIDData;
+
+        } catch (error) {
+            console.error('Error adding save/restore functions:', error);
+            return null;
+        }
+    }
+
+    generateRestoreRoutineBytes(modifiedAddresses) {
+        const code = [];
+        
+        for (const addr of modifiedAddresses) {
+            // LDA #immediate (will be patched by save routine)
+            code.push(0xA9); // LDA #
+            code.push(0x00); // Placeholder value
+            
+            // STA to restore the value
+            if (addr < 256) {
+                code.push(0x85); // STA zeropage
+                code.push(addr);
+            } else {
+                code.push(0x8D); // STA absolute
+                code.push(addr & 0xFF);
+                code.push((addr >> 8) & 0xFF);
+            }
+        }
+        
+        code.push(0x60); // RTS
+        return new Uint8Array(code);
+    }
+
+    generateSaveRoutineBytes(modifiedAddresses, restoreRoutineAddr) {
+        const code = [];
+        let restoreOffset = 0;
+        
+        for (const addr of modifiedAddresses) {
+            // Load from memory address
+            if (addr < 256) {
+                code.push(0xA5); // LDA zeropage
+                code.push(addr);
+            } else {
+                code.push(0xAD); // LDA absolute
+                code.push(addr & 0xFF);
+                code.push((addr >> 8) & 0xFF);
+            }
+            
+            // Store into restore routine (at the immediate value byte)
+            const targetAddr = restoreRoutineAddr + restoreOffset + 1; // +1 to skip the LDA opcode
+            code.push(0x8D); // STA absolute
+            code.push(targetAddr & 0xFF);
+            code.push((targetAddr >> 8) & 0xFF);
+            
+            // Calculate offset for next address in restore routine
+            restoreOffset += (addr < 256) ? 4 : 5; // Size of each restore instruction block
+        }
+        
+        code.push(0x60); // RTS
+        return new Uint8Array(code);
     }
 
     async exportPRGWithVisualizer() {
