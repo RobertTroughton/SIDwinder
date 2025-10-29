@@ -474,6 +474,12 @@ class UIController {
         this.hasModifications = false;
         this.elements.exportModifiedSIDButton.disabled = true;
 
+        // Reset save/restore checkbox when loading new SID
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        if (addSaveRestoreCheckbox) {
+            addSaveRestoreCheckbox.checked = false;
+        }
+
         // Show busy overlay
         this.showBusy('Loading SID File', 'Reading and analyzing file...');
         this.hideMessages();
