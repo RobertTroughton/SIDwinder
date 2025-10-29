@@ -223,6 +223,15 @@
         </div>
     </div>
 
+    <!-- Busy Overlay -->
+    <div class="busy-overlay" id="busyOverlay">
+        <div class="busy-content">
+            <div class="busy-spinner"></div>
+            <div class="busy-message" id="busyMessage">Processing...</div>
+            <div class="busy-submessage" id="busySubmessage"></div>
+        </div>
+    </div>
+
     <!-- Load TSCrunch as ES module -->
     <script type="module">
         import { Cruncher, createSFX } from './lib/index.js';

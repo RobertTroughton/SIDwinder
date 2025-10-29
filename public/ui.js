@@ -59,6 +59,10 @@ class UIController {
             modalOverlay: document.getElementById('modalOverlay'),
             modalIcon: document.getElementById('modalIcon'),
             modalMessage: document.getElementById('modalMessage'),
+            // Busy overlay elements
+            busyOverlay: document.getElementById('busyOverlay'),
+            busyMessage: document.getElementById('busyMessage'),
+            busySubmessage: document.getElementById('busySubmessage'),
             // Editable fields
             sidTitle: document.getElementById('sidTitle'),
             sidAuthor: document.getElementById('sidAuthor'),
@@ -470,12 +474,16 @@ class UIController {
         this.hasModifications = false;
         this.elements.exportModifiedSIDButton.disabled = true;
 
-        this.showLoading(true);
+        // Show busy overlay
+        this.showBusy('Loading SID File', 'Reading and analyzing file...');
         this.hideMessages();
 
         try {
             // Read file
             const buffer = await file.arrayBuffer();
+
+            // Update busy message
+            this.updateBusy('Parsing SID Header', 'Extracting metadata...');
 
             // Load SID file
             const header = await this.analyzer.loadSID(buffer);
@@ -494,8 +502,8 @@ class UIController {
             this.updateTechnicalInfo(header);
             this.updateSongTitle(header);
 
-            // Show progress bar for analysis
-            this.elements.progressBar.classList.add('active');
+            // Update busy message for analysis
+            this.updateBusy('Analyzing SID Music', 'This may take a few moments...');
 
             // Run analysis
             const frameCount = 30000;
@@ -505,8 +513,7 @@ class UIController {
                 const percent = Math.floor((current / total) * 100);
                 if (percent !== lastProgress) {
                     lastProgress = percent;
-                    this.elements.progressFill.style.width = percent + '%';
-                    this.elements.progressText.textContent = `Analyzing: ${percent}%`;
+                    this.updateBusy('Analyzing SID Music', `Processing frame ${current.toLocaleString()} of ${total.toLocaleString()} (${percent}%)`);
                 }
             });
 
@@ -526,13 +533,14 @@ class UIController {
             // Show export section
             this.showExportSection();
 
+            // Hide busy overlay
+            this.hideBusy();
+
             this.showModal(`Successfully analyzed: ${file.name}`, true);
         } catch (error) {
+            this.hideBusy();
             this.showModal(`Error: ${error.message}`, false);
             console.error(error);
-        } finally {
-            this.showLoading(false);
-            this.elements.progressBar.classList.remove('active');
         }
     }
 
@@ -1706,7 +1714,8 @@ class UIController {
         const compressionRadio = document.querySelector('input[name="compression-type"]:checked');
         const compressionType = compressionRadio ? compressionRadio.value : 'tscrunch';
 
-        this.showExportStatus('Building PRG file...', 'info');
+        // Show busy overlay
+        this.showBusy('Creating PRG File', 'Preparing components...');
 
         // Get the selected song (default to startSong if selector doesn't exist)
         const songSelector = document.getElementById('songSelector');
@@ -1715,6 +1724,9 @@ class UIController {
         try {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
+
+            // Update progress
+            this.updateBusy('Loading Visualizer', 'Reading configuration...');
 
             // Load the visualizer config to get the SYS address
             const vizConfig = await this.visualizerConfig.loadConfig(this.selectedVisualizer.id);
@@ -1742,7 +1754,17 @@ class UIController {
                 layoutKey: selectedLayoutKey
             };
 
+            // Update progress
+            this.updateBusy('Building PRG', 'Assembling components...');
+
             const prgData = await this.prgExporter.createPRG(options);
+
+            // Update progress for compression if needed
+            if (compressionType !== 'none') {
+                this.updateBusy('Compressing', `Applying ${compressionType.toUpperCase()} compression...`);
+                // Small delay to show the message
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
 
             // Generate filename based on compression
             const isCompressed = compressionType !== 'none';
@@ -1758,6 +1780,9 @@ class UIController {
 
             this.downloadFile(prgData, filename);
 
+            // Hide busy overlay
+            this.hideBusy();
+
             const sizeKB = (prgData.length / 1024).toFixed(2);
             let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;
 
@@ -1768,6 +1793,7 @@ class UIController {
             this.showExportStatus(statusMsg, 'success');
 
         } catch (error) {
+            this.hideBusy();
             console.error('Export error:', error);
             this.showExportStatus(`Export failed: ${error.message}`, 'error');
         }
@@ -1833,6 +1859,27 @@ class UIController {
 
     showLoading(show) {
         this.elements.loading.classList.toggle('active', show);
+    }
+
+    showBusy(message, submessage = '') {
+        if (this.elements.busyOverlay) {
+            this.elements.busyMessage.textContent = message;
+            this.elements.busySubmessage.textContent = submessage;
+            this.elements.busyOverlay.classList.add('visible');
+        }
+    }
+
+    updateBusy(message, submessage = '') {
+        if (this.elements.busyOverlay && this.elements.busyOverlay.classList.contains('visible')) {
+            this.elements.busyMessage.textContent = message;
+            this.elements.busySubmessage.textContent = submessage;
+        }
+    }
+
+    hideBusy() {
+        if (this.elements.busyOverlay) {
+            this.elements.busyOverlay.classList.remove('visible');
+        }
     }
 
     showModal(message, isSuccess) {

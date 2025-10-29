@@ -1170,6 +1170,66 @@ body {
     color: #333;
 }
 
+/* Busy Overlay - for showing progress during long operations */
+.busy-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Higher than modal */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+    .busy-overlay.visible {
+        display: flex;
+        opacity: 1;
+    }
+
+.busy-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 50px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    min-width: 300px;
+}
+
+.busy-overlay.visible .busy-content {
+    transform: scale(1);
+}
+
+.busy-spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.busy-message {
+    font-size: 1.3em;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.busy-submessage {
+    font-size: 0.95em;
+    color: #666;
+    line-height: 1.4;
+}
+
+
 .compression-options {
     display: flex;
     flex-direction: column;

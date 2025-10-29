@@ -260,8 +260,8 @@ MainIRQ:
 !skip:
 
 	jsr JustPlayMusic
-	jsr UpdateBars
 	jsr AnalyseMusic
+	jsr UpdateBars
 
 !done:
 	jsr NextIRQ

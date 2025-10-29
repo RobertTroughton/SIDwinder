@@ -184,7 +184,6 @@ MainLoop:
 	beq MainLoop
 
 	jsr ApplySmoothing
-
 	jsr RenderBars
 
 	lda #$00

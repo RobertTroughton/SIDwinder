@@ -40,7 +40,7 @@
 
 .const NUM_FREQUENCY_BARS				= 40
 
-.const TOP_SPECTRUM_HEIGHT				= 16
+.const TOP_SPECTRUM_HEIGHT				= 14
 .const BOTTOM_SPECTRUM_HEIGHT			= 3
 
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
@@ -48,7 +48,7 @@
 
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
-.const SPECTRUM_START_LINE				= 3
+.const SPECTRUM_START_LINE				= 5
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 .eval setSeed(55378008)
@@ -273,9 +273,9 @@ MainIRQ:
 
 	jsr JustPlayMusic
 	jsr UpdateColors
+	jsr AnalyseMusic
 	jsr UpdateBars
 	jsr UpdateSprites
-	jsr AnalyseMusic
 
 !done:
 	jsr NextIRQ
