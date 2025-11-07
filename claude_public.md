@@ -731,15 +731,6 @@
                 <div class="song-author" id="songAuthor">Load a SID file to begin</div>
             </div>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <div>Analyzing SID file...</div>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText"></div>
-            </div>
-
             <div class="error-message" id="errorMessage"></div>
 
             <div class="section-group info-section disabled" id="infoSection">
@@ -820,12 +811,22 @@
                             <span class="info-label">Play Calls/Frame:</span>
                             <span class="info-value" id="numCallsPerFrame">-</span>
                         </div>
+                        
+                        <div class="info-row" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                            <div class="checkbox-container">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="addSaveRestoreCheckbox">
+                                    Add Save/Restore Functions
+                                </label>
+                                <div class="checkbox-hint">Adds JSR-able save/restore routines for modified memory</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="export-modified-container">
                     <button class="export-button" id="exportModifiedSIDButton" disabled>
-                        💾 Export Modified SID
+                        💾 Save SID
                     </button>
                     <div class="export-hint" id="exportHint">Edit the metadata above to enable export</div>
                 </div>
@@ -858,6 +859,14 @@
         <div class="modal-content">
             <div class="modal-icon" id="modalIcon">✔</div>
             <div class="modal-message" id="modalMessage">Success!</div>
+        </div>
+    </div>
+
+    <div class="busy-overlay" id="busyOverlay">
+        <div class="busy-content">
+            <div class="busy-spinner"></div>
+            <div class="busy-message" id="busyMessage">Processing...</div>
+            <div class="busy-submessage" id="busySubmessage"></div>
         </div>
     </div>
 
@@ -2228,64 +2237,6 @@ body {
         border: 1px solid #bee5eb;
     }
 
-.loading {
-    display: none;
-    text-align: center;
-    padding: 20px;
-}
-
-    .loading.active {
-        display: block;
-    }
-
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.progress-bar {
-    width: 100%;
-    height: 20px;
-    background: #f0f0f0;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 10px;
-    display: none;
-}
-
-    .progress-bar.active {
-        display: block;
-    }
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-text {
-    text-align: center;
-    margin-top: 5px;
-    font-size: 0.9em;
-    color: #666;
-}
-
 .error-message {
     background: #ff6b6b20;
     border: 1px solid #ff6b6b;
@@ -2350,6 +2301,64 @@ body {
 .modal-message {
     font-size: 1.2em;
     color: #333;
+}
+
+.busy-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; 
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+    .busy-overlay.visible {
+        display: flex;
+        opacity: 1;
+    }
+
+.busy-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 50px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    min-width: 300px;
+}
+
+.busy-overlay.visible .busy-content {
+    transform: scale(1);
+}
+
+.busy-spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.busy-message {
+    font-size: 1.3em;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.busy-submessage {
+    font-size: 0.95em;
+    color: #666;
+    line-height: 1.4;
 }
 
 .compression-options {
@@ -3113,17 +3122,6 @@ body {
     justify-content: space-between;
 }
 
-.loading {
-    text-align: center;
-    padding: 20px;
-    color: #888;
-}
-
-    .loading::after {
-        content: '...';
-        animation: dots 1s steps(3, end) infinite;
-    }
-
 @keyframes dots {
     0%, 20% {
         content: '.';
@@ -3503,6 +3501,64 @@ body {
     60%, 100% {
         content: '...';
     }
+}
+
+.checkbox-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+}
+
+    .checkbox-container input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        margin-right: 8px;
+        accent-color: #667eea;
+        vertical-align: middle;
+        flex-shrink: 0;
+    }
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.checkbox-hint {
+    font-size: 11px;
+    color: #666;
+    margin-left: 26px;
+    line-height: 1.3;
+}
+
+.checkbox-container:hover .checkbox-label {
+    color: #667eea;
+}
+
+#exportModifiedSIDButton {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+#exportModifiedSIDButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #7b8ff5 0%, #8a5bb5 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#exportModifiedSIDButton:disabled {
+    background: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    text-shadow: none;
 }
 ```
 
@@ -6525,6 +6581,10 @@ class UIController {
             modalIcon: document.getElementById('modalIcon'),
             modalMessage: document.getElementById('modalMessage'),
             
+            busyOverlay: document.getElementById('busyOverlay'),
+            busyMessage: document.getElementById('busyMessage'),
+            busySubmessage: document.getElementById('busySubmessage'),
+            
             sidTitle: document.getElementById('sidTitle'),
             sidAuthor: document.getElementById('sidAuthor'),
             sidCopyright: document.getElementById('sidCopyright'),
@@ -6573,6 +6633,13 @@ class UIController {
         this.elements.exportModifiedSIDButton.addEventListener('click', () => {
             this.exportModifiedSID();
         });
+
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        if (addSaveRestoreCheckbox) {
+            addSaveRestoreCheckbox.addEventListener('change', () => {
+                this.checkForModifications();
+            });
+        }
 
         this.elements.exportPRGButton.addEventListener('click', () => {
             this.exportPRGWithVisualizer();
@@ -6627,7 +6694,6 @@ class UIController {
         const modal = document.getElementById('hvscModal');
         modal.classList.remove('visible');
 
-        this.showLoading(true);
         this.showModal('Downloading SID from HVSC...', true);
 
         try {
@@ -6646,7 +6712,6 @@ class UIController {
         } catch (error) {
             console.error('Error downloading HVSC file:', error);
             this.showModal('Failed to download SID from HVSC', false);
-            this.showLoading(false);
         }
     }
 
@@ -6865,12 +6930,16 @@ class UIController {
             currentAuthor !== this.originalMetadata.author ||
             currentCopyright !== this.originalMetadata.copyright;
 
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        const checkboxChecked = addSaveRestoreCheckbox ? addSaveRestoreCheckbox.checked : false;
+
         this.hasModifications = hasChanges;
 
-        this.elements.exportModifiedSIDButton.disabled = !hasChanges;
+        const shouldEnable = hasChanges || checkboxChecked;
+        this.elements.exportModifiedSIDButton.disabled = !shouldEnable;
 
         if (this.elements.exportHint) {
-            this.elements.exportHint.style.display = hasChanges ? 'none' : 'block';
+            this.elements.exportHint.style.display = shouldEnable ? 'none' : 'block';
         }
     }
 
@@ -6893,12 +6962,19 @@ class UIController {
         this.hasModifications = false;
         this.elements.exportModifiedSIDButton.disabled = true;
 
-        this.showLoading(true);
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        if (addSaveRestoreCheckbox) {
+            addSaveRestoreCheckbox.checked = false;
+        }
+
+        this.showBusy('Loading SID File', 'Reading and analyzing file...');
         this.hideMessages();
 
         try {
             
             const buffer = await file.arrayBuffer();
+
+            this.updateBusy('Parsing SID Header', 'Extracting metadata...');
 
             const header = await this.analyzer.loadSID(buffer);
             this.sidHeader = header;
@@ -6914,7 +6990,7 @@ class UIController {
             this.updateTechnicalInfo(header);
             this.updateSongTitle(header);
 
-            this.elements.progressBar.classList.add('active');
+            this.updateBusy('Analyzing SID Music', 'This may take a few moments...');
 
             const frameCount = 30000;
             let lastProgress = 0;
@@ -6923,8 +6999,7 @@ class UIController {
                 const percent = Math.floor((current / total) * 100);
                 if (percent !== lastProgress) {
                     lastProgress = percent;
-                    this.elements.progressFill.style.width = percent + '%';
-                    this.elements.progressText.textContent = `Analyzing: ${percent}%`;
+                    this.updateBusy('Analyzing SID Music', `Processing frame ${current.toLocaleString()} of ${total.toLocaleString()} (${percent}%)`);
                 }
             });
 
@@ -6941,13 +7016,13 @@ class UIController {
 
             this.showExportSection();
 
+            this.hideBusy();
+
             this.showModal(`Successfully analyzed: ${file.name}`, true);
         } catch (error) {
+            this.hideBusy();
             this.showModal(`Error: ${error.message}`, false);
             console.error(error);
-        } finally {
-            this.showLoading(false);
-            this.elements.progressBar.classList.remove('active');
         }
     }
 
@@ -7269,6 +7344,32 @@ class UIController {
         const modifiedAddresses = this.analysisResults?.modifiedAddresses || 0;
         const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
 
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        const hasSaveRestore = addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked && modifiedCount > 0;
+        
+        let sidStart = sidLoadAddress;
+        let sidEnd = sidLoadAddress + sidSize - 1;
+        
+        if (hasSaveRestore) {
+            
+            sidStart = sidLoadAddress - 6;
+            
+            const filteredAddrs = Array.from(modifiedAddresses).filter(addr => {
+                if (addr >= 0x0100 && addr <= 0x01FF) return false; 
+                if (addr >= 0xD400 && addr <= 0xD7FF) return false; 
+                return true;
+            });
+            
+            const restoreSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 4 : 5), 0) + 1;
+            
+            const saveSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 5 : 6), 0) + 1;
+            
+            const actualCodeSize = sidSize - 2;
+            const saveRestoreStart = sidLoadAddress + actualCodeSize;
+            
+            sidEnd = saveRestoreStart + restoreSize + saveSize - 1;
+        }
+
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
         }
@@ -7284,25 +7385,20 @@ class UIController {
         }
 
         let html = '<div class="layout-options">';
+        
+        html += `
+        <div class="sid-memory-info">
+            <span class="sid-memory-label">SID Memory:</span>
+            <span class="sid-memory-range">${this.formatHex(sidStart, 4)}-${this.formatHex(sidEnd, 4)}</span>
+        </div>
+        `;
 
         let firstValidIndex = -1;
         layouts.forEach((layoutInfo, index) => {
             const layout = layoutInfo.layout;
 
-            let rangeStart, rangeEnd;
-            if (modifiedCount > 0 && layoutInfo.saveRestoreStart < layoutInfo.vizStart) {
-                
-                rangeStart = this.formatHex(layoutInfo.saveRestoreStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
-            } else if (modifiedCount > 0 && layoutInfo.saveRestoreEnd > layoutInfo.vizEnd) {
-                
-                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.saveRestoreEnd - 1, 4);
-            } else {
-                
-                rangeStart = this.formatHex(layoutInfo.vizStart, 4);
-                rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
-            }
+            const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
+            const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
 
             const isValid = layoutInfo.valid;
 
@@ -7798,10 +7894,22 @@ class UIController {
             return;
         }
 
+        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
+        let finalData = modifiedData;
+        
+        if (addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked) {
+            
+            finalData = this.addSaveRestoreFunctionsToSID(modifiedData);
+            if (!finalData) {
+                this.showExportStatus('Failed to add save/restore functions', 'error');
+                return;
+            }
+        }
+
         const baseName = this.currentFileName ?
             this.currentFileName.replace('.sid', '') : 'modified';
 
-        this.downloadFile(modifiedData, `${baseName}_edited.sid`);
+        this.downloadFile(finalData, `${baseName}_edited.sid`);
         this.showExportStatus('SID file exported successfully!', 'success');
 
         this.originalMetadata = {
@@ -7815,6 +7923,165 @@ class UIController {
         if (this.elements.exportHint) {
             this.elements.exportHint.style.display = 'block';
         }
+    }
+
+    addSaveRestoreFunctionsToSID(sidData) {
+        
+        if (!this.analyzer.analysisResults || !this.analyzer.analysisResults.modifiedAddresses) {
+            console.warn('No analysis results, cannot add save/restore functions');
+            return sidData; 
+        }
+
+        try {
+            
+            const header = this.sidHeader || this.analyzer.sidHeader;
+            if (!header) {
+                console.error('No SID header available');
+                return null;
+            }
+
+            const loadAddress = header.loadAddress;
+            const dataOffset = header.dataOffset || 0x7C; 
+            
+            const originalData = sidData.slice(dataOffset);
+            
+            let codeData = originalData;
+            let hasLoadAddressBytes = false;
+            
+            if (originalData.length >= 2) {
+                const dataLoadAddr = originalData[0] | (originalData[1] << 8);
+                
+                if (dataLoadAddr === loadAddress || (sidData[8] === 0 && sidData[9] === 0)) {
+                    codeData = originalData.slice(2);
+                    hasLoadAddressBytes = true;
+                }
+            }
+            
+            const dataSize = codeData.length;
+
+            const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses)
+                .filter(addr => {
+                    if (addr >= 0x0100 && addr <= 0x01FF) return false; 
+                    if (addr >= 0xD400 && addr <= 0xD7FF) return false; 
+                    return true;
+                })
+                .sort((a, b) => a - b);
+
+            if (modifiedAddrs.length === 0) {
+                console.warn('No modified addresses to save/restore');
+                return sidData; 
+            }
+
+            const sidEndAddress = loadAddress + dataSize;
+            const restoreRoutineAddr = sidEndAddress;
+            
+            const restoreRoutine = this.generateRestoreRoutineBytes(modifiedAddrs);
+            const saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
+            
+            const saveRoutine = this.generateSaveRoutineBytes(modifiedAddrs, restoreRoutineAddr);
+            
+            const restoreJmpAddr = loadAddress - 6;
+            const saveJmpAddr = loadAddress - 3;
+            
+            const restoreJmp = new Uint8Array([
+                0x4C, 
+                restoreRoutineAddr & 0xFF,
+                (restoreRoutineAddr >> 8) & 0xFF
+            ]);
+            
+            const saveJmp = new Uint8Array([
+                0x4C, 
+                saveRoutineAddr & 0xFF,
+                (saveRoutineAddr >> 8) & 0xFF
+            ]);
+
+            const newLoadAddress = restoreJmpAddr;
+            const newDataSize = 2 + 6 + dataSize + restoreRoutine.length + saveRoutine.length;
+            
+            const newSIDData = new Uint8Array(dataOffset + newDataSize);
+            
+            newSIDData.set(sidData.slice(0, dataOffset));
+            
+            newSIDData[8] = 0x00;
+            newSIDData[9] = 0x00;
+            
+            let offset = dataOffset;
+            
+            newSIDData[offset++] = newLoadAddress & 0xFF;
+            newSIDData[offset++] = (newLoadAddress >> 8) & 0xFF;
+            
+            newSIDData.set(restoreJmp, offset);
+            offset += 3;
+            newSIDData.set(saveJmp, offset);
+            offset += 3;
+            newSIDData.set(codeData, offset);
+            offset += dataSize;
+            newSIDData.set(restoreRoutine, offset);
+            offset += restoreRoutine.length;
+            newSIDData.set(saveRoutine, offset);
+
+            console.log(`Added save/restore functions to SID:`);
+            console.log(`  New load address: $${newLoadAddress.toString(16).toUpperCase()}`);
+            console.log(`  Restore JMP at: $${restoreJmpAddr.toString(16).toUpperCase()} -> $${restoreRoutineAddr.toString(16).toUpperCase()}`);
+            console.log(`  Save JMP at: $${saveJmpAddr.toString(16).toUpperCase()} -> $${saveRoutineAddr.toString(16).toUpperCase()}`);
+            console.log(`  Call restore with: JSR $${restoreJmpAddr.toString(16).toUpperCase()}`);
+            console.log(`  Call save with: JSR $${saveJmpAddr.toString(16).toUpperCase()}`);
+
+            return newSIDData;
+
+        } catch (error) {
+            console.error('Error adding save/restore functions:', error);
+            return null;
+        }
+    }
+
+    generateRestoreRoutineBytes(modifiedAddresses) {
+        const code = [];
+        
+        for (const addr of modifiedAddresses) {
+            
+            code.push(0xA9); 
+            code.push(0x00); 
+            
+            if (addr < 256) {
+                code.push(0x85); 
+                code.push(addr);
+            } else {
+                code.push(0x8D); 
+                code.push(addr & 0xFF);
+                code.push((addr >> 8) & 0xFF);
+            }
+        }
+        
+        code.push(0x60); 
+        return new Uint8Array(code);
+    }
+
+    generateSaveRoutineBytes(modifiedAddresses, restoreRoutineAddr) {
+        const code = [];
+        let restoreOffset = 0;
+        
+        for (const addr of modifiedAddresses) {
+            
+            if (addr < 256) {
+                code.push(0xA5); 
+                code.push(addr);
+            } else {
+                code.push(0xAD); 
+                code.push(addr & 0xFF);
+                code.push((addr >> 8) & 0xFF);
+            }
+            
+            const targetAddr = restoreRoutineAddr + restoreOffset + 1; 
+            code.push(0x8D); 
+            code.push(targetAddr & 0xFF);
+            code.push((targetAddr >> 8) & 0xFF);
+            
+            restoreOffset += (addr < 256) ? 4 : 5; 
+        }
+        
+        code.push(0x60); 
+        return new Uint8Array(code);
     }
 
     async exportPRGWithVisualizer() {
@@ -7835,7 +8102,7 @@ class UIController {
         const compressionRadio = document.querySelector('input[name="compression-type"]:checked');
         const compressionType = compressionRadio ? compressionRadio.value : 'tscrunch';
 
-        this.showExportStatus('Building PRG file...', 'info');
+        this.showBusy('Creating PRG File', 'Preparing components...');
 
         const songSelector = document.getElementById('songSelector');
         const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
@@ -7843,6 +8110,8 @@ class UIController {
         try {
             const baseName = this.currentFileName ?
                 this.currentFileName.replace('.sid', '') : 'output';
+
+            this.updateBusy('Loading Visualizer', 'Reading configuration...');
 
             const vizConfig = await this.visualizerConfig.loadConfig(this.selectedVisualizer.id);
             let visualizerSysAddress = 0x4100; 
@@ -7869,7 +8138,15 @@ class UIController {
                 layoutKey: selectedLayoutKey
             };
 
+            this.updateBusy('Building PRG', 'Assembling components...');
+
             const prgData = await this.prgExporter.createPRG(options);
+
+            if (compressionType !== 'none') {
+                this.updateBusy('Compressing', `Applying ${compressionType.toUpperCase()} compression...`);
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
 
             const isCompressed = compressionType !== 'none';
             let filename;
@@ -7884,6 +8161,8 @@ class UIController {
 
             this.downloadFile(prgData, filename);
 
+            this.hideBusy();
+
             const sizeKB = (prgData.length / 1024).toFixed(2);
             let statusMsg = `PRG exported successfully! Size: ${sizeKB}KB`;
 
@@ -7894,6 +8173,7 @@ class UIController {
             this.showExportStatus(statusMsg, 'success');
 
         } catch (error) {
+            this.hideBusy();
             console.error('Export error:', error);
             this.showExportStatus(`Export failed: ${error.message}`, 'error');
         }
@@ -7955,8 +8235,25 @@ class UIController {
         }
     }
 
-    showLoading(show) {
-        this.elements.loading.classList.toggle('active', show);
+    showBusy(message, submessage = '') {
+        if (this.elements.busyOverlay) {
+            this.elements.busyMessage.textContent = message;
+            this.elements.busySubmessage.textContent = submessage;
+            this.elements.busyOverlay.classList.add('visible');
+        }
+    }
+
+    updateBusy(message, submessage = '') {
+        if (this.elements.busyOverlay && this.elements.busyOverlay.classList.contains('visible')) {
+            this.elements.busyMessage.textContent = message;
+            this.elements.busySubmessage.textContent = submessage;
+        }
+    }
+
+    hideBusy() {
+        if (this.elements.busyOverlay) {
+            this.elements.busyOverlay.classList.remove('visible');
+        }
     }
 
     showModal(message, isSuccess) {

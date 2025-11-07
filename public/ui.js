@@ -183,7 +183,6 @@ class UIController {
         const modal = document.getElementById('hvscModal');
         modal.classList.remove('visible');
 
-        this.showLoading(true);
         this.showModal('Downloading SID from HVSC...', true);
 
         try {
@@ -202,7 +201,6 @@ class UIController {
         } catch (error) {
             console.error('Error downloading HVSC file:', error);
             this.showModal('Failed to download SID from HVSC', false);
-            this.showLoading(false);
         }
     }
 
@@ -1861,10 +1859,6 @@ class UIController {
             case 3: return 'rd';
             default: return 'th';
         }
-    }
-
-    showLoading(show) {
-        this.elements.loading.classList.toggle('active', show);
     }
 
     showBusy(message, submessage = '') {

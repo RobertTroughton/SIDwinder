@@ -750,7 +750,7 @@ d011_values_ptr:
 ```
 
 ### FILE: SIDPlayers/INC/FreqTable.asm
-*Original size: 2363 bytes, Cleaned: 2159 bytes (reduced by 8.6%)*
+*Original size: 3780 bytes, Cleaned: 3576 bytes (reduced by 5.4%)*
 ```asm
 .var file_freqTable = LoadBinary("FreqTable.bin")
 .align 256
@@ -761,38 +761,58 @@ FreqToBarHi: .fill 256, file_freqTable.get(i + 512)
 .const SUSTAIN_MAX = MAX_BAR_HEIGHT
 sustainToHeight:
     .fill 16, SUSTAIN_MIN + (i * (SUSTAIN_MAX - SUSTAIN_MIN)) / 15.0
-releaseRateLo:				.byte <((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 4.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 6.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 9.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 11.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 12.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 15.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 38.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 75.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 120.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 150.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 450.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
-							.byte <((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
-releaseRateHi:				.byte >((MAX_BAR_HEIGHT * 256.0 / 1.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 2.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 3.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 4.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 6.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 9.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 11.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 12.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 15.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 38.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 75.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 120.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 150.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 450.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 750.0) + 64.0)
-							.byte >((MAX_BAR_HEIGHT * 256.0 / 1200.0) + 64.0)
+.const RELEASE_RATE_SCALE = 1.0
+.const RELEASE_RATE_EXTRA = 64.0
+.const REL_DIV0  = 1.5   * 0.7
+.const REL_DIV1  = 3.0   * 0.7
+.const REL_DIV2  = 6.0   * 0.7
+.const REL_DIV3  = 9.4   * 0.7
+.const REL_DIV4  = 13.4  * 0.7
+.const REL_DIV5  = 19.0  * 0.7
+.const REL_DIV6  = 26.8  * 0.7
+.const REL_DIV7  = 49    * 0.7
+.const REL_DIV8  = 62    * 0.7
+.const REL_DIV9  = 70    * 0.7
+.const REL_DIV10 = 75.0  * 0.7
+.const REL_DIV11 = 80.0  * 0.7
+.const REL_DIV12 = 85.4  * 0.7
+.const REL_DIV13 = 90.0  * 0.7
+.const REL_DIV14 = 95.0  * 0.7
+.const REL_DIV15 = 100.0 * 0.7
+releaseRateLo:
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV0 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV1 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV2 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV3 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV4 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV5 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV6 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV7 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV8 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV9 ) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV10) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV11) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV12) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV13) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV14) + RELEASE_RATE_EXTRA)
+    .byte <((MAX_BAR_HEIGHT * 256.0 / REL_DIV15) + RELEASE_RATE_EXTRA)
+releaseRateHi:
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV0 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV1 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV2 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV3 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV4 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV5 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV6 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV7 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV8 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV9 ) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV10) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV11) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV12) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV13) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV14) + RELEASE_RATE_EXTRA)
+    .byte >((MAX_BAR_HEIGHT * RELEASE_RATE_SCALE * 256.0 / REL_DIV15) + RELEASE_RATE_EXTRA)
 ```
 
 ### FILE: SIDPlayers/INC/Keyboard.asm
@@ -1316,7 +1336,7 @@ PlayMusicWithAnalysis:
 ```
 
 ### FILE: SIDPlayers/INC/Spectrometer.asm
-*Original size: 6903 bytes, Cleaned: 3420 bytes (reduced by 50.5%)*
+*Original size: 6857 bytes, Cleaned: 3406 bytes (reduced by 50.3%)*
 ```asm
 #importonce
 .align NUM_FREQUENCY_BARS
@@ -1331,17 +1351,16 @@ targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
-.align NUM_FREQUENCY_BARS + 4
-.byte $00, $00
-halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
-.byte $00, $00
 .align 4
 voiceReleaseHi:             .fill 3, 0
                             .byte BAR_DECREASE_RATE
 .align 4
 voiceReleaseLo:             .fill 3, 0
                             .byte 0
-halfValues:                      .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
+.align 128
+neighbourSmoothVals: .fill MAX_BAR_HEIGHT + 1, floor(i * 32.0 / 100.0)
+.align 128
+neighbourSmoothVals2: .fill MAX_BAR_HEIGHT + 1, floor(i * 12.0 / 100.0)
 AnalyzeSIDRegisters:
     .for (var voice = 0; voice < 3; voice++) {
     lda sidRegisterMirror + (voice * 7) + 4
@@ -1444,7 +1463,7 @@ UpdateBars:
     sta barHeightsLo, x
     lda barHeights, x
     sbc voiceReleaseHi, y
-    bpl !skip+
+    bcs !skip+
     lda #$00
     sta barHeightsLo, x
 !skip:
@@ -1455,28 +1474,25 @@ UpdateBars:
     bne !loop-
     rts
 ApplySmoothing:
-    ldx #0
-!loop:
-    ldy barHeights, x
-    lda halfValues, y
-    sta halfBarHeights, x
-    inx
-    cpx #NUM_FREQUENCY_BARS
-    bne !loop-
-    ldx #0
+    ldx #NUM_FREQUENCY_BARS - 1
 !loop:
     clc
     lda barHeights + 0, x
-    adc halfBarHeights - 1, x
-    adc halfBarHeights + 1, x
+    ldy barHeights - 1, x
+    adc neighbourSmoothVals, y
+    ldy barHeights + 1, x
+    adc neighbourSmoothVals, y
+    ldy barHeights - 2, x
+    adc neighbourSmoothVals2, y
+    ldy barHeights + 2, x
+    adc neighbourSmoothVals2, y
     cmp #MAX_BAR_HEIGHT
     bcc !skip+
     lda #MAX_BAR_HEIGHT
 !skip:
     sta smoothedHeights, x
-    inx
-    cpx #NUM_FREQUENCY_BARS
-    bne !loop-
+    dex
+    bpl !loop-
     rts
 InitializeBarArrays:
     ldy #$00
@@ -1557,13 +1573,13 @@ Files: 1
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 .const NUM_FREQUENCY_BARS				= 40
-.const TOP_SPECTRUM_HEIGHT				= 16
+.const TOP_SPECTRUM_HEIGHT				= 14
 .const BOTTOM_SPECTRUM_HEIGHT			= 3
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 0
 .const ARTIST_NAME_LINE					= 23
-.const SPECTRUM_START_LINE				= 3
+.const SPECTRUM_START_LINE				= 5
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
 .const SCREEN0_BANK						= 12
@@ -1714,9 +1730,9 @@ MainIRQ:
 !skip:
 	jsr JustPlayMusic
 	jsr UpdateColors
+	jsr AnalyseMusic
 	jsr UpdateBars
 	jsr UpdateSprites
-	jsr AnalyseMusic
 !done:
 	jsr NextIRQ
 	pla
@@ -2086,7 +2102,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 18134 bytes, Cleaned: 12530 bytes (reduced by 30.9%)*
+*Original size: 18133 bytes, Cleaned: 12530 bytes (reduced by 30.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2752,8 +2768,8 @@ MainIRQ:
 	inc frame256Counter
 !skip:
 	jsr JustPlayMusic
-	jsr UpdateBars
 	jsr AnalyseMusic
+	jsr UpdateBars
 !done:
 	jsr NextIRQ
 	pla
