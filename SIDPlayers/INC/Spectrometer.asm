@@ -235,7 +235,7 @@ ApplySmoothing:
     ldy barHeights - 1, x
     adc neighbourSmoothVals, y
     ldy barHeights + 1, x
-    adc neighbourSmoothVals, x
+    adc neighbourSmoothVals, y
     cmp #MAX_BAR_HEIGHT
     bcc !skip+
     lda #MAX_BAR_HEIGHT
