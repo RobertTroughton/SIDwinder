@@ -33,11 +33,6 @@ targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
 
-.align NUM_FREQUENCY_BARS + 4
-.byte $00, $00
-halfBarHeights:                 .fill NUM_FREQUENCY_BARS, 0
-.byte $00, $00
-
 
 //; =============================================================================
 //; VOICE STATE DATA
@@ -55,7 +50,7 @@ voiceReleaseLo:             .fill 3, 0
 //; CALCULATION TABLES
 //; =============================================================================
 
-halfValues:                      .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
+neighbourScaleVals:         .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
 
 //; =============================================================================
 //; SID REGISTER ANALYSIS
@@ -228,32 +223,26 @@ UpdateBars:
 //; SMOOTHING ALGORITHM
 //; =============================================================================
 
+neighbourSmoothVals: .fill MAX_BAR_HEIGHT + 1, floor(i * 30.0 / 100.0)
+
 ApplySmoothing:
 
-    ldx #0
-!loop:
-    ldy barHeights, x
-    lda halfValues, y
-    sta halfBarHeights, x
-    inx
-    cpx #NUM_FREQUENCY_BARS
-    bne !loop-
-
-//; apply smoothing algorithm
-    ldx #0
+    //; out = min(MAX_BAR_HEIGHT, current + left * 0.3 + right * 0.3)
+    ldx #NUM_FREQUENCY_BARS - 1
 !loop:
     clc
     lda barHeights + 0, x
-    adc halfBarHeights - 1, x
-    adc halfBarHeights + 1, x
+    ldy barHeights - 1, x
+    adc neighbourSmoothVals, y
+    ldy barHeights + 1, x
+    adc neighbourSmoothVals, x
     cmp #MAX_BAR_HEIGHT
     bcc !skip+
     lda #MAX_BAR_HEIGHT
 !skip:
     sta smoothedHeights, x
-    inx
-    cpx #NUM_FREQUENCY_BARS
-    bne !loop-
+    dex
+    bpl !loop-
     rts
 
 //; =============================================================================
