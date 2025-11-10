@@ -43,6 +43,7 @@ class SIDAnalyzer {
                 sid_get_num_calls_per_frame: this.Module.cwrap('sid_get_num_calls_per_frame', 'number', []),
                 sid_get_cia_timer_detected: this.Module.cwrap('sid_get_cia_timer_detected', 'number', []),
                 sid_get_cia_timer_value: this.Module.cwrap('sid_get_cia_timer_value', 'number', []),
+                sid_get_max_cycles: this.Module.cwrap('sid_get_max_cycles', 'number', []),
                 sid_cleanup: this.Module.cwrap('sid_cleanup', null, []),
 
                 // Memory management - use direct module references
@@ -210,6 +211,7 @@ class SIDAnalyzer {
             const numCallsPerFrame = this.api.sid_get_num_calls_per_frame();
             const ciaTimerDetected = this.api.sid_get_cia_timer_detected() ? true : false;
             const ciaTimerValue = this.api.sid_get_cia_timer_value();
+            const maxCycles = this.api.sid_get_max_cycles();
 
             return {
                 modifiedAddresses,
@@ -219,8 +221,9 @@ class SIDAnalyzer {
                 dataBytes: this.api.sid_get_data_bytes(),
                 numCallsPerFrame,
                 ciaTimerDetected,
-                ciaTimerValue
-            };
+                ciaTimerValue,
+                maxCycles
+            };
         } finally {
             if (progressInterval) {
                 clearInterval(progressInterval);

@@ -79,6 +79,7 @@ class UIController {
             zpUsage: document.getElementById('zpUsage'),
             clockType: document.getElementById('clockType'),
             sidModel: document.getElementById('sidModel'),
+            maxCycles: document.getElementById('maxCycles'),
             // Export section elements
             exportSection: document.getElementById('exportSection'),
             visualizerGrid: document.getElementById('visualizerGrid'),
@@ -226,6 +227,11 @@ class UIController {
         const numCallsElement = document.getElementById('numCallsPerFrame');
         if (numCallsElement) {
             numCallsElement.textContent = '1';
+        }
+
+        const maxCyclesElement = document.getElementById('maxCycles');
+        if (maxCyclesElement) {
+            maxCyclesElement.textContent = '4000';
         }
 
         const modifiedMemoryElement = document.getElementById('modifiedMemoryCount');
@@ -527,6 +533,7 @@ class UIController {
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
             this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
+            this.updateMaxCycles(this.analysisResults.maxCycles);
 
             // Show panels - remove disabled state and add visible
             this.elements.infoSection.classList.remove('disabled');
@@ -1469,6 +1476,13 @@ class UIController {
         const element = document.getElementById('numCallsPerFrame');
         if (element) {
             element.textContent = numCalls || '1';
+        }
+    }
+
+    updateMaxCycles(maxCycles) {
+        const element = document.getElementById('maxCycles');
+        if (element) {
+            element.textContent = maxCycles || '-';
         }
     }
 

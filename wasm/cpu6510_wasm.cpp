@@ -66,6 +66,9 @@ extern "C" {
 
         // Flag to enable/disable tracking (so we can load without tracking)
         bool trackingEnabled;
+        
+        // Track cycles from last function execution
+        uint32_t lastExecutionCycles;
     } cpu;
 
     // Helper function to read 16-bit address from memory
@@ -94,6 +97,7 @@ extern "C" {
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
         cpu.trackingEnabled = false;
+        cpu.lastExecutionCycles = 0;
 
         memset(cpu.memory, 0, sizeof(cpu.memory));
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
@@ -1334,6 +1338,7 @@ extern "C" {
 
             // Check if we hit RTS and stack is back to expected level
             if (opcode == 0x60 && cpu.sp == startSP) {
+                cpu.lastExecutionCycles = (uint32_t)(cpu.cycles - startCycles);
                 return 1;  // Success
             }
 
@@ -1382,6 +1387,9 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
         uint64_t cpu_get_cycles() { return cpu.cycles; }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint32_t cpu_get_last_execution_cycles() { return cpu.lastExecutionCycles; }
 
     // Get memory access info
     EMSCRIPTEN_KEEPALIVE

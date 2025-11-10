@@ -81,6 +81,7 @@ extern "C" {
         uint8_t numCallsPerFrame;
         uint16_t ciaTimerValue;
         bool ciaTimerDetected;
+        uint32_t maxCycles;
     };
 
     // Global state
@@ -111,6 +112,7 @@ extern "C" {
     extern void cpu_save_memory(uint8_t* buffer);
     extern void cpu_restore_memory(uint8_t* buffer);
     extern void cpu_reset_state_only();
+    extern uint32_t cpu_get_last_execution_cycles();
 
     // Helper function to swap endianness
     uint16_t swap16(uint16_t value) {
@@ -151,6 +153,7 @@ extern "C" {
         sidState.analysis.hasPattern = false;
         sidState.analysis.patternPeriod = 0;
         sidState.analysis.initFrames = 0;
+        sidState.analysis.maxCycles = 0;
 
         cpu_init();
     }
@@ -264,6 +267,7 @@ extern "C" {
         sidState.analysis.numCallsPerFrame = 1;
         sidState.analysis.ciaTimerValue = 0;
         sidState.analysis.ciaTimerDetected = false;
+        sidState.analysis.maxCycles = 0;
 
         // Create a clean memory snapshot after initial load
         uint8_t* cleanMemorySnapshot = (uint8_t*)malloc(65536);
@@ -315,7 +319,12 @@ extern "C" {
             // Execute play routine for this song
             for (uint32_t frame = 0; frame < frameCount; frame++) {
                 if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
-                    break; // Play routine failed, but continue with next song
+                    break;
+                }
+                
+                uint32_t cycles = cpu_get_last_execution_cycles();
+                if (cycles > sidState.analysis.maxCycles) {
+                    sidState.analysis.maxCycles = cycles;
                 }
 
                 // Progress callback
@@ -595,6 +604,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
         uint16_t sid_get_cia_timer_value() {
         return sidState.analysis.ciaTimerValue;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+        uint32_t sid_get_max_cycles() {
+        return sidState.analysis.maxCycles;
     }
 
     // Clean up
