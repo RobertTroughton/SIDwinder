@@ -54,19 +54,19 @@
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0x6000",
-            "size": "0xC80"
+            "size": "0xDC0"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
             "targetAddress": "0x7000",
-            "size": "0x0190"
+            "size": "0x01B8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
             "targetAddress": "0x7400",
-            "size": "0x0190"
+            "size": "0x01B8"
           },
           {
             "name": "background",
@@ -80,19 +80,19 @@
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0xA000",
-            "size": "0xC80"
+            "size": "0xDC0"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
             "targetAddress": "0xB000",
-            "size": "0x0190"
+            "size": "0x01B8"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
             "targetAddress": "0xB400",
-            "size": "0x0190"
+            "size": "0x01B8"
           },
           {
             "name": "background",

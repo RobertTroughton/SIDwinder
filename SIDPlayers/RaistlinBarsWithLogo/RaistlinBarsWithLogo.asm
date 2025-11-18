@@ -44,15 +44,15 @@
 //; Display layout
 .const NUM_FREQUENCY_BARS				= 40
 
-.const LOGO_HEIGHT						= 10
-.const TOP_SPECTRUM_HEIGHT				= 9
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 8
 .const BOTTOM_SPECTRUM_HEIGHT			= 3
 
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 
 .const SONG_TITLE_LINE					= 23
-.const SPECTRUM_START_LINE				= 11
+.const SPECTRUM_START_LINE				= 12
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 
 .eval setSeed(55378008)
@@ -719,7 +719,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.fill $400 - (LOGO_HEIGHT * 40), $20
 
 * = BITMAP_ADDRESS "Bitmap"
-	.fill $C80, $00
+	.fill LOGO_HEIGHT * 40 * 8, $00
 
 //; =============================================================================
 //; END OF FILE
