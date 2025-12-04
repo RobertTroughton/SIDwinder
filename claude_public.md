@@ -3564,6 +3564,229 @@ body {
     cursor: not-allowed;
     text-shadow: none;
 }
+
+.image-selector-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10001;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.image-selector-modal.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-selector-modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.image-selector-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    z-index: 1;
+}
+
+.image-selector-modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+    transform: rotate(90deg);
+}
+
+.image-selector-modal-body {
+    padding: 40px 30px 30px;
+}
+
+.image-selector-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.image-selector-drop-zone {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border: 3px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 25px;
+}
+
+.image-selector-drop-zone:hover {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    transform: translateY(-2px);
+}
+
+.image-selector-drop-zone.drag-active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(1.02);
+}
+
+.drop-zone-text {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.drop-zone-subtext {
+    font-size: 14px;
+    color: #666;
+}
+
+.image-selector-options {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.selector-option-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.selector-option-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.selector-option-btn:active {
+    transform: translateY(0);
+}
+
+.selector-option-btn i {
+    font-size: 24px;
+}
+
+.image-preview-info {
+    display: none;
+}
+
+.image-gallery-toggle {
+    display: none;
+}
+
+.preview-click-hint {
+    font-size: 14px;
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.preview-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.preview-overlay-content i {
+    font-size: 32px;
+}
+
+@media (max-width: 600px) {
+    .image-selector-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .image-selector-modal-body {
+        padding: 30px 20px 20px;
+    }
+
+    .image-selector-title {
+        font-size: 20px;
+    }
+
+    .image-selector-options {
+        flex-direction: column;
+    }
+
+    .selector-option-btn {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+.preview-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 ```
 
 
@@ -4103,7 +4326,203 @@ window.hvscBrowser = (function () {
 
 ### FILE: public/image-preview-manager.js
 ```js
-﻿
+class ImageSelectorModal {
+    constructor() {
+        this.modal = null;
+        this.currentConfig = null;
+        this.currentContainer = null;
+        this.dropZone = null;
+        this.initialized = false;
+    }
+
+    init() {
+        if (this.initialized) return;
+
+        this.createModalHTML();
+        this.attachEventListeners();
+        this.initialized = true;
+    }
+
+    createModalHTML() {
+        const modalHTML = `
+            <div class="image-selector-modal" id="imageSelectorModal">
+                <div class="image-selector-modal-content">
+                    <button class="image-selector-modal-close" id="imageSelectorModalClose">✕</button>
+                    <div class="image-selector-modal-body">
+                        <h3 class="image-selector-title" id="imageSelectorTitle">Select Image</h3>
+                        
+                        <div class="image-selector-drop-zone" id="imageSelectorDropZone">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #667eea; margin-bottom: 15px;"></i>
+                            <div class="drop-zone-text">Drag and drop an image here</div>
+                            <div class="drop-zone-subtext">or use the options below</div>
+                        </div>
+
+                        <div class="image-selector-options">
+                            <button class="selector-option-btn" id="selectorBrowseBtn">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Browse Files</span>
+                            </button>
+                            <button class="selector-option-btn" id="selectorGalleryBtn">
+                                <i class="fas fa-images"></i>
+                                <span>Choose from Gallery</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = modalHTML;
+        document.body.appendChild(tempDiv.firstElementChild);
+
+        this.modal = document.getElementById('imageSelectorModal');
+        this.dropZone = document.getElementById('imageSelectorDropZone');
+    }
+
+    attachEventListeners() {
+        const closeBtn = document.getElementById('imageSelectorModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal && this.modal.classList.contains('visible')) {
+                this.close();
+            }
+        });
+
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
+            }
+        });
+
+        const browseBtn = document.getElementById('selectorBrowseBtn');
+        if (browseBtn) {
+            browseBtn.addEventListener('click', () => {
+                this.handleBrowse();
+            });
+        }
+
+        const galleryBtn = document.getElementById('selectorGalleryBtn');
+        if (galleryBtn) {
+            galleryBtn.addEventListener('click', () => {
+                this.handleGallery();
+            });
+        }
+
+        this.attachDropZoneHandlers();
+    }
+
+    attachDropZoneHandlers() {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            this.dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            this.dropZone.addEventListener(eventName, () => {
+                this.dropZone.classList.add('drag-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            this.dropZone.addEventListener(eventName, () => {
+                this.dropZone.classList.remove('drag-active');
+            });
+        });
+
+        this.dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (this.isValidImageFile(file)) {
+                    const fileInput = this.currentContainer.querySelector(`#${this.currentConfig.id}`);
+                    if (fileInput) {
+                        delete fileInput.dataset.gallerySelected;
+                        delete fileInput.dataset.galleryFile;
+                    }
+                    window.imagePreviewManager.handleFileChange({ target: { files: [file] } }, this.currentConfig);
+                    this.close();
+                } else {
+                    alert('Please drop a valid image file');
+                }
+            }
+        });
+    }
+
+    isValidImageFile(file) {
+        if (!this.currentConfig || !this.currentConfig.accept) return true;
+
+        const acceptTypes = this.currentConfig.accept.split(',').map(t => t.trim());
+
+        for (const acceptType of acceptTypes) {
+            if (acceptType.startsWith('.')) {
+                if (file.name.toLowerCase().endsWith(acceptType.toLowerCase())) {
+                    return true;
+                }
+            } else if (acceptType.includes('*')) {
+                const [type] = acceptType.split('/');
+                if (file.type.startsWith(type + '/')) {
+                    return true;
+                }
+            } else if (file.type === acceptType) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    open(config, container) {
+        if (!this.initialized) this.init();
+        if (!this.modal) return;
+
+        this.currentConfig = config;
+        this.currentContainer = container;
+
+        const title = document.getElementById('imageSelectorTitle');
+        if (title) {
+            title.textContent = config.label || 'Select Image';
+        }
+
+        const galleryBtn = document.getElementById('selectorGalleryBtn');
+        if (galleryBtn) {
+            if (config.gallery && config.gallery.length > 0) {
+                galleryBtn.style.display = 'flex';
+            } else {
+                galleryBtn.style.display = 'none';
+            }
+        }
+
+        this.modal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    close() {
+        if (this.modal) {
+            this.modal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+    }
+
+    handleBrowse() {
+        const fileInput = this.currentContainer.querySelector(`#${this.currentConfig.id}`);
+        if (fileInput) {
+            fileInput.click();
+            this.close();
+        }
+    }
+
+    handleGallery() {
+        this.close();
+        const galleryModal = window.imagePreviewManager.initGalleryModal();
+        galleryModal.open(this.currentConfig, this.currentContainer);
+    }
+}
 
 class GalleryModal {
     constructor() {
@@ -4156,24 +4575,36 @@ class GalleryModal {
             subtitle.textContent = `Select ${config.label || 'an image'}`;
         }
 
-        this.buildGallery(config.gallery);
+        this.populateGallery(config.gallery);
 
         this.modal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
     }
 
-    buildGallery(galleryItems) {
+    close() {
+        if (this.modal) {
+            this.modal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+    }
+
+    populateGallery(gallery) {
         const gridContainer = document.getElementById('galleryGridContainer');
+        const itemCount = document.getElementById('galleryItemCount');
+
         if (!gridContainer) return;
 
         gridContainer.innerHTML = '';
 
-        if (!galleryItems || galleryItems.length === 0) {
+        if (!gallery || gallery.length === 0) {
             gridContainer.innerHTML = '<div class="gallery-loading">No images available</div>';
-            this.updateItemCount(0);
+            if (itemCount) {
+                itemCount.textContent = '0 items';
+            }
             return;
         }
 
-        galleryItems.forEach((item, index) => {
+        gallery.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'gallery-item-card';
             card.dataset.file = item.file;
@@ -4190,64 +4621,45 @@ class GalleryModal {
                 <div class="gallery-item-selected-badge">✓ Selected</div>
             `;
 
-            card.addEventListener('click', () => this.selectItem(card, item));
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.gallery-item-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                card.classList.add('selected');
+                this.selectedItem = item;
+
+                setTimeout(() => {
+                    this.selectImage();
+                }, 200);
+            });
+
             gridContainer.appendChild(card);
         });
 
-        this.updateItemCount(galleryItems.length);
-    }
-
-    selectItem(card, item) {
-        
-        document.querySelectorAll('.gallery-item-card').forEach(c => {
-            c.classList.remove('selected');
-        });
-
-        card.classList.add('selected');
-        this.selectedItem = item;
-
-        setTimeout(() => {
-            this.applySelection(item);
-            this.close();
-        }, 200);
-    }
-
-    async applySelection(item) {
-        if (!this.currentContainer || !this.currentConfig) return;
-
-        if (window.imagePreviewManager) {
-            await window.imagePreviewManager.loadGalleryImage(
-                this.currentContainer,
-                this.currentConfig,
-                item.file,
-                item.name
-            );
+        if (itemCount) {
+            itemCount.textContent = `${gallery.length} ${gallery.length === 1 ? 'item' : 'items'}`;
         }
     }
 
-    updateItemCount(count) {
-        const countElement = document.getElementById('galleryItemCount');
-        if (countElement) {
-            countElement.textContent = `${count} image${count !== 1 ? 's' : ''}`;
-        }
-    }
+    async selectImage() {
+        if (!this.selectedItem) return;
 
-    close() {
-        if (this.modal) {
-            this.modal.classList.remove('visible');
-        }
-        this.currentConfig = null;
-        this.currentContainer = null;
-        this.selectedItem = null;
+        await window.imagePreviewManager.loadGalleryImage(
+            this.currentContainer,
+            this.currentConfig,
+            this.selectedItem.file,
+            this.selectedItem.name
+        );
+
+        this.close();
     }
 }
 
 class ImagePreviewManager {
     constructor() {
         this.previewCache = new Map();
-        this.defaultImages = new Map();
-        this.loadingPromises = new Map();
         this.galleryModal = null;
+        this.selectorModal = null;
     }
 
     initGalleryModal() {
@@ -4258,14 +4670,20 @@ class ImagePreviewManager {
         return this.galleryModal;
     }
 
+    initSelectorModal() {
+        if (!this.selectorModal) {
+            this.selectorModal = new ImageSelectorModal();
+            this.selectorModal.init();
+        }
+        return this.selectorModal;
+    }
+
     createImagePreview(config) {
         const container = document.createElement('div');
         container.className = 'image-preview-container';
 
-        const hasGallery = config.gallery && config.gallery.length > 0;
-
         container.innerHTML = `
-            <div class="image-preview-wrapper ${hasGallery ? 'with-gallery' : ''}" data-input-id="${config.id}">
+            <div class="image-preview-wrapper" data-input-id="${config.id}">
                 <div class="image-preview-drop-zone">
                     <div class="image-preview-frame">
                         <img class="image-preview-img" 
@@ -4276,7 +4694,7 @@ class ImagePreviewManager {
                         <div class="image-preview-overlay">
                             <div class="preview-overlay-content">
                                 <i class="fas fa-upload"></i>
-                                <div class="preview-click-hint">Click to browse or drag image here</div>
+                                <div class="preview-click-hint">Click to select image</div>
                             </div>
                         </div>
                         <div class="image-preview-loading">
@@ -4284,19 +4702,7 @@ class ImagePreviewManager {
                             <div>Loading...</div>
                         </div>
                     </div>
-                    <div class="image-preview-info">
-                        <span class="preview-filename">Loading default...</span>
-                        <span class="preview-size"></span>
-                    </div>
                 </div>
-                ${hasGallery ? `
-                    <div class="image-gallery-toggle">
-                        <button type="button" class="gallery-btn">
-                            <i class="fas fa-images"></i>
-                            Choose from Gallery
-                        </button>
-                    </div>
-                ` : ''}
             </div>
             <input type="file" 
                    id="${config.id}" 
@@ -4304,15 +4710,13 @@ class ImagePreviewManager {
                    style="display: none;">
         `;
 
-        this.attachDragDropHandlers(container, config);
-        this.attachGalleryHandlers(container, config);
-
         const wrapper = container.querySelector('.image-preview-wrapper');
         const fileInput = container.querySelector('input[type="file"]');
-
         const previewFrame = wrapper.querySelector('.image-preview-frame');
+
         previewFrame.addEventListener('click', () => {
-            fileInput.click();
+            const modal = this.initSelectorModal();
+            modal.open(config, container);
         });
 
         fileInput.addEventListener('change', (e) => {
@@ -4322,86 +4726,8 @@ class ImagePreviewManager {
         return container;
     }
 
-    attachDragDropHandlers(container, config) {
-        const dropZone = container.querySelector('.image-preview-drop-zone');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('drag-active');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('drag-active');
-            });
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (this.isValidImageFile(file, config)) {
-                    const fileInput = container.querySelector(`#${config.id}`);
-                    if (fileInput) {
-                        delete fileInput.dataset.gallerySelected;
-                        delete fileInput.dataset.galleryFile;
-                    }
-                    this.handleFileChange({ target: { files: [file] } }, config);
-                } else {
-                    this.showError(container, 'Please drop a valid image file');
-                }
-            }
-        });
-    }
-
-    attachGalleryHandlers(container, config) {
-        const toggleBtn = container.querySelector('.gallery-btn');
-
-        if (toggleBtn && config.gallery && config.gallery.length > 0) {
-            toggleBtn.addEventListener('click', () => {
-                const modal = this.initGalleryModal();
-                modal.open(config, container);
-            });
-        }
-    }
-
-    isValidImageFile(file, config) {
-        if (!config.accept) return true;
-
-        const acceptTypes = config.accept.split(',').map(t => t.trim());
-
-        for (const acceptType of acceptTypes) {
-            if (acceptType.startsWith('.')) {
-                
-                if (file.name.toLowerCase().endsWith(acceptType.toLowerCase())) {
-                    return true;
-                }
-            } else if (acceptType.includes('*')) {
-                
-                const [type, subtype] = acceptType.split('/');
-                if (file.type.startsWith(type + '/')) {
-                    return true;
-                }
-            } else if (file.type === acceptType) {
-                
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     showError(container, message) {
         console.error(message);
-        
     }
 
     async loadDefaultImage(config) {
@@ -4409,20 +4735,15 @@ class ImagePreviewManager {
         if (!wrapper) return;
 
         const img = wrapper.querySelector('.image-preview-img');
-        const info = wrapper.querySelector('.preview-filename');
-        const sizeInfo = wrapper.querySelector('.preview-size');
         const loadingDiv = wrapper.querySelector('.image-preview-loading');
 
         try {
             loadingDiv.style.display = 'flex';
 
             if (config.default) {
-                
                 if (this.previewCache.has(config.default)) {
                     const cached = this.previewCache.get(config.default);
                     img.src = cached.dataUrl;
-                    info.textContent = `Default: ${config.default.split('/').pop()}`;
-                    sizeInfo.textContent = cached.sizeText;
                     loadingDiv.style.display = 'none';
                     return;
                 }
@@ -4430,59 +4751,44 @@ class ImagePreviewManager {
                 const fileData = await this.loadDefaultFile(config.default);
 
                 if (config.default.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
-                    
                     const preview = await this.createPreviewFromPNGData(fileData);
                     this.previewCache.set(config.default, preview);
-
                     img.src = preview.dataUrl;
-                    info.textContent = `Default: ${config.default.split('/').pop()}`;
-                    sizeInfo.textContent = preview.sizeText;
                 } else {
-                    
                     const preview = await this.createPreviewFromData(fileData, config.default);
                     this.previewCache.set(config.default, preview);
-
                     img.src = preview.dataUrl;
-                    info.textContent = `Default: ${config.default.split('/').pop()}`;
-                    sizeInfo.textContent = preview.sizeText;
                 }
             }
         } catch (error) {
             console.error('Error loading default image:', error);
-            info.textContent = 'Error loading default';
-            sizeInfo.textContent = '';
             this.showErrorPlaceholder(img);
         } finally {
             loadingDiv.style.display = 'none';
         }
     }
 
-    async loadGalleryImage(container, config, filename, name) {
+    async loadGalleryImage(container, config, filepath, name) {
         const wrapper = container.querySelector(`[data-input-id="${config.id}"]`);
         if (!wrapper) return;
 
         const img = wrapper.querySelector('.image-preview-img');
-        const info = wrapper.querySelector('.preview-filename');
-        const sizeInfo = wrapper.querySelector('.preview-size');
         const loadingDiv = wrapper.querySelector('.image-preview-loading');
 
         try {
             loadingDiv.style.display = 'flex';
 
-            const response = await fetch(filename);
+            const response = await fetch(filepath);
             if (!response.ok) {
-                throw new Error(`Failed to load gallery image: ${filename}`);
+                throw new Error(`Failed to load gallery image: ${filepath}`);
             }
 
             const arrayBuffer = await response.arrayBuffer();
             const fileData = new Uint8Array(arrayBuffer);
 
-            if (filename.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+            if (filepath.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
                 const preview = await this.createPreviewFromPNGData(fileData);
-
                 img.src = preview.dataUrl;
-                info.textContent = name;
-                sizeInfo.textContent = preview.sizeText;
 
                 const blob = new Blob([fileData], { type: 'image/png' });
                 const file = new File([blob], name + '.png', { type: 'image/png' });
@@ -4493,232 +4799,139 @@ class ImagePreviewManager {
                 if (fileInput) {
                     fileInput.files = dataTransfer.files;
                     fileInput.dataset.gallerySelected = 'true';
-                    fileInput.dataset.galleryFile = filename;
+                    fileInput.dataset.galleryFile = filepath;
                 }
             } else {
                 const preview = await this.createPreviewFromData(fileData, name);
-
                 img.src = preview.dataUrl;
-                info.textContent = name;
-                sizeInfo.textContent = preview.sizeText;
 
-                const blob = new Blob([fileData], { type: 'application/octet-stream' });
-                const file = new File([blob], name, { type: 'application/octet-stream' });
+                const blob = new Blob([fileData], { type: 'image/png' });
+                const file = new File([blob], name, { type: 'image/png' });
 
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 const fileInput = container.querySelector(`#${config.id}`);
                 if (fileInput) {
                     fileInput.files = dataTransfer.files;
+                    fileInput.dataset.gallerySelected = 'true';
+                    fileInput.dataset.galleryFile = filepath;
                 }
             }
-
         } catch (error) {
             console.error('Error loading gallery image:', error);
-            info.textContent = `Error: ${name}`;
-            sizeInfo.textContent = error.message;
             this.showErrorPlaceholder(img);
         } finally {
             loadingDiv.style.display = 'none';
         }
     }
 
-    async loadDefaultFile(defaultPath) {
-        if (!window.currentVisualizerConfig) {
-            window.currentVisualizerConfig = new VisualizerConfig();
-        }
-        return await window.currentVisualizerConfig.loadDefaultFile(defaultPath);
-    }
+    async handleFileChange(e, config) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-    async handleFileChange(event, config) {
-        const file = event.target.files[0];
-
-        const fileInput = event.target;
-        if (fileInput) {
-            delete fileInput.dataset.gallerySelected;
-            delete fileInput.dataset.galleryFile;
-        }
-
+        const file = files[0];
         const wrapper = document.querySelector(`[data-input-id="${config.id}"]`);
         if (!wrapper) return;
 
         const img = wrapper.querySelector('.image-preview-img');
-        const info = wrapper.querySelector('.preview-filename');
-        const sizeInfo = wrapper.querySelector('.preview-size');
         const loadingDiv = wrapper.querySelector('.image-preview-loading');
-
-        if (!file) return;
 
         try {
             loadingDiv.style.display = 'flex';
 
-            let previewData;
+            const fileData = await this.readFileAsArrayBuffer(file);
 
-            if (file.type === 'image/png') {
-                previewData = await this.createPreviewFromPNG(file);
+            if (file.name.toLowerCase().endsWith('.png') && this.isPNGFile(fileData)) {
+                const preview = await this.createPreviewFromPNGData(fileData);
+                img.src = preview.dataUrl;
+            } else {
+                const preview = await this.createPreviewFromData(fileData, file.name);
+                img.src = preview.dataUrl;
             }
 
-            img.src = previewData.dataUrl;
-            info.textContent = file.name;
-            sizeInfo.textContent = previewData.sizeText;
-
+            if (config.onChange) {
+                config.onChange(file);
+            }
         } catch (error) {
-            console.error('Error processing file:', error);
-            info.textContent = `Error: ${file.name}`;
-            sizeInfo.textContent = error.message;
+            console.error('Error loading file:', error);
             this.showErrorPlaceholder(img);
         } finally {
             loadingDiv.style.display = 'none';
         }
     }
 
-    async createPreviewFromPNG(file) {
+    readFileAsArrayBuffer(file) {
         return new Promise((resolve, reject) => {
-            const img = new Image();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            img.onload = () => {
-                canvas.width = 320;
-                canvas.height = 200;
-
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(img, 0, 0, 320, 200);
-
-                const dataUrl = canvas.toDataURL();
-
-                resolve({
-                    dataUrl: dataUrl,
-                    sizeText: `${(file.size / 1024).toFixed(1)}KB (PNG)`
-                });
-            };
-
-            img.onerror = () => {
-                reject(new Error('Invalid PNG file'));
-            };
-
-            const objectUrl = URL.createObjectURL(file);
-            img.src = objectUrl;
-
-            img.addEventListener('load', () => {
-                URL.revokeObjectURL(objectUrl);
-            }, { once: true });
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
         });
+    }
+
+    async loadDefaultFile(path) {
+        const response = await fetch(path);
+        if (!response.ok) {
+            throw new Error(`Failed to load default file: ${path}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+    }
+
+    isPNGFile(data) {
+        return data.length >= 8 &&
+               data[0] === 0x89 && data[1] === 0x50 &&
+               data[2] === 0x4E && data[3] === 0x47 &&
+               data[4] === 0x0D && data[5] === 0x0A &&
+               data[6] === 0x1A && data[7] === 0x0A;
     }
 
     async createPreviewFromPNGData(pngData) {
         return new Promise((resolve, reject) => {
-            const img = new Image();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            img.onload = () => {
-                canvas.width = 320;
-                canvas.height = 200;
-
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(img, 0, 0, 320, 200);
-
-                const dataUrl = canvas.toDataURL();
-
-                URL.revokeObjectURL(img.src);
-
+            const blob = new Blob([pngData], { type: 'image/png' });
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
                 resolve({
                     dataUrl: dataUrl,
-                    sizeText: `${(pngData.length / 1024).toFixed(1)}KB (PNG)`
+                    sizeText: `${Math.round(pngData.length / 1024)}KB`
                 });
             };
-
-            img.onerror = () => {
-                URL.revokeObjectURL(img.src);
-                reject(new Error('Invalid PNG data'));
+            
+            reader.onerror = () => {
+                reject(new Error('Failed to load PNG'));
             };
-
-            const blob = new Blob([pngData], { type: 'image/png' });
-            const blobUrl = URL.createObjectURL(blob);
-            img.src = blobUrl;
+            
+            reader.readAsDataURL(blob);
         });
     }
 
     async createPreviewFromData(data, filename) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 320;
-        canvas.height = 200;
-
-        this.renderBinaryPlaceholder(ctx, filename);
-
-        return {
-            dataUrl: canvas.toDataURL(),
-            sizeText: `${(data.length / 1024).toFixed(1)}KB (Binary)`
-        };
-    }
-
-    isPNGFile(data) {
-        if (data.length < 8) return false;
-        return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
-            data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
-    }
-
-    renderBinaryPlaceholder(ctx, filename) {
-        ctx.fillStyle = '#222';
-        ctx.fillRect(0, 0, 320, 200);
-
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 320; i += 16) {
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, 200);
-            ctx.stroke();
-        }
-        for (let i = 0; i < 200; i += 16) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(320, i);
-            ctx.stroke();
-        }
-
-        ctx.fillStyle = '#888';
-        ctx.font = '16px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('BINARY FILE', 160, 90);
-
-        ctx.font = '12px monospace';
-        const shortName = filename.length > 25 ? filename.substring(0, 22) + '...' : filename;
-        ctx.fillText(shortName, 160, 110);
-    }
-
-    getFileType(data) {
-        if (this.isPNGFile(data)) {
-            return 'PNG';
-        }
-        return 'Binary';
+        return new Promise((resolve, reject) => {
+            const blob = new Blob([data], { type: 'application/octet-stream' });
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                resolve({
+                    dataUrl: dataUrl,
+                    sizeText: `${Math.round(data.length / 1024)}KB`
+                });
+            };
+            
+            reader.onerror = () => {
+                reject(new Error('Failed to load image'));
+            };
+            
+            reader.readAsDataURL(blob);
+        });
     }
 
     showErrorPlaceholder(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 320;
-        canvas.height = 200;
-
-        ctx.fillStyle = '#400';
-        ctx.fillRect(0, 0, 320, 200);
-
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('ERROR', 160, 90);
-        ctx.font = '12px monospace';
-        ctx.fillText('Unable to load image', 160, 110);
-
-        img.src = canvas.toDataURL();
+        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjNjY2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIGxvYWRpbmcgaW1hZ2U8L3RleHQ+PC9zdmc+';
     }
 }
-
-window.ImagePreviewManager = ImagePreviewManager;
-
-window.imagePreviewManager = new ImagePreviewManager();
 ```
 
 
@@ -6026,6 +6239,11 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
+            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
+            for (const component of optionComponents) {
+                this.builder.addComponent(component.data, component.loadAddress, component.name);
+            }
+
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
             let saveJmpAddr = 0;
@@ -6034,11 +6252,20 @@ class SIDwinderPRGExporter {
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                let highestEndAddress = actualSidAddress + sidInfo.data.length;
+                
+                for (const comp of this.builder.components) {
+                    const compEnd = comp.loadAddress + comp.size;
+                    if (compEnd > highestEndAddress) {
+                        highestEndAddress = compEnd;
+                    }
+                }
+                
+                const safeAddress = this.alignToPage(highestEndAddress);
                 
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
                 
-                restoreRoutineAddr = sidEndAddress;
+                restoreRoutineAddr = safeAddress;
                 
                 saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
                 
@@ -6069,8 +6296,16 @@ class SIDwinderPRGExporter {
                 console.warn('No analysis results for save/restore routines');
                 const dummyRoutine = new Uint8Array([0x60]); 
                 
-                const sidEndAddress = actualSidAddress + sidInfo.data.length;
-                restoreRoutineAddr = sidEndAddress;
+                let highestEndAddress = actualSidAddress + sidInfo.data.length;
+                for (const comp of this.builder.components) {
+                    const compEnd = comp.loadAddress + comp.size;
+                    if (compEnd > highestEndAddress) {
+                        highestEndAddress = compEnd;
+                    }
+                }
+                const safeAddress = this.alignToPage(highestEndAddress);
+                
+                restoreRoutineAddr = safeAddress;
                 saveRoutineAddr = restoreRoutineAddr + 1;
                 
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
@@ -6106,11 +6341,6 @@ class SIDwinderPRGExporter {
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
-
-            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
-            for (const component of optionComponents) {
-                this.builder.addComponent(component.data, component.loadAddress, component.name);
-            }
 
             const prgData = this.builder.build();
 

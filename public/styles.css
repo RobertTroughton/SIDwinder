@@ -2372,3 +2372,231 @@ body {
     cursor: not-allowed;
     text-shadow: none;
 }
+
+/* Image Selector Modal Styles */
+.image-selector-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10001;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.image-selector-modal.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-selector-modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.image-selector-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    z-index: 1;
+}
+
+.image-selector-modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+    transform: rotate(90deg);
+}
+
+.image-selector-modal-body {
+    padding: 40px 30px 30px;
+}
+
+.image-selector-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.image-selector-drop-zone {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border: 3px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 25px;
+}
+
+.image-selector-drop-zone:hover {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    transform: translateY(-2px);
+}
+
+.image-selector-drop-zone.drag-active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(1.02);
+}
+
+.drop-zone-text {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.drop-zone-subtext {
+    font-size: 14px;
+    color: #666;
+}
+
+.image-selector-options {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.selector-option-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.selector-option-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.selector-option-btn:active {
+    transform: translateY(0);
+}
+
+.selector-option-btn i {
+    font-size: 24px;
+}
+
+/* Updated image preview styles to remove filename display */
+.image-preview-info {
+    display: none;
+}
+
+/* Updated gallery toggle - now hidden as we use the modal instead */
+.image-gallery-toggle {
+    display: none;
+}
+
+/* Update the overlay hint text */
+.preview-click-hint {
+    font-size: 14px;
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.preview-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.preview-overlay-content i {
+    font-size: 32px;
+}
+
+@media (max-width: 600px) {
+    .image-selector-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .image-selector-modal-body {
+        padding: 30px 20px 20px;
+    }
+
+    .image-selector-title {
+        font-size: 20px;
+    }
+
+    .image-selector-options {
+        flex-direction: column;
+    }
+
+    .selector-option-btn {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* Preview Spinner */
+.preview-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

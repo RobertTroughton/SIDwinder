@@ -2102,7 +2102,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 18133 bytes, Cleaned: 12530 bytes (reduced by 30.9%)*
+*Original size: 18149 bytes, Cleaned: 12546 bytes (reduced by 30.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2116,13 +2116,13 @@ Files: 1
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 .const NUM_FREQUENCY_BARS				= 40
-.const LOGO_HEIGHT						= 10
-.const TOP_SPECTRUM_HEIGHT				= 9
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 8
 .const BOTTOM_SPECTRUM_HEIGHT			= 3
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 23
-.const SPECTRUM_START_LINE				= 11
+.const SPECTRUM_START_LINE				= 12
 .const REFLECTION_SPRITES_YVAL			= 50 + (SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT) * 8 + 3
 .eval setSeed(55378008)
 .const DD00Value                        = 3 - VIC_BANK
@@ -2601,7 +2601,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20
 * = BITMAP_ADDRESS "Bitmap"
-	.fill $C80, $00
+	.fill LOGO_HEIGHT * 40 * 8, $00
 ```
 
 
@@ -3018,7 +3018,7 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 13224 bytes, Cleaned: 8686 bytes (reduced by 34.3%)*
+*Original size: 13219 bytes, Cleaned: 8681 bytes (reduced by 34.3%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3031,13 +3031,13 @@ Files: 1
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .const NUM_FREQUENCY_BARS				= 40
-.const LOGO_HEIGHT						= 10
-.const TOP_SPECTRUM_HEIGHT				= 6
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 5
 .const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 .const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 23
-.const SPECTRUM_START_LINE				= 11
+.const SPECTRUM_START_LINE				= 12
 .eval setSeed(55378008)
 .const SCREEN0_BANK						= 12
 .const SCREEN1_BANK						= 13
@@ -3186,11 +3186,10 @@ SpectrometerDisplayIRQ:
 	pha
 	tya
 	pha
-	ldx #4
+	ldx #5
 !loop:
 	dex
 	bpl !loop-
-	nop
 	lda #$1b
 	sta $d011
 	lda #$00

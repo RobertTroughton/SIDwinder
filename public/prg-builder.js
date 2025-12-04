@@ -878,8 +878,15 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // NEW ARCHITECTURE: Place save/restore routines at end of SID data
-            // and add JMP vectors just before SID load address
+            // Process visualizer options BEFORE calculating save/restore addresses
+            // This ensures we know where all visualizer data is placed
+            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
+            for (const component of optionComponents) {
+                this.builder.addComponent(component.data, component.loadAddress, component.name);
+            }
+
+            // NEW ARCHITECTURE: Place save/restore routines after ALL other data
+            // to avoid conflicts with visualizer components
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
             let saveJmpAddr = 0;
@@ -888,14 +895,25 @@ class SIDwinderPRGExporter {
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                // Calculate where routines will go: right after the SID data
-                const sidEndAddress = actualSidAddress + sidInfo.data.length;
+                // Calculate the highest address used by any component
+                let highestEndAddress = actualSidAddress + sidInfo.data.length;
+                
+                // Check all components we've added so far
+                for (const comp of this.builder.components) {
+                    const compEnd = comp.loadAddress + comp.size;
+                    if (compEnd > highestEndAddress) {
+                        highestEndAddress = compEnd;
+                    }
+                }
+                
+                // Page align for safety
+                const safeAddress = this.alignToPage(highestEndAddress);
                 
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
                 
-                // Place restore routine first, right after SID
-                restoreRoutineAddr = sidEndAddress;
+                // Place restore routine first, at safe address
+                restoreRoutineAddr = safeAddress;
                 
                 // Place save routine after restore routine
                 saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
@@ -903,7 +921,7 @@ class SIDwinderPRGExporter {
                 // Regenerate save routine with correct restore address
                 const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
 
-                // Add the actual routines at end of SID
+                // Add the actual routines
                 this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
                 this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
 
@@ -932,9 +950,17 @@ class SIDwinderPRGExporter {
                 console.warn('No analysis results for save/restore routines');
                 const dummyRoutine = new Uint8Array([0x60]); // RTS
                 
-                // Even with dummy routines, use the new architecture
-                const sidEndAddress = actualSidAddress + sidInfo.data.length;
-                restoreRoutineAddr = sidEndAddress;
+                // Calculate highest address for dummy routines too
+                let highestEndAddress = actualSidAddress + sidInfo.data.length;
+                for (const comp of this.builder.components) {
+                    const compEnd = comp.loadAddress + comp.size;
+                    if (compEnd > highestEndAddress) {
+                        highestEndAddress = compEnd;
+                    }
+                }
+                const safeAddress = this.alignToPage(highestEndAddress);
+                
+                restoreRoutineAddr = safeAddress;
                 saveRoutineAddr = restoreRoutineAddr + 1;
                 
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
@@ -971,12 +997,6 @@ class SIDwinderPRGExporter {
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
-
-            // Process visualizer options
-            const optionComponents = await this.processVisualizerOptions(visualizerName, layoutKey);
-            for (const component of optionComponents) {
-                this.builder.addComponent(component.data, component.loadAddress, component.name);
-            }
 
             // Build PRG
             const prgData = this.builder.build();
