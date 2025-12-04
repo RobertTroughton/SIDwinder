@@ -275,11 +275,10 @@ SpectrometerDisplayIRQ:
 	tya
 	pha
 
-	ldx #4
+	ldx #5
 !loop:
 	dex
 	bpl !loop-
-	nop
 
 	lda #$1b
 	sta $d011
