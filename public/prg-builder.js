@@ -41,19 +41,11 @@ class PRGBuilder {
             prgData[i] = 0x00;
         }
 
-        console.log('[PRG-Builder] Writing components in sorted order:');
         for (const component of this.components) {
             const offset = component.loadAddress - this.lowestAddress + 2;
-            console.log(`  Writing ${component.name} at offset ${offset} (addr $${component.loadAddress.toString(16).toUpperCase()})`);
             for (let i = 0; i < component.data.length; i++) {
                 prgData[offset + i] = component.data[i];
             }
-        }
-
-        // Debug: Check value at 0x5080 (scrollColor address for bank4000)
-        const scrollColorOffset = 0x5080 - this.lowestAddress + 2;
-        if (scrollColorOffset >= 0 && scrollColorOffset < prgData.length) {
-            console.log(`[PRG-Builder] Final value at $5080 (offset ${scrollColorOffset}): ${prgData[scrollColorOffset]}`);
         }
 
         return prgData;
@@ -674,10 +666,7 @@ class SIDwinderPRGExporter {
 
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
-            if (!element) {
-                console.warn(`[PRG-Builder] Element not found for option "${optionConfig.id}"`);
-                continue;
-            }
+            if (!element) continue;
 
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
@@ -718,11 +707,7 @@ class SIDwinderPRGExporter {
                     // Use proper null check to handle 0 values correctly
                     // (0 is falsy in JS but is a valid color value)
                     const parsedValue = parseInt(element.value);
-                    let value = !isNaN(parsedValue) ? parsedValue : (optionConfig.default ?? 0);
-
-                    // Debug logging for color issues
-                    console.log(`[PRG-Builder] Option "${optionConfig.id}": element.value="${element.value}", parsedValue=${parsedValue}, final value=${value}`);
-
+                    const value = !isNaN(parsedValue) ? parsedValue : (optionConfig.default ?? 0);
                     const data = new Uint8Array(1);
                     data[0] = value & 0xFF;
 
@@ -1015,12 +1000,6 @@ class SIDwinderPRGExporter {
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
-
-            // Debug: Log all components before building
-            console.log('[PRG-Builder] Components before build:');
-            for (const comp of this.builder.components) {
-                console.log(`  - ${comp.name}: $${comp.loadAddress.toString(16).toUpperCase()} - $${(comp.loadAddress + comp.size - 1).toString(16).toUpperCase()} (${comp.size} bytes)`);
-            }
 
             // Build PRG
             const prgData = this.builder.build();
