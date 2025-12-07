@@ -674,7 +674,10 @@ class SIDwinderPRGExporter {
 
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
-            if (!element) continue;
+            if (!element) {
+                console.warn(`[PRG-Builder] Element not found for option "${optionConfig.id}"`);
+                continue;
+            }
 
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
