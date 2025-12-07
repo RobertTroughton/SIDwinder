@@ -861,8 +861,11 @@
     
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
-            <div class="modal-icon" id="modalIcon">✔</div>
-            <div class="modal-message" id="modalMessage">Success!</div>
+            <div class="modal-icon" id="modalIcon"></div>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-message" id="modalMessage"></div>
+            <div class="modal-details" id="modalDetails"></div>
+            <div class="modal-actions" id="modalActions"></div>
         </div>
     </div>
 
@@ -1006,6 +1009,7 @@
         </div>
     </div>
 
+    <script src="error-modal.js"></script>
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
     <script src="png-converter.js"></script>
@@ -2305,6 +2309,101 @@ body {
 .modal-message {
     font-size: 1.2em;
     color: #333;
+}
+
+.modal-icon.warning {
+    color: #fcc419;
+}
+
+.modal-icon.info {
+    color: #339af0;
+}
+
+.modal-icon.confirm {
+    color: #667eea;
+}
+
+.modal-title {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.modal-details {
+    margin-top: 15px;
+    text-align: left;
+}
+
+.error-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 0.85em;
+}
+
+.error-details summary {
+    cursor: pointer;
+    color: #666;
+    font-weight: 500;
+    padding: 5px 0;
+    user-select: none;
+}
+
+.error-details summary:hover {
+    color: #333;
+}
+
+.error-details pre {
+    margin: 10px 0 0 0;
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #495057;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-action-btn {
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.modal-action-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.modal-action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.modal-action-btn.secondary {
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.modal-action-btn.secondary:hover {
+    background: #e8eaed;
+    border-color: #c6c6c6;
 }
 
 .busy-overlay {
@@ -3937,6 +4036,247 @@ var CPU6510Module=(()=>{var _scriptName=typeof document!="undefined"?document.cu
 ```
 
 
+### FILE: public/error-modal.js
+```js
+class ErrorModal {
+    constructor() {
+        this.modalElement = null;
+        this.timeoutId = null;
+        this.initialized = false;
+    }
+
+    init() {
+        if (this.initialized) return;
+
+        this.modalElement = document.getElementById('modalOverlay');
+
+        if (!this.modalElement) {
+            
+            this.createModalHTML();
+        }
+
+        this.initialized = true;
+    }
+
+    createModalHTML() {
+        const modalHTML = `
+            <div class="modal-overlay" id="modalOverlay">
+                <div class="modal-content">
+                    <div class="modal-icon" id="modalIcon"></div>
+                    <div class="modal-title" id="modalTitle"></div>
+                    <div class="modal-message" id="modalMessage"></div>
+                    <div class="modal-details" id="modalDetails"></div>
+                    <div class="modal-actions" id="modalActions"></div>
+                </div>
+            </div>
+        `;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = modalHTML;
+        document.body.appendChild(tempDiv.firstElementChild);
+        this.modalElement = document.getElementById('modalOverlay');
+    }
+
+    error(message, options = {}) {
+        const defaultOptions = {
+            title: 'Error',
+            icon: '\u2717', 
+            iconClass: 'error',
+            duration: 0, 
+            log: true,
+            ...options
+        };
+
+        if (defaultOptions.log) {
+            console.error(`[SIDquake Error] ${message}`, options.details || '');
+        }
+
+        this._show(message, defaultOptions);
+    }
+
+    warning(message, options = {}) {
+        const defaultOptions = {
+            title: 'Warning',
+            icon: '\u26A0', 
+            iconClass: 'warning',
+            duration: 4000,
+            log: true,
+            ...options
+        };
+
+        if (defaultOptions.log) {
+            console.warn(`[SIDquake Warning] ${message}`);
+        }
+
+        this._show(message, defaultOptions);
+    }
+
+    success(message, options = {}) {
+        const defaultOptions = {
+            title: '',
+            icon: '\u2713', 
+            iconClass: 'success',
+            duration: 2000,
+            log: false,
+            ...options
+        };
+
+        this._show(message, defaultOptions);
+    }
+
+    info(message, options = {}) {
+        const defaultOptions = {
+            title: '',
+            icon: '\u2139', 
+            iconClass: 'info',
+            duration: 3000,
+            log: false,
+            ...options
+        };
+
+        this._show(message, defaultOptions);
+    }
+
+    confirm(message, options = {}) {
+        return new Promise((resolve) => {
+            const defaultOptions = {
+                title: 'Confirm',
+                icon: '?',
+                iconClass: 'confirm',
+                duration: 0,
+                actions: [
+                    { label: 'Cancel', callback: () => resolve(false), secondary: true },
+                    { label: 'Confirm', callback: () => resolve(true) }
+                ],
+                ...options
+            };
+
+            this._show(message, defaultOptions);
+        });
+    }
+
+    _show(message, options) {
+        if (!this.initialized) this.init();
+
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+
+        const iconEl = document.getElementById('modalIcon');
+        const titleEl = document.getElementById('modalTitle');
+        const messageEl = document.getElementById('modalMessage');
+        const detailsEl = document.getElementById('modalDetails');
+        const actionsEl = document.getElementById('modalActions');
+
+        if (iconEl) {
+            iconEl.textContent = options.icon || '';
+            iconEl.className = `modal-icon ${options.iconClass || ''}`;
+        }
+
+        if (titleEl) {
+            titleEl.textContent = options.title || '';
+            titleEl.style.display = options.title ? 'block' : 'none';
+        }
+
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+
+        if (detailsEl) {
+            if (options.details) {
+                detailsEl.innerHTML = `
+                    <details class="error-details">
+                        <summary>Technical Details</summary>
+                        <pre>${this._escapeHtml(options.details)}</pre>
+                    </details>
+                `;
+                detailsEl.style.display = 'block';
+            } else {
+                detailsEl.innerHTML = '';
+                detailsEl.style.display = 'none';
+            }
+        }
+
+        if (actionsEl) {
+            actionsEl.innerHTML = '';
+
+            if (options.actions && options.actions.length > 0) {
+                options.actions.forEach(action => {
+                    const btn = document.createElement('button');
+                    btn.className = `modal-action-btn ${action.secondary ? 'secondary' : 'primary'}`;
+                    btn.textContent = action.label;
+                    btn.addEventListener('click', () => {
+                        this.hide();
+                        if (action.callback) action.callback();
+                    });
+                    actionsEl.appendChild(btn);
+                });
+                actionsEl.style.display = 'flex';
+            } else if (options.duration === 0) {
+                
+                const btn = document.createElement('button');
+                btn.className = 'modal-action-btn primary';
+                btn.textContent = 'OK';
+                btn.addEventListener('click', () => this.hide());
+                actionsEl.appendChild(btn);
+                actionsEl.style.display = 'flex';
+            } else {
+                actionsEl.style.display = 'none';
+            }
+        }
+
+        this.modalElement.classList.add('visible');
+
+        if (options.duration > 0) {
+            this.timeoutId = setTimeout(() => {
+                this.hide();
+            }, options.duration);
+        }
+
+        if (options.duration > 0) {
+            const clickHandler = (e) => {
+                if (e.target === this.modalElement) {
+                    this.hide();
+                    this.modalElement.removeEventListener('click', clickHandler);
+                }
+            };
+            this.modalElement.addEventListener('click', clickHandler);
+        }
+    }
+
+    hide() {
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+
+        if (this.modalElement) {
+            this.modalElement.classList.remove('visible');
+        }
+    }
+
+    _escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+window.errorModal = new ErrorModal();
+
+window.showError = (message, options) => window.errorModal.error(message, options);
+window.showWarning = (message, options) => window.errorModal.warning(message, options);
+window.showSuccess = (message, options) => window.errorModal.success(message, options);
+window.showInfo = (message, options) => window.errorModal.info(message, options);
+window.showConfirm = (message, options) => window.errorModal.confirm(message, options);
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ErrorModal;
+}
+```
+
+
 ### FILE: public/floating-notes.js
 ```js
 ﻿
@@ -4082,8 +4422,16 @@ window.hvscBrowser = (function () {
             updatePathBar();
         } catch (error) {
             console.error('Fetch error:', error);
+            
             document.getElementById('fileList').innerHTML =
                 '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
+            
+            if (window.showError) {
+                window.showError('Failed to load HVSC directory', {
+                    details: error.message,
+                    duration: 0 
+                });
+            }
         }
     }
 
@@ -4448,7 +4796,12 @@ class ImageSelectorModal {
                     window.imagePreviewManager.handleFileChange({ target: { files: [file] } }, this.currentConfig);
                     this.close();
                 } else {
-                    alert('Please drop a valid image file');
+                    
+                    if (window.showWarning) {
+                        window.showWarning('Please drop a valid image file (PNG format required)');
+                    } else {
+                        console.warn('Please drop a valid image file');
+                    }
                 }
             }
         });
@@ -4728,6 +5081,10 @@ class ImagePreviewManager {
 
     showError(container, message) {
         console.error(message);
+        
+        if (window.showError) {
+            window.showError(message, { duration: 4000 });
+        }
     }
 
     async loadDefaultImage(config) {
@@ -8428,6 +8785,13 @@ class UIController {
             this.hideBusy();
             console.error('Export error:', error);
             this.showExportStatus(`Export failed: ${error.message}`, 'error');
+            
+            if (window.showError) {
+                window.showError('Export failed', {
+                    details: error.message,
+                    duration: 0
+                });
+            }
         }
     }
 
@@ -8508,16 +8872,30 @@ class UIController {
         }
     }
 
-    showModal(message, isSuccess) {
-        this.elements.modalIcon.textContent = isSuccess ? '✓' : '✗';
-        this.elements.modalIcon.className = isSuccess ? 'modal-icon success' : 'modal-icon error';
-        this.elements.modalMessage.textContent = message;
+    showModal(message, isSuccess, options = {}) {
+        
+        if (window.errorModal) {
+            if (isSuccess) {
+                window.errorModal.success(message, options);
+            } else {
+                
+                window.errorModal.error(message, {
+                    duration: options.autoDismiss ? 3000 : 0,
+                    ...options
+                });
+            }
+        } else {
+            
+            this.elements.modalIcon.textContent = isSuccess ? '\u2713' : '\u2717';
+            this.elements.modalIcon.className = isSuccess ? 'modal-icon success' : 'modal-icon error';
+            this.elements.modalMessage.textContent = message;
 
-        this.elements.modalOverlay.classList.add('visible');
+            this.elements.modalOverlay.classList.add('visible');
 
-        setTimeout(() => {
-            this.elements.modalOverlay.classList.remove('visible');
-        }, 2000);
+            setTimeout(() => {
+                this.elements.modalOverlay.classList.remove('visible');
+            }, 2000);
+        }
     }
 
     hideMessages() {
@@ -8585,7 +8963,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (typeof SIDAnalyzer === 'undefined') {
             console.error('SIDAnalyzer not loaded');
-            alert('Error: Core components not loaded. Please refresh the page.');
+            
+            if (window.showError) {
+                window.showError('Core components not loaded', {
+                    details: 'The SIDAnalyzer module failed to load. Please refresh the page to try again.',
+                    duration: 0
+                });
+            } else {
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff6b6b;color:white;padding:20px;border-radius:8px;z-index:9999;text-align:center;';
+                errorDiv.innerHTML = '<strong>Error:</strong> Core components not loaded.<br>Please refresh the page.';
+                document.body.appendChild(errorDiv);
+            }
             return;
         }
 
@@ -8595,6 +8985,12 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (typeof SIDwinderPRGExporter === 'undefined') {
                     console.error('ERROR: SIDwinderPRGExporter still not available after waiting');
+                    if (window.showWarning) {
+                        window.showWarning('PRG Exporter module loading delayed', {
+                            details: 'Some export features may not be available immediately.',
+                            duration: 4000
+                        });
+                    }
                 }
             }, 1000);
         }
