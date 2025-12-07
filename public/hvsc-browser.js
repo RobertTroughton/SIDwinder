@@ -43,8 +43,16 @@ window.hvscBrowser = (function () {
             updatePathBar();
         } catch (error) {
             console.error('Fetch error:', error);
+            // Show error in the file list area
             document.getElementById('fileList').innerHTML =
                 '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
+            // Also show unified error modal for visibility
+            if (window.showError) {
+                window.showError('Failed to load HVSC directory', {
+                    details: error.message,
+                    duration: 0 // Require manual dismiss
+                });
+            }
         }
     }
 

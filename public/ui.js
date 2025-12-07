@@ -1814,6 +1814,13 @@ class UIController {
             this.hideBusy();
             console.error('Export error:', error);
             this.showExportStatus(`Export failed: ${error.message}`, 'error');
+            // Also show error modal for better visibility on serious errors
+            if (window.showError) {
+                window.showError('Export failed', {
+                    details: error.message,
+                    duration: 0
+                });
+            }
         }
     }
 
@@ -1896,16 +1903,31 @@ class UIController {
         }
     }
 
-    showModal(message, isSuccess) {
-        this.elements.modalIcon.textContent = isSuccess ? '✓' : '✗';
-        this.elements.modalIcon.className = isSuccess ? 'modal-icon success' : 'modal-icon error';
-        this.elements.modalMessage.textContent = message;
+    showModal(message, isSuccess, options = {}) {
+        // Use the unified error modal system
+        if (window.errorModal) {
+            if (isSuccess) {
+                window.errorModal.success(message, options);
+            } else {
+                // For errors, show with manual dismiss for important errors
+                // or auto-dismiss for minor warnings
+                window.errorModal.error(message, {
+                    duration: options.autoDismiss ? 3000 : 0,
+                    ...options
+                });
+            }
+        } else {
+            // Fallback for when error modal isn't loaded yet
+            this.elements.modalIcon.textContent = isSuccess ? '\u2713' : '\u2717';
+            this.elements.modalIcon.className = isSuccess ? 'modal-icon success' : 'modal-icon error';
+            this.elements.modalMessage.textContent = message;
 
-        this.elements.modalOverlay.classList.add('visible');
+            this.elements.modalOverlay.classList.add('visible');
 
-        setTimeout(() => {
-            this.elements.modalOverlay.classList.remove('visible');
-        }, 2000);
+            setTimeout(() => {
+                this.elements.modalOverlay.classList.remove('visible');
+            }, 2000);
+        }
     }
 
     hideMessages() {
@@ -1976,7 +1998,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if required classes are available
         if (typeof SIDAnalyzer === 'undefined') {
             console.error('SIDAnalyzer not loaded');
-            alert('Error: Core components not loaded. Please refresh the page.');
+            // Use unified error modal instead of alert()
+            if (window.showError) {
+                window.showError('Core components not loaded', {
+                    details: 'The SIDAnalyzer module failed to load. Please refresh the page to try again.',
+                    duration: 0
+                });
+            } else {
+                // Fallback if error modal isn't loaded either
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff6b6b;color:white;padding:20px;border-radius:8px;z-index:9999;text-align:center;';
+                errorDiv.innerHTML = '<strong>Error:</strong> Core components not loaded.<br>Please refresh the page.';
+                document.body.appendChild(errorDiv);
+            }
             return;
         }
 
@@ -1986,6 +2020,12 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (typeof SIDwinderPRGExporter === 'undefined') {
                     console.error('ERROR: SIDwinderPRGExporter still not available after waiting');
+                    if (window.showWarning) {
+                        window.showWarning('PRG Exporter module loading delayed', {
+                            details: 'Some export features may not be available immediately.',
+                            duration: 4000
+                        });
+                    }
                 }
             }, 1000);
         }

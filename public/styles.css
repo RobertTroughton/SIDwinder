@@ -1112,6 +1112,105 @@ body {
     color: #333;
 }
 
+/* Additional modal icon types for unified error handling */
+.modal-icon.warning {
+    color: #fcc419;
+}
+
+.modal-icon.info {
+    color: #339af0;
+}
+
+.modal-icon.confirm {
+    color: #667eea;
+}
+
+/* Modal title for error/warning messages */
+.modal-title {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* Modal details section for technical information */
+.modal-details {
+    margin-top: 15px;
+    text-align: left;
+}
+
+.error-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 0.85em;
+}
+
+.error-details summary {
+    cursor: pointer;
+    color: #666;
+    font-weight: 500;
+    padding: 5px 0;
+    user-select: none;
+}
+
+.error-details summary:hover {
+    color: #333;
+}
+
+.error-details pre {
+    margin: 10px 0 0 0;
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #495057;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Modal action buttons */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-action-btn {
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.modal-action-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.modal-action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.modal-action-btn.secondary {
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.modal-action-btn.secondary:hover {
+    background: #e8eaed;
+    border-color: #c6c6c6;
+}
+
 /* Busy Overlay - for showing progress during long operations */
 .busy-overlay {
     position: fixed;

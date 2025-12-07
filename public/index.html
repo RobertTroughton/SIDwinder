@@ -209,11 +209,14 @@
         </div>
     </div>
     </div> <!-- End of site content wrapper -->
-    <!-- Modal Overlay -->
+    <!-- Modal Overlay - Unified error/success/warning modal -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
-            <div class="modal-icon" id="modalIcon">✔</div>
-            <div class="modal-message" id="modalMessage">Success!</div>
+            <div class="modal-icon" id="modalIcon"></div>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-message" id="modalMessage"></div>
+            <div class="modal-details" id="modalDetails"></div>
+            <div class="modal-actions" id="modalActions"></div>
         </div>
     </div>
 
@@ -362,6 +365,7 @@
     </div>
 
     <!-- Regular scripts -->
+    <script src="error-modal.js"></script>
     <script src="sidwinder.js"></script>
     <script src="sidwinder-core.js"></script>
     <script src="png-converter.js"></script>
