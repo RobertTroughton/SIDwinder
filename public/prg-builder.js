@@ -704,7 +704,10 @@ class SIDwinderPRGExporter {
                     });
 
                 } else if (optionConfig.type === 'number') {
-                    let value = parseInt(element.value) || optionConfig.default || 0;
+                    // Use proper null check to handle 0 values correctly
+                    // (0 is falsy in JS but is a valid color value)
+                    const parsedValue = parseInt(element.value);
+                    let value = !isNaN(parsedValue) ? parsedValue : (optionConfig.default ?? 0);
                     const data = new Uint8Array(1);
                     data[0] = value & 0xFF;
 
