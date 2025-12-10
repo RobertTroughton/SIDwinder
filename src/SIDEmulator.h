@@ -76,7 +76,7 @@ namespace sidwinder {
          */
         bool generateHelpfulDataFile(const std::string& filename) const;
 
-        bool generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
+        void generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
 
     private:
         CPU6510* cpu_;                 ///< CPU instance

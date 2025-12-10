@@ -198,7 +198,7 @@ namespace sidwinder {
         return { avgCycles, maxCyclesPerFrame_ };
     }
 
-    bool SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
+    void SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
         std::vector<u16> modifiedAddresses;
 
         // Collect all non-SID modified addresses
