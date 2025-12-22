@@ -317,9 +317,9 @@ BarStyleWater5:
     .byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
     .byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
 
-//; =========== STYLE 6: KNIFE (diagonal blade top) ===========
+//; =========== STYLE 6: POINTED (pointed top) ===========
 BarStyleWater6:
-//; Main bar chars (10 chars) - diagonal knife edge top
+//; Main bar chars (10 chars) - pointed top
     .byte $00, $00, $00, $00, $00, $00, $00, $00     //; Empty
     .byte $00, $00, $00, $00, $00, $00, $00, $18    //; 1/8 - diagonal start
     .byte $00, $00, $00, $00, $00, $00, $18, $3C     //; 2/8
@@ -547,9 +547,9 @@ BarStyleMirror5:
     .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C     //; 8/8
     .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE     //; Full
 
-//; =========== STYLE 6: KNIFE (diagonal blade top) ===========
+//; =========== STYLE 6: POINTED (pointed top) ===========
 BarStyleMirror6:
-//; Main bar chars (10 chars) - diagonal knife edge
+//; Main bar chars (10 chars) - pointed top
     .byte $00, $00, $00, $00, $00, $00, $00, $00     //; Empty
     .byte $00, $00, $00, $00, $00, $00, $00, $06     //; 1/8
     .byte $00, $00, $00, $00, $00, $00, $0C, $7E     //; 2/8

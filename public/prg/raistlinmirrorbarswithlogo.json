@@ -121,7 +121,7 @@
         { "value": 3, "label": "▐ ▌ Outline - Hollow bars" },
         { "value": 4, "label": "▐▀▌ Chunky - Blocky pixel bars" },
         { "value": 5, "label": "▐█▌ Smooth - Rounded without highlights" },
-        { "value": 6, "label": "◢█▌ Knife - Diagonal blade top" },
+        { "value": 6, "label": " ▲  Pointed - Pointed top" },
         { "value": 7, "label": "▐▀▌ Lined - Solid with scanlines" }
       ]
     },
