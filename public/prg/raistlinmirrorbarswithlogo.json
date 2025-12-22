@@ -5,7 +5,7 @@
 
   "layouts": {
     "bank4000": {
-      "binary": "prg/raistlinmirrorbarswithlogo-4000.bin",
+      "binary": "prg/RaistlinMirrorBarsWithLogo-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
       "dataAddress": "0x4000",
@@ -13,12 +13,13 @@
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x400D",
+      "barStyle": "0x4070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
     },
     "bank8000": {
-      "binary": "prg/raistlinmirrorbarswithlogo-8000.bin",
+      "binary": "prg/RaistlinMirrorBarsWithLogo-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
       "dataAddress": "0x8000",
@@ -26,6 +27,7 @@
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x800D",
+      "barStyle": "0x8070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
@@ -106,6 +108,23 @@
   ],
 
   "options": [
+    {
+      "id": "barStyle",
+      "label": "Bar Style",
+      "type": "select",
+      "default": 5,
+      "dataField": "barStyle",
+      "values": [
+        { "value": 0, "label": "▐█▌ Classic - Rounded with highlights" },
+        { "value": 1, "label": "███ Solid - Full solid bars" },
+        { "value": 2, "label": " ▐▌ Thin - Narrow 4-pixel bars" },
+        { "value": 3, "label": "▐ ▌ Outline - Hollow bars" },
+        { "value": 4, "label": "▐▀▌ Chunky - Blocky pixel bars" },
+        { "value": 5, "label": "▐█▌ Smooth - Rounded without highlights" },
+        { "value": 6, "label": "◢█▌ Knife - Diagonal blade top" },
+        { "value": 7, "label": "▐▀▌ Lined - Solid with scanlines" }
+      ]
+    },
     {
       "id": "borderColor",
       "label": "Border Color",

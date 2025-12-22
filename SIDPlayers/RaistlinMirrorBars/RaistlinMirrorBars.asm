@@ -18,7 +18,7 @@
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $100, $00                     // Reserved for system (includes BarStyle at $70)
 
 * = CODE_ADDRESS "Main Code"
 
@@ -79,11 +79,12 @@
 .var DEFAULT_RASTERTIMING_Y = 232
 
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.import source "../INC/BarStyles.asm"
 
 //; =============================================================================
 //; DATA
@@ -118,6 +119,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
+	jsr CopyBarStyleMirror
 	jsr ClearScreens
 	jsr DisplaySongInfo
 	jsr init_D011_D012_values
@@ -561,27 +563,8 @@ barCharacterMap:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $7C, $00, $00, $00, $00, $00, $00, $00
-	.byte $BE, $7C, $00, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $7C, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+//; This area is filled at runtime by CopyBarStyleMirror based on BarStyle selection
+	.fill BAR_STYLE_SIZE_MIRROR, $00
 
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill $400, $00
