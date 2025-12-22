@@ -1220,8 +1220,8 @@ class UIController {
         }).join('');
 
         return `
-            <label class="option-label">${config.label}</label>
-            <div class="option-control">
+            <div class="bar-style-container">
+                <span class="bar-style-label">${config.label}</span>
                 <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}">
                     ${thumbnailsHTML}
                 </div>
