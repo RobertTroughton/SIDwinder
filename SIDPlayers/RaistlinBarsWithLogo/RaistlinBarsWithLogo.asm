@@ -21,7 +21,8 @@
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+BarStyle:       .byte $00       // Bar style index (0-4) - set by PRG builder
+    .fill $FF, $00
 
 * = CODE_ADDRESS "Main Code"
 
@@ -103,8 +104,8 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
@@ -142,6 +143,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
+	jsr CopyBarStyle
 	jsr DrawScreens
 
 	ldy #$00
@@ -574,6 +576,40 @@ SetupMusic:
 	jmp SIDInit
 
 //; =============================================================================
+//; BAR STYLE COPY ROUTINE
+//; =============================================================================
+
+.const NUM_BAR_STYLES = 5
+.const BAR_STYLE_SIZE = 240		// 30 chars * 8 bytes each
+
+CopyBarStyle:
+	// Calculate source address based on BarStyle index
+	lda BarStyle
+	cmp #NUM_BAR_STYLES
+	bcc !validStyle+
+	lda #$00					// Default to style 0 if invalid
+!validStyle:
+
+	// Multiply by BAR_STYLE_SIZE (240 = $F0)
+	// A * 240 = A * 256 - A * 16 = A << 8 - A << 4
+	tax
+	lda BarStylesLo, x
+	sta !copyLoop+ + 1
+	lda BarStylesHi, x
+	sta !copyLoop+ + 2
+
+	// Copy 240 bytes to charset
+	ldx #$00
+!copyLoop:
+	lda BarStyleData, x			// Source (modified above)
+	sta CHARSET_ADDRESS + (224 * 8), x
+	inx
+	cpx #BAR_STYLE_SIZE
+	bne !copyLoop-
+
+	rts
+
+//; =============================================================================
 //; DATA SECTION - VIC Configuration
 //; =============================================================================
 
@@ -674,19 +710,33 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; First, the chars for the main bar
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+//; This area is filled at runtime by CopyBarStyle based on BarStyle selection
+	.fill BAR_STYLE_SIZE, $00
 
-//; reflection chars - frame 1 is &55 (for flicker)
+//; =============================================================================
+//; BAR STYLE DATA - 5 styles, each 240 bytes (30 chars)
+//; Each style: 10 main bar chars + 10 reflection frame1 + 10 reflection frame2
+//; =============================================================================
+
+BarStylesLo:	.fill NUM_BAR_STYLES, <(BarStyleData + (i * BAR_STYLE_SIZE))
+BarStylesHi:	.fill NUM_BAR_STYLES, >(BarStyleData + (i * BAR_STYLE_SIZE))
+
+BarStyleData:
+
+//; =========== STYLE 0: CLASSIC (rounded with highlights) ===========
+BarStyle0:
+//; Main bar chars (10 chars)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00		//; Empty
+	.byte $00, $00, $00, $00, $00, $00, $00, $7C		//; 1/8
+	.byte $00, $00, $00, $00, $00, $00, $7C, $BE		//; 2/8
+	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE		//; 3/8
+	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE		//; 4/8
+	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE		//; 5/8
+	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE		//; 6/8
+	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE		//; 7/8
+	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE		//; 8/8
+	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE		//; Full
+//; Reflection frame 1 (&55 flicker)
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $54, $00, $00, $00, $00, $00, $00, $00
 	.byte $aa, $54, $00, $00, $00, $00, $00, $00
@@ -697,8 +747,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
 	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-
-//; reflection chars - frame 2 is &AA (for flicker)
+//; Reflection frame 2 (&AA flicker)
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $aa, $00, $00, $00, $00, $00, $00, $00
 	.byte $54, $aa, $00, $00, $00, $00, $00, $00
@@ -706,9 +755,153 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
 	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
 	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
+	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $00
 	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
 	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+
+//; =========== STYLE 1: SOLID (full solid bars) ===========
+BarStyle1:
+//; Main bar chars (10 chars) - solid $7E fill
+	.byte $00, $00, $00, $00, $00, $00, $00, $00		//; Empty
+	.byte $00, $00, $00, $00, $00, $00, $00, $7E		//; 1/8
+	.byte $00, $00, $00, $00, $00, $00, $7E, $7E		//; 2/8
+	.byte $00, $00, $00, $00, $00, $7E, $7E, $7E		//; 3/8
+	.byte $00, $00, $00, $00, $7E, $7E, $7E, $7E		//; 4/8
+	.byte $00, $00, $00, $7E, $7E, $7E, $7E, $7E		//; 5/8
+	.byte $00, $00, $7E, $7E, $7E, $7E, $7E, $7E		//; 6/8
+	.byte $00, $7E, $7E, $7E, $7E, $7E, $7E, $7E		//; 7/8
+	.byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E		//; 8/8
+	.byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E		//; Full
+//; Reflection frame 1 (&55 mask on $7E = $54)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $00, $00, $00, $00, $00, $00, $00
+	.byte $2A, $54, $00, $00, $00, $00, $00, $00
+	.byte $54, $2A, $54, $00, $00, $00, $00, $00
+	.byte $2A, $54, $2A, $54, $00, $00, $00, $00
+	.byte $54, $2A, $54, $2A, $54, $00, $00, $00
+	.byte $2A, $54, $2A, $54, $2A, $54, $00, $00
+	.byte $54, $2A, $54, $2A, $54, $2A, $54, $00
+	.byte $2A, $54, $2A, $54, $2A, $54, $2A, $54
+	.byte $54, $2A, $54, $2A, $54, $2A, $54, $2A
+//; Reflection frame 2 (&AA mask on $7E = $2A)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $2A, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $2A, $00, $00, $00, $00, $00, $00
+	.byte $2A, $54, $2A, $00, $00, $00, $00, $00
+	.byte $54, $2A, $54, $2A, $00, $00, $00, $00
+	.byte $2A, $54, $2A, $54, $2A, $00, $00, $00
+	.byte $54, $2A, $54, $2A, $54, $2A, $00, $00
+	.byte $2A, $54, $2A, $54, $2A, $54, $2A, $00
+	.byte $54, $2A, $54, $2A, $54, $2A, $54, $2A
+	.byte $2A, $54, $2A, $54, $2A, $54, $2A, $54
+
+//; =========== STYLE 2: THIN (narrow 4-pixel bars) ===========
+BarStyle2:
+//; Main bar chars (10 chars) - thin $3C fill
+	.byte $00, $00, $00, $00, $00, $00, $00, $00		//; Empty
+	.byte $00, $00, $00, $00, $00, $00, $00, $3C		//; 1/8
+	.byte $00, $00, $00, $00, $00, $00, $3C, $3C		//; 2/8
+	.byte $00, $00, $00, $00, $00, $3C, $3C, $3C		//; 3/8
+	.byte $00, $00, $00, $00, $3C, $3C, $3C, $3C		//; 4/8
+	.byte $00, $00, $00, $3C, $3C, $3C, $3C, $3C		//; 5/8
+	.byte $00, $00, $3C, $3C, $3C, $3C, $3C, $3C		//; 6/8
+	.byte $00, $3C, $3C, $3C, $3C, $3C, $3C, $3C		//; 7/8
+	.byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C		//; 8/8
+	.byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C		//; Full
+//; Reflection frame 1 (&55 mask on $3C = $14)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $14, $00, $00, $00, $00, $00, $00, $00
+	.byte $28, $14, $00, $00, $00, $00, $00, $00
+	.byte $14, $28, $14, $00, $00, $00, $00, $00
+	.byte $28, $14, $28, $14, $00, $00, $00, $00
+	.byte $14, $28, $14, $28, $14, $00, $00, $00
+	.byte $28, $14, $28, $14, $28, $14, $00, $00
+	.byte $14, $28, $14, $28, $14, $28, $14, $00
+	.byte $28, $14, $28, $14, $28, $14, $28, $14
+	.byte $14, $28, $14, $28, $14, $28, $14, $28
+//; Reflection frame 2 (&AA mask on $3C = $28)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $28, $00, $00, $00, $00, $00, $00, $00
+	.byte $14, $28, $00, $00, $00, $00, $00, $00
+	.byte $28, $14, $28, $00, $00, $00, $00, $00
+	.byte $14, $28, $14, $28, $00, $00, $00, $00
+	.byte $28, $14, $28, $14, $28, $00, $00, $00
+	.byte $14, $28, $14, $28, $14, $28, $00, $00
+	.byte $28, $14, $28, $14, $28, $14, $28, $00
+	.byte $14, $28, $14, $28, $14, $28, $14, $28
+	.byte $28, $14, $28, $14, $28, $14, $28, $14
+
+//; =========== STYLE 3: OUTLINE (hollow bars) ===========
+BarStyle3:
+//; Main bar chars (10 chars) - outline only
+	.byte $00, $00, $00, $00, $00, $00, $00, $00		//; Empty
+	.byte $00, $00, $00, $00, $00, $00, $00, $7E		//; 1/8
+	.byte $00, $00, $00, $00, $00, $00, $7E, $42		//; 2/8
+	.byte $00, $00, $00, $00, $00, $7E, $42, $42		//; 3/8
+	.byte $00, $00, $00, $00, $7E, $42, $42, $42		//; 4/8
+	.byte $00, $00, $00, $7E, $42, $42, $42, $42		//; 5/8
+	.byte $00, $00, $7E, $42, $42, $42, $42, $42		//; 6/8
+	.byte $00, $7E, $42, $42, $42, $42, $42, $42		//; 7/8
+	.byte $7E, $42, $42, $42, $42, $42, $42, $42		//; 8/8
+	.byte $42, $42, $42, $42, $42, $42, $42, $42		//; Full (just sides)
+//; Reflection frame 1 (&55 mask)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $00, $00, $00, $00, $00, $00, $00
+	.byte $2A, $40, $00, $00, $00, $00, $00, $00
+	.byte $54, $02, $40, $00, $00, $00, $00, $00
+	.byte $2A, $40, $02, $40, $00, $00, $00, $00
+	.byte $54, $02, $40, $02, $40, $00, $00, $00
+	.byte $2A, $40, $02, $40, $02, $40, $00, $00
+	.byte $54, $02, $40, $02, $40, $02, $40, $00
+	.byte $2A, $40, $02, $40, $02, $40, $02, $40
+	.byte $40, $02, $40, $02, $40, $02, $40, $02
+//; Reflection frame 2 (&AA mask)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $2A, $00, $00, $00, $00, $00, $00, $00
+	.byte $54, $02, $00, $00, $00, $00, $00, $00
+	.byte $2A, $40, $02, $00, $00, $00, $00, $00
+	.byte $54, $02, $40, $02, $00, $00, $00, $00
+	.byte $2A, $40, $02, $40, $02, $00, $00, $00
+	.byte $54, $02, $40, $02, $40, $02, $00, $00
+	.byte $2A, $40, $02, $40, $02, $40, $02, $00
+	.byte $54, $02, $40, $02, $40, $02, $40, $02
+	.byte $02, $40, $02, $40, $02, $40, $02, $40
+
+//; =========== STYLE 4: CHUNKY (blocky pixel bars) ===========
+BarStyle4:
+//; Main bar chars (10 chars) - chunky 2x2 pixel blocks
+	.byte $00, $00, $00, $00, $00, $00, $00, $00		//; Empty
+	.byte $00, $00, $00, $00, $00, $00, $66, $66		//; 1/8
+	.byte $00, $00, $00, $00, $00, $00, $66, $66		//; 2/8
+	.byte $00, $00, $00, $00, $66, $66, $66, $66		//; 3/8
+	.byte $00, $00, $00, $00, $66, $66, $66, $66		//; 4/8
+	.byte $00, $00, $66, $66, $66, $66, $66, $66		//; 5/8
+	.byte $00, $00, $66, $66, $66, $66, $66, $66		//; 6/8
+	.byte $66, $66, $66, $66, $66, $66, $66, $66		//; 7/8
+	.byte $66, $66, $66, $66, $66, $66, $66, $66		//; 8/8
+	.byte $66, $66, $66, $66, $66, $66, $66, $66		//; Full
+//; Reflection frame 1 (&55 mask on $66 = $44)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $44, $44, $00, $00, $00, $00, $00, $00
+	.byte $22, $22, $44, $44, $00, $00, $00, $00
+	.byte $44, $44, $22, $22, $00, $00, $00, $00
+	.byte $22, $22, $44, $44, $22, $22, $00, $00
+	.byte $44, $44, $22, $22, $44, $44, $00, $00
+	.byte $22, $22, $44, $44, $22, $22, $44, $44
+	.byte $44, $44, $22, $22, $44, $44, $22, $22
+	.byte $22, $22, $44, $44, $22, $22, $44, $44
+	.byte $44, $44, $22, $22, $44, $44, $22, $22
+//; Reflection frame 2 (&AA mask on $66 = $22)
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $22, $22, $00, $00, $00, $00, $00, $00
+	.byte $44, $44, $22, $22, $00, $00, $00, $00
+	.byte $22, $22, $44, $44, $00, $00, $00, $00
+	.byte $44, $44, $22, $22, $44, $44, $00, $00
+	.byte $22, $22, $44, $44, $22, $22, $00, $00
+	.byte $44, $44, $22, $22, $44, $44, $22, $22
+	.byte $22, $22, $44, $44, $22, $22, $44, $44
+	.byte $44, $44, $22, $22, $44, $44, $22, $22
+	.byte $22, $22, $44, $44, $22, $22, $44, $44
 
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00

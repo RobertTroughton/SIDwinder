@@ -863,6 +863,18 @@ body {
     cursor: pointer;
 }
 
+/* Bar style select with visual previews */
+.select-input.bar-style-select {
+    min-width: 280px;
+    font-family: 'C64 Pro Mono', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.select-input.bar-style-select option {
+    font-family: 'C64 Pro Mono', 'Courier New', monospace;
+    padding: 4px 8px;
+}
+
     .number-input:focus, .select-input:focus, .date-input:focus {
         outline: none;
         border-color: #667eea;

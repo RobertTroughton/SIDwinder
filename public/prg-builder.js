@@ -703,7 +703,7 @@ class SIDwinderPRGExporter {
                         name: `option_${optionConfig.id}`
                     });
 
-                } else if (optionConfig.type === 'number') {
+                } else if (optionConfig.type === 'number' || optionConfig.type === 'select') {
                     // Use proper null check to handle 0 values correctly
                     // (0 is falsy in JS but is a valid color value)
                     const parsedValue = parseInt(element.value);

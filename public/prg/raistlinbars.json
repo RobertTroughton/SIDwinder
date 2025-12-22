@@ -4,28 +4,47 @@
 
   "layouts": {
     "bank4000": {
-      "binary": "prg/raistlinbars-4000.bin",
+      "binary": "prg/RaistlinBars-4000.bin",
       "size": "0x4000",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
+      "barStyle": "0x4000",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
     },
     "bank8000": {
-      "binary": "prg/raistlinbars-8000.bin",
+      "binary": "prg/RaistlinBars-8000.bin",
       "size": "0x4000",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
+      "barStyle": "0x8000",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
     }
-  }
+  },
+
+  "options": [
+    {
+      "id": "barStyle",
+      "label": "Bar Style",
+      "type": "select",
+      "default": 0,
+      "dataField": "barStyle",
+      "values": [
+        { "value": 0, "label": "▐█▌ Classic - Rounded with highlights" },
+        { "value": 1, "label": "███ Solid - Full solid bars" },
+        { "value": 2, "label": " ▐▌ Thin - Narrow 4-pixel bars" },
+        { "value": 3, "label": "▐ ▌ Outline - Hollow bars" },
+        { "value": 4, "label": "▐▀▌ Chunky - Blocky pixel bars" }
+      ]
+    }
+  ]
 }

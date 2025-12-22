@@ -1109,10 +1109,12 @@ class UIController {
             `;
             }
         } else if (config.type === 'select') {
+            // Add special class for barStyle select to use monospace font for visual previews
+            const selectClass = config.id === 'barStyle' ? 'select-input bar-style-select' : 'select-input';
             html += `
             <label class="option-label">${config.label}</label>
             <div class="option-control">
-                <select id="${config.id}" class="select-input">
+                <select id="${config.id}" class="${selectClass}">
                     ${config.values.map(v =>
                 `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
                             ${v.label}
