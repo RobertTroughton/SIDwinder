@@ -29,7 +29,15 @@ class PRGBuilder {
             throw new Error('No components added to PRG');
         }
 
-        this.components.sort((a, b) => a.loadAddress - b.loadAddress);
+        // Sort by loadAddress, with larger components first at the same address
+        // This ensures smaller patches (like option values) override larger binaries
+        this.components.sort((a, b) => {
+            if (a.loadAddress !== b.loadAddress) {
+                return a.loadAddress - b.loadAddress;
+            }
+            // Same load address: larger components first (so smaller ones can override)
+            return b.size - a.size;
+        });
 
         const totalSize = (this.highestAddress - this.lowestAddress + 1) + 2;
         const prgData = new Uint8Array(totalSize);
