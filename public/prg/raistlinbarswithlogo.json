@@ -13,7 +13,7 @@
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x400D",
-      "barStyle": "0x4000",
+      "barStyle": "0x4070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -27,7 +27,7 @@
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x800D",
-      "barStyle": "0x8000",
+      "barStyle": "0x8070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"

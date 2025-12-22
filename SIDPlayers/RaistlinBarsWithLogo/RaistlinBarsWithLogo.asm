@@ -21,8 +21,9 @@
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
 * = DATA_ADDRESS "Data Block"
-BarStyle:       .byte $00       // Bar style index (0-4) - set by PRG builder
-    .fill $FF, $00
+    .fill $70, $00                      // Reserved for system (SIDInit, SIDPlay, etc.)
+BarStyle:       .byte $00               // Bar style index (0-4) - set by PRG builder
+    .fill $8F, $00                      // Remaining space
 
 * = CODE_ADDRESS "Main Code"
 

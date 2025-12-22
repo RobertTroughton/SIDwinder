@@ -11,7 +11,7 @@
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
-      "barStyle": "0x4000",
+      "barStyle": "0x4070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -24,7 +24,7 @@
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
-      "barStyle": "0x8000",
+      "barStyle": "0x8070",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
