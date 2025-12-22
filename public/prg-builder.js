@@ -676,6 +676,26 @@ class SIDwinderPRGExporter {
             const element = document.getElementById(optionConfig.id);
             if (!element) continue;
 
+            // Special handling for barStyle when character data should be injected
+            if (optionConfig.id === 'barStyle' && vizConfig.barStyleType && layout.barCharsAddress) {
+                const styleIndex = parseInt(element.value);
+                const validIndex = !isNaN(styleIndex) ? styleIndex : (optionConfig.default ?? 0);
+
+                // Get bar style character data from the global BAR_STYLES_DATA
+                if (typeof BAR_STYLES_DATA !== 'undefined') {
+                    const charData = BAR_STYLES_DATA.getBarStyleData(vizConfig.barStyleType, validIndex);
+                    if (charData) {
+                        const targetAddress = parseInt(layout.barCharsAddress);
+                        optionComponents.push({
+                            data: charData,
+                            loadAddress: targetAddress,
+                            name: `barStyle_chars`
+                        });
+                    }
+                }
+                continue; // Skip normal processing for this option
+            }
+
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
 

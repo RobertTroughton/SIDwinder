@@ -130,7 +130,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
-	jsr CopyBarStyleWater
+	//; Bar style character data is now injected at build time by the web app
 	jsr ClearScreens
 	jsr DisplaySongInfo
 	jsr init_D011_D012_values
@@ -726,7 +726,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; This area is filled at runtime by CopyBarStyleWater based on BarStyle selection
+//; This area is filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_WATER, $00
 
 * = SCREEN0_ADDRESS "Screen 0"

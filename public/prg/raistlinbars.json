@@ -1,6 +1,7 @@
 {
   "name": "Raistlin Bars",
   "maxCallsPerFrame": 2,
+  "barStyleType": "water",
 
   "layouts": {
     "bank4000": {
@@ -11,7 +12,7 @@
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
-      "barStyle": "0x4070",
+      "barCharsAddress": "0x7F00",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -24,7 +25,7 @@
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
-      "barStyle": "0x8070",
+      "barCharsAddress": "0xBF00",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
@@ -37,7 +38,6 @@
       "label": "Bar Style",
       "type": "select",
       "default": 0,
-      "dataField": "barStyle",
       "values": [
         { "value": 0, "label": "▐█▌ Classic - Rounded with highlights" },
         { "value": 1, "label": "███ Solid - Full solid bars" },
