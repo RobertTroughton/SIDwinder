@@ -1098,19 +1098,22 @@ class UIController {
                 html += `
                 <label class="option-label">${config.label}</label>
                 <div class="option-control">
-                    <input type="number" 
-                           id="${config.id}" 
+                    <input type="number"
+                           id="${config.id}"
                            class="number-input"
-                           value="${config.default || 0}" 
-                           min="${config.min || 0}" 
+                           value="${config.default || 0}"
+                           min="${config.min || 0}"
                            max="${config.max || 255}">
                     ${config.description ? `<span class="option-hint">${config.description}</span>` : ''}
                 </div>
             `;
             }
+        } else if (config.type === 'imageGrid' || (config.type === 'select' && config.id === 'barStyle')) {
+            // Image grid for bar styles - render as clickable thumbnails
+            html += this.createBarStyleGridHTML(config);
         } else if (config.type === 'select') {
-            // Add special class for barStyle select to use monospace font for visual previews
-            const selectClass = config.id === 'barStyle' ? 'select-input bar-style-select' : 'select-input';
+            // Regular select dropdown
+            const selectClass = 'select-input';
             html += `
             <label class="option-label">${config.label}</label>
             <div class="option-control">
@@ -1166,16 +1169,16 @@ class UIController {
         <label class="option-label">${config.label}</label>
         <div class="option-control color-slider-control">
             <div class="slider-wrapper">
-                <input type="range" 
-                       id="${config.id}" 
+                <input type="range"
+                       id="${config.id}"
                        class="color-slider"
-                       min="0" 
-                       max="15" 
+                       min="0"
+                       max="15"
                        value="${defaultValue}"
                        data-config-id="${config.id}">
                 <div class="color-slider-track">
                     ${C64_COLORS.map(c => `
-                        <div class="color-segment" 
+                        <div class="color-segment"
                              style="background: ${c.hex}"
                              data-value="${c.value}"
                              data-name="${c.name}"
@@ -1187,12 +1190,44 @@ class UIController {
             <div class="color-value" id="${config.id}-display">
                 <span class="color-swatch" style="background: ${defaultColor.hex}"></span>
                 <span class="color-text">
-                    <span class="color-number">${defaultValue}</span>: 
+                    <span class="color-number">${defaultValue}</span>:
                     <span class="color-name">${defaultColor.name}</span>
                 </span>
             </div>
         </div>
     `;
+    }
+
+    createBarStyleGridHTML(config) {
+        const defaultValue = config.default || 0;
+
+        // Generate thumbnails for each bar style
+        const thumbnailsHTML = config.values.map(v => {
+            const isSelected = v.value === defaultValue;
+            // Image path follows convention: prg/bar-styles/style-{value}.png
+            const imagePath = `prg/bar-styles/style-${v.value}.png`;
+
+            return `
+                <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
+                     data-value="${v.value}"
+                     title="${v.label}">
+                    <img src="${imagePath}"
+                         alt="Style ${v.value}"
+                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML += '<span>${v.value}</span><span class=\\'selected-check\\'>✓</span>';">
+                    <span class="selected-check">✓</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <label class="option-label">${config.label}</label>
+            <div class="option-control">
+                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}">
+                    ${thumbnailsHTML}
+                </div>
+                <input type="hidden" id="${config.id}" value="${defaultValue}">
+            </div>
+        `;
     }
 
     attachOptionEventListeners(config) {
@@ -1375,6 +1410,29 @@ class UIController {
                     const event = new Event('input', { bubbles: true });
                     slider.dispatchEvent(event);
                 }
+            });
+        });
+
+        // Bar style grid thumbnail handlers
+        document.querySelectorAll('.bar-style-grid').forEach(grid => {
+            grid.addEventListener('click', (e) => {
+                const thumbnail = e.target.closest('.bar-style-thumbnail');
+                if (!thumbnail) return;
+
+                const value = parseInt(thumbnail.dataset.value);
+                const configId = grid.dataset.configId;
+                const hiddenInput = document.getElementById(configId);
+
+                // Update hidden input value
+                if (hiddenInput) {
+                    hiddenInput.value = value;
+                }
+
+                // Update visual selection
+                grid.querySelectorAll('.bar-style-thumbnail').forEach(thumb => {
+                    thumb.classList.remove('selected');
+                });
+                thumbnail.classList.add('selected');
             });
         });
 

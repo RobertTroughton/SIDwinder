@@ -36,17 +36,17 @@
     {
       "id": "barStyle",
       "label": "Bar Style",
-      "type": "select",
+      "type": "imageGrid",
       "default": 0,
       "values": [
-        { "value": 0, "label": "▐█▌ Classic - Rounded with highlights" },
-        { "value": 1, "label": "███ Solid - Full solid bars" },
-        { "value": 2, "label": " ▐▌ Thin - Narrow 4-pixel bars" },
-        { "value": 3, "label": "▐ ▌ Outline - Hollow bars" },
-        { "value": 4, "label": "▐▀▌ Chunky - Blocky pixel bars" },
-        { "value": 5, "label": "▐█▌ Smooth - Rounded without highlights" },
-        { "value": 6, "label": " ▲  Pointed - Pointed top" },
-        { "value": 7, "label": "▐▀▌ Lined - Solid with scanlines" }
+        { "value": 0, "label": "Classic - Rounded with highlights" },
+        { "value": 1, "label": "Solid - Full solid bars" },
+        { "value": 2, "label": "Thin - Narrow 4-pixel bars" },
+        { "value": 3, "label": "Outline - Hollow bars" },
+        { "value": 4, "label": "Chunky - Blocky pixel bars" },
+        { "value": 5, "label": "Smooth - Rounded without highlights" },
+        { "value": 6, "label": "Pointed - Pointed top" },
+        { "value": 7, "label": "Lined - Solid with scanlines" }
       ]
     }
   ]
