@@ -42,6 +42,7 @@ class UIController {
             uploadSection: document.getElementById('uploadSection'),
             uploadBtn: document.getElementById('uploadBtn'),
             hvscBtn: document.getElementById('hvscBtn'),
+            randomBtn: document.getElementById('randomBtn'),
             hvscSelected: document.getElementById('hvscSelected'),
             selectedFile: document.getElementById('selectedFile'),
 
@@ -101,6 +102,11 @@ class UIController {
         // HVSC button
         this.elements.hvscBtn.addEventListener('click', () => {
             this.openHVSCBrowser();
+        });
+
+        // Random SID button
+        this.elements.randomBtn.addEventListener('click', () => {
+            this.selectRandomSID();
         });
 
         // Drag & drop section click
@@ -173,6 +179,45 @@ class UIController {
         } else if (!window.hvscBrowserInitialized) {
             hvscBrowser.fetchDirectory('C64Music');
             window.hvscBrowserInitialized = true;
+        }
+    }
+
+    async selectRandomSID() {
+        // Show busy overlay
+        this.showBusy('Finding Random SID', 'Exploring HVSC collection...');
+
+        try {
+            // Use the hvscRandom module to select a random SID
+            const result = await window.hvscRandom.selectRandomSID(5, (message) => {
+                this.updateBusy('Finding Random SID', message);
+            });
+
+            // Hide busy overlay before processing
+            this.hideBusy();
+
+            // Show selection info
+            this.elements.hvscSelected.style.display = 'block';
+            this.elements.selectedFile.textContent = result.name;
+
+            // Show downloading message
+            this.showModal('Downloading SID from HVSC...', true);
+
+            // Download and process the SID (same as handleHVSCSelection)
+            const response = await fetch(result.url);
+
+            if (!response.ok) {
+                throw new Error('Failed to download SID file');
+            }
+
+            const blob = await response.blob();
+            const file = new File([blob], result.name, { type: 'application/octet-stream' });
+
+            await this.processFile(file);
+
+        } catch (error) {
+            this.hideBusy();
+            console.error('Error selecting random SID:', error);
+            this.showModal('Failed to select random SID: ' + error.message, false);
         }
     }
 

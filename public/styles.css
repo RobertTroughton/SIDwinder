@@ -232,6 +232,15 @@ body {
         transform: translateY(0);
     }
 
+.upload-btn.random-btn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+}
+
+    .upload-btn.random-btn:hover {
+        box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+    }
+
 .upload-btn-icon {
     font-size: 1.2em;
 }
