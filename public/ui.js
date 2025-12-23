@@ -584,7 +584,7 @@ class UIController {
             this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
             this.updateMaxCycles(this.analysisResults.maxCycles);
-            this.updateSidChipCount(this.analysisResults.sidChipCount);
+            this.updateSidChipCount(this.analysisResults.sidChipCount, this.analysisResults.sidChipAddresses);
 
             // Show panels - remove disabled state and add visible
             this.elements.infoSection.classList.remove('disabled');
@@ -1597,9 +1597,24 @@ class UIController {
         }
     }
 
-    updateSidChipCount(sidChipCount) {
+    updateSidChipCount(sidChipCount, sidChipAddresses) {
         if (this.elements.sidChipCount) {
-            this.elements.sidChipCount.textContent = sidChipCount || '1';
+            const count = sidChipCount || 1;
+
+            if (count <= 1 || !sidChipAddresses || sidChipAddresses.length <= 1) {
+                // Single SID - just show "1"
+                this.elements.sidChipCount.textContent = '1';
+            } else {
+                // Multiple SIDs - show count and list extra SID addresses
+                const extraAddresses = sidChipAddresses.slice(1); // Skip the first ($D400)
+                const extraList = extraAddresses.map((addr, idx) =>
+                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
+                ).join('\n');
+
+                this.elements.sidChipCount.innerHTML = `${count}<br><span style="font-size: 0.85em; color: #aaa;">${extraAddresses.map((addr, idx) =>
+                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
+                ).join('<br>')}</span>`;
+            }
         }
     }
 
