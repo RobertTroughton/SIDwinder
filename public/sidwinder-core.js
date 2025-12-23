@@ -38,6 +38,7 @@ class SIDAnalyzer {
                 sid_get_code_bytes: this.Module.cwrap('sid_get_code_bytes', 'number', []),
                 sid_get_data_bytes: this.Module.cwrap('sid_get_data_bytes', 'number', []),
                 sid_get_sid_writes: this.Module.cwrap('sid_get_sid_writes', 'number', ['number']),
+                sid_get_sid_chip_count: this.Module.cwrap('sid_get_sid_chip_count', 'number', []),
                 sid_get_clock_type: this.Module.cwrap('sid_get_clock_type', 'string', []),
                 sid_get_sid_model: this.Module.cwrap('sid_get_sid_model', 'string', []),
                 sid_get_num_calls_per_frame: this.Module.cwrap('sid_get_num_calls_per_frame', 'number', []),
@@ -212,6 +213,7 @@ class SIDAnalyzer {
             const ciaTimerDetected = this.api.sid_get_cia_timer_detected() ? true : false;
             const ciaTimerValue = this.api.sid_get_cia_timer_value();
             const maxCycles = this.api.sid_get_max_cycles();
+            const sidChipCount = this.api.sid_get_sid_chip_count();
 
             return {
                 modifiedAddresses,
@@ -222,7 +224,8 @@ class SIDAnalyzer {
                 numCallsPerFrame,
                 ciaTimerDetected,
                 ciaTimerValue,
-                maxCycles
+                maxCycles,
+                sidChipCount
             };
         } finally {
             if (progressInterval) {

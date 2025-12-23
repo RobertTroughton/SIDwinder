@@ -80,6 +80,7 @@ class UIController {
             zpUsage: document.getElementById('zpUsage'),
             clockType: document.getElementById('clockType'),
             sidModel: document.getElementById('sidModel'),
+            sidChipCount: document.getElementById('sidChipCount'),
             maxCycles: document.getElementById('maxCycles'),
             // Export section elements
             exportSection: document.getElementById('exportSection'),
@@ -277,6 +278,10 @@ class UIController {
         const maxCyclesElement = document.getElementById('maxCycles');
         if (maxCyclesElement) {
             maxCyclesElement.textContent = '4000';
+        }
+
+        if (this.elements.sidChipCount) {
+            this.elements.sidChipCount.textContent = '1';
         }
 
         const modifiedMemoryElement = document.getElementById('modifiedMemoryCount');
@@ -579,6 +584,7 @@ class UIController {
             this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
             this.updateMaxCycles(this.analysisResults.maxCycles);
+            this.updateSidChipCount(this.analysisResults.sidChipCount);
 
             // Show panels - remove disabled state and add visible
             this.elements.infoSection.classList.remove('disabled');
@@ -1588,6 +1594,12 @@ class UIController {
         const element = document.getElementById('maxCycles');
         if (element) {
             element.textContent = maxCycles || '-';
+        }
+    }
+
+    updateSidChipCount(sidChipCount) {
+        if (this.elements.sidChipCount) {
+            this.elements.sidChipCount.textContent = sidChipCount || '1';
         }
     }
 

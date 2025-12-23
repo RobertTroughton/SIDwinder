@@ -53,6 +53,9 @@ extern "C" {
         uint32_t sidWrites[32];  // Count writes to each SID register
         uint32_t totalSidWrites;
 
+        // Multi-SID chip tracking ($D400-$D7FF, 32 possible SID slots)
+        bool sidChipsUsed[32];   // Track which SID chips have been written to
+
         // Zero page write tracking
         uint32_t zpWrites[256];   // Count writes to each zero page location
         uint32_t totalZpWrites;
@@ -102,6 +105,7 @@ extern "C" {
         memset(cpu.memory, 0, sizeof(cpu.memory));
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
         memset(cpu.sidWrites, 0, sizeof(cpu.sidWrites));
+        memset(cpu.sidChipsUsed, 0, sizeof(cpu.sidChipsUsed));
         memset(cpu.zpWrites, 0, sizeof(cpu.zpWrites));
         memset(cpu.lastWritePC, 0, sizeof(cpu.lastWritePC));
 
@@ -154,11 +158,15 @@ extern "C" {
                 cpu.totalZpWrites++;
             }
 
-            // Track SID writes
-            if (address >= 0xD400 && address <= 0xD41F) {
+            // Track SID writes (full SID range $D400-$D7FF)
+            if (address >= 0xD400 && address <= 0xD7FF) {
                 uint8_t reg = address & 0x1F;
                 cpu.sidWrites[reg]++;
                 cpu.totalSidWrites++;
+
+                // Track which SID chip is being used (each chip is $20 bytes)
+                uint8_t sidChipIndex = (address - 0xD400) >> 5;  // Divide by 32
+                cpu.sidChipsUsed[sidChipIndex] = true;
 
                 if (cpu.recordWrites) {
                     cpu.writeSequence.push_back(address);
@@ -1250,7 +1258,7 @@ extern "C" {
         // ALR (AND #imm then LSR A)
         case 0x4B: { uint8_t v = cpu.memory[pc++]; cpu.a &= v; set_flag(FLAG_CARRY, cpu.a & 1); cpu.a >>= 1; set_zn_flags(cpu.a); add(2); } break;
         
-        // ARR (AND #imm then ROR A) – simplified flags
+        // ARR (AND #imm then ROR A) ï¿½ simplified flags
         case 0x6B: { uint8_t v = cpu.memory[pc++]; uint8_t t = cpu.a & v; bool c = test_flag(FLAG_CARRY); cpu.a = (t >> 1) | (c ? 0x80 : 0); set_zn_flags(cpu.a); set_flag(FLAG_CARRY, (cpu.a & 0x40) != 0); set_flag(FLAG_OVERFLOW, ((cpu.a ^ (cpu.a << 1)) & 0x40) != 0); add(2); } break;
 
         // AXS/SBX (X=(A&X)-imm)
@@ -1411,6 +1419,18 @@ extern "C" {
         return cpu.totalSidWrites;
     }
 
+    // Get the number of SID chips used (based on which $20-byte groups were written to)
+    EMSCRIPTEN_KEEPALIVE
+        uint32_t cpu_get_sid_chip_count() {
+        uint32_t count = 0;
+        for (int i = 0; i < 32; i++) {
+            if (cpu.sidChipsUsed[i]) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // Get zero page write statistics
     EMSCRIPTEN_KEEPALIVE
         uint32_t cpu_get_zp_writes(uint8_t addr) {
@@ -1527,6 +1547,7 @@ extern "C" {
         // Clear access tracking
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
         memset(cpu.sidWrites, 0, sizeof(cpu.sidWrites));
+        memset(cpu.sidChipsUsed, 0, sizeof(cpu.sidChipsUsed));
         memset(cpu.zpWrites, 0, sizeof(cpu.zpWrites));
         memset(cpu.lastWritePC, 0, sizeof(cpu.lastWritePC));
         cpu.writeSequence.clear();

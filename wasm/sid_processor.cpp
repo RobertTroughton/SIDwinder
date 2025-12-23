@@ -107,6 +107,7 @@ extern "C" {
     extern int cpu_execute_function(uint16_t address, uint32_t maxCycles);
     extern uint8_t cpu_get_memory_access(uint16_t address);
     extern uint32_t cpu_get_sid_writes(uint8_t reg);
+    extern uint32_t cpu_get_sid_chip_count();
     extern uint32_t cpu_get_zp_writes(uint8_t addr);
     extern void cpu_set_record_writes(bool record);
     extern void cpu_save_memory(uint8_t* buffer);
@@ -561,6 +562,12 @@ extern "C" {
             return sidState.analysis.sidRegisterWrites[reg];
         }
         return 0;
+    }
+
+    // Get the number of SID chips used
+    EMSCRIPTEN_KEEPALIVE
+        uint32_t sid_get_sid_chip_count() {
+        return cpu_get_sid_chip_count();
     }
 
     // Get clock type from flags
