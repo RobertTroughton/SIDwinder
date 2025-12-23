@@ -19,6 +19,8 @@
 .var NumSongs						= DATA_ADDRESS + $c8 // 1 byte
 .var ClockType						= DATA_ADDRESS + $c9 // 1 byte, 0=PAL, 1=NTSC
 .var SIDModel						= DATA_ADDRESS + $ca // 1 byte, 0=6581, 1=8580
+// $CB-$CC reserved for modifiedCount (set by prg-builder.js)
+.var NumSIDChips					= DATA_ADDRESS + $cd // 1 byte, 1-4 SID chips supported
 .var ZPUsageData					= DATA_ADDRESS + $e0 // 32-byte string
 
 //; =============================================================================

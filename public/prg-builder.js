@@ -234,7 +234,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -308,9 +308,12 @@ class SIDwinderPRGExporter {
         const sidModel = (header.sidModel && header.sidModel.includes('8580')) ? 1 : 0;
         data[0xCA] = sidModel;
 
-        // Store modified address count at $xxCB
+        // Store modified address count at $xxCB-$xxCC
         data[0xCB] = modifiedCount & 0xFF;
         data[0xCC] = (modifiedCount >> 8) & 0xFF;
+
+        // Store number of SID chips at $xxCD (1-4, clamped)
+        data[0xCD] = Math.min(Math.max(sidChipCount, 1), 4) & 0xFF;
 
         // ZP usage data
         let zpString = 'NONE';
@@ -1008,6 +1011,7 @@ class SIDwinderPRGExporter {
             }
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
+            const sidChipCount = this.analyzer.analysisResults?.sidChipCount || 1;
 
             // The data block should point to the JMP instructions, not the routines directly
             const dataBlock = this.generateDataBlock(
@@ -1024,7 +1028,8 @@ class SIDwinderPRGExporter {
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,
-                modifiedCount
+                modifiedCount,
+                sidChipCount
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
