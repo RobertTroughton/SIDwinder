@@ -63,6 +63,12 @@ class FreshFloatingNotes {
         // Apply animation directly - 7s instead of 10s (30% faster)
         note.style.animation = anim + ' 7s ease-in-out forwards';
 
+        // Add click handler for evaporation effect
+        note.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.evaporateNote(note);
+        });
+
         this.container.appendChild(note);
 
         setTimeout(() => {
@@ -72,6 +78,21 @@ class FreshFloatingNotes {
         }, 8000); // Reduced cleanup time too
 
         return note;
+    }
+
+    evaporateNote(note) {
+        // Prevent double-clicks
+        if (note.classList.contains('evaporating')) return;
+
+        // Add evaporating class to trigger the CSS animation
+        note.classList.add('evaporating');
+
+        // Remove the note after the animation completes
+        setTimeout(() => {
+            if (note.parentNode) {
+                note.parentNode.removeChild(note);
+            }
+        }, 600); // Match the CSS animation duration
     }
 
     startFloating() {

@@ -1647,10 +1647,44 @@ body {
 
 .floating-note {
     position: absolute;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     font-size: 8rem;
     opacity: 0;
     color: rgba(0, 212, 255, 0.2);
+    transition: filter 0.1s ease;
+}
+
+.floating-note:hover {
+    filter: brightness(1.5) drop-shadow(0 0 10px currentColor);
+}
+
+.floating-note.evaporating {
+    animation: note-evaporate 0.6s ease-in forwards !important;
+    pointer-events: none;
+}
+
+@keyframes note-evaporate {
+    0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1.3) rotate(180deg);
+        filter: brightness(2) drop-shadow(0 0 20px currentColor);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1) rotate(540deg);
+        filter: brightness(2.5) drop-shadow(0 0 30px white);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0) rotate(1080deg);
+        filter: brightness(3) blur(5px);
+    }
 }
 
 @keyframes float-up {
