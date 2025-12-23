@@ -1431,6 +1431,22 @@ extern "C" {
         return count;
     }
 
+    // Get the base address of the Nth SID chip used (0-indexed)
+    // Returns 0 if index is out of range
+    EMSCRIPTEN_KEEPALIVE
+        uint16_t cpu_get_sid_chip_address(uint32_t index) {
+        uint32_t count = 0;
+        for (int i = 0; i < 32; i++) {
+            if (cpu.sidChipsUsed[i]) {
+                if (count == index) {
+                    return 0xD400 + (i * 0x20);
+                }
+                count++;
+            }
+        }
+        return 0;
+    }
+
     // Get zero page write statistics
     EMSCRIPTEN_KEEPALIVE
         uint32_t cpu_get_zp_writes(uint8_t addr) {

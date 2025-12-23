@@ -108,6 +108,7 @@ extern "C" {
     extern uint8_t cpu_get_memory_access(uint16_t address);
     extern uint32_t cpu_get_sid_writes(uint8_t reg);
     extern uint32_t cpu_get_sid_chip_count();
+    extern uint16_t cpu_get_sid_chip_address(uint32_t index);
     extern uint32_t cpu_get_zp_writes(uint8_t addr);
     extern void cpu_set_record_writes(bool record);
     extern void cpu_save_memory(uint8_t* buffer);
@@ -568,6 +569,12 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
         uint32_t sid_get_sid_chip_count() {
         return cpu_get_sid_chip_count();
+    }
+
+    // Get the base address of the Nth SID chip used (0-indexed)
+    EMSCRIPTEN_KEEPALIVE
+        uint16_t sid_get_sid_chip_address(uint32_t index) {
+        return cpu_get_sid_chip_address(index);
     }
 
     // Get clock type from flags
