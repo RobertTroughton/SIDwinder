@@ -185,7 +185,8 @@ AnalyzeSingleVoice:
     // Check GATE bit (register offset 4, bit 0)
     lda (zpRegPtr), y
     and #$01
-    beq !skipVoice+
+    bne !analyzeFreq+
+    rts
 
 !analyzeFreq:
     // Get frequency high byte (register offset 1)
@@ -278,9 +279,8 @@ AnalyzeSingleVoice:
     lsr
     tay
     lda sustainToHeight, y
-    cmp targetBarHeights, x    // Compare with existing
-    bcc !skipVoice+            // If new < existing, skip (loudest wins)
-    beq !skipVoice+            // Also skip if equal
+    cmp targetBarHeights, x
+    bcc !skipVoice+
     sta targetBarHeights, x
 
     // Store voice index in bar map (only when we update the height)
