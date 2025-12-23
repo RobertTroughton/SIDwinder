@@ -61,61 +61,113 @@ neighbourSmoothVals2: .fill MAX_BAR_HEIGHT + 1, floor(i * 12.0 / 100.0)
 //; =============================================================================
 
 //; Zero page locations for voice analysis
-.const zpRegPtr    = $FB    // 2-byte pointer to current voice registers
-.const zpVoiceIdx  = $FD    // Current voice index (0-11)
+.const zpRegPtr    = $FB    // 2-byte pointer to current SID's registers
+.const zpVoiceIdx  = $FD    // Base voice index for current SID (0, 3, 6, or 9)
 .const zpTempByte  = $FE    // Temporary storage
 
 AnalyzeSIDRegisters:
-    // Initialize pointer to sidRegisterMirror
+    // Save zero page values we're about to use
+    lda zpRegPtr
+    pha
+    lda zpRegPtr + 1
+    pha
+    lda zpVoiceIdx
+    pha
+    lda zpTempByte
+    pha
+
+    // Analyze SID 1 (always)
     lda #<sidRegisterMirror
     sta zpRegPtr
     lda #>sidRegisterMirror
     sta zpRegPtr + 1
-
     lda #0
     sta zpVoiceIdx
+    jsr AnalyzeSIDChip
 
-    // Process all SIDs based on NumSIDChips
-    ldx #0                  // SID counter (0-3)
+    // Analyze SID 2 if present
+    lda NumSIDChips
+    cmp #2
+    bcs !doSID2+
+    jmp !restoreZP+
+!doSID2:
+    lda #<(sidRegisterMirror + 25)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 25)
+    sta zpRegPtr + 1
+    lda #3
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
 
-!sidLoop:
-    // Process 3 voices for this SID
-    ldy #0                  // Voice counter within SID (0-2)
+    // Analyze SID 3 if present
+    lda NumSIDChips
+    cmp #3
+    bcs !doSID3+
+    jmp !restoreZP+
+!doSID3:
+    lda #<(sidRegisterMirror + 50)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 50)
+    sta zpRegPtr + 1
+    lda #6
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
 
-!voiceLoop:
-    sty zpTempByte          // Save voice counter
+    // Analyze SID 4 if present
+    lda NumSIDChips
+    cmp #4
+    bcc !restoreZP+
+    lda #<(sidRegisterMirror + 75)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 75)
+    sta zpRegPtr + 1
+    lda #9
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
+
+!restoreZP:
+    // Restore zero page values
+    pla
+    sta zpTempByte
+    pla
+    sta zpVoiceIdx
+    pla
+    sta zpRegPtr + 1
+    pla
+    sta zpRegPtr
+    rts
+
+//; =============================================================================
+//; Analyze all 3 voices on one SID chip
+//; Input: zpRegPtr points to SID's register mirror (25 bytes)
+//;        zpVoiceIdx contains base voice index (0, 3, 6, or 9)
+//; =============================================================================
+
+AnalyzeSIDChip:
+    // Analyze voice 0
     jsr AnalyzeSingleVoice
 
-    inc zpVoiceIdx
-
-    // Move pointer forward by 7 bytes (one voice worth of registers)
+    // Move to voice 1
     clc
     lda zpRegPtr
     adc #7
     sta zpRegPtr
-    bcc !noCarry1+
+    bcc !nc1+
     inc zpRegPtr + 1
-!noCarry1:
+!nc1:
+    inc zpVoiceIdx
+    jsr AnalyzeSingleVoice
 
-    ldy zpTempByte          // Restore voice counter
-    iny
-    cpy #3
-    bcc !voiceLoop-
-
-    // Move pointer forward by 4 bytes to next SID (25 - 21 = 4)
+    // Move to voice 2
     clc
     lda zpRegPtr
-    adc #4
+    adc #7
     sta zpRegPtr
-    bcc !noCarry2+
+    bcc !nc2+
     inc zpRegPtr + 1
-!noCarry2:
-
-    inx
-    cpx NumSIDChips
-    bcc !sidLoop-
-
-    rts
+!nc2:
+    inc zpVoiceIdx
+    jmp AnalyzeSingleVoice  // Tail call - no need for JSR/RTS
 
 //; =============================================================================
 //; Single Voice Analysis Routine
