@@ -278,9 +278,12 @@ AnalyzeSingleVoice:
     lsr
     tay
     lda sustainToHeight, y
+    cmp targetBarHeights, x    // Compare with existing
+    bcc !skipVoice+            // If new < existing, skip (loudest wins)
+    beq !skipVoice+            // Also skip if equal
     sta targetBarHeights, x
 
-    // Store voice index in bar map
+    // Store voice index in bar map (only when we update the height)
     lda zpVoiceIdx
     sta barVoiceMap, x
 
