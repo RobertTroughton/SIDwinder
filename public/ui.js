@@ -1608,10 +1608,10 @@ class UIController {
                 // Multiple SIDs - show count and list extra SID addresses
                 const extraAddresses = sidChipAddresses.slice(1); // Skip the first ($D400)
                 const extraLines = extraAddresses.map((addr, idx) =>
-                    `<div style="font-size: 0.85em;">Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}</div>`
+                    `<div style="font-size: 0.85em; text-align: right;">Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}</div>`
                 ).join('');
 
-                this.elements.sidChipCount.innerHTML = `<div>${count}</div>${extraLines}`;
+                this.elements.sidChipCount.innerHTML = `<div style="text-align: right;">${count}</div>${extraLines}`;
             }
         }
     }
