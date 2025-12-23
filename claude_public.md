@@ -716,6 +716,10 @@
                         <span class="upload-btn-icon">🎵</span>
                         <span>Browse HVSC</span>
                     </button>
+                    <button class="upload-btn random-btn" id="randomBtn">
+                        <span class="upload-btn-icon">🎲</span>
+                        <span>Random SID</span>
+                    </button>
                 </div>
 
                 <div class="hvsc-selected" id="hvscSelected" style="display: none;">
@@ -806,6 +810,10 @@
                         <div class="info-row">
                             <span class="info-label">SID Model:</span>
                             <span class="info-value" id="sidModel">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">SID Chips:</span>
+                            <span class="info-value" id="sidChipCount">-</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Play Calls/Frame:</span>
@@ -1015,8 +1023,10 @@
     <script src="png-converter.js"></script>
     <script src="image-preview-manager.js"></script>
     <script src="compressor-manager.js"></script>
+    <script src="bar-styles-data.js"></script>
     <script src="prg-builder.js"></script>
     <script src="hvsc-browser.js"></script>
+    <script src="hvsc-random.js"></script>
     <script src="ui.js"></script>
     <script src="visualizer-registry.js"></script>
     <script src="visualizer-configs.js"></script>
@@ -1429,6 +1439,15 @@ body {
 
     .upload-btn:active {
         transform: translateY(0);
+    }
+
+.upload-btn.random-btn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+}
+
+    .upload-btn.random-btn:hover {
+        box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
     }
 
 .upload-btn-icon {
@@ -3886,6 +3905,323 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.bar-style-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bar-style-container .bar-style-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bar-style-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.bar-style-thumbnail {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    background: #000;
+    position: relative;
+}
+
+.bar-style-thumbnail:hover {
+    border-color: #667eea;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.bar-style-thumbnail.selected {
+    border-color: #667eea;
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.bar-style-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.bar-style-thumbnail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(102, 126, 234, 0);
+    transition: background 0.2s ease;
+    pointer-events: none;
+}
+
+.bar-style-thumbnail.selected::after {
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.bar-style-thumbnail .selected-check {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #667eea;
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.bar-style-thumbnail.selected .selected-check {
+    display: flex;
+}
+
+.bar-style-thumbnail.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    font-size: 10px;
+    color: #667eea;
+    text-align: center;
+    padding: 4px;
+}
+
+@media (max-width: 480px) {
+    .bar-style-container {
+        padding: 12px;
+    }
+
+    .bar-style-grid {
+        gap: 6px;
+    }
+
+    .bar-style-thumbnail .selected-check {
+        width: 14px;
+        height: 14px;
+        font-size: 9px;
+    }
+}
+```
+
+
+### FILE: public/bar-styles-data.js
+```js
+const BAR_STYLE_SIZE_WATER = 240;  
+const BAR_STYLE_SIZE_MIRROR = 160; 
+const NUM_BAR_STYLES = 8;
+const CHARS_PER_STYLE = 10;
+const BYTES_PER_CHAR = 8;
+
+const BAR_STYLES_MAIN = [
+    
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C, 0xBE,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7C, 0xBE, 0xBE,     
+        0x00, 0x00, 0x00, 0x00, 0x7C, 0x14, 0xBE, 0xBE,     
+        0x00, 0x00, 0x00, 0x7C, 0xBE, 0x14, 0xBE, 0xBE,     
+        0x00, 0x00, 0x7C, 0xBE, 0xBE, 0x14, 0xBE, 0xBE,     
+        0x00, 0x7C, 0xBE, 0xBE, 0xBE, 0x14, 0xBE, 0xBE,     
+        0x7C, 0x14, 0xBE, 0xBE, 0xBE, 0x14, 0xBE, 0xBE,     
+        0xBE, 0x14, 0xBE, 0xBE, 0xBE, 0x14, 0xBE, 0xBE      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x00, 0x00, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x00, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x3C,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x3C, 0x3C,     
+        0x00, 0x00, 0x00, 0x00, 0x3C, 0x3C, 0x3C, 0x3C,     
+        0x00, 0x00, 0x00, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C,     
+        0x00, 0x00, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C,     
+        0x00, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C,     
+        0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C,     
+        0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x42,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x42, 0x42,     
+        0x00, 0x00, 0x00, 0x00, 0x7E, 0x42, 0x42, 0x42,     
+        0x00, 0x00, 0x00, 0x7E, 0x42, 0x42, 0x42, 0x42,     
+        0x00, 0x00, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x42,     
+        0x00, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42,     
+        0x7E, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42,     
+        0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x66, 0x66,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x66, 0x66,     
+        0x00, 0x00, 0x00, 0x00, 0x66, 0x66, 0x66, 0x66,     
+        0x00, 0x00, 0x00, 0x00, 0x66, 0x66, 0x66, 0x66,     
+        0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,     
+        0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,     
+        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,     
+        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,     
+        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C, 0xBE,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7C, 0xBE, 0xBE,     
+        0x00, 0x00, 0x00, 0x00, 0x7C, 0xBE, 0xBE, 0xBE,     
+        0x00, 0x00, 0x00, 0x7C, 0xBE, 0xBE, 0xBE, 0xBE,     
+        0x00, 0x00, 0x7C, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE,     
+        0x00, 0x7C, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE,     
+        0x7C, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE,     
+        0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x3C,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x3C, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x18, 0x3C, 0x7E, 0x7E,     
+        0x00, 0x00, 0x00, 0x18, 0x3C, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x00, 0x18, 0x3C, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x00, 0x18, 0x3C, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x18, 0x3C, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E,     
+        0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E      
+    ]),
+
+    new Uint8Array([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x00, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E,     
+        0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E, 0x00, 0x7E      
+    ])
+];
+
+function getMirroredChar(mainData, charIndex) {
+    const offset = charIndex * BYTES_PER_CHAR;
+    const result = new Uint8Array(BYTES_PER_CHAR);
+    for (let i = 0; i < BYTES_PER_CHAR; i++) {
+        result[i] = mainData[offset + (BYTES_PER_CHAR - 1 - i)];
+    }
+    return result;
+}
+
+function generateWaterData(styleIndex) {
+    const main = BAR_STYLES_MAIN[styleIndex];
+    const result = new Uint8Array(BAR_STYLE_SIZE_WATER);
+
+    result.set(main, 0);
+
+    for (let c = 0; c < CHARS_PER_STYLE; c++) {
+        const mirror = getMirroredChar(main, c);
+        const baseOffset1 = 80 + c * BYTES_PER_CHAR;  
+        const baseOffset2 = 160 + c * BYTES_PER_CHAR; 
+
+        for (let b = 0; b < BYTES_PER_CHAR; b++) {
+            
+            result[baseOffset1 + b] = mirror[b] & ((b % 2 === 0) ? 0xAA : 0x55);
+            
+            result[baseOffset2 + b] = mirror[b] & ((b % 2 === 0) ? 0x55 : 0xAA);
+        }
+    }
+
+    return result;
+}
+
+function generateMirrorData(styleIndex) {
+    const main = BAR_STYLES_MAIN[styleIndex];
+    const result = new Uint8Array(BAR_STYLE_SIZE_MIRROR);
+
+    result.set(main, 0);
+
+    for (let c = 0; c < CHARS_PER_STYLE; c++) {
+        const mirror = getMirroredChar(main, c);
+        result.set(mirror, 80 + c * BYTES_PER_CHAR);
+    }
+
+    return result;
+}
+
+const waterDataCache = new Array(NUM_BAR_STYLES).fill(null);
+const mirrorDataCache = new Array(NUM_BAR_STYLES).fill(null);
+
+function getBarStyleData(styleType, styleIndex) {
+    if (styleIndex < 0 || styleIndex >= NUM_BAR_STYLES) {
+        styleIndex = 0; 
+    }
+
+    if (styleType === 'water') {
+        if (!waterDataCache[styleIndex]) {
+            waterDataCache[styleIndex] = generateWaterData(styleIndex);
+        }
+        return waterDataCache[styleIndex];
+    } else if (styleType === 'mirror') {
+        if (!mirrorDataCache[styleIndex]) {
+            mirrorDataCache[styleIndex] = generateMirrorData(styleIndex);
+        }
+        return mirrorDataCache[styleIndex];
+    }
+
+    return null;
+}
+
+window.BAR_STYLES_DATA = {
+    main: BAR_STYLES_MAIN,
+    getBarStyleData: getBarStyleData,
+    BAR_STYLE_SIZE_WATER: BAR_STYLE_SIZE_WATER,
+    BAR_STYLE_SIZE_MIRROR: BAR_STYLE_SIZE_MIRROR,
+    NUM_BAR_STYLES: NUM_BAR_STYLES
+};
 ```
 
 
@@ -4667,6 +5003,247 @@ window.hvscBrowser = (function () {
         navigateUp: navigateUp,
         navigateHome: navigateHome,
         fetchDirectory: fetchDirectory
+    };
+})();
+```
+
+
+### FILE: public/hvsc-random.js
+```js
+window.hvscRandom = (function () {
+    const HVSC_BASE = '/.netlify/functions/hvsc';
+
+    let curatedPaths = [];
+    let isLoaded = false;
+    let isLoading = false;
+
+    async function loadPaths() {
+        if (isLoaded) return true;
+        if (isLoading) {
+            
+            while (isLoading) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            return isLoaded;
+        }
+
+        isLoading = true;
+        try {
+            const response = await fetch('hvsc-random.json');
+            if (!response.ok) {
+                throw new Error('Failed to load HVSC paths');
+            }
+            const data = await response.json();
+            curatedPaths = data.paths || [];
+            isLoaded = true;
+            console.log(`Loaded ${curatedPaths.length} curated HVSC paths`);
+            return true;
+        } catch (error) {
+            console.error('Error loading HVSC paths:', error);
+            isLoading = false;
+            return false;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    function parseDirectoryHTML(html) {
+        const entries = [];
+
+        const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/i;
+        const tableMatch = html.match(tableRegex);
+
+        if (tableMatch) {
+            const tableContent = tableMatch[1];
+            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+            let rowMatch;
+
+            while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+                const row = rowMatch[1];
+                const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
+
+                if (linkMatch) {
+                    const href = linkMatch[1];
+                    let name = linkMatch[2].trim();
+
+                    if (href.startsWith('?path=') && !href.includes('info=')) {
+                        let pathValue = decodeURIComponent(href.substring(6));
+                        if (pathValue.endsWith('/')) {
+                            pathValue = pathValue.slice(0, -1);
+                        }
+                        name = name.replace(/\/$/, '');
+
+                        entries.push({
+                            name: name,
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                    }
+                    
+                    else if (href.includes('.sid') && !href.includes('info=')) {
+                        let fileName = href.split('/').pop();
+                        entries.push({
+                            name: fileName,
+                            path: href,
+                            isDirectory: false
+                        });
+                    }
+                    else if (href.includes('info=please') && href.includes('.sid')) {
+                        const pathMatch = href.match(/path=([^&]+)/);
+                        if (pathMatch) {
+                            const filePath = decodeURIComponent(pathMatch[1]);
+                            const fileName = filePath.split('/').pop();
+
+                            if (!entries.find(e => e.name === fileName)) {
+                                entries.push({
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            
+            const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
+            let match;
+
+            while ((match = linkRegex.exec(html)) !== null) {
+                const href = match[1];
+                const linkText = match[2].trim();
+
+                if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
+                    linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
+                    linkText === 'Parent Directory' || href.startsWith('http:
+                    href.startsWith('https:
+                    continue;
+                }
+
+                if (href.includes('?path=') && !href.includes('info=')) {
+                    const pathMatch = href.match(/\?path=([^&]*)/);
+                    if (pathMatch) {
+                        let pathValue = decodeURIComponent(pathMatch[1]);
+                        if (pathValue.endsWith('/')) {
+                            pathValue = pathValue.slice(0, -1);
+                        }
+                        entries.push({
+                            name: linkText.replace(/\/$/, ''),
+                            path: pathValue,
+                            isDirectory: true
+                        });
+                    }
+                }
+                
+                else if (href.includes('info=please') || linkText.endsWith('.sid')) {
+                    if (href.includes('path=')) {
+                        const pathMatch = href.match(/path=([^&]+)/);
+                        if (pathMatch) {
+                            const filePath = decodeURIComponent(pathMatch[1]);
+                            const fileName = filePath.split('/').pop();
+                            entries.push({
+                                name: fileName,
+                                path: filePath,
+                                isDirectory: false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        return entries;
+    }
+
+    async function fetchDirectory(path) {
+        if (path.endsWith('/')) {
+            path = path.slice(0, -1);
+        }
+
+        const encodedPath = encodeURIComponent(path);
+        const url = `${HVSC_BASE}?path=${encodedPath}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch directory');
+        }
+
+        const html = await response.text();
+        return parseDirectoryHTML(html);
+    }
+
+    async function selectRandomSID(maxDepth = 5, onProgress = null) {
+        
+        if (!await loadPaths()) {
+            throw new Error('Could not load HVSC paths');
+        }
+
+        if (curatedPaths.length === 0) {
+            throw new Error('No HVSC paths available');
+        }
+
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (attempts < maxAttempts) {
+            attempts++;
+
+            const randomIndex = Math.floor(Math.random() * curatedPaths.length);
+            let currentPath = curatedPaths[randomIndex];
+
+            if (onProgress) {
+                onProgress(`Exploring ${currentPath.split('/').pop()}...`);
+            }
+
+            try {
+                
+                let depth = 0;
+                while (depth < maxDepth) {
+                    const entries = await fetchDirectory(currentPath);
+
+                    const sids = entries.filter(e => !e.isDirectory && e.name.toLowerCase().endsWith('.sid'));
+                    const dirs = entries.filter(e => e.isDirectory);
+
+                    if (sids.length > 0) {
+                        
+                        const randomSid = sids[Math.floor(Math.random() * sids.length)];
+
+                        const sidUrl = `${HVSC_BASE}?path=${encodeURIComponent(randomSid.path)}`;
+
+                        return {
+                            name: randomSid.name,
+                            path: randomSid.path,
+                            url: sidUrl,
+                            browsePath: currentPath
+                        };
+                    } else if (dirs.length > 0) {
+                        
+                        const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+                        currentPath = randomDir.path;
+                        depth++;
+
+                        if (onProgress) {
+                            const dirName = currentPath.split('/').pop();
+                            onProgress(`Exploring ${dirName}...`);
+                        }
+                    } else {
+                        
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.warn(`Failed to explore ${currentPath}:`, error);
+                
+            }
+        }
+
+        throw new Error('Could not find a random SID after multiple attempts');
+    }
+
+    return {
+        loadPaths: loadPaths,
+        selectRandomSID: selectRandomSID
     };
 })();
 ```
@@ -5790,7 +6367,13 @@ class PRGBuilder {
             throw new Error('No components added to PRG');
         }
 
-        this.components.sort((a, b) => a.loadAddress - b.loadAddress);
+        this.components.sort((a, b) => {
+            if (a.loadAddress !== b.loadAddress) {
+                return a.loadAddress - b.loadAddress;
+            }
+            
+            return b.size - a.size;
+        });
 
         const totalSize = (this.highestAddress - this.lowestAddress + 1) + 2;
         const prgData = new Uint8Array(totalSize);
@@ -6401,6 +6984,24 @@ class SIDwinderPRGExporter {
             const element = document.getElementById(optionConfig.id);
             if (!element) continue;
 
+            if (optionConfig.id === 'barStyle' && vizConfig.barStyleType && layout.barCharsAddress) {
+                const styleIndex = parseInt(element.value);
+                const validIndex = !isNaN(styleIndex) ? styleIndex : (optionConfig.default ?? 0);
+
+                if (typeof BAR_STYLES_DATA !== 'undefined') {
+                    const charData = BAR_STYLES_DATA.getBarStyleData(vizConfig.barStyleType, validIndex);
+                    if (charData) {
+                        const targetAddress = parseInt(layout.barCharsAddress);
+                        optionComponents.push({
+                            data: charData,
+                            loadAddress: targetAddress,
+                            name: `barStyle_chars`
+                        });
+                    }
+                }
+                continue; 
+            }
+
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
 
@@ -6435,8 +7036,10 @@ class SIDwinderPRGExporter {
                         name: `option_${optionConfig.id}`
                     });
 
-                } else if (optionConfig.type === 'number') {
-                    let value = parseInt(element.value) || optionConfig.default || 0;
+                } else if (optionConfig.type === 'number' || optionConfig.type === 'select') {
+                    
+                    const parsedValue = parseInt(element.value);
+                    const value = !isNaN(parsedValue) ? parsedValue : (optionConfig.default ?? 0);
                     const data = new Uint8Array(1);
                     data[0] = value & 0xFF;
 
@@ -6787,6 +7390,7 @@ class SIDAnalyzer {
                 sid_get_code_bytes: this.Module.cwrap('sid_get_code_bytes', 'number', []),
                 sid_get_data_bytes: this.Module.cwrap('sid_get_data_bytes', 'number', []),
                 sid_get_sid_writes: this.Module.cwrap('sid_get_sid_writes', 'number', ['number']),
+                sid_get_sid_chip_count: this.Module.cwrap('sid_get_sid_chip_count', 'number', []),
                 sid_get_clock_type: this.Module.cwrap('sid_get_clock_type', 'string', []),
                 sid_get_sid_model: this.Module.cwrap('sid_get_sid_model', 'string', []),
                 sid_get_num_calls_per_frame: this.Module.cwrap('sid_get_num_calls_per_frame', 'number', []),
@@ -6951,6 +7555,7 @@ class SIDAnalyzer {
             const ciaTimerDetected = this.api.sid_get_cia_timer_detected() ? true : false;
             const ciaTimerValue = this.api.sid_get_cia_timer_value();
             const maxCycles = this.api.sid_get_max_cycles();
+            const sidChipCount = this.api.sid_get_sid_chip_count();
 
             return {
                 modifiedAddresses,
@@ -6961,7 +7566,8 @@ class SIDAnalyzer {
                 numCallsPerFrame,
                 ciaTimerDetected,
                 ciaTimerValue,
-                maxCycles
+                maxCycles,
+                sidChipCount
             };
 
         } finally {
@@ -7158,6 +7764,7 @@ class UIController {
             uploadSection: document.getElementById('uploadSection'),
             uploadBtn: document.getElementById('uploadBtn'),
             hvscBtn: document.getElementById('hvscBtn'),
+            randomBtn: document.getElementById('randomBtn'),
             hvscSelected: document.getElementById('hvscSelected'),
             selectedFile: document.getElementById('selectedFile'),
 
@@ -7195,6 +7802,7 @@ class UIController {
             zpUsage: document.getElementById('zpUsage'),
             clockType: document.getElementById('clockType'),
             sidModel: document.getElementById('sidModel'),
+            sidChipCount: document.getElementById('sidChipCount'),
             maxCycles: document.getElementById('maxCycles'),
             
             exportSection: document.getElementById('exportSection'),
@@ -7216,6 +7824,10 @@ class UIController {
 
         this.elements.hvscBtn.addEventListener('click', () => {
             this.openHVSCBrowser();
+        });
+
+        this.elements.randomBtn.addEventListener('click', () => {
+            this.selectRandomSID();
         });
 
         this.elements.uploadSection.addEventListener('click', () => {
@@ -7282,6 +7894,41 @@ class UIController {
         }
     }
 
+    async selectRandomSID() {
+        
+        this.showBusy('Finding Random SID', 'Exploring HVSC collection...');
+
+        try {
+            
+            const result = await window.hvscRandom.selectRandomSID(5, (message) => {
+                this.updateBusy('Finding Random SID', message);
+            });
+
+            this.hideBusy();
+
+            this.elements.hvscSelected.style.display = 'block';
+            this.elements.selectedFile.textContent = result.name;
+
+            this.showModal('Downloading SID from HVSC...', true);
+
+            const response = await fetch(result.url);
+
+            if (!response.ok) {
+                throw new Error('Failed to download SID file');
+            }
+
+            const blob = await response.blob();
+            const file = new File([blob], result.name, { type: 'application/octet-stream' });
+
+            await this.processFile(file);
+
+        } catch (error) {
+            this.hideBusy();
+            console.error('Error selecting random SID:', error);
+            this.showModal('Failed to select random SID: ' + error.message, false);
+        }
+    }
+
     async handleHVSCSelection(data) {
 
         this.elements.hvscSelected.style.display = 'block';
@@ -7338,6 +7985,10 @@ class UIController {
         const maxCyclesElement = document.getElementById('maxCycles');
         if (maxCyclesElement) {
             maxCyclesElement.textContent = '4000';
+        }
+
+        if (this.elements.sidChipCount) {
+            this.elements.sidChipCount.textContent = '1';
         }
 
         const modifiedMemoryElement = document.getElementById('modifiedMemoryCount');
@@ -7610,6 +8261,7 @@ class UIController {
             this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
             this.updateMaxCycles(this.analysisResults.maxCycles);
+            this.updateSidChipCount(this.analysisResults.sidChipCount);
 
             this.elements.infoSection.classList.remove('disabled');
             this.elements.infoSection.classList.add('visible');
@@ -8087,21 +8739,26 @@ class UIController {
                 html += `
                 <label class="option-label">${config.label}</label>
                 <div class="option-control">
-                    <input type="number" 
-                           id="${config.id}" 
+                    <input type="number"
+                           id="${config.id}"
                            class="number-input"
-                           value="${config.default || 0}" 
-                           min="${config.min || 0}" 
+                           value="${config.default || 0}"
+                           min="${config.min || 0}"
                            max="${config.max || 255}">
                     ${config.description ? `<span class="option-hint">${config.description}</span>` : ''}
                 </div>
             `;
             }
+        } else if (config.type === 'imageGrid' || (config.type === 'select' && config.id === 'barStyle')) {
+            
+            html += this.createBarStyleGridHTML(config);
         } else if (config.type === 'select') {
+            
+            const selectClass = 'select-input';
             html += `
             <label class="option-label">${config.label}</label>
             <div class="option-control">
-                <select id="${config.id}" class="select-input">
+                <select id="${config.id}" class="${selectClass}">
                     ${config.values.map(v =>
                 `<option value="${v.value}" ${v.value === config.default ? 'selected' : ''}>
                             ${v.label}
@@ -8153,16 +8810,16 @@ class UIController {
         <label class="option-label">${config.label}</label>
         <div class="option-control color-slider-control">
             <div class="slider-wrapper">
-                <input type="range" 
-                       id="${config.id}" 
+                <input type="range"
+                       id="${config.id}"
                        class="color-slider"
-                       min="0" 
-                       max="15" 
+                       min="0"
+                       max="15"
                        value="${defaultValue}"
                        data-config-id="${config.id}">
                 <div class="color-slider-track">
                     ${C64_COLORS.map(c => `
-                        <div class="color-segment" 
+                        <div class="color-segment"
                              style="background: ${c.hex}"
                              data-value="${c.value}"
                              data-name="${c.name}"
@@ -8174,12 +8831,43 @@ class UIController {
             <div class="color-value" id="${config.id}-display">
                 <span class="color-swatch" style="background: ${defaultColor.hex}"></span>
                 <span class="color-text">
-                    <span class="color-number">${defaultValue}</span>: 
+                    <span class="color-number">${defaultValue}</span>:
                     <span class="color-name">${defaultColor.name}</span>
                 </span>
             </div>
         </div>
     `;
+    }
+
+    createBarStyleGridHTML(config) {
+        const defaultValue = config.default || 0;
+
+        const thumbnailsHTML = config.values.map(v => {
+            const isSelected = v.value === defaultValue;
+            
+            const imagePath = `prg/bar-styles/style-${v.value}.png`;
+
+            return `
+                <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
+                     data-value="${v.value}"
+                     title="${v.label}">
+                    <img src="${imagePath}"
+                         alt="Style ${v.value}"
+                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML += '<span>${v.value}</span><span class=\\'selected-check\\'>✓</span>';">
+                    <span class="selected-check">✓</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bar-style-container">
+                <span class="bar-style-label">${config.label}</span>
+                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}">
+                    ${thumbnailsHTML}
+                </div>
+                <input type="hidden" id="${config.id}" value="${defaultValue}">
+            </div>
+        `;
     }
 
     attachOptionEventListeners(config) {
@@ -8350,6 +9038,26 @@ class UIController {
             });
         });
 
+        document.querySelectorAll('.bar-style-grid').forEach(grid => {
+            grid.addEventListener('click', (e) => {
+                const thumbnail = e.target.closest('.bar-style-thumbnail');
+                if (!thumbnail) return;
+
+                const value = parseInt(thumbnail.dataset.value);
+                const configId = grid.dataset.configId;
+                const hiddenInput = document.getElementById(configId);
+
+                if (hiddenInput) {
+                    hiddenInput.value = value;
+                }
+
+                grid.querySelectorAll('.bar-style-thumbnail').forEach(thumb => {
+                    thumb.classList.remove('selected');
+                });
+                thumbnail.classList.add('selected');
+            });
+        });
+
         document.querySelectorAll('.load-text-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 this.loadScrollText(e.target.getAttribute('data-target'));
@@ -8492,6 +9200,12 @@ class UIController {
         const element = document.getElementById('maxCycles');
         if (element) {
             element.textContent = maxCycles || '-';
+        }
+    }
+
+    updateSidChipCount(sidChipCount) {
+        if (this.elements.sidChipCount) {
+            this.elements.sidChipCount.textContent = sidChipCount || '1';
         }
     }
 

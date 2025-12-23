@@ -654,7 +654,477 @@ SpaceText:          .text "SPACE = Fast Forward (Hold)"
 
 
 ## Player: INC
-Files: 6
+Files: 7
+
+### FILE: SIDPlayers/INC/BarStyles.asm
+*Original size: 29425 bytes, Cleaned: 21169 bytes (reduced by 28.1%)*
+```asm
+#importonce
+.const NUM_BAR_STYLES = 8
+.const BAR_STYLE_SIZE_WATER = 240
+.const BAR_STYLE_SIZE_MIRROR = 160
+.var BarStyle = DATA_ADDRESS + $70
+CopyBarStyleWater:
+    lda BarStyle
+    cmp #NUM_BAR_STYLES
+    bcc !validStyle+
+    lda #$00
+!validStyle:
+    tax
+    lda BarStylesWaterLo, x
+    sta !copyLoop+ + 1
+    lda BarStylesWaterHi, x
+    sta !copyLoop+ + 2
+    ldx #$00
+!copyLoop:
+    lda BarStyleDataWater, x
+    sta CHARSET_ADDRESS + (224 * 8), x
+    inx
+    cpx #BAR_STYLE_SIZE_WATER
+    bne !copyLoop-
+    rts
+CopyBarStyleMirror:
+    lda BarStyle
+    cmp #NUM_BAR_STYLES
+    bcc !validStyle+
+    lda #$00
+!validStyle:
+    tax
+    lda BarStylesMirrorLo, x
+    sta !copyLoop+ + 1
+    lda BarStylesMirrorHi, x
+    sta !copyLoop+ + 2
+    ldx #$00
+!copyLoop:
+    lda BarStyleDataMirror, x
+    sta CHARSET_ADDRESS + (224 * 8), x
+    inx
+    cpx #BAR_STYLE_SIZE_MIRROR
+    bne !copyLoop-
+    rts
+BarStylesWaterLo:   .fill NUM_BAR_STYLES, <(BarStyleDataWater + (i * BAR_STYLE_SIZE_WATER))
+BarStylesWaterHi:   .fill NUM_BAR_STYLES, >(BarStyleDataWater + (i * BAR_STYLE_SIZE_WATER))
+BarStylesMirrorLo:  .fill NUM_BAR_STYLES, <(BarStyleDataMirror + (i * BAR_STYLE_SIZE_MIRROR))
+BarStylesMirrorHi:  .fill NUM_BAR_STYLES, >(BarStyleDataMirror + (i * BAR_STYLE_SIZE_MIRROR))
+BarStyleDataWater:
+BarStyleWater0:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7C
+    .byte $00, $00, $00, $00, $00, $00, $7C, $BE
+    .byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+    .byte $00, $00, $00, $00, $7C, $14, $BE, $BE
+    .byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
+    .byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
+    .byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $00, $00, $00, $00, $00, $00
+    .byte $aa, $54, $00, $00, $00, $00, $00, $00
+    .byte $54, $aa, $54, $00, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $00, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $aa, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $aa, $00, $00, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $00, $00, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+BarStyleWater1:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $54, $00, $00, $00, $00, $00, $00
+    .byte $54, $2A, $54, $00, $00, $00, $00, $00
+    .byte $2A, $54, $2A, $54, $00, $00, $00, $00
+    .byte $54, $2A, $54, $2A, $54, $00, $00, $00
+    .byte $2A, $54, $2A, $54, $2A, $54, $00, $00
+    .byte $54, $2A, $54, $2A, $54, $2A, $54, $00
+    .byte $2A, $54, $2A, $54, $2A, $54, $2A, $54
+    .byte $54, $2A, $54, $2A, $54, $2A, $54, $2A
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $2A, $00, $00, $00, $00, $00, $00
+    .byte $2A, $54, $2A, $00, $00, $00, $00, $00
+    .byte $54, $2A, $54, $2A, $00, $00, $00, $00
+    .byte $2A, $54, $2A, $54, $2A, $00, $00, $00
+    .byte $54, $2A, $54, $2A, $54, $2A, $00, $00
+    .byte $2A, $54, $2A, $54, $2A, $54, $2A, $00
+    .byte $54, $2A, $54, $2A, $54, $2A, $54, $2A
+    .byte $2A, $54, $2A, $54, $2A, $54, $2A, $54
+BarStyleWater2:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $3C
+    .byte $00, $00, $00, $00, $00, $00, $3C, $3C
+    .byte $00, $00, $00, $00, $00, $3C, $3C, $3C
+    .byte $00, $00, $00, $00, $3C, $3C, $3C, $3C
+    .byte $00, $00, $00, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $00, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $14, $00, $00, $00, $00, $00, $00, $00
+    .byte $28, $14, $00, $00, $00, $00, $00, $00
+    .byte $14, $28, $14, $00, $00, $00, $00, $00
+    .byte $28, $14, $28, $14, $00, $00, $00, $00
+    .byte $14, $28, $14, $28, $14, $00, $00, $00
+    .byte $28, $14, $28, $14, $28, $14, $00, $00
+    .byte $14, $28, $14, $28, $14, $28, $14, $00
+    .byte $28, $14, $28, $14, $28, $14, $28, $14
+    .byte $14, $28, $14, $28, $14, $28, $14, $28
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $28, $00, $00, $00, $00, $00, $00, $00
+    .byte $14, $28, $00, $00, $00, $00, $00, $00
+    .byte $28, $14, $28, $00, $00, $00, $00, $00
+    .byte $14, $28, $14, $28, $00, $00, $00, $00
+    .byte $28, $14, $28, $14, $28, $00, $00, $00
+    .byte $14, $28, $14, $28, $14, $28, $00, $00
+    .byte $28, $14, $28, $14, $28, $14, $28, $00
+    .byte $14, $28, $14, $28, $14, $28, $14, $28
+    .byte $28, $14, $28, $14, $28, $14, $28, $14
+BarStyleWater3:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $42
+    .byte $00, $00, $00, $00, $00, $7E, $42, $42
+    .byte $00, $00, $00, $00, $7E, $42, $42, $42
+    .byte $00, $00, $00, $7E, $42, $42, $42, $42
+    .byte $00, $00, $7E, $42, $42, $42, $42, $42
+    .byte $00, $7E, $42, $42, $42, $42, $42, $42
+    .byte $7E, $42, $42, $42, $42, $42, $42, $42
+    .byte $42, $42, $42, $42, $42, $42, $42, $42
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $40, $00, $00, $00, $00, $00, $00
+    .byte $54, $02, $40, $00, $00, $00, $00, $00
+    .byte $2A, $40, $02, $40, $00, $00, $00, $00
+    .byte $54, $02, $40, $02, $40, $00, $00, $00
+    .byte $2A, $40, $02, $40, $02, $40, $00, $00
+    .byte $54, $02, $40, $02, $40, $02, $40, $00
+    .byte $2A, $40, $02, $40, $02, $40, $02, $40
+    .byte $40, $02, $40, $02, $40, $02, $40, $02
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $02, $00, $00, $00, $00, $00, $00
+    .byte $2A, $40, $02, $00, $00, $00, $00, $00
+    .byte $54, $02, $40, $02, $00, $00, $00, $00
+    .byte $2A, $40, $02, $40, $02, $00, $00, $00
+    .byte $54, $02, $40, $02, $40, $02, $00, $00
+    .byte $2A, $40, $02, $40, $02, $40, $02, $00
+    .byte $54, $02, $40, $02, $40, $02, $40, $02
+    .byte $02, $40, $02, $40, $02, $40, $02, $40
+BarStyleWater4:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $66, $66
+    .byte $00, $00, $00, $00, $00, $00, $66, $66
+    .byte $00, $00, $00, $00, $66, $66, $66, $66
+    .byte $00, $00, $00, $00, $66, $66, $66, $66
+    .byte $00, $00, $66, $66, $66, $66, $66, $66
+    .byte $00, $00, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $44, $44, $00, $00, $00, $00, $00, $00
+    .byte $22, $22, $44, $44, $00, $00, $00, $00
+    .byte $44, $44, $22, $22, $00, $00, $00, $00
+    .byte $22, $22, $44, $44, $22, $22, $00, $00
+    .byte $44, $44, $22, $22, $44, $44, $00, $00
+    .byte $22, $22, $44, $44, $22, $22, $44, $44
+    .byte $44, $44, $22, $22, $44, $44, $22, $22
+    .byte $22, $22, $44, $44, $22, $22, $44, $44
+    .byte $44, $44, $22, $22, $44, $44, $22, $22
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $22, $22, $00, $00, $00, $00, $00, $00
+    .byte $44, $44, $22, $22, $00, $00, $00, $00
+    .byte $22, $22, $44, $44, $00, $00, $00, $00
+    .byte $44, $44, $22, $22, $44, $44, $00, $00
+    .byte $22, $22, $44, $44, $22, $22, $00, $00
+    .byte $44, $44, $22, $22, $44, $44, $22, $22
+    .byte $22, $22, $44, $44, $22, $22, $44, $44
+    .byte $44, $44, $22, $22, $44, $44, $22, $22
+    .byte $22, $22, $44, $44, $22, $22, $44, $44
+BarStyleWater5:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7C
+    .byte $00, $00, $00, $00, $00, $00, $7C, $BE
+    .byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+    .byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
+    .byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
+    .byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
+    .byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $00, $00, $00, $00, $00, $00
+    .byte $aa, $54, $00, $00, $00, $00, $00, $00
+    .byte $54, $aa, $54, $00, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $00, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $aa, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $aa, $00, $00, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $00, $00, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $00, $00, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $00, $00, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $00, $00
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $00
+    .byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
+    .byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+BarStyleWater6:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $18
+    .byte $00, $00, $00, $00, $00, $00, $18, $3C
+    .byte $00, $00, $00, $00, $00, $18, $3C, $7E
+    .byte $00, $00, $00, $00, $18, $3C, $7E, $7E
+    .byte $00, $00, $00, $18, $3C, $7E, $7E, $7E
+    .byte $00, $00, $18, $3C, $7E, $7E, $7E, $7E
+    .byte $00, $18, $3C, $7E, $7E, $7E, $7E, $7E
+    .byte $18, $3C, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $04, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $04, $00, $00, $00, $00, $00, $00
+    .byte $04, $54, $10, $00, $00, $00, $00, $00
+    .byte $54, $04, $54, $00, $00, $00, $00, $00
+    .byte $04, $54, $04, $54, $40, $00, $00, $00
+    .byte $54, $04, $54, $04, $54, $00, $00, $00
+    .byte $04, $54, $04, $54, $04, $54, $40, $00
+    .byte $54, $04, $54, $04, $54, $04, $54, $40
+    .byte $04, $54, $04, $54, $04, $54, $04, $54
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $02, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $08, $00, $00, $00, $00, $00, $00
+    .byte $08, $2A, $08, $00, $00, $00, $00, $00
+    .byte $2A, $08, $2A, $20, $00, $00, $00, $00
+    .byte $08, $2A, $08, $2A, $20, $00, $00, $00
+    .byte $2A, $08, $2A, $08, $2A, $00, $00, $00
+    .byte $08, $2A, $08, $2A, $08, $2A, $00, $00
+    .byte $2A, $08, $2A, $08, $2A, $08, $2A, $00
+    .byte $08, $2A, $08, $2A, $08, $2A, $08, $2A
+BarStyleWater7:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $00
+    .byte $00, $00, $00, $00, $00, $7E, $00, $7E
+    .byte $00, $00, $00, $00, $7E, $00, $7E, $00
+    .byte $00, $00, $00, $7E, $00, $7E, $00, $7E
+    .byte $00, $00, $7E, $00, $7E, $00, $7E, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E
+    .byte $7E, $00, $7E, $00, $7E, $00, $7E, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $54, $00, $00, $00, $00, $00, $00
+    .byte $54, $00, $54, $00, $00, $00, $00, $00
+    .byte $00, $54, $00, $54, $00, $00, $00, $00
+    .byte $54, $00, $54, $00, $54, $00, $00, $00
+    .byte $00, $54, $00, $54, $00, $54, $00, $00
+    .byte $54, $00, $54, $00, $54, $00, $54, $00
+    .byte $00, $54, $00, $54, $00, $54, $00, $54
+    .byte $54, $00, $54, $00, $54, $00, $54, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $2A, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $2A, $00, $00, $00, $00, $00, $00
+    .byte $2A, $00, $2A, $00, $00, $00, $00, $00
+    .byte $00, $2A, $00, $2A, $00, $00, $00, $00
+    .byte $2A, $00, $2A, $00, $2A, $00, $00, $00
+    .byte $00, $2A, $00, $2A, $00, $2A, $00, $00
+    .byte $2A, $00, $2A, $00, $2A, $00, $2A, $00
+    .byte $00, $2A, $00, $2A, $00, $2A, $00, $2A
+    .byte $2A, $00, $2A, $00, $2A, $00, $2A, $00
+BarStyleDataMirror:
+BarStyleMirror0:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7C
+    .byte $00, $00, $00, $00, $00, $00, $7C, $BE
+    .byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+    .byte $00, $00, $00, $00, $7C, $14, $BE, $BE
+    .byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
+    .byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
+    .byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $7C, $00, $00, $00, $00, $00, $00, $00
+    .byte $BE, $7C, $00, $00, $00, $00, $00, $00
+    .byte $BE, $BE, $7C, $00, $00, $00, $00, $00
+    .byte $BE, $BE, $14, $7C, $00, $00, $00, $00
+    .byte $BE, $BE, $14, $BE, $7C, $00, $00, $00
+    .byte $BE, $BE, $14, $BE, $BE, $7C, $00, $00
+    .byte $BE, $BE, $14, $BE, $BE, $BE, $7C, $00
+    .byte $BE, $BE, $14, $BE, $BE, $BE, $14, $7C
+    .byte $BE, $BE, $14, $BE, $BE, $BE, $14, $BE
+BarStyleMirror1:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $7E, $00, $00, $00, $00, $00, $00, $00
+    .byte $7E, $7E, $00, $00, $00, $00, $00, $00
+    .byte $7E, $7E, $7E, $00, $00, $00, $00, $00
+    .byte $7E, $7E, $7E, $7E, $00, $00, $00, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $00, $00, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $00, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+BarStyleMirror2:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $3C
+    .byte $00, $00, $00, $00, $00, $00, $3C, $3C
+    .byte $00, $00, $00, $00, $00, $3C, $3C, $3C
+    .byte $00, $00, $00, $00, $3C, $3C, $3C, $3C
+    .byte $00, $00, $00, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $00, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $3C, $00, $00, $00, $00, $00, $00, $00
+    .byte $3C, $3C, $00, $00, $00, $00, $00, $00
+    .byte $3C, $3C, $3C, $00, $00, $00, $00, $00
+    .byte $3C, $3C, $3C, $3C, $00, $00, $00, $00
+    .byte $3C, $3C, $3C, $3C, $3C, $00, $00, $00
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $00, $00
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $00
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+    .byte $3C, $3C, $3C, $3C, $3C, $3C, $3C, $3C
+BarStyleMirror3:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $42
+    .byte $00, $00, $00, $00, $00, $7E, $42, $42
+    .byte $00, $00, $00, $00, $7E, $42, $42, $42
+    .byte $00, $00, $00, $7E, $42, $42, $42, $42
+    .byte $00, $00, $7E, $42, $42, $42, $42, $42
+    .byte $00, $7E, $42, $42, $42, $42, $42, $42
+    .byte $7E, $42, $42, $42, $42, $42, $42, $42
+    .byte $42, $42, $42, $42, $42, $42, $42, $42
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $7E, $00, $00, $00, $00, $00, $00, $00
+    .byte $42, $7E, $00, $00, $00, $00, $00, $00
+    .byte $42, $42, $7E, $00, $00, $00, $00, $00
+    .byte $42, $42, $42, $7E, $00, $00, $00, $00
+    .byte $42, $42, $42, $42, $7E, $00, $00, $00
+    .byte $42, $42, $42, $42, $42, $7E, $00, $00
+    .byte $42, $42, $42, $42, $42, $42, $7E, $00
+    .byte $42, $42, $42, $42, $42, $42, $42, $7E
+    .byte $42, $42, $42, $42, $42, $42, $42, $42
+BarStyleMirror4:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $66, $66
+    .byte $00, $00, $00, $00, $00, $00, $66, $66
+    .byte $00, $00, $00, $00, $66, $66, $66, $66
+    .byte $00, $00, $00, $00, $66, $66, $66, $66
+    .byte $00, $00, $66, $66, $66, $66, $66, $66
+    .byte $00, $00, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $66, $66, $00, $00, $00, $00, $00, $00
+    .byte $66, $66, $00, $00, $00, $00, $00, $00
+    .byte $66, $66, $66, $66, $00, $00, $00, $00
+    .byte $66, $66, $66, $66, $00, $00, $00, $00
+    .byte $66, $66, $66, $66, $66, $66, $00, $00
+    .byte $66, $66, $66, $66, $66, $66, $00, $00
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+    .byte $66, $66, $66, $66, $66, $66, $66, $66
+BarStyleMirror5:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7C
+    .byte $00, $00, $00, $00, $00, $00, $7C, $BE
+    .byte $00, $00, $00, $00, $00, $7C, $BE, $BE
+    .byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
+    .byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
+    .byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
+    .byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $7C, $00, $00, $00, $00, $00, $00, $00
+    .byte $BE, $7C, $00, $00, $00, $00, $00, $00
+    .byte $BE, $BE, $7C, $00, $00, $00, $00, $00
+    .byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
+    .byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
+    .byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
+    .byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
+    .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
+    .byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+BarStyleMirror6:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $18
+    .byte $00, $00, $00, $00, $00, $00, $18, $3C
+    .byte $00, $00, $00, $00, $00, $18, $3C, $7E
+    .byte $00, $00, $00, $00, $18, $3C, $7E, $7E
+    .byte $00, $00, $00, $18, $3C, $7E, $7E, $7E
+    .byte $00, $00, $18, $3C, $7E, $7E, $7E, $7E
+    .byte $00, $18, $3C, $7E, $7E, $7E, $7E, $7E
+    .byte $18, $3C, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $18, $00, $00, $00, $00, $00, $00, $00
+    .byte $3C, $18, $00, $00, $00, $00, $00, $00
+    .byte $7E, $3C, $18, $00, $00, $00, $00, $00
+    .byte $7E, $7E, $3C, $18, $00, $00, $00, $00
+    .byte $7E, $7E, $7E, $3C, $18, $00, $00, $00
+    .byte $7E, $7E, $7E, $7E, $3C, $18, $00, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $3C, $18, $00
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $3C, $18
+    .byte $7E, $7E, $7E, $7E, $7E, $7E, $7E, $7E
+BarStyleMirror7:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $7E, $00
+    .byte $00, $00, $00, $00, $00, $7E, $00, $7E
+    .byte $00, $00, $00, $00, $7E, $00, $7E, $00
+    .byte $00, $00, $00, $7E, $00, $7E, $00, $7E
+    .byte $00, $00, $7E, $00, $7E, $00, $7E, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E
+    .byte $7E, $00, $7E, $00, $7E, $00, $7E, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+    .byte $7E, $00, $00, $00, $00, $00, $00, $00
+    .byte $00, $7E, $00, $00, $00, $00, $00, $00
+    .byte $7E, $00, $7E, $00, $00, $00, $00, $00
+    .byte $00, $7E, $00, $7E, $00, $00, $00, $00
+    .byte $7E, $00, $7E, $00, $7E, $00, $00, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $00
+    .byte $7E, $00, $7E, $00, $7E, $00, $7E, $00
+    .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E
+    .byte $7E, $00, $7E, $00, $7E, $00, $7E, $00
+```
 
 ### FILE: SIDPlayers/INC/Common.asm
 *Original size: 4960 bytes, Cleaned: 3995 bytes (reduced by 19.5%)*
@@ -1559,7 +2029,7 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 18659 bytes, Cleaned: 13007 bytes (reduced by 30.3%)*
+*Original size: 17432 bytes, Cleaned: 11698 bytes (reduced by 32.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -1608,11 +2078,12 @@ Files: 1
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 232
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.import source "../INC/BarStyles.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -2061,36 +2532,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+	.fill BAR_STYLE_SIZE_WATER, $00
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill $400, $00
 * = SCREEN1_ADDRESS "Screen 1"
@@ -2102,7 +2544,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 18149 bytes, Cleaned: 12546 bytes (reduced by 30.9%)*
+*Original size: 16922 bytes, Cleaned: 11237 bytes (reduced by 33.6%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2154,11 +2596,12 @@ Files: 1
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.import source "../INC/BarStyles.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -2564,36 +3007,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $14, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $14, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $14, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $7C, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $BE, $14, $BE, $BE, $BE, $14, $BE, $BE
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $aa, $00, $00, $00, $00, $00, $00, $00
-	.byte $54, $aa, $00, $00, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $00, $00, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $00, $00, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $00, $00, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $00, $00
-	.byte $aa, $54, $aa, $54, $aa, $54, $54, $00
-	.byte $54, $aa, $54, $aa, $54, $aa, $54, $aa
-	.byte $aa, $54, $aa, $54, $aa, $54, $aa, $54
+	.fill BAR_STYLE_SIZE_WATER, $00
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20
@@ -2609,7 +3023,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 13690 bytes, Cleaned: 9046 bytes (reduced by 33.9%)*
+*Original size: 13067 bytes, Cleaned: 8198 bytes (reduced by 37.3%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -2648,11 +3062,12 @@ Files: 1
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 232
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.import source "../INC/BarStyles.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -2987,26 +3402,7 @@ barCharacterMap:
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $7C, $00, $00, $00, $00, $00, $00, $00
-	.byte $BE, $7C, $00, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $7C, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+	.fill BAR_STYLE_SIZE_MIRROR, $00
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill $400, $00
 * = SCREEN1_ADDRESS "Screen 1"
@@ -3018,7 +3414,7 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 13219 bytes, Cleaned: 8681 bytes (reduced by 34.3%)*
+*Original size: 12596 bytes, Cleaned: 7833 bytes (reduced by 37.8%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3058,11 +3454,12 @@ Files: 1
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 .import source "../INC/Common.asm"
-.import source "../INC/keyboard.asm"
-.import source "../INC/musicplayback.asm"
+.import source "../INC/Keyboard.asm"
+.import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
+.import source "../INC/BarStyles.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -3367,26 +3764,7 @@ barCharacterMap:
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $00, $00, $00, $00, $00, $00, $00, $7C
-	.byte $00, $00, $00, $00, $00, $00, $7C, $BE
-	.byte $00, $00, $00, $00, $00, $7C, $BE, $BE
-	.byte $00, $00, $00, $00, $7C, $BE, $BE, $BE
-	.byte $00, $00, $00, $7C, $BE, $BE, $BE, $BE
-	.byte $00, $00, $7C, $BE, $BE, $BE, $BE, $BE
-	.byte $00, $7C, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $7C, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
-	.byte $00, $00, $00, $00, $00, $00, $00, $00
-	.byte $7C, $00, $00, $00, $00, $00, $00, $00
-	.byte $BE, $7C, $00, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $7C, $00, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $7C, $00, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $7C, $00, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $7C, $00, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $7C, $00
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $7C
-	.byte $BE, $BE, $BE, $BE, $BE, $BE, $BE, $BE
+	.fill BAR_STYLE_SIZE_MIRROR, $00
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20

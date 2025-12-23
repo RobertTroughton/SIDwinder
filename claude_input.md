@@ -2240,7 +2240,7 @@ namespace sidwinder {
         const u64 avgCycles = framesExecuted_ > 0 ? totalCycles_ / framesExecuted_ : 0;
         return { avgCycles, maxCyclesPerFrame_ };
     }
-    bool SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
+    void SIDEmulator::generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const {
         std::vector<u16> modifiedAddresses;
         auto accessFlags = cpu_->getMemoryAccess();
         for (u32 addr = 0; addr < 65536; ++addr) {
@@ -6684,7 +6684,7 @@ namespace sidwinder {
         const SIDWriteTracker& getWriteTracker() const { return writeTracker_; }
         const SIDPatternFinder& getPatternFinder() const { return patternFinder_; }
         bool generateHelpfulDataFile(const std::string& filename) const;
-        bool generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
+        void generateSaveAndRestoreModifiedMemoryFiles(const std::string& saveFilename, const std::string& restoreFilename) const;
     private:
         CPU6510* cpu_;                 
         SIDLoader* sid_;               
