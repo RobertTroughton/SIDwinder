@@ -1607,13 +1607,11 @@ class UIController {
             } else {
                 // Multiple SIDs - show count and list extra SID addresses
                 const extraAddresses = sidChipAddresses.slice(1); // Skip the first ($D400)
-                const extraList = extraAddresses.map((addr, idx) =>
-                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
-                ).join('\n');
+                const extraLines = extraAddresses.map((addr, idx) =>
+                    `<div style="font-size: 0.85em; text-align: right;">Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}</div>`
+                ).join('');
 
-                this.elements.sidChipCount.innerHTML = `${count}<br><span style="font-size: 0.85em; color: #aaa;">${extraAddresses.map((addr, idx) =>
-                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
-                ).join('<br>')}</span>`;
+                this.elements.sidChipCount.innerHTML = `<div style="text-align: right;">${count}</div>${extraLines}`;
             }
         }
     }
