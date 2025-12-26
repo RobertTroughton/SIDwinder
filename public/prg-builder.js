@@ -699,21 +699,46 @@ class SIDwinderPRGExporter {
                 continue; // Skip normal processing for this option
             }
 
-            // Special handling for colorEffect when color table data should be injected
-            if (optionConfig.id === 'colorEffect' && vizConfig.colorEffectType && layout.colorTableAddress) {
-                const effectIndex = parseInt(element.value);
-                const validIndex = !isNaN(effectIndex) ? effectIndex : (optionConfig.default ?? 0);
+            // Special handling for colorPalette when color table data should be injected
+            if (optionConfig.id === 'colorPalette' && vizConfig.colorPaletteType && layout.colorTableAddress) {
+                const paletteIndex = parseInt(element.value);
+                const validIndex = !isNaN(paletteIndex) ? paletteIndex : (optionConfig.default ?? 0);
 
-                // Get color effect data from the global COLOR_EFFECTS_DATA
-                if (typeof COLOR_EFFECTS_DATA !== 'undefined') {
-                    const colorData = COLOR_EFFECTS_DATA.getColorEffectData(vizConfig.colorEffectType, validIndex);
+                // Get color palette data from the global COLOR_PALETTES_DATA
+                if (typeof COLOR_PALETTES_DATA !== 'undefined') {
+                    const colorData = COLOR_PALETTES_DATA.getColorPaletteData(vizConfig.colorPaletteType, validIndex);
                     if (colorData) {
                         const targetAddress = parseInt(layout.colorTableAddress);
                         optionComponents.push({
                             data: colorData,
                             loadAddress: targetAddress,
-                            name: `colorEffect_table`
+                            name: `colorPalette_table`
                         });
+                    }
+
+                    // Also inject border and background colors if the layout has addresses for them
+                    const paletteDetails = COLOR_PALETTES_DATA.getColorPaletteDetails(validIndex);
+                    if (paletteDetails) {
+                        // Inject border color if layout specifies address
+                        if (layout.borderColor) {
+                            const borderData = new Uint8Array(1);
+                            borderData[0] = paletteDetails.borderColor & 0xFF;
+                            optionComponents.push({
+                                data: borderData,
+                                loadAddress: parseInt(layout.borderColor),
+                                name: `colorPalette_border`
+                            });
+                        }
+                        // Inject background color if layout specifies address
+                        if (layout.backgroundColor) {
+                            const bgData = new Uint8Array(1);
+                            bgData[0] = paletteDetails.backgroundColor & 0xFF;
+                            optionComponents.push({
+                                data: bgData,
+                                loadAddress: parseInt(layout.backgroundColor),
+                                name: `colorPalette_background`
+                            });
+                        }
                     }
                 }
                 continue; // Skip normal processing for this option

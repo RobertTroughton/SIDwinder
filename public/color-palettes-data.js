@@ -1,8 +1,8 @@
-// color-effects-data.js - Color Effect Data for SIDwinder Web
-// This module contains the color lookup tables for all color effects,
+// color-palettes-data.js - Color Palette Data for SIDwinder Web
+// This module contains the color lookup tables for all color palettes,
 // allowing the web app to inject the selected color scheme directly.
 //
-// Color effects are height-based color gradients for the spectrum bars.
+// Color palettes are height-based color gradients for the spectrum bars.
 // Different visualizers have different max heights:
 // - Water (RaistlinBars): MAX_BAR_HEIGHT = 111 (14 rows * 8 - 1), needs ~116 entries
 // - Mirror (RaistlinMirrorBars): MAX_BAR_HEIGHT = 71 (9 rows * 8 - 1), needs ~76 entries
@@ -17,53 +17,44 @@
 // $06 = Blue        $0E = Light Blue
 // $07 = Yellow      $0F = Light Grey
 
-const NUM_COLOR_EFFECTS = 8;
+const NUM_COLOR_PALETTES = 7;
 
 // Size constants - extra bytes for safety margin
 const COLOR_TABLE_SIZE_WATER = 120;   // For RaistlinBars (MAX_BAR_HEIGHT=111 + padding)
 const COLOR_TABLE_SIZE_MIRROR = 80;   // For RaistlinMirrorBars (MAX_BAR_HEIGHT=71 + padding)
 
-// Color effect definitions - each defines colors from bottom to top
+// Color palette definitions - each defines colors from bottom to top
 // Format: array of {color, percentage} where percentage is 0-100 for position in gradient
-const COLOR_EFFECT_GRADIENTS = [
-    // Effect 0: Cycling Rainbow (Original RaistlinBars style - uses purple/pink palette as base)
+// Note: Avoid using black ($00) as a bar color since it's the screen background
+const COLOR_PALETTE_GRADIENTS = [
+    // Palette 0: Rainbow
     {
-        name: "Cycling Rainbow",
-        description: "Animated color cycling through palettes",
-        gradient: [
-            { color: 0x0B, pct: 0 },    // Dark grey (base)
-            { color: 0x09, pct: 5 },    // Brown
-            { color: 0x04, pct: 15 },   // Purple
-            { color: 0x05, pct: 30 },   // Green
-            { color: 0x0D, pct: 50 },   // Light green
-            { color: 0x0D, pct: 65 },   // Light green
-            { color: 0x0F, pct: 85 },   // Light grey
-            { color: 0x01, pct: 100 }   // White
-        ]
-    },
-
-    // Effect 1: Static Rainbow (Original RaistlinMirrorBars style)
-    {
-        name: "Static Rainbow",
+        name: "Rainbow",
         description: "Classic rainbow gradient from bottom to top",
+        borderColor: 0x00,      // Black
+        backgroundColor: 0x00,  // Black
+        previewImage: "PNG/Palettes/palette-rainbow.png",
         gradient: [
-            { color: 0x0B, pct: 0 },    // Dark grey
+            { color: 0x0B, pct: 0 },    // Dark grey (base - avoids black)
             { color: 0x09, pct: 3 },    // Brown
             { color: 0x06, pct: 20 },   // Blue
             { color: 0x04, pct: 37 },   // Purple
             { color: 0x0E, pct: 52 },   // Light blue
             { color: 0x0D, pct: 67 },   // Light green
             { color: 0x07, pct: 85 },   // Yellow
-            { color: 0x01, pct: 100 }   // White (implied at top)
+            { color: 0x01, pct: 100 }   // White
         ]
     },
 
-    // Effect 2: Fire (Red/Orange/Yellow)
+    // Palette 1: Fire (Red/Orange/Yellow)
     {
         name: "Fire",
         description: "Hot flames from red to yellow to white",
+        borderColor: 0x00,      // Black
+        backgroundColor: 0x00,  // Black
+        previewImage: "PNG/Palettes/palette-fire.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
+            { color: 0x0B, pct: 0 },    // Dark grey (base - avoids black)
             { color: 0x09, pct: 8 },    // Brown
             { color: 0x02, pct: 20 },   // Red
             { color: 0x0A, pct: 35 },   // Light red
@@ -74,12 +65,15 @@ const COLOR_EFFECT_GRADIENTS = [
         ]
     },
 
-    // Effect 3: Ice (Blue/Cyan/White)
+    // Palette 2: Ice (Blue/Cyan/White)
     {
         name: "Ice",
         description: "Cool ice colors from deep blue to white",
+        borderColor: 0x06,      // Blue
+        backgroundColor: 0x06,  // Blue
+        previewImage: "PNG/Palettes/palette-ice.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
+            { color: 0x06, pct: 0 },    // Blue (base - matches background)
             { color: 0x06, pct: 15 },   // Blue
             { color: 0x06, pct: 30 },   // Blue
             { color: 0x0E, pct: 45 },   // Light blue
@@ -91,12 +85,15 @@ const COLOR_EFFECT_GRADIENTS = [
         ]
     },
 
-    // Effect 4: Forest (Green shades)
+    // Palette 3: Forest (Green shades)
     {
         name: "Forest",
         description: "Natural green forest gradient",
+        borderColor: 0x00,      // Black
+        backgroundColor: 0x00,  // Black
+        previewImage: "PNG/Palettes/palette-forest.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
+            { color: 0x0B, pct: 0 },    // Dark grey (base - avoids black)
             { color: 0x0B, pct: 10 },   // Dark grey
             { color: 0x05, pct: 25 },   // Green
             { color: 0x05, pct: 40 },   // Green
@@ -107,12 +104,15 @@ const COLOR_EFFECT_GRADIENTS = [
         ]
     },
 
-    // Effect 5: Purple Haze
+    // Palette 4: Purple Haze
     {
         name: "Purple Haze",
         description: "Deep purple to pink gradient",
+        borderColor: 0x00,      // Black
+        backgroundColor: 0x00,  // Black
+        previewImage: "PNG/Palettes/palette-purplehaze.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
+            { color: 0x0B, pct: 0 },    // Dark grey (base - avoids black)
             { color: 0x06, pct: 12 },   // Blue
             { color: 0x04, pct: 28 },   // Purple
             { color: 0x04, pct: 42 },   // Purple
@@ -123,13 +123,16 @@ const COLOR_EFFECT_GRADIENTS = [
         ]
     },
 
-    // Effect 6: Ocean Depths
+    // Palette 5: Ocean Depths
     {
         name: "Ocean",
         description: "Deep sea blues and cyans",
+        borderColor: 0x06,      // Blue
+        backgroundColor: 0x06,  // Blue
+        previewImage: "PNG/Palettes/palette-ocean.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
-            { color: 0x0B, pct: 10 },   // Dark grey
+            { color: 0x06, pct: 0 },    // Blue (base - matches background)
+            { color: 0x06, pct: 10 },   // Blue
             { color: 0x06, pct: 25 },   // Blue
             { color: 0x0E, pct: 42 },   // Light blue
             { color: 0x03, pct: 58 },   // Cyan
@@ -139,12 +142,15 @@ const COLOR_EFFECT_GRADIENTS = [
         ]
     },
 
-    // Effect 7: Monochrome (Grey shades)
+    // Palette 6: Monochrome (Grey shades)
     {
         name: "Monochrome",
         description: "Classic grey scale",
+        borderColor: 0x00,      // Black
+        backgroundColor: 0x00,  // Black
+        previewImage: "PNG/Palettes/palette-mono.png",
         gradient: [
-            { color: 0x00, pct: 0 },    // Black
+            { color: 0x0B, pct: 0 },    // Dark grey (base - avoids black)
             { color: 0x0B, pct: 18 },   // Dark grey
             { color: 0x0B, pct: 35 },   // Dark grey
             { color: 0x0C, pct: 52 },   // Grey
@@ -155,18 +161,18 @@ const COLOR_EFFECT_GRADIENTS = [
     }
 ];
 
-// Generate a color lookup table for a given effect and table size
-function generateColorTable(effectIndex, tableSize) {
-    if (effectIndex < 0 || effectIndex >= NUM_COLOR_EFFECTS) {
-        effectIndex = 0;
+// Generate a color lookup table for a given palette and table size
+function generateColorTable(paletteIndex, tableSize) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
     }
 
-    const effect = COLOR_EFFECT_GRADIENTS[effectIndex];
-    const gradient = effect.gradient;
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
     const result = new Uint8Array(tableSize);
 
-    // First few entries (height 0-1) are typically the base/background color
-    result[0] = 0x0B; // Dark grey for "no bar"
+    // First entry (height 0) uses the base color from gradient
+    result[0] = gradient[0].color;
 
     for (let i = 1; i < tableSize; i++) {
         // Map table position to percentage (1 to tableSize-1 maps to ~0-100%)
@@ -195,15 +201,14 @@ function generateColorTable(effectIndex, tableSize) {
 }
 
 // Generate color table for water-style visualizers (RaistlinBars)
-// Also needs a darker color map for the water reflection
-function generateWaterColorData(effectIndex) {
-    const colorTable = generateColorTable(effectIndex, COLOR_TABLE_SIZE_WATER);
+function generateWaterColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_WATER);
     return colorTable;
 }
 
 // Generate color table for mirror-style visualizers (RaistlinMirrorBars)
-function generateMirrorColorData(effectIndex) {
-    const colorTable = generateColorTable(effectIndex, COLOR_TABLE_SIZE_MIRROR);
+function generateMirrorColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_MIRROR);
     return colorTable;
 }
 
@@ -229,45 +234,63 @@ const DARKER_COLOR_MAP = new Uint8Array([
 ]);
 
 // Cache for generated data
-const waterColorCache = new Array(NUM_COLOR_EFFECTS).fill(null);
-const mirrorColorCache = new Array(NUM_COLOR_EFFECTS).fill(null);
+const waterColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const mirrorColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 
-// Get color effect data for a specific visualizer type
-function getColorEffectData(effectType, effectIndex) {
-    if (effectIndex < 0 || effectIndex >= NUM_COLOR_EFFECTS) {
-        effectIndex = 0;
+// Get color palette data for a specific visualizer type
+function getColorPaletteData(paletteType, paletteIndex) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
     }
 
-    if (effectType === 'water') {
-        if (!waterColorCache[effectIndex]) {
-            waterColorCache[effectIndex] = generateWaterColorData(effectIndex);
+    if (paletteType === 'water') {
+        if (!waterColorCache[paletteIndex]) {
+            waterColorCache[paletteIndex] = generateWaterColorData(paletteIndex);
         }
-        return waterColorCache[effectIndex];
-    } else if (effectType === 'mirror') {
-        if (!mirrorColorCache[effectIndex]) {
-            mirrorColorCache[effectIndex] = generateMirrorColorData(effectIndex);
+        return waterColorCache[paletteIndex];
+    } else if (paletteType === 'mirror') {
+        if (!mirrorColorCache[paletteIndex]) {
+            mirrorColorCache[paletteIndex] = generateMirrorColorData(paletteIndex);
         }
-        return mirrorColorCache[effectIndex];
+        return mirrorColorCache[paletteIndex];
     }
 
     return null;
 }
 
-// Get effect info for UI display
-function getColorEffectInfo() {
-    return COLOR_EFFECT_GRADIENTS.map((effect, index) => ({
+// Get palette info for UI display
+function getColorPaletteInfo() {
+    return COLOR_PALETTE_GRADIENTS.map((palette, index) => ({
         value: index,
-        name: effect.name,
-        description: effect.description
+        name: palette.name,
+        description: palette.description,
+        previewImage: palette.previewImage,
+        borderColor: palette.borderColor,
+        backgroundColor: palette.backgroundColor
     }));
 }
 
+// Get specific palette details
+function getColorPaletteDetails(paletteIndex) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    return {
+        name: palette.name,
+        borderColor: palette.borderColor,
+        backgroundColor: palette.backgroundColor,
+        previewImage: palette.previewImage
+    };
+}
+
 // Export for use in other modules
-window.COLOR_EFFECTS_DATA = {
-    getColorEffectData: getColorEffectData,
-    getColorEffectInfo: getColorEffectInfo,
+window.COLOR_PALETTES_DATA = {
+    getColorPaletteData: getColorPaletteData,
+    getColorPaletteInfo: getColorPaletteInfo,
+    getColorPaletteDetails: getColorPaletteDetails,
     getDarkerColorMap: () => DARKER_COLOR_MAP,
     COLOR_TABLE_SIZE_WATER: COLOR_TABLE_SIZE_WATER,
     COLOR_TABLE_SIZE_MIRROR: COLOR_TABLE_SIZE_MIRROR,
-    NUM_COLOR_EFFECTS: NUM_COLOR_EFFECTS
+    NUM_COLOR_PALETTES: NUM_COLOR_PALETTES
 };

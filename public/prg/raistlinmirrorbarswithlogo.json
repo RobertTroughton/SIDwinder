@@ -3,7 +3,7 @@
   "version": "1.0",
   "maxCallsPerFrame": 1,
   "barStyleType": "mirror",
-  "colorEffectType": "mirror",
+  "colorPaletteType": "mirror",
 
   "layouts": {
     "bank4000": {
@@ -15,6 +15,7 @@
       "binaryDataStart": "0x4000",
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x400D",
+      "backgroundColor": "0x400E",
       "barCharsAddress": "0x7F00",
       "colorTableAddress": "0x6E00",
       "saveRestoreLocation": "before",
@@ -30,6 +31,7 @@
       "binaryDataStart": "0x8000",
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x800D",
+      "backgroundColor": "0x800E",
       "barCharsAddress": "0xBF00",
       "colorTableAddress": "0xAE00",
       "saveRestoreLocation": "before",
@@ -129,29 +131,19 @@
       ]
     },
     {
-      "id": "colorEffect",
-      "label": "Color Effect",
-      "type": "select",
-      "default": 1,
-      "values": [
-        { "value": 0, "label": "Cycling Rainbow" },
-        { "value": 1, "label": "Static Rainbow" },
-        { "value": 2, "label": "Fire" },
-        { "value": 3, "label": "Ice" },
-        { "value": 4, "label": "Forest" },
-        { "value": 5, "label": "Purple Haze" },
-        { "value": 6, "label": "Ocean" },
-        { "value": 7, "label": "Monochrome" }
-      ]
-    },
-    {
-      "id": "borderColor",
-      "label": "Border Color",
-      "type": "number",
+      "id": "colorPalette",
+      "label": "Color Palette",
+      "type": "imageGrid",
       "default": 0,
-      "min": 0,
-      "max": 15,
-      "dataField": "borderColor"
+      "values": [
+        { "value": 0, "label": "Rainbow", "image": "PNG/Palettes/palette-rainbow.png" },
+        { "value": 1, "label": "Fire", "image": "PNG/Palettes/palette-fire.png" },
+        { "value": 2, "label": "Ice", "image": "PNG/Palettes/palette-ice.png" },
+        { "value": 3, "label": "Forest", "image": "PNG/Palettes/palette-forest.png" },
+        { "value": 4, "label": "Purple Haze", "image": "PNG/Palettes/palette-purplehaze.png" },
+        { "value": 5, "label": "Ocean", "image": "PNG/Palettes/palette-ocean.png" },
+        { "value": 6, "label": "Monochrome", "image": "PNG/Palettes/palette-mono.png" }
+      ]
     }
   ]
 }

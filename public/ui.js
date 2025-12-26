@@ -1207,11 +1207,11 @@ class UIController {
     createBarStyleGridHTML(config) {
         const defaultValue = config.default || 0;
 
-        // Generate thumbnails for each bar style
+        // Generate thumbnails for each style option
         const thumbnailsHTML = config.values.map(v => {
             const isSelected = v.value === defaultValue;
-            // Image path follows convention: prg/bar-styles/style-{value}.png
-            const imagePath = `prg/bar-styles/style-${v.value}.png`;
+            // Use custom image path from config if available, otherwise use bar-style convention
+            const imagePath = v.image || `prg/bar-styles/style-${v.value}.png`;
 
             return `
                 <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
