@@ -811,6 +811,51 @@ class SIDwinderPRGExporter {
                 continue; // Skip normal processing for this option
             }
 
+            // Handle color picker options (songNameColor, artistNameColor, bgColor)
+            if (optionConfig.type === 'colorPicker') {
+                const colorValue = parseInt(element.value);
+                const validColor = !isNaN(colorValue) ? (colorValue & 0x0F) : (optionConfig.default ?? 0);
+
+                if (optionConfig.id === 'songNameColor' && layout.songNameColorAddress) {
+                    const colorData = new Uint8Array(1);
+                    colorData[0] = validColor;
+                    optionComponents.push({
+                        data: colorData,
+                        loadAddress: parseInt(layout.songNameColorAddress),
+                        name: 'songNameColor'
+                    });
+                } else if (optionConfig.id === 'artistNameColor' && layout.artistNameColorAddress) {
+                    const colorData = new Uint8Array(1);
+                    colorData[0] = validColor;
+                    optionComponents.push({
+                        data: colorData,
+                        loadAddress: parseInt(layout.artistNameColorAddress),
+                        name: 'artistNameColor'
+                    });
+                } else if (optionConfig.id === 'bgColor') {
+                    // Background color affects both border and background
+                    if (layout.borderColor) {
+                        const borderData = new Uint8Array(1);
+                        borderData[0] = validColor;
+                        optionComponents.push({
+                            data: borderData,
+                            loadAddress: parseInt(layout.borderColor),
+                            name: 'bgColor_border'
+                        });
+                    }
+                    if (layout.backgroundColor) {
+                        const bgData = new Uint8Array(1);
+                        bgData[0] = validColor;
+                        optionComponents.push({
+                            data: bgData,
+                            loadAddress: parseInt(layout.backgroundColor),
+                            name: 'bgColor_background'
+                        });
+                    }
+                }
+                continue; // Skip normal processing for this option
+            }
+
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
 

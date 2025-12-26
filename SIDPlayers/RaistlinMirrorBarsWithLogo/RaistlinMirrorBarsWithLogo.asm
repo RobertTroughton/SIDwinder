@@ -39,7 +39,9 @@ colorEffectMode:
     .byte $00                           // Byte 96 ($60): Color effect mode (0=Height, 1=LineGradient, 2=Solid)
 lineGradientColors:
     .fill TOTAL_SPECTRUM_HEIGHT, $0b    // Bytes 97-106 ($61-$6A): Line gradient colors for mirrored display
-    .fill $100 - $61 - TOTAL_SPECTRUM_HEIGHT, $00  // Fill rest of reserved space
+songNameColor:
+    .byte $01                           // Song name text color (default: white)
+    .fill $100 - $61 - TOTAL_SPECTRUM_HEIGHT - 1, $00  // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 
@@ -436,7 +438,7 @@ DrawScreens:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	dey

@@ -21,6 +21,7 @@
       "colorTableAddress": "0x6E00",
       "colorEffectModeAddress": "0x4060",
       "lineGradientColorsAddress": "0x4061",
+      "songNameColorAddress": "0x406B",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -39,6 +40,7 @@
       "colorTableAddress": "0xAE00",
       "colorEffectModeAddress": "0x8060",
       "lineGradientColorsAddress": "0x8061",
+      "songNameColorAddress": "0x806B",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
@@ -156,10 +158,22 @@
       "type": "imageGrid",
       "default": 0,
       "values": [
-        { "value": 0, "label": "Height", "shortLabel": "height", "image": "PNG/Effects/effect-height.png" },
-        { "value": 1, "label": "Line Gradient", "shortLabel": "gradient", "image": "PNG/Effects/effect-gradient.png" },
-        { "value": 2, "label": "Solid", "shortLabel": "solid", "image": "PNG/Effects/effect-solid.png" }
+        { "value": 0, "label": "Dynamic Pulse", "shortLabel": "pulse", "image": "PNG/Effects/effect-height.png" },
+        { "value": 1, "label": "Fixed Gradient", "shortLabel": "gradient", "image": "PNG/Effects/effect-gradient.png" },
+        { "value": 2, "label": "Fixed Single Colour", "shortLabel": "solid", "image": "PNG/Effects/effect-solid.png" }
       ]
+    },
+    {
+      "id": "songNameColor",
+      "label": "Song Name Colour",
+      "type": "colorPicker",
+      "default": 1
+    },
+    {
+      "id": "bgColor",
+      "label": "Background Colour",
+      "type": "colorPicker",
+      "default": 0
     }
   ]
 }

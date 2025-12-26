@@ -241,9 +241,16 @@ function generateLineGradientWater(paletteIndex, topHeight, bottomHeight) {
     const result = new Uint8Array(totalLines);
 
     // Generate colors for top section (top to bottom = brightest to darker)
+    // Only the last line of top section gets the darkest color (0%)
+    // Lines 0 to topHeight-2 map to 100% down to 20%
     for (let line = 0; line < topHeight; line++) {
-        // Map line position to percentage (line 0 = top = 100%, last line = bottom = 0%)
-        const pct = ((topHeight - 1 - line) / (topHeight - 1)) * 100;
+        let pct;
+        if (line === topHeight - 1) {
+            pct = 0;  // Bottom line of top section gets darkest color
+        } else {
+            // Map lines 0 to topHeight-2 to 100%-20% range (skip the dark range)
+            pct = 100 - (line / (topHeight - 2)) * 80;
+        }
 
         let color = gradient[0].color;
         for (let g = 0; g < gradient.length - 1; g++) {
@@ -260,10 +267,16 @@ function generateLineGradientWater(paletteIndex, topHeight, bottomHeight) {
     }
 
     // Generate darker colors for bottom reflection section
+    // Only the last line gets the darkest color
+    const topDarkColor = result[topHeight - 1];
+    const bottomDarkColor = DARKER_COLOR_MAP[topDarkColor];
     for (let line = 0; line < bottomHeight; line++) {
-        // Get the color from the top section (mirror position) and darken it
-        const topColor = result[topHeight - 1];  // Use bottom-most color of top section
-        result[topHeight + line] = DARKER_COLOR_MAP[topColor];
+        if (line === bottomHeight - 1) {
+            result[topHeight + line] = bottomDarkColor;  // Only last line is darkest
+        } else {
+            // Use the color from the line above the darkest in top section
+            result[topHeight + line] = DARKER_COLOR_MAP[result[topHeight - 2]];
+        }
     }
 
     return result;
@@ -282,9 +295,15 @@ function generateLineGradientMirror(paletteIndex, halfHeight) {
     const result = new Uint8Array(totalLines);
 
     // Generate colors for top half (top to center = darker to brighter)
+    // Only line 0 gets the darkest color (0%), remaining lines map to 20%-100%
     for (let line = 0; line < halfHeight; line++) {
-        // Map line position to percentage (line 0 = edge = low%, center = 100%)
-        const pct = (line / (halfHeight - 1)) * 100;
+        let pct;
+        if (line === 0) {
+            pct = 0;  // Edge line gets darkest color
+        } else {
+            // Map lines 1 to halfHeight-1 to 20%-100% range (skip the dark range)
+            pct = 20 + ((line - 1) / (halfHeight - 2)) * 80;
+        }
 
         let color = gradient[0].color;
         for (let g = 0; g < gradient.length - 1; g++) {

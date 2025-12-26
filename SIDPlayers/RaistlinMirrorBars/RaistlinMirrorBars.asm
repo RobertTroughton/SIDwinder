@@ -35,7 +35,11 @@ colorEffectMode:
     .byte $00                           // Byte 96 ($60): Color effect mode (0=Height, 1=LineGradient, 2=Solid)
 lineGradientColors:
     .fill TOTAL_SPECTRUM_HEIGHT, $0b    // Bytes 97-114 ($61-$72): Line gradient colors for mirrored display
-    .fill $100 - $61 - TOTAL_SPECTRUM_HEIGHT, $00  // Fill rest of reserved space
+songNameColor:
+    .byte $01                           // Byte 115 ($73): Song name text color (default: white)
+artistNameColor:
+    .byte $0f                           // Byte 116 ($74): Artist name text color (default: light grey)
+    .fill $100 - $75, $00               // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 
@@ -474,7 +478,7 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 
@@ -484,7 +488,7 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
-	lda #$0f
+	lda artistNameColor
 	sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
 	sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 
