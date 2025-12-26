@@ -138,10 +138,22 @@
       ]
     },
     {
+      "id": "colorEffect",
+      "label": "Colour Effect",
+      "type": "imageGrid",
+      "default": 0,
+      "values": [
+        { "value": 0, "label": "Dynamic Pulse", "shortLabel": "Dynamic Pulse", "image": "PNG/Effects/effect-height.png" },
+        { "value": 1, "label": "Fixed Gradient", "shortLabel": "Fixed Gradient", "image": "PNG/Effects/effect-gradient.png" },
+        { "value": 2, "label": "Fixed Single Colour", "shortLabel": "Fixed Colour", "image": "PNG/Effects/effect-solid.png" }
+      ]
+    },
+    {
       "id": "colorPalette",
       "label": "Colour Palette",
       "type": "imageGrid",
       "default": 0,
+      "showWhen": { "colorEffect": [0, 1] },
       "values": [
         { "value": 0, "label": "Rainbow", "image": "PNG/Palettes/palette-rainbow.png" },
         { "value": 1, "label": "Fire", "image": "PNG/Palettes/palette-fire.png" },
@@ -153,15 +165,11 @@
       ]
     },
     {
-      "id": "colorEffect",
-      "label": "Colour Effect",
-      "type": "imageGrid",
-      "default": 0,
-      "values": [
-        { "value": 0, "label": "Dynamic Pulse", "shortLabel": "Dynamic Pulse", "image": "PNG/Effects/effect-height.png" },
-        { "value": 1, "label": "Fixed Gradient", "shortLabel": "Fixed Gradient", "image": "PNG/Effects/effect-gradient.png" },
-        { "value": 2, "label": "Fixed Single Colour", "shortLabel": "Fixed Colour", "image": "PNG/Effects/effect-solid.png" }
-      ]
+      "id": "barColor",
+      "label": "Bar Colour",
+      "type": "colorPicker",
+      "default": 1,
+      "showWhen": { "colorEffect": [2] }
     },
     {
       "id": "songNameColor",

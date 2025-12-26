@@ -870,14 +870,21 @@ class SIDwinderPRGExporter {
                                 lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 5);
                             }
                         } else if (validEffectIndex === 2) {
-                            // Solid mode
+                            // Solid mode - use barColor instead of palette
                             let lineCount;
                             if (effectType === 'water') lineCount = 17;
                             else if (effectType === 'waterlogo') lineCount = 11;
                             else if (effectType === 'mirror') lineCount = 18;
                             else if (effectType === 'mirrorlogo') lineCount = 10;
                             else lineCount = 17;
-                            lineColors = COLOR_PALETTES_DATA.generateSolidColors(validPaletteIndex, lineCount);
+
+                            // Get barColor from the UI element
+                            const barColorElement = document.getElementById('barColor');
+                            const barColor = barColorElement ? (parseInt(barColorElement.value) & 0x0F) : 1;
+
+                            // Create solid color array with the selected bar color
+                            lineColors = new Uint8Array(lineCount);
+                            lineColors.fill(barColor);
                         }
 
                         if (lineColors) {

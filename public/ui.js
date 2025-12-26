@@ -1044,7 +1044,13 @@ class UIController {
     }
 
     createOptionHTML(config) {
-        let html = `<div class="option-row">`;
+        // Build data attributes for conditional visibility
+        let dataAttrs = '';
+        if (config.showWhen) {
+            const showWhenJson = JSON.stringify(config.showWhen).replace(/"/g, '&quot;');
+            dataAttrs = ` data-show-when="${showWhenJson}" data-option-id="${config.id}"`;
+        }
+        let html = `<div class="option-row"${dataAttrs}>`;
 
         if (config.type === 'number') {
             // Check if this is a color option (0-15 range)
@@ -1398,8 +1404,16 @@ class UIController {
                     thumb.classList.remove('selected');
                 });
                 thumbnail.classList.add('selected');
+
+                // If this is the colorEffect grid, update conditional visibility
+                if (configId === 'colorEffect') {
+                    this.updateConditionalVisibility();
+                }
             });
         });
+
+        // Initial update of conditional visibility
+        this.updateConditionalVisibility();
 
         // Textarea load/save handlers
         document.querySelectorAll('.load-text-btn').forEach(button => {
@@ -1424,11 +1438,34 @@ class UIController {
             displayEl.innerHTML = `
             <span class="color-swatch" style="background: ${color.hex}"></span>
             <span class="color-text">
-                <span class="color-number">${value}</span>: 
+                <span class="color-number">${value}</span>:
                 <span class="color-name">${color.name}</span>
             </span>
         `;
         }
+    }
+
+    updateConditionalVisibility() {
+        // Find all option rows with showWhen conditions
+        document.querySelectorAll('.option-row[data-show-when]').forEach(row => {
+            const showWhen = JSON.parse(row.dataset.showWhen);
+            let shouldShow = true;
+
+            // Evaluate each condition in showWhen
+            for (const [dependsOnId, allowedValues] of Object.entries(showWhen)) {
+                const dependsOnElement = document.getElementById(dependsOnId);
+                if (dependsOnElement) {
+                    const currentValue = parseInt(dependsOnElement.value);
+                    if (!allowedValues.includes(currentValue)) {
+                        shouldShow = false;
+                        break;
+                    }
+                }
+            }
+
+            // Toggle visibility
+            row.style.display = shouldShow ? '' : 'none';
+        });
     }
 
     updateFileInfo(header) {
