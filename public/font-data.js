@@ -72,8 +72,8 @@ const KNOWN_FONTS = {
     ]
 };
 
-// Constants
-const BYTES_PER_CHAR = 8;
+// Constants (prefixed to avoid collision with bar-styles-data.js)
+const FONT_BYTES_PER_CHAR = 8;
 
 // Cache for loaded font data
 const fontDataCache = new Map();
@@ -200,7 +200,7 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
                         byte |= (0x80 >> col);
                     }
                 }
-                charset[charIndexTop * BYTES_PER_CHAR + row] = byte;
+                charset[charIndexTop * FONT_BYTES_PER_CHAR + row] = byte;
             }
         }
 
@@ -223,7 +223,7 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
                         byte |= (0x80 >> col);
                     }
                 }
-                charset[charIndexBottom * BYTES_PER_CHAR + row] = byte;
+                charset[charIndexBottom * FONT_BYTES_PER_CHAR + row] = byte;
             }
         }
     }
@@ -274,7 +274,7 @@ function convertPNG1x1ToCharset(imageData, threshold = 128) {
                     byte |= (0x80 >> col);
                 }
             }
-            charset[charIndex * BYTES_PER_CHAR + row] = byte;
+            charset[charIndex * FONT_BYTES_PER_CHAR + row] = byte;
         }
     }
 
