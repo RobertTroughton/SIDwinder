@@ -34,7 +34,12 @@
 //; =============================================================================
 
 * = DATA_ADDRESS "Data Block"
-    .fill $60, $00                      // Reserved bytes 0-95 (includes borderColor at $0D, backgroundColor at $0E)
+    .fill $0D, $00                      // Reserved bytes 0-12
+borderColor:
+    .byte $00                           // Byte 13 ($0D): Border color
+backgroundColor:
+    .byte $00                           // Byte 14 ($0E): Background color
+    .fill $60 - $0F, $00                // Reserved bytes 15-95
 colorEffectMode:
     .byte $00                           // Byte 96 ($60): Color effect mode (0=Height, 1=LineGradient, 2=Solid)
 lineGradientColors:
@@ -242,6 +247,20 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
+
+	//; Load border and background colors from data block
+	lda borderColor
+	sta $d020
+	sta $d027							//; Also set sprite colors to match
+	sta $d028
+	sta $d029
+	sta $d02a
+	sta $d02b
+	sta $d02c
+	sta $d02d
+	sta $d02e
+	lda backgroundColor
+	sta $d021
 
 	rts
 
@@ -587,8 +606,8 @@ VICConfigStart:
 	.byte $ff							//; Sprite X expand
 	.byte $00							//; Sprite-sprite collision
 	.byte $00							//; Sprite-background collision
-	.byte $00							//; Border color
-	.byte $00							//; Background color
+	.byte SKIP_REGISTER					//; Border color - loaded from data block
+	.byte SKIP_REGISTER					//; Background color - loaded from data block
 	.byte $00, $00						//; Extra colors
 	.byte $00, $00, $00					//; Sprite extra colors
 	.byte $00, $00, $00, $00			//; Sprite colors 0-3
