@@ -17,8 +17,8 @@
 //
 // C64 Charset Format (1x2):
 // - 8 bytes per character (8x8 pixels, 1 bit per pixel)
-// - Characters 32-127: Top halves of doubled-height glyphs
-// - Characters 160-255: Bottom halves of doubled-height glyphs (char + 128)
+// - Characters 0-95: Top halves of doubled-height glyphs (bytes $000-$2FF)
+// - Characters 128-223: Bottom halves of doubled-height glyphs (bytes $400-$6FF)
 // - Total: 224 characters × 8 bytes = 1792 bytes
 
 // Case type constants
@@ -178,11 +178,13 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
         const startY = glyphRow * dim.glyphHeight;
 
         // C64 character indices
-        const charIndexTop = 32 + glyphIndex;     // Characters 32-127
-        const charIndexBottom = 160 + glyphIndex; // Characters 160-255
+        // Top halves go to chars 0-95 (bytes $000-$2FF)
+        // Bottom halves go to chars 128-223 (bytes $400-$6FF)
+        const charIndexTop = glyphIndex;           // Characters 0-95
+        const charIndexBottom = 128 + glyphIndex;  // Characters 128-223
 
         // Process top half (rows 0-7 of the glyph)
-        if (charIndexTop < 224) {
+        if (charIndexTop < 96) {
             for (let row = 0; row < 8; row++) {
                 let byte = 0;
                 for (let col = 0; col < 8; col++) {
@@ -205,7 +207,7 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
         }
 
         // Process bottom half (rows 8-15 of the glyph)
-        if (charIndexBottom < 224) {
+        if (charIndexBottom < 224) {  // chars 128-223
             for (let row = 0; row < 8; row++) {
                 let byte = 0;
                 for (let col = 0; col < 8; col++) {
@@ -414,6 +416,81 @@ async function loadFontFromBinary(url, offset, size) {
     return charsetData;
 }
 
+// Cache for font thumbnails
+const fontThumbnailCache = new Map();
+
+/**
+ * Generate a 64x64 thumbnail from a font PNG (top-left corner)
+ * @param {string} url - URL of the font PNG
+ * @returns {Promise<string>} - Data URL of the thumbnail
+ */
+async function generateFontThumbnail(url) {
+    const cacheKey = `thumb:${url}`;
+    if (fontThumbnailCache.has(cacheKey)) {
+        return fontThumbnailCache.get(cacheKey);
+    }
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                // Create a 64x64 canvas for the thumbnail
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                // Fill with black background
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 64, 64);
+
+                // Draw the top-left 64x64 pixels of the font PNG
+                // Scale if needed (font is 256x48, we want top-left 64x64)
+                const srcWidth = Math.min(64, img.width);
+                const srcHeight = Math.min(64, img.height);
+                ctx.drawImage(img, 0, 0, srcWidth, srcHeight, 0, 0, srcWidth, srcHeight);
+
+                const dataUrl = canvas.toDataURL('image/png');
+                fontThumbnailCache.set(cacheKey, dataUrl);
+                resolve(dataUrl);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error(`Failed to load font image for thumbnail: ${url}`));
+        };
+
+        img.src = url;
+    });
+}
+
+/**
+ * Get thumbnails for all fonts of a given type
+ * @param {string} fontType - Font dimension type (e.g., '1x2')
+ * @returns {Promise<Map<string, string>>} - Map of font ID to thumbnail data URL
+ */
+async function getFontThumbnails(fontType) {
+    const fonts = await discoverFonts(fontType);
+    const thumbnails = new Map();
+
+    await Promise.all(fonts.map(async (font) => {
+        if (font.source) {
+            try {
+                const thumbnail = await generateFontThumbnail(font.source);
+                thumbnails.set(font.id, thumbnail);
+            } catch (e) {
+                console.warn(`Failed to generate thumbnail for font ${font.id}:`, e);
+            }
+        }
+    }));
+
+    return thumbnails;
+}
+
 /**
  * Get font data for a specific font
  * @param {string} fontType - Font dimension type (e.g., '1x2')
@@ -534,6 +611,10 @@ window.FONT_DATA = {
     // Conversion functions
     convertPNG1x2ToCharset: convertPNG1x2ToCharset,
     convertPNG1x1ToCharset: convertPNG1x1ToCharset,
+
+    // Thumbnail functions
+    generateFontThumbnail: generateFontThumbnail,
+    getFontThumbnails: getFontThumbnails,
 
     // UI/info functions
     getFontCaseType: getFontCaseType,

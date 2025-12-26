@@ -1180,7 +1180,8 @@ class UIController {
                 value: index,
                 label: font.name,
                 shortLabel: font.id,
-                image: `${dim.folder}/font-${fontType}-${font.id}.png`
+                id: font.id,
+                imagePath: `${dim.folder}/font-${fontType}-${font.id}.png`
             }));
         }
 
@@ -1195,30 +1196,60 @@ class UIController {
             `;
         }
 
+        // Create thumbnails with placeholders - they'll be loaded async
         const thumbnailsHTML = fonts.map(v => {
             const isSelected = v.value === defaultValue;
             return `
                 <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
                      data-value="${v.value}"
+                     data-font-id="${v.id}"
+                     data-font-path="${v.imagePath}"
                      title="${v.label}">
-                    <img src="${v.image}"
+                    <img class="font-thumbnail-img"
                          alt="${v.label}"
-                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
+                         style="width:64px;height:64px;background:#000;">
                     <span class="selected-check">✓</span>
                     <span class="style-name">${v.shortLabel}</span>
                 </div>
             `;
         }).join('');
 
+        // Schedule thumbnail loading after render
+        setTimeout(() => this.loadFontThumbnails(config.id, fontType), 0);
+
         return `
             <div class="bar-style-container">
                 <span class="bar-style-label">${config.label}</span>
-                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}">
+                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}" data-font-type="${fontType}">
                     ${thumbnailsHTML}
                 </div>
                 <input type="hidden" id="${config.id}" value="${defaultValue}">
             </div>
         `;
+    }
+
+    async loadFontThumbnails(configId, fontType) {
+        const grid = document.getElementById(`${configId}-grid`);
+        if (!grid) return;
+
+        const thumbnailDivs = grid.querySelectorAll('.bar-style-thumbnail');
+        for (const div of thumbnailDivs) {
+            const fontPath = div.dataset.fontPath;
+            const img = div.querySelector('.font-thumbnail-img');
+            if (fontPath && img) {
+                try {
+                    // Generate 64x64 thumbnail from top-left of font PNG
+                    const thumbnailDataUrl = await FONT_DATA.generateFontThumbnail(fontPath);
+                    img.src = thumbnailDataUrl;
+                } catch (e) {
+                    // Show placeholder on error
+                    div.classList.add('placeholder');
+                    img.style.display = 'none';
+                    const fontId = div.dataset.fontId || div.dataset.value;
+                    div.querySelector('.style-name').insertAdjacentHTML('beforebegin', `<span>${fontId}</span>`);
+                }
+            }
+        }
     }
 
     createBarStyleGridHTML(config) {
