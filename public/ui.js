@@ -1180,7 +1180,7 @@ class UIController {
                 value: index,
                 label: font.name,
                 shortLabel: font.id,
-                image: `${dim.folder}/${font.id}.png`
+                image: `${dim.folder}/font-${fontType}-${font.id}.png`
             }));
         }
 

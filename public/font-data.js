@@ -39,7 +39,7 @@ const FONT_DIMENSIONS = {
         glyphRows: 3,
         totalGlyphs: 96,
         charsetSize: 1792,  // 224 chars × 8 bytes
-        folder: 'PNG/Fonts'  // Fonts are in PNG/Fonts/ with font-1x2-*.png naming
+        folder: 'PNG/Fonts/1x2'  // Fonts are in PNG/Fonts/1x2/ with font-1x2-*.png naming
     },
     '1x1': {
         name: '1×1 (Single Height)',
@@ -52,7 +52,7 @@ const FONT_DIMENSIONS = {
         glyphRows: 3,
         totalGlyphs: 96,
         charsetSize: 768,  // 96 chars × 8 bytes
-        folder: 'PNG/Fonts'
+        folder: 'PNG/Fonts/1x1'
     }
 };
 
