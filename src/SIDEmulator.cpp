@@ -210,10 +210,40 @@ namespace sidwinder {
             }
         }
 
+        // Use page tracker to find a safe location for storing saved values
+        // This avoids conflicts with SID data that may be at high memory (e.g., $E000-$FF20)
+        MemoryPageTracker pageTracker;
+
+        // Mark the SID's data range as used
+        if (sid_) {
+            pageTracker.markRangeUsed(sid_->getLoadAddress(), sid_->getDataSize());
+        }
+
+        // Mark pages that were accessed during execution as used
+        for (u32 addr = 0; addr < 65536; ++addr) {
+            if (accessFlags[addr] != 0) {
+                pageTracker.markPageUsed(addr >> 8);
+            }
+        }
+
+        // Find free space for storing the saved values
+        // We need one byte per modified address
+        const int numBytesNeeded = static_cast<int>(modifiedAddresses.size());
+        auto freeSpaceResult = pageTracker.findFreeSpace(numBytesNeeded, false);  // Prefer low memory
+
+        // Default to $0400 (screen memory area - often safe to use) if no free space found
+        // This is better than $EC00 which conflicts with high-memory SIDs
+        u16 storageBaseAddr = 0x0400;
+        if (freeSpaceResult.has_value()) {
+            storageBaseAddr = freeSpaceResult.value();
+        } else {
+            util::Logger::warning("Could not find free memory for save/restore storage, using $0400");
+        }
+
         //; Save Modified Addresses PRG
         {
             std::vector<u8> dataBlock;
-            u16 saveAddr = 0xec00;
+            u16 saveAddr = storageBaseAddr;
             for (u16 addr : modifiedAddresses) {
                 if (addr >= 256)
                 {
@@ -238,7 +268,7 @@ namespace sidwinder {
         //; Restore Modified Addresses PRG
         {
             std::vector<u8> dataBlock;
-            u16 saveAddr = 0xec00;
+            u16 saveAddr = storageBaseAddr;
             for (u16 addr : modifiedAddresses) {
                 dataBlock.push_back(0xAD); //; LDA abs
                 dataBlock.push_back(saveAddr & 0xFF);

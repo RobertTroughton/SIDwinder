@@ -2,8 +2,130 @@
 #pragma once
 
 #include "Common.h"
+#include <array>
+#include <optional>
 
 namespace sidwinder {
+
+    /**
+     * @brief Tracks which 256-byte pages are used in C64 memory
+     *
+     * Used to find free pages for placing generated code (e.g., save/restore routines)
+     * without conflicting with the SID data or other used memory.
+     */
+    class MemoryPageTracker {
+    public:
+        static constexpr int NUM_PAGES = 256;  // 256 pages of 256 bytes each = 64KB
+
+        MemoryPageTracker() {
+            pages_.fill(false);
+            // Mark I/O area as always used ($D000-$DFFF)
+            for (int page = 0xD0; page <= 0xDF; ++page) {
+                pages_[page] = true;
+            }
+            // Mark interrupt vectors as used ($FF00-$FFFF includes vectors)
+            pages_[0xFF] = true;
+        }
+
+        /**
+         * @brief Mark a memory range as used
+         * @param startAddr Start address of the range
+         * @param size Size of the range in bytes
+         */
+        void markRangeUsed(u16 startAddr, u16 size) {
+            if (size == 0) return;
+            u16 endAddr = startAddr + size - 1;
+            // Handle wraparound (if startAddr + size > 0xFFFF)
+            if (endAddr < startAddr) endAddr = 0xFFFF;
+
+            int startPage = startAddr >> 8;
+            int endPage = endAddr >> 8;
+            for (int page = startPage; page <= endPage; ++page) {
+                pages_[page] = true;
+            }
+        }
+
+        /**
+         * @brief Mark a single page as used
+         * @param page Page number (0-255)
+         */
+        void markPageUsed(int page) {
+            if (page >= 0 && page < NUM_PAGES) {
+                pages_[page] = true;
+            }
+        }
+
+        /**
+         * @brief Check if a page is used
+         * @param page Page number (0-255)
+         * @return true if the page is used
+         */
+        bool isPageUsed(int page) const {
+            return page >= 0 && page < NUM_PAGES && pages_[page];
+        }
+
+        /**
+         * @brief Find a contiguous block of free pages
+         * @param numPages Number of contiguous pages needed
+         * @param preferHighMemory If true, search from high memory down; otherwise from low memory up
+         * @return Start address of the free block, or std::nullopt if not found
+         *
+         * Searches for free pages, avoiding zero page, stack, and the I/O area.
+         */
+        std::optional<u16> findFreePages(int numPages, bool preferHighMemory = true) const {
+            if (numPages <= 0 || numPages > NUM_PAGES) return std::nullopt;
+
+            if (preferHighMemory) {
+                // Search from high memory down (but before I/O area at $D0)
+                // Start at $CF and work down, or start at $FE and work down
+                // Actually, let's start just before I/O ($CF) and work down
+                for (int startPage = 0xCF - numPages + 1; startPage >= 0x02; --startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+                // Also try after I/O area ($E0-$FE) if needed
+                for (int startPage = 0xFE - numPages + 1; startPage >= 0xE0; --startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+            } else {
+                // Search from low memory up (avoiding zero page and stack)
+                for (int startPage = 0x02; startPage <= 0xCF - numPages + 1; ++startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+            }
+
+            return std::nullopt;
+        }
+
+        /**
+         * @brief Find a free address for storing a specific number of bytes
+         * @param numBytes Number of bytes needed
+         * @param preferHighMemory If true, prefer high memory locations
+         * @return Start address for the storage, or std::nullopt if not found
+         */
+        std::optional<u16> findFreeSpace(int numBytes, bool preferHighMemory = true) const {
+            int numPages = (numBytes + 255) / 256;  // Round up to full pages
+            return findFreePages(numPages, preferHighMemory);
+        }
+
+    private:
+        std::array<bool, NUM_PAGES> pages_;
+
+        bool arePagesAvailable(int startPage, int numPages) const {
+            for (int i = 0; i < numPages; ++i) {
+                int page = startPage + i;
+                if (page < 0 || page >= NUM_PAGES || pages_[page]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
 
     /**
      * @brief Central location for C64 memory map constants
