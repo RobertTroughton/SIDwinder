@@ -961,15 +961,8 @@ class UIController {
         // in free memory, not necessarily right after the SID
         if (sidEnd > 0xFFFF) sidEnd = 0xFFFF;
 
-        if (hasSaveRestore) {
-            // SID starts 6 bytes earlier due to prepended JMPs (2 load addr + 2*3 JMP)
-            sidStart = sidLoadAddress - 6;
-
-            // Note: The actual save/restore routines are placed by the PRG builder
-            // after all components (including visualizer) to avoid conflicts.
-            // For display purposes, we show the SID data range only.
-            // The layout validation in prg-builder.js handles actual placement.
-        }
+        // Note: Save/restore routines are placed by the PRG builder in free memory,
+        // separate from the SID data. No JMPs are prepended to the SID anymore.
 
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);

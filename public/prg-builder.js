@@ -123,8 +123,8 @@ class SIDwinderPRGExporter {
     selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
 
-        // The SID data range includes 6 bytes before for JMP instructions
-        let effectiveSidStart = sidLoadAddress - 6; // Space for 2 JMP instructions
+        // The SID data range - save/restore routines are placed separately in free memory
+        let effectiveSidStart = sidLoadAddress;
         let effectiveSidEnd = sidLoadAddress + sidSize;
 
         // Cap at 0xFFFF to handle high-memory SIDs correctly
