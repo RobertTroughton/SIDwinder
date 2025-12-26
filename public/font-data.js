@@ -110,20 +110,8 @@ async function discoverFonts(fontType) {
         return [];
     }
 
-    // Try to fetch the font index file (optional - for user-defined fonts)
-    const indexUrl = `${dimension.folder}/fonts-${fontType}.json`;
-    try {
-        const response = await fetch(indexUrl);
-        if (response.ok) {
-            const fonts = await response.json();
-            fontListCache.set(fontType, fonts);
-            return fonts;
-        }
-    } catch (e) {
-        // Index file doesn't exist, fall back to known fonts
-    }
-
-    // Fall back to known fonts for this dimension
+    // Use known fonts for this dimension
+    // (Future: could optionally load from fonts-{type}.json if it exists)
     const knownFonts = KNOWN_FONTS[fontType] || [];
     const fonts = knownFonts.map((font, index) => {
         const imagePath = getFontPath(fontType, font.id);

@@ -494,23 +494,38 @@ class SIDwinderPRGExporter {
 
     stringToPETSCII(str, length) {
         const bytes = new Uint8Array(length);
-        bytes.fill(0);  // Screen code 0 = space (ASCII 32)
+        bytes.fill(32);  // Default to space (screen code 32)
 
         if (str && str.length > 0) {
             const maxLen = Math.min(str.length, length);
 
             for (let i = 0; i < maxLen; i++) {
                 const code = str.charCodeAt(i);
-                let screenCode = 0;  // Default to space (screen code 0 = ASCII 32)
+                let screenCode = 32;  // Default to space
 
-                // Convert ASCII to screen code by subtracting 32
-                // ASCII 32-127 maps to screen codes 0-95
-                // This aligns with our charset where glyph N = ASCII (N+32)
-                if (code >= 32 && code <= 127) {
+                // Convert ASCII to C64 screen codes
+                // Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+                if (code >= 65 && code <= 90) {
+                    // A-Z uppercase -> screen codes 1-26
+                    screenCode = code - 64;
+                } else if (code >= 97 && code <= 122) {
+                    // a-z lowercase -> screen codes 65-90
                     screenCode = code - 32;
-                } else {
-                    // Out of range - use space
+                } else if (code >= 32 && code <= 63) {
+                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                    screenCode = code;
+                } else if (code === 64) {
+                    // @ -> screen code 0
                     screenCode = 0;
+                } else {
+                    // Anything else: try to map to valid range 0-95
+                    // Use modulo to wrap into range
+                    screenCode = ((code % 96) + 96) % 96;
+                }
+
+                // Ensure screen code is in valid range 0-95
+                if (screenCode < 0 || screenCode > 95) {
+                    screenCode = 32;  // Default to space if still out of range
                 }
 
                 bytes[i] = screenCode & 0xFF;
