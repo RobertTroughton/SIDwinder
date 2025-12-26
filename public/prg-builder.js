@@ -503,14 +503,14 @@ class SIDwinderPRGExporter {
                 const code = str.charCodeAt(i);
                 let screenCode = 32;  // Default to space
 
-                // Convert ASCII to C64 screen codes
-                // Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+                // Convert ASCII to C64 screen codes (lowercase mode charset)
+                // Font layout: 1-26 = a-z (lowercase), 65-90 = A-Z (uppercase)
                 if (code >= 65 && code <= 90) {
-                    // A-Z uppercase -> screen codes 1-26
-                    screenCode = code - 64;
+                    // A-Z uppercase -> screen codes 65-90
+                    screenCode = code;
                 } else if (code >= 97 && code <= 122) {
-                    // a-z lowercase -> screen codes 65-90
-                    screenCode = code - 32;
+                    // a-z lowercase -> screen codes 1-26
+                    screenCode = code - 96;
                 } else if (code >= 32 && code <= 63) {
                     // Space, symbols, digits (ASCII 32-63) -> same screen codes
                     screenCode = code;
