@@ -704,16 +704,24 @@ class SIDwinderPRGExporter {
                 const paletteIndex = parseInt(element.value);
                 const validIndex = !isNaN(paletteIndex) ? paletteIndex : (optionConfig.default ?? 0);
 
+                // Check if there's a colorEffect selected (default to 0 = Height-based)
+                const colorEffectElement = document.getElementById('colorEffect');
+                const colorEffectIndex = colorEffectElement ? parseInt(colorEffectElement.value) : 0;
+                const validEffectIndex = !isNaN(colorEffectIndex) ? colorEffectIndex : 0;
+
                 // Get color palette data from the global COLOR_PALETTES_DATA
                 if (typeof COLOR_PALETTES_DATA !== 'undefined') {
-                    const colorData = COLOR_PALETTES_DATA.getColorPaletteData(vizConfig.colorPaletteType, validIndex);
-                    if (colorData) {
-                        const targetAddress = parseInt(layout.colorTableAddress);
-                        optionComponents.push({
-                            data: colorData,
-                            loadAddress: targetAddress,
-                            name: `colorPalette_table`
-                        });
+                    // Only inject height-based color table for effect mode 0
+                    if (validEffectIndex === 0) {
+                        const colorData = COLOR_PALETTES_DATA.getColorPaletteData(vizConfig.colorPaletteType, validIndex);
+                        if (colorData) {
+                            const targetAddress = parseInt(layout.colorTableAddress);
+                            optionComponents.push({
+                                data: colorData,
+                                loadAddress: targetAddress,
+                                name: `colorPalette_table`
+                            });
+                        }
                     }
 
                     // Also inject border and background colors if the layout has addresses for them
@@ -737,6 +745,65 @@ class SIDwinderPRGExporter {
                                 data: bgData,
                                 loadAddress: parseInt(layout.backgroundColor),
                                 name: `colorPalette_background`
+                            });
+                        }
+                    }
+                }
+                continue; // Skip normal processing for this option
+            }
+
+            // Special handling for colorEffect when colorEffectMode and lineGradientColors should be injected
+            if (optionConfig.id === 'colorEffect' && vizConfig.colorEffectType && layout.colorEffectModeAddress) {
+                const effectIndex = parseInt(element.value);
+                const validEffectIndex = !isNaN(effectIndex) ? effectIndex : (optionConfig.default ?? 0);
+
+                // Get the selected palette index
+                const colorPaletteElement = document.getElementById('colorPalette');
+                const paletteIndex = colorPaletteElement ? parseInt(colorPaletteElement.value) : 0;
+                const validPaletteIndex = !isNaN(paletteIndex) ? paletteIndex : 0;
+
+                if (typeof COLOR_PALETTES_DATA !== 'undefined') {
+                    // Inject colorEffectMode byte
+                    const effectModeData = new Uint8Array(1);
+                    effectModeData[0] = validEffectIndex & 0xFF;
+                    optionComponents.push({
+                        data: effectModeData,
+                        loadAddress: parseInt(layout.colorEffectModeAddress),
+                        name: `colorEffect_mode`
+                    });
+
+                    // For non-height modes (1 = Line Gradient, 2 = Solid), inject line gradient colors
+                    if (validEffectIndex !== 0 && layout.lineGradientColorsAddress) {
+                        let lineColors;
+                        const effectType = vizConfig.colorEffectType;
+
+                        if (validEffectIndex === 1) {
+                            // Line Gradient mode
+                            if (effectType === 'water') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientWater(validPaletteIndex, 14, 3);
+                            } else if (effectType === 'waterlogo') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientWater(validPaletteIndex, 8, 3);
+                            } else if (effectType === 'mirror') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 9);
+                            } else if (effectType === 'mirrorlogo') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 5);
+                            }
+                        } else if (validEffectIndex === 2) {
+                            // Solid mode
+                            let lineCount;
+                            if (effectType === 'water') lineCount = 17;
+                            else if (effectType === 'waterlogo') lineCount = 11;
+                            else if (effectType === 'mirror') lineCount = 18;
+                            else if (effectType === 'mirrorlogo') lineCount = 10;
+                            else lineCount = 17;
+                            lineColors = COLOR_PALETTES_DATA.generateSolidColors(validPaletteIndex, lineCount);
+                        }
+
+                        if (lineColors) {
+                            optionComponents.push({
+                                data: lineColors,
+                                loadAddress: parseInt(layout.lineGradientColorsAddress),
+                                name: `colorEffect_lineColors`
                             });
                         }
                     }

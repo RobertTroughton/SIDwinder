@@ -4,6 +4,7 @@
   "maxCallsPerFrame": 2,
   "barStyleType": "mirror",
   "colorPaletteType": "mirror",
+  "colorEffectType": "mirror",
 
   "layouts": {
     "bank4000": {
@@ -16,6 +17,8 @@
       "binaryDataEnd": "0x7FFF",
       "barCharsAddress": "0x7F00",
       "colorTableAddress": "0x6E00",
+      "colorEffectModeAddress": "0x4008",
+      "lineGradientColorsAddress": "0x4009",
       "borderColor": "0x400D",
       "backgroundColor": "0x400E",
       "saveRestoreLocation": "before",
@@ -32,6 +35,8 @@
       "binaryDataEnd": "0xBFFF",
       "barCharsAddress": "0xBF00",
       "colorTableAddress": "0xAE00",
+      "colorEffectModeAddress": "0x8008",
+      "lineGradientColorsAddress": "0x8009",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E",
       "saveRestoreLocation": "before",
@@ -70,6 +75,17 @@
         { "value": 4, "label": "Purple Haze", "image": "PNG/Palettes/palette-purplehaze.png" },
         { "value": 5, "label": "Ocean", "image": "PNG/Palettes/palette-ocean.png" },
         { "value": 6, "label": "Monochrome", "image": "PNG/Palettes/palette-mono.png" }
+      ]
+    },
+    {
+      "id": "colorEffect",
+      "label": "Color Effect",
+      "type": "imageGrid",
+      "default": 0,
+      "values": [
+        { "value": 0, "label": "Height", "shortLabel": "height", "image": "PNG/Effects/effect-height.png" },
+        { "value": 1, "label": "Line Gradient", "shortLabel": "gradient", "image": "PNG/Effects/effect-gradient.png" },
+        { "value": 2, "label": "Solid", "shortLabel": "solid", "image": "PNG/Effects/effect-solid.png" }
       ]
     }
   ]

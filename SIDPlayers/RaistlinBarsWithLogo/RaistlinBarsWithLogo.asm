@@ -20,8 +20,26 @@
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
+//; =============================================================================
+//; CONFIGURATION CONSTANTS (needed before data block)
+//; =============================================================================
+
+.const NUM_FREQUENCY_BARS				= 40
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 8
+.const BOTTOM_SPECTRUM_HEIGHT			= 3
+
+//; =============================================================================
+//; DATA BLOCK
+//; =============================================================================
+
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00                     // Reserved for system (includes BarStyle at $70)
+    .fill $08, $00                      // Reserved bytes 0-7
+colorEffectMode:
+    .byte $00                           // Byte 8: Color effect mode (0=Height, 1=LineGradient, 2=Solid)
+lineGradientColors:
+    .fill TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT, $0b  // Bytes 9-19: Line gradient colors
+    .fill $100 - $09 - (TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT), $00  // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 
@@ -38,15 +56,8 @@
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
 
 //; =============================================================================
-//; CONFIGURATION CONSTANTS
+//; CONFIGURATION CONSTANTS (continued)
 //; =============================================================================
-
-//; Display layout
-.const NUM_FREQUENCY_BARS				= 40
-
-.const LOGO_HEIGHT						= 11
-.const TOP_SPECTRUM_HEIGHT				= 8
-.const BOTTOM_SPECTRUM_HEIGHT			= 3
 
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
@@ -337,6 +348,10 @@ SpectrometerD018:
 //; =============================================================================
 
 RenderBars:
+	//; Check color effect mode - skip dynamic colors for static modes
+	lda colorEffectMode
+	bne !colorsDone+
+
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
@@ -505,8 +520,28 @@ DrawScreens:
 
 	rts
 
-//; InitializeColors is no longer needed - colors are injected at build time by web app
+//; InitializeColors - Set up color RAM for static color effect modes
 InitializeColors:
+	lda colorEffectMode
+	beq !done+					//; Mode 0 (Height) = dynamic, nothing to init
+
+	//; Static modes (Line Gradient or Solid) - initialize color RAM
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	//; Set colors for each line of the spectrum
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	//; Set colors for reflection lines (reversed order)
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + TOP_SPECTRUM_HEIGHT + line
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+
+!done:
 	rts
 
 SetupMusic:

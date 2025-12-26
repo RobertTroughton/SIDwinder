@@ -217,6 +217,111 @@ function generateMirrorColorData(paletteIndex) {
     return colorTable;
 }
 
+// Color effect types
+const COLOR_EFFECT_HEIGHT = 0;      // Dynamic - color based on bar height
+const COLOR_EFFECT_LINE_GRADIENT = 1; // Static - fixed colors per screen line
+const COLOR_EFFECT_SOLID = 2;       // Static - single color throughout
+
+// Line counts for different visualizer types
+const LINE_COUNT_WATER = 17;        // TOP_SPECTRUM_HEIGHT (14) + BOTTOM_SPECTRUM_HEIGHT (3)
+const LINE_COUNT_WATER_LOGO = 11;   // TOP_SPECTRUM_HEIGHT (8) + BOTTOM_SPECTRUM_HEIGHT (3)
+const LINE_COUNT_MIRROR = 18;       // TOTAL_SPECTRUM_HEIGHT (9 * 2)
+const LINE_COUNT_MIRROR_LOGO = 10;  // TOTAL_SPECTRUM_HEIGHT (5 * 2)
+
+// Generate line gradient colors for water-style visualizers
+// Returns colors from top to bottom (brightest at top, darker at bottom)
+function generateLineGradientWater(paletteIndex, topHeight, bottomHeight) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
+    const totalLines = topHeight + bottomHeight;
+    const result = new Uint8Array(totalLines);
+
+    // Generate colors for top section (top to bottom = brightest to darker)
+    for (let line = 0; line < topHeight; line++) {
+        // Map line position to percentage (line 0 = top = 100%, last line = bottom = 0%)
+        const pct = ((topHeight - 1 - line) / (topHeight - 1)) * 100;
+
+        let color = gradient[0].color;
+        for (let g = 0; g < gradient.length - 1; g++) {
+            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
+                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
+                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
+                break;
+            }
+            if (pct > gradient[g + 1].pct) {
+                color = gradient[g + 1].color;
+            }
+        }
+        result[line] = color;
+    }
+
+    // Generate darker colors for bottom reflection section
+    for (let line = 0; line < bottomHeight; line++) {
+        // Get the color from the top section (mirror position) and darken it
+        const topColor = result[topHeight - 1];  // Use bottom-most color of top section
+        result[topHeight + line] = DARKER_COLOR_MAP[topColor];
+    }
+
+    return result;
+}
+
+// Generate line gradient colors for mirror-style visualizers
+// Returns colors from top to bottom (brightest at center, darker at edges)
+function generateLineGradientMirror(paletteIndex, halfHeight) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
+    const totalLines = halfHeight * 2;
+    const result = new Uint8Array(totalLines);
+
+    // Generate colors for top half (top to center = darker to brighter)
+    for (let line = 0; line < halfHeight; line++) {
+        // Map line position to percentage (line 0 = edge = low%, center = 100%)
+        const pct = (line / (halfHeight - 1)) * 100;
+
+        let color = gradient[0].color;
+        for (let g = 0; g < gradient.length - 1; g++) {
+            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
+                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
+                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
+                break;
+            }
+            if (pct > gradient[g + 1].pct) {
+                color = gradient[g + 1].color;
+            }
+        }
+        result[line] = color;
+    }
+
+    // Mirror colors for bottom half (center to bottom = brighter to darker)
+    for (let line = 0; line < halfHeight; line++) {
+        result[halfHeight + line] = result[halfHeight - 1 - line];
+    }
+
+    return result;
+}
+
+// Generate solid color (single color for all lines)
+function generateSolidColors(paletteIndex, lineCount) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    // Use the brightest color from the palette (last gradient stop)
+    const brightestColor = palette.gradient[palette.gradient.length - 1].color;
+    const result = new Uint8Array(lineCount);
+    result.fill(brightestColor);
+    return result;
+}
+
 // Darker color lookup for water reflections
 // Maps each C64 color to a darker equivalent
 const DARKER_COLOR_MAP = new Uint8Array([
@@ -297,5 +402,16 @@ window.COLOR_PALETTES_DATA = {
     getDarkerColorMap: () => DARKER_COLOR_MAP,
     COLOR_TABLE_SIZE_WATER: COLOR_TABLE_SIZE_WATER,
     COLOR_TABLE_SIZE_MIRROR: COLOR_TABLE_SIZE_MIRROR,
-    NUM_COLOR_PALETTES: NUM_COLOR_PALETTES
+    NUM_COLOR_PALETTES: NUM_COLOR_PALETTES,
+    // Color effect functions and constants
+    COLOR_EFFECT_HEIGHT: COLOR_EFFECT_HEIGHT,
+    COLOR_EFFECT_LINE_GRADIENT: COLOR_EFFECT_LINE_GRADIENT,
+    COLOR_EFFECT_SOLID: COLOR_EFFECT_SOLID,
+    generateLineGradientWater: generateLineGradientWater,
+    generateLineGradientMirror: generateLineGradientMirror,
+    generateSolidColors: generateSolidColors,
+    LINE_COUNT_WATER: LINE_COUNT_WATER,
+    LINE_COUNT_WATER_LOGO: LINE_COUNT_WATER_LOGO,
+    LINE_COUNT_MIRROR: LINE_COUNT_MIRROR,
+    LINE_COUNT_MIRROR_LOGO: LINE_COUNT_MIRROR_LOGO
 };

@@ -17,8 +17,25 @@
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
+//; =============================================================================
+//; CONFIGURATION CONSTANTS (needed before data block)
+//; =============================================================================
+
+.const NUM_FREQUENCY_BARS				= 40
+.const TOP_SPECTRUM_HEIGHT				= 9
+.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
+
+//; =============================================================================
+//; DATA BLOCK
+//; =============================================================================
+
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00                     // Reserved for system (includes BarStyle at $70)
+    .fill $08, $00                      // Reserved bytes 0-7
+colorEffectMode:
+    .byte $00                           // Byte 8: Color effect mode (0=Height, 1=LineGradient, 2=Solid)
+lineGradientColors:
+    .fill TOTAL_SPECTRUM_HEIGHT, $0b    // Bytes 9-26: Line gradient colors for mirrored display
+    .fill $100 - $09 - TOTAL_SPECTRUM_HEIGHT, $00  // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 
@@ -34,13 +51,8 @@
 .var file_charsetData = LoadBinary("CharSet.map")
 
 //; =============================================================================
-//; CONFIGURATION CONSTANTS
+//; CONFIGURATION CONSTANTS (continued)
 //; =============================================================================
-
-.const NUM_FREQUENCY_BARS				= 40
-
-.const TOP_SPECTRUM_HEIGHT				= 9
-.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 
 .const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.6)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
@@ -211,6 +223,8 @@ InitializeVIC:
 	dex
 	bpl !loop-
 
+	jsr InitializeColors
+
 	rts
 
 //; =============================================================================
@@ -355,6 +369,10 @@ NextIRQLdx:
 //; =============================================================================
 
 RenderBars:
+	//; Check color effect mode - skip dynamic colors for static modes
+	lda colorEffectMode
+	bne !skipColorLoop+
+
 	ldy #NUM_FREQUENCY_BARS - 1
 !colorLoop:
 	ldx smoothedHeights, y
@@ -371,6 +389,7 @@ RenderBars:
 	dey
 	bpl !colorLoop-
 
+!skipColorLoop:
 	lda currentScreenBuffer
 	beq !renderScreen1+
 
@@ -473,6 +492,25 @@ DisplaySongInfo:
 	dey
 	bpl !loop-
 
+	rts
+
+//; InitializeColors - Set up color RAM for static color effect modes
+InitializeColors:
+	lda colorEffectMode
+	beq !done+					//; Mode 0 (Height) = dynamic, nothing to init
+
+	//; Static modes (Line Gradient or Solid) - initialize color RAM
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	//; Set colors for each line of the spectrum (mirrored display)
+	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+
+!done:
 	rts
 
 SetupMusic:
