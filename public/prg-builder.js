@@ -122,27 +122,35 @@ class SIDwinderPRGExporter {
 
     selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
-        
-        // NEW ARCHITECTURE: Save/restore routines go at end of SID, JMPs go before SID
-        // So effective SID range is: (sidLoadAddress - 6) to (sidLoadAddress + sidSize + routineSize)
+
+        // The SID data range includes 6 bytes before for JMP instructions
         let effectiveSidStart = sidLoadAddress - 6; // Space for 2 JMP instructions
         let effectiveSidEnd = sidLoadAddress + sidSize;
-        
-        if (modifiedAddresses && modifiedAddresses.length > 0) {
-            const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
-            effectiveSidEnd += sizes.totalSize; // Add space for routines at end
-        }
+
+        // Cap at 0xFFFF to handle high-memory SIDs correctly
+        if (effectiveSidEnd > 0xFFFF) effectiveSidEnd = 0xFFFF;
+
+        // Note: Save/restore routines are placed AFTER all components (including visualizer)
+        // by the PRG builder, not immediately after the SID. So we don't add routine size
+        // to the SID range for overlap detection.
 
         for (const [key, layout] of Object.entries(vizConfig.layouts)) {
             const vizStart = parseInt(layout.baseAddress);
             const vizEnd = vizStart + parseInt(layout.size || '0x4000');
 
-            // Check for overlaps - just visualizer vs expanded SID range
+            // Check for overlaps - visualizer vs SID data range (without save/restore)
             const hasOverlap = !(vizEnd <= effectiveSidStart || vizStart >= effectiveSidEnd);
 
             // Format hex inline
             const sidStartHex = '$' + effectiveSidStart.toString(16).toUpperCase().padStart(4, '0');
             const sidEndHex = '$' + effectiveSidEnd.toString(16).toUpperCase().padStart(4, '0');
+
+            // Calculate where save/restore would actually go (after visualizer if needed)
+            let saveRestoreStart = effectiveSidEnd;
+            if (!hasOverlap && vizEnd > saveRestoreStart) {
+                // If visualizer is after SID, save/restore goes after visualizer
+                saveRestoreStart = this.alignToPage(vizEnd);
+            }
 
             validLayouts.push({
                 key: key,
@@ -150,10 +158,10 @@ class SIDwinderPRGExporter {
                 valid: !hasOverlap,
                 vizStart: vizStart,
                 vizEnd: vizEnd,
-                saveRestoreStart: effectiveSidEnd - (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
-                saveRestoreEnd: effectiveSidEnd,
+                saveRestoreStart: saveRestoreStart,
+                saveRestoreEnd: saveRestoreStart + (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
                 overlapReason: hasOverlap ?
-                    `Overlaps with SID+routines (${sidStartHex}-${sidEndHex})` :
+                    `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
                     null
             });
         }
@@ -1088,7 +1096,7 @@ class SIDwinderPRGExporter {
 
                 // Calculate the highest address used by any component
                 let highestEndAddress = actualSidAddress + sidInfo.data.length;
-                
+
                 // Check all components we've added so far
                 for (const comp of this.builder.components) {
                     const compEnd = comp.loadAddress + comp.size;
@@ -1096,9 +1104,36 @@ class SIDwinderPRGExporter {
                         highestEndAddress = compEnd;
                     }
                 }
-                
-                // Page align for safety
-                const safeAddress = this.alignToPage(highestEndAddress);
+
+                // Page align for safety, but ensure we don't overflow past $FFFF
+                let safeAddress = this.alignToPage(highestEndAddress);
+                if (safeAddress > 0xFE00) {
+                    // High memory is full, try to find space in lower memory
+                    // Look for gap between $0200 (after stack) and first component
+                    const sortedComps = [...this.builder.components].sort((a, b) => a.loadAddress - b.loadAddress);
+                    let foundSpace = false;
+                    let prevEnd = 0x0200; // Start after stack
+
+                    for (const comp of sortedComps) {
+                        // Skip I/O area
+                        if (prevEnd >= 0xD000 && prevEnd <= 0xDFFF) {
+                            prevEnd = 0xE000;
+                        }
+                        const gap = comp.loadAddress - prevEnd;
+                        const routineSize = this.calculateSaveRestoreSize(modifiedAddrs).totalSize;
+                        if (gap >= routineSize + 256) { // Need room for routines
+                            safeAddress = this.alignToPage(prevEnd);
+                            foundSpace = true;
+                            break;
+                        }
+                        prevEnd = comp.loadAddress + comp.size;
+                    }
+
+                    if (!foundSpace) {
+                        console.warn('Could not find safe memory for save/restore routines, using $0200');
+                        safeAddress = 0x0200;
+                    }
+                }
                 
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);

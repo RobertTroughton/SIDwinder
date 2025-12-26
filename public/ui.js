@@ -952,35 +952,23 @@ class UIController {
         // Calculate SID memory range with save/restore functions
         const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
         const hasSaveRestore = addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked && modifiedCount > 0;
-        
+
         let sidStart = sidLoadAddress;
         let sidEnd = sidLoadAddress + sidSize - 1;
-        
+
+        // Cap at $FFFF to prevent overflow display issues for high-memory SIDs
+        // Note: Save/restore routines are actually placed intelligently by the PRG builder
+        // in free memory, not necessarily right after the SID
+        if (sidEnd > 0xFFFF) sidEnd = 0xFFFF;
+
         if (hasSaveRestore) {
             // SID starts 6 bytes earlier due to prepended JMPs (2 load addr + 2*3 JMP)
             sidStart = sidLoadAddress - 6;
-            
-            // Calculate save/restore routine sizes
-            const filteredAddrs = Array.from(modifiedAddresses).filter(addr => {
-                if (addr >= 0x0100 && addr <= 0x01FF) return false; // Skip stack
-                if (addr >= 0xD400 && addr <= 0xD7FF) return false; // Skip SID registers
-                return true;
-            });
-            
-            // Restore: LDA # (2) + STA zp/abs (2 or 3) = 4 or 5 bytes per address, +1 RTS
-            const restoreSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 4 : 5), 0) + 1;
-            
-            // Save: LDA zp/abs (2 or 3) + STA abs (3) = 5 or 6 bytes per address, +1 RTS
-            const saveSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 5 : 6), 0) + 1;
-            
-            // The save/restore routines are placed after the original SID code
-            // Original code occupies: loadAddress to (loadAddress + actualCodeSize - 1)
-            // We need to account for the fact that sidSize might include the original load address bytes
-            // Assume it does (typical case), so actual code size is sidSize - 2
-            const actualCodeSize = sidSize - 2;
-            const saveRestoreStart = sidLoadAddress + actualCodeSize;
-            
-            sidEnd = saveRestoreStart + restoreSize + saveSize - 1;
+
+            // Note: The actual save/restore routines are placed by the PRG builder
+            // after all components (including visualizer) to avoid conflicts.
+            // For display purposes, we show the SID data range only.
+            // The layout validation in prg-builder.js handles actual placement.
         }
 
         if (!this.prgExporter) {
