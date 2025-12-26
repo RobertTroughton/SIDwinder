@@ -24,54 +24,54 @@ const FONT_CASE_LOWER_ONLY = 2; // Only lowercase letters (rare)
 const FONT_PRESETS = [
     {
         id: 'default',
-        name: 'Classic',
+        name: 'Classic 1x2',
         description: 'Default SIDwinder font',
         caseType: FONT_CASE_MIXED,
-        preview: 'PNG/Fonts/font-classic.png',
-        source: 'PNG/Fonts/font-classic.png',
-        binarySource: 'prg/RaistlinBars-4000.bin',  // Fallback: extract from binary
-        binaryOffset: 0x3800,                        // Offset to charset in binary (0x7800 - 0x4000)
+        preview: 'PNG/Fonts/font-1x2-classic.png',
+        source: 'PNG/Fonts/font-1x2-classic.png',
+        binarySource: 'PNG/Fonts/default.bin',
+        binaryOffset: 0,
         binarySize: CHARSET_SIZE
     },
     {
-        id: 'bold',
-        name: 'Bold',
-        description: 'Bold blocky font',
-        caseType: FONT_CASE_UPPER_ONLY,
-        preview: 'PNG/Fonts/font-bold.png',
-        source: 'PNG/Fonts/font-bold.png'
-    },
-    {
-        id: 'thin',
-        name: 'Thin',
-        description: 'Thin elegant font',
+        id: 'cupid1x2',
+        name: 'Cupid 1x2',
+        description: '1x2 by Cupid',
         caseType: FONT_CASE_MIXED,
-        preview: 'PNG/Fonts/font-thin.png',
-        source: 'PNG/Fonts/font-thin.png'
+        preview: 'PNG/Fonts/font-1x2-cupid.png',
+        source: 'PNG/Fonts/font-1x2-cupid.png'
     },
     {
-        id: 'retro',
-        name: 'Retro',
-        description: 'Retro computer style',
+        id: 'mermaid1x2',
+        name: 'Mermaid 1x2',
+        description: '1x2 by Mermaid',
         caseType: FONT_CASE_UPPER_ONLY,
-        preview: 'PNG/Fonts/font-retro.png',
-        source: 'PNG/Fonts/font-retro.png'
+        preview: 'PNG/Fonts/font-1x2-mermaid.png',
+        source: 'PNG/Fonts/font-1x2-mermaid.png'
     },
     {
-        id: 'pixel',
-        name: 'Pixel',
-        description: 'Pixel art style',
+        id: 'yazoo1x2',
+        name: 'Yazoo 1x2',
+        description: '1x2 by Yazoo',
         caseType: FONT_CASE_UPPER_ONLY,
-        preview: 'PNG/Fonts/font-pixel.png',
-        source: 'PNG/Fonts/font-pixel.png'
+        preview: 'PNG/Fonts/font-1x2-yazoo.png',
+        source: 'PNG/Fonts/font-1x2-yazoo.png'
     },
     {
-        id: 'rounded',
-        name: 'Rounded',
-        description: 'Soft rounded characters',
+        id: 'compyx1x2',
+        name: 'Compyx 1x2',
+        description: '1x2 by Compyx',
         caseType: FONT_CASE_MIXED,
-        preview: 'PNG/Fonts/font-rounded.png',
-        source: 'PNG/Fonts/font-rounded.png'
+        preview: 'PNG/Fonts/font-1x2-compyx.png',
+        source: 'PNG/Fonts/font-1x2-compyx.png'
+    },
+    {
+        id: 'flex1x2',
+        name: 'Flex 1x2',
+        description: '1x2 by Flex',
+        caseType: FONT_CASE_UPPER_ONLY,
+        preview: 'PNG/Fonts/font-1x2-flex.png',
+        source: 'PNG/Fonts/font-1x2-flex.png'
     }
 ];
 

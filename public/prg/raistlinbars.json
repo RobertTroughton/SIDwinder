@@ -57,12 +57,12 @@
       "type": "imageGrid",
       "default": 0,
       "values": [
-        { "value": 0, "label": "Classic", "shortLabel": "classic", "image": "PNG/Fonts/font-classic.png" },
-        { "value": 1, "label": "Bold", "shortLabel": "bold", "image": "PNG/Fonts/font-bold.png" },
-        { "value": 2, "label": "Thin", "shortLabel": "thin", "image": "PNG/Fonts/font-thin.png" },
-        { "value": 3, "label": "Retro", "shortLabel": "retro", "image": "PNG/Fonts/font-retro.png" },
-        { "value": 4, "label": "Pixel", "shortLabel": "pixel", "image": "PNG/Fonts/font-pixel.png" },
-        { "value": 5, "label": "Rounded", "shortLabel": "rounded", "image": "PNG/Fonts/font-rounded.png" }
+        { "value": 0, "label": "Classic 1x2", "shortLabel": "classic", "image": "PNG/Fonts/font-1x2-classic.png" },
+        { "value": 1, "label": "Cupid 1x2", "shortLabel": "cupid1x2", "image": "PNG/Fonts/font-1x2-cupid.png" },
+        { "value": 2, "label": "Mermaid 1x2", "shortLabel": "mermaid1x2", "image": "PNG/Fonts/font-1x2-mermaid.png" },
+        { "value": 3, "label": "Yazoo 1x2", "shortLabel": "yazoo1x2", "image": "PNG/Fonts/font-1x2-yazoo.png" },
+        { "value": 4, "label": "Compyx 1x2", "shortLabel": "compyx1x2", "image": "PNG/Fonts/font-1x2-compyx.png" },
+        { "value": 5, "label": "Flex 1x2", "shortLabel": "flex1x2", "image": "PNG/Fonts/font-1x2-flex.png" }
       ]
     },
     {
