@@ -137,6 +137,7 @@ Initialize:
 	jsr InitializeVIC
 	//; Bar style character data is now injected at build time by the web app
 	jsr ClearScreens
+	jsr InitializeColors
 	jsr DisplaySongInfo
 	jsr init_D011_D012_values
 
@@ -222,8 +223,6 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
-
-	jsr InitializeColors
 
 	rts
 
