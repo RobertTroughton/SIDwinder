@@ -3,6 +3,7 @@
   "version": "1.0",
   "maxCallsPerFrame": 1,
   "barStyleType": "water",
+  "colorEffectType": "water",
 
   "layouts": {
     "bank4000": {
@@ -15,6 +16,7 @@
       "binaryDataEnd": "0x7FFF",
       "borderColor": "0x400D",
       "barCharsAddress": "0x7F00",
+      "colorTableAddress": "0x5F80",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -29,6 +31,7 @@
       "binaryDataEnd": "0xBFFF",
       "borderColor": "0x800D",
       "barCharsAddress": "0xBF00",
+      "colorTableAddress": "0x9F80",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
@@ -123,6 +126,22 @@
         { "value": 5, "label": "Smooth - Rounded without highlights" },
         { "value": 6, "label": "Pointed - Pointed top" },
         { "value": 7, "label": "Lined - Solid with scanlines" }
+      ]
+    },
+    {
+      "id": "colorEffect",
+      "label": "Color Effect",
+      "type": "select",
+      "default": 0,
+      "values": [
+        { "value": 0, "label": "Cycling Rainbow" },
+        { "value": 1, "label": "Static Rainbow" },
+        { "value": 2, "label": "Fire" },
+        { "value": 3, "label": "Ice" },
+        { "value": 4, "label": "Forest" },
+        { "value": 5, "label": "Purple Haze" },
+        { "value": 6, "label": "Ocean" },
+        { "value": 7, "label": "Monochrome" }
       ]
     },
     {

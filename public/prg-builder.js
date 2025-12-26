@@ -699,6 +699,26 @@ class SIDwinderPRGExporter {
                 continue; // Skip normal processing for this option
             }
 
+            // Special handling for colorEffect when color table data should be injected
+            if (optionConfig.id === 'colorEffect' && vizConfig.colorEffectType && layout.colorTableAddress) {
+                const effectIndex = parseInt(element.value);
+                const validIndex = !isNaN(effectIndex) ? effectIndex : (optionConfig.default ?? 0);
+
+                // Get color effect data from the global COLOR_EFFECTS_DATA
+                if (typeof COLOR_EFFECTS_DATA !== 'undefined') {
+                    const colorData = COLOR_EFFECTS_DATA.getColorEffectData(vizConfig.colorEffectType, validIndex);
+                    if (colorData) {
+                        const targetAddress = parseInt(layout.colorTableAddress);
+                        optionComponents.push({
+                            data: colorData,
+                            loadAddress: targetAddress,
+                            name: `colorEffect_table`
+                        });
+                    }
+                }
+                continue; // Skip normal processing for this option
+            }
+
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
                 const targetAddress = parseInt(layout[optionConfig.dataField]);
 

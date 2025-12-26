@@ -89,9 +89,9 @@
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 
-//; Color palette configuration
-.const NUM_COLOR_PALETTES				= 3
-.const COLORS_PER_PALETTE				= 8
+//; Color table configuration
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
+.const COLOR_TABLE_ADDRESS				= BITMAP_ADDRESS - $80    //; 128 bytes before bitmap
 
 //; =============================================================================
 //; INCLUDES
@@ -262,7 +262,6 @@ MainIRQ:
 	jsr PlayMusicWithAnalysis
 
 	jsr UpdateBars
-	jsr UpdateColors
 	jsr UpdateSprites
 
 	inc frameCounter
@@ -431,50 +430,8 @@ RenderToScreen1:
 	jmp !loop-
 
 //; =============================================================================
-//; COLOR MANAGEMENT
+//; NOTE: Color table (heightToColor) is now injected at build time by the web app
 //; =============================================================================
-
-UpdateColors:
-	lda frameCounter
-	bne !done+
-
-	inc frame256Counter
-	lda #$00
-	sta colorUpdateIndex
-
-	ldx currentPalette
-	inx
-	cpx #NUM_COLOR_PALETTES
-	bne !setPalette+
-	ldx #$00
-!setPalette:
-	stx currentPalette
-
-	lda colorPalettesLo, x
-	sta !readColor+ + 1
-	lda colorPalettesHi, x
-	sta !readColor+ + 2
-
-!done:
-	ldx colorUpdateIndex
-	bmi !exit+
-
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-!readColor:
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-
-	inc colorUpdateIndex
-	lda colorUpdateIndex
-	cmp #MAX_BAR_HEIGHT + 5
-	bne !exit+
-	lda #$ff
-	sta colorUpdateIndex
-!exit:
-	rts
 
 //; =============================================================================
 //; SPRITE ANIMATION
@@ -548,18 +505,8 @@ DrawScreens:
 
 	rts
 
+//; InitializeColors is no longer needed - colors are injected at build time by web app
 InitializeColors:
-	ldx #0
-!loop:
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inx
-	cpx #MAX_BAR_HEIGHT + 5
-	bne !loop-
 	rts
 
 SetupMusic:
@@ -621,8 +568,6 @@ frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
 spriteAnimationIndex:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
@@ -630,21 +575,8 @@ darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
 							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
 
 //; =============================================================================
-//; DATA SECTION - Color Palettes
+//; Note: Color table data moved to COLOR_TABLE_ADDRESS section
 //; =============================================================================
-
-colorPalettes:
-	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01		//; Purple/pink
-	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01		//; Blue/cyan
-	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01		//; Red/orange
-
-colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
-colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
-
-heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
-
-heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
@@ -660,6 +592,14 @@ barCharacterMap:
 //; =============================================================================
 
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
+
+//; =============================================================================
+//; COLOR TABLE DATA
+//; This area is filled at build time by the web app based on colorEffect selection
+//; =============================================================================
+
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 
 //; =============================================================================
 //; SPRITE DATA

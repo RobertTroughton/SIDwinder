@@ -58,12 +58,16 @@
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
 .const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
 .const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00  //; Before screen 0
 
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
+
+//; Color table size - matches MAX_BAR_HEIGHT + padding for safety
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
 
 //; =============================================================================
 //; INCLUDES
@@ -534,17 +538,8 @@ currentScreenBuffer:		.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 //; =============================================================================
-//; DATA SECTION - Height-Based Color Table
+//; Note: Height color table is now at COLOR_TABLE_ADDRESS and injected at build time
 //; =============================================================================
-
-heightColorTable:
-	.fill 2, $0B
-	.fill 12, $09
-	.fill 12, $06
-	.fill 12, $04
-	.fill 11, $0E
-	.fill 11, $0D
-	.fill 12, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
@@ -565,6 +560,14 @@ barCharacterMap:
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 //; This area is filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_MIRROR, $00
+
+//; =============================================================================
+//; COLOR TABLE DATA
+//; This area is filled at build time by the web app based on colorEffect selection
+//; =============================================================================
+
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightColorTable:			.fill COLOR_TABLE_SIZE, $0b
 
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill $400, $00

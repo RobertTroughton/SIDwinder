@@ -73,6 +73,10 @@
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 
+//; Color table configuration
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00  //; Before screen 0
+
 //; =============================================================================
 //; INCLUDES
 //; =============================================================================
@@ -482,27 +486,12 @@ visualizationUpdateFlag:	.byte $00
 frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 //; =============================================================================
-//; DATA SECTION - Height-Based Color Table
+//; Note: Height color table is now at COLOR_TABLE_ADDRESS and injected at build time
 //; =============================================================================
-
-heightColorTable:
-	.fill 2, $0B
-	.fill 4, $09
-	.fill 4, $02
-	.fill 4, $06
-	.fill 4, $08
-	.fill 4, $04
-	.fill 4, $05
-	.fill 5, $0E
-	.fill 5, $0A
-	.fill 6, $0D
-	.fill 7, $07
 
 //; =============================================================================
 //; DATA SECTION - Display Mapping
@@ -523,6 +512,14 @@ barCharacterMap:
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 //; This area is filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_MIRROR, $00
+
+//; =============================================================================
+//; COLOR TABLE DATA
+//; This area is filled at build time by the web app based on colorEffect selection
+//; =============================================================================
+
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightColorTable:			.fill COLOR_TABLE_SIZE, $0b
 
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00
