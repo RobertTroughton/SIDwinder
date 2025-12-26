@@ -2808,6 +2808,32 @@ body {
     display: flex;
 }
 
+/* Style name label below thumbnail */
+.bar-style-thumbnail .style-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.75);
+    color: #ccc;
+    font-size: 9px;
+    text-align: center;
+    padding: 2px 1px;
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bar-style-thumbnail.selected .style-name {
+    color: #fff;
+    background: rgba(102, 126, 234, 0.8);
+}
+
+.bar-style-thumbnail:hover .style-name {
+    color: #fff;
+}
+
 /* Placeholder styling for missing images */
 .bar-style-thumbnail.placeholder {
     display: flex;

@@ -1212,6 +1212,8 @@ class UIController {
             const isSelected = v.value === defaultValue;
             // Use custom image path from config if available, otherwise use bar-style convention
             const imagePath = v.image || `prg/bar-styles/style-${v.value}.png`;
+            // Use shortLabel if available, otherwise extract first word from label
+            const displayLabel = v.shortLabel || v.label.split(' - ')[0] || v.label;
 
             return `
                 <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
@@ -1219,8 +1221,9 @@ class UIController {
                      title="${v.label}">
                     <img src="${imagePath}"
                          alt="Style ${v.value}"
-                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML += '<span>${v.value}</span><span class=\\'selected-check\\'>✓</span>';">
+                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
                     <span class="selected-check">✓</span>
+                    <span class="style-name">${displayLabel}</span>
                 </div>
             `;
         }).join('');

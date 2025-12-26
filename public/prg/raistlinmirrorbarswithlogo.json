@@ -120,14 +120,14 @@
       "type": "imageGrid",
       "default": 5,
       "values": [
-        { "value": 0, "label": "Classic - Rounded with highlights" },
-        { "value": 1, "label": "Solid - Full solid bars" },
-        { "value": 2, "label": "Thin - Narrow 4-pixel bars" },
-        { "value": 3, "label": "Outline - Hollow bars" },
-        { "value": 4, "label": "Chunky - Blocky pixel bars" },
-        { "value": 5, "label": "Smooth - Rounded without highlights" },
-        { "value": 6, "label": "Pointed - Pointed top" },
-        { "value": 7, "label": "Lined - Solid with scanlines" }
+        { "value": 0, "label": "Curved - Rounded with highlights", "shortLabel": "curved" },
+        { "value": 1, "label": "Box - Full solid bars", "shortLabel": "box" },
+        { "value": 2, "label": "Thin Box - Narrow 4-pixel bars", "shortLabel": "thin box" },
+        { "value": 3, "label": "Outline - Hollow bars", "shortLabel": "outline" },
+        { "value": 4, "label": "Doubles - Blocky pixel bars", "shortLabel": "doubles" },
+        { "value": 5, "label": "Shine - Rounded without highlights", "shortLabel": "shine" },
+        { "value": 6, "label": "Pointed - Pointed top", "shortLabel": "pointed" },
+        { "value": 7, "label": "Dashed - Solid with scanlines", "shortLabel": "dashed" }
       ]
     },
     {
