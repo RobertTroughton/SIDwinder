@@ -1084,12 +1084,10 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // NEW ARCHITECTURE: Place save/restore routines after ALL other data
-            // to avoid conflicts with visualizer components
+            // NEW ARCHITECTURE: Place save/restore routines in safe memory
+            // The data block contains JMPs that point directly to these routines
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
-            let saveJmpAddr = 0;
-            let restoreJmpAddr = 0;
 
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
@@ -1134,78 +1132,41 @@ class SIDwinderPRGExporter {
                         safeAddress = 0x0200;
                     }
                 }
-                
+
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
-                
+
                 // Place restore routine first, at safe address
                 restoreRoutineAddr = safeAddress;
-                
+
                 // Place save routine after restore routine
                 saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-                
+
                 // Regenerate save routine with correct restore address
                 const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
 
-                // Add the actual routines
+                // Add the actual routines - data block JMPs point directly to these
                 this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
                 this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
 
-                // Create JMP instructions that will go just before SID load address
-                // JMP to restore routine at (sidLoadAddress - 6)
-                // JMP to save routine at (sidLoadAddress - 3)
-                restoreJmpAddr = actualSidAddress - 6;
-                saveJmpAddr = actualSidAddress - 3;
-                
-                const restoreJmp = new Uint8Array([
-                    0x4C,  // JMP
-                    restoreRoutineAddr & 0xFF,
-                    (restoreRoutineAddr >> 8) & 0xFF
-                ]);
-                
-                const saveJmp = new Uint8Array([
-                    0x4C,  // JMP
-                    saveRoutineAddr & 0xFF,
-                    (saveRoutineAddr >> 8) & 0xFF
-                ]);
-
-                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Restore JMP');
-                this.builder.addComponent(saveJmp, saveJmpAddr, 'Save JMP');
-                
             } else {
                 console.warn('No analysis results for save/restore routines');
+                // Create dummy RTS routines at a safe location
                 const dummyRoutine = new Uint8Array([0x60]); // RTS
-                
-                // Calculate highest address for dummy routines too
-                let highestEndAddress = actualSidAddress + sidInfo.data.length;
-                for (const comp of this.builder.components) {
-                    const compEnd = comp.loadAddress + comp.size;
-                    if (compEnd > highestEndAddress) {
-                        highestEndAddress = compEnd;
-                    }
-                }
-                const safeAddress = this.alignToPage(highestEndAddress);
-                
+
+                // Place after data block
+                const safeAddress = this.alignToPage(dataLoadAddress + 0x100);
                 restoreRoutineAddr = safeAddress;
-                saveRoutineAddr = restoreRoutineAddr + 1;
-                
+                saveRoutineAddr = safeAddress + 1;
+
                 this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
-                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
-                
-                restoreJmpAddr = actualSidAddress - 6;
-                saveJmpAddr = actualSidAddress - 3;
-                
-                const restoreJmp = new Uint8Array([0x4C, restoreRoutineAddr & 0xFF, (restoreRoutineAddr >> 8) & 0xFF]);
-                const saveJmp = new Uint8Array([0x4C, saveRoutineAddr & 0xFF, (saveRoutineAddr >> 8) & 0xFF]);
-                
-                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Dummy Restore JMP');
-                this.builder.addComponent(saveJmp, saveJmpAddr, 'Dummy Save JMP');
+                this.builder.addComponent(new Uint8Array([0x60]), saveRoutineAddr, 'Dummy Save');
             }
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
             const sidChipCount = this.analyzer.analysisResults?.sidChipCount || 1;
 
-            // The data block should point to the JMP instructions, not the routines directly
+            // The data block JMPs point directly to the save/restore routines
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -1215,8 +1176,8 @@ class SIDwinderPRGExporter {
                 },
                 this.analyzer.analysisResults,
                 header,
-                saveJmpAddr,      // Point to JMP instruction, not the routine itself
-                restoreJmpAddr,   // Point to JMP instruction, not the routine itself
+                saveRoutineAddr,      // Point directly to save routine
+                restoreRoutineAddr,   // Point directly to restore routine
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,
