@@ -93,6 +93,79 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
+    /**
+     * Find safe memory location for save/restore routines
+     * Searches for gaps between existing components that can fit the routines
+     * @param {number} routineSize - Total size of save+restore routines
+     * @param {number} sidLoadAddress - SID load address
+     * @param {number} sidDataLength - SID data length
+     * @returns {number} Safe address for routines
+     */
+    findSafeMemoryForRoutines(routineSize, sidLoadAddress, sidDataLength) {
+        // Build list of used memory ranges from components
+        const usedRanges = [];
+
+        for (const comp of this.builder.components) {
+            usedRanges.push({
+                start: comp.loadAddress,
+                end: comp.loadAddress + comp.size
+            });
+        }
+
+        // Add I/O area as always used ($D000-$DFFF)
+        usedRanges.push({ start: 0xD000, end: 0xE000 });
+
+        // Sort by start address
+        usedRanges.sort((a, b) => a.start - b.start);
+
+        // Look for gaps that can fit the routines
+        // Start searching from $0200 (after zero page and stack)
+        let prevEnd = 0x0200;
+
+        for (const range of usedRanges) {
+            // Skip if this range starts before our search point
+            if (range.end <= prevEnd) continue;
+
+            const gapStart = prevEnd;
+            const gapEnd = range.start;
+
+            // Skip gaps in I/O area
+            if (gapStart >= 0xD000 && gapStart < 0xE000) {
+                prevEnd = Math.max(prevEnd, range.end);
+                continue;
+            }
+
+            // Check if gap is before I/O area
+            const effectiveGapEnd = Math.min(gapEnd, 0xD000);
+            const gapSize = effectiveGapEnd - gapStart;
+
+            if (gapSize >= routineSize) {
+                // Found a suitable gap
+                return this.alignToPage(gapStart);
+            }
+
+            prevEnd = Math.max(prevEnd, range.end);
+        }
+
+        // Check gap after all components but before I/O
+        if (prevEnd < 0xD000) {
+            const gapSize = 0xD000 - prevEnd;
+            if (gapSize >= routineSize) {
+                return this.alignToPage(prevEnd);
+            }
+        }
+
+        // Check after I/O area ($E000+) but only if it won't overflow
+        const afterIO = Math.max(prevEnd, 0xE000);
+        if (afterIO + routineSize <= 0xFFFF) {
+            return this.alignToPage(afterIO);
+        }
+
+        // Last resort: use $0200 and hope for the best
+        console.warn(`Could not find ${routineSize} bytes for save/restore routines, using $0200`);
+        return 0x0200;
+    }
+
     calculateSaveRestoreSize(modifiedAddresses) {
         const filtered = modifiedAddresses.filter(addr => {
             if (addr >= 0x0100 && addr <= 0x01FF) return false;
@@ -1092,46 +1165,12 @@ class SIDwinderPRGExporter {
             if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                // Calculate the highest address used by any component
-                let highestEndAddress = actualSidAddress + sidInfo.data.length;
+                // Calculate the routine size FIRST to know how much space we need
+                const routineSizes = this.calculateSaveRestoreSize(modifiedAddrs);
+                const totalRoutineSize = routineSizes.totalSize;
 
-                // Check all components we've added so far
-                for (const comp of this.builder.components) {
-                    const compEnd = comp.loadAddress + comp.size;
-                    if (compEnd > highestEndAddress) {
-                        highestEndAddress = compEnd;
-                    }
-                }
-
-                // Page align for safety, but ensure we don't overflow past $FFFF
-                let safeAddress = this.alignToPage(highestEndAddress);
-                if (safeAddress > 0xFE00) {
-                    // High memory is full, try to find space in lower memory
-                    // Look for gap between $0200 (after stack) and first component
-                    const sortedComps = [...this.builder.components].sort((a, b) => a.loadAddress - b.loadAddress);
-                    let foundSpace = false;
-                    let prevEnd = 0x0200; // Start after stack
-
-                    for (const comp of sortedComps) {
-                        // Skip I/O area
-                        if (prevEnd >= 0xD000 && prevEnd <= 0xDFFF) {
-                            prevEnd = 0xE000;
-                        }
-                        const gap = comp.loadAddress - prevEnd;
-                        const routineSize = this.calculateSaveRestoreSize(modifiedAddrs).totalSize;
-                        if (gap >= routineSize + 256) { // Need room for routines
-                            safeAddress = this.alignToPage(prevEnd);
-                            foundSpace = true;
-                            break;
-                        }
-                        prevEnd = comp.loadAddress + comp.size;
-                    }
-
-                    if (!foundSpace) {
-                        console.warn('Could not find safe memory for save/restore routines, using $0200');
-                        safeAddress = 0x0200;
-                    }
-                }
+                // Find a safe address that can fit the routines without overflowing
+                let safeAddress = this.findSafeMemoryForRoutines(totalRoutineSize, actualSidAddress, sidInfo.data.length);
 
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
