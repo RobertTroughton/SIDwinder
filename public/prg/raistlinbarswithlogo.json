@@ -5,6 +5,7 @@
   "barStyleType": "water",
   "colorPaletteType": "water",
   "colorEffectType": "waterlogo",
+  "fontType": "1x2",
 
   "layouts": {
     "bank4000": {
@@ -126,16 +127,8 @@
     {
       "id": "font",
       "label": "Font",
-      "type": "imageGrid",
-      "default": 0,
-      "values": [
-        { "value": 0, "label": "Classic", "shortLabel": "classic", "image": "PNG/Fonts/font-classic.png" },
-        { "value": 1, "label": "Bold", "shortLabel": "bold", "image": "PNG/Fonts/font-bold.png" },
-        { "value": 2, "label": "Thin", "shortLabel": "thin", "image": "PNG/Fonts/font-thin.png" },
-        { "value": 3, "label": "Retro", "shortLabel": "retro", "image": "PNG/Fonts/font-retro.png" },
-        { "value": 4, "label": "Pixel", "shortLabel": "pixel", "image": "PNG/Fonts/font-pixel.png" },
-        { "value": 5, "label": "Rounded", "shortLabel": "rounded", "image": "PNG/Fonts/font-rounded.png" }
-      ]
+      "type": "fontSelector",
+      "default": 0
     },
     {
       "id": "barStyle",

@@ -1073,6 +1073,9 @@ class UIController {
                 </div>
             `;
             }
+        } else if (config.type === 'fontSelector') {
+            // Font selector - dynamically populated from FONT_DATA based on fontType
+            html += this.createFontSelectorHTML(config, this.visualizerConfig?.fontType || '1x2');
         } else if (config.type === 'imageGrid' || (config.type === 'select' && config.id === 'barStyle')) {
             // Image grid for bar styles - render as clickable thumbnails
             html += this.createBarStyleGridHTML(config);
@@ -1164,6 +1167,58 @@ class UIController {
             </div>
         </div>
     `;
+    }
+
+    createFontSelectorHTML(config, fontType) {
+        const defaultValue = config.default || 0;
+
+        // Get fonts for this type from FONT_DATA
+        let fonts = [];
+        if (typeof FONT_DATA !== 'undefined' && FONT_DATA.KNOWN_FONTS[fontType]) {
+            const dim = FONT_DATA.FONT_DIMENSIONS[fontType];
+            fonts = FONT_DATA.KNOWN_FONTS[fontType].map((font, index) => ({
+                value: index,
+                label: font.name,
+                shortLabel: font.id,
+                image: `${dim.folder}/${font.id}.png`
+            }));
+        }
+
+        if (fonts.length === 0) {
+            // Fallback if no fonts defined
+            return `
+                <div class="bar-style-container">
+                    <span class="bar-style-label">${config.label}</span>
+                    <div class="font-no-fonts">No fonts available for this visualizer</div>
+                    <input type="hidden" id="${config.id}" value="0">
+                </div>
+            `;
+        }
+
+        const thumbnailsHTML = fonts.map(v => {
+            const isSelected = v.value === defaultValue;
+            return `
+                <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
+                     data-value="${v.value}"
+                     title="${v.label}">
+                    <img src="${v.image}"
+                         alt="${v.label}"
+                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
+                    <span class="selected-check">✓</span>
+                    <span class="style-name">${v.shortLabel}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bar-style-container">
+                <span class="bar-style-label">${config.label}</span>
+                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}">
+                    ${thumbnailsHTML}
+                </div>
+                <input type="hidden" id="${config.id}" value="${defaultValue}">
+            </div>
+        `;
     }
 
     createBarStyleGridHTML(config) {

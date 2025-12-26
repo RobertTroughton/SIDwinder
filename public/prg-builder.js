@@ -775,14 +775,20 @@ class SIDwinderPRGExporter {
             if (!element) continue;
 
             // Special handling for font when charset data should be injected
-            if (optionConfig.id === 'font' && layout.charsetAddress) {
+            if (optionConfig.id === 'font' && layout.charsetAddress && vizConfig.fontType) {
                 const fontIndex = parseInt(element.value);
                 const validIndex = !isNaN(fontIndex) ? fontIndex : (optionConfig.default ?? 0);
 
                 // Get font data from the global FONT_DATA
                 if (typeof FONT_DATA !== 'undefined') {
                     try {
-                        const fontData = await FONT_DATA.getFontData(validIndex);
+                        // Prepare fallback config using the binary
+                        const fallbackConfig = {
+                            binarySource: layout.binary,
+                            binaryOffset: parseInt(layout.charsetAddress) - parseInt(layout.baseAddress)
+                        };
+
+                        const fontData = await FONT_DATA.getFontData(vizConfig.fontType, validIndex, fallbackConfig);
                         if (fontData) {
                             const targetAddress = parseInt(layout.charsetAddress);
                             optionComponents.push({
@@ -792,7 +798,7 @@ class SIDwinderPRGExporter {
                             });
 
                             // Store the font case type for text conversion
-                            this.currentFontCaseType = FONT_DATA.getFontCaseType(validIndex);
+                            this.currentFontCaseType = await FONT_DATA.getFontCaseType(vizConfig.fontType, validIndex);
                         }
                     } catch (fontError) {
                         console.warn('Failed to load font, using default:', fontError);

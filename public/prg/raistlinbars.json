@@ -4,6 +4,7 @@
   "barStyleType": "water",
   "colorPaletteType": "water",
   "colorEffectType": "water",
+  "fontType": "1x2",
 
   "layouts": {
     "bank4000": {
@@ -54,16 +55,8 @@
     {
       "id": "font",
       "label": "Font",
-      "type": "imageGrid",
-      "default": 0,
-      "values": [
-        { "value": 0, "label": "Classic 1x2", "shortLabel": "classic", "image": "PNG/Fonts/font-1x2-classic.png" },
-        { "value": 1, "label": "Cupid 1x2", "shortLabel": "cupid1x2", "image": "PNG/Fonts/font-1x2-cupid.png" },
-        { "value": 2, "label": "Mermaid 1x2", "shortLabel": "mermaid1x2", "image": "PNG/Fonts/font-1x2-mermaid.png" },
-        { "value": 3, "label": "Yazoo 1x2", "shortLabel": "yazoo1x2", "image": "PNG/Fonts/font-1x2-yazoo.png" },
-        { "value": 4, "label": "Compyx 1x2", "shortLabel": "compyx1x2", "image": "PNG/Fonts/font-1x2-compyx.png" },
-        { "value": 5, "label": "Flex 1x2", "shortLabel": "flex1x2", "image": "PNG/Fonts/font-1x2-flex.png" }
-      ]
+      "type": "fontSelector",
+      "default": 0
     },
     {
       "id": "barStyle",
