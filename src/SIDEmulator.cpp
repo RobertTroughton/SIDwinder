@@ -231,13 +231,13 @@ namespace sidwinder {
         const int numBytesNeeded = static_cast<int>(modifiedAddresses.size());
         auto freeSpaceResult = pageTracker.findFreeSpace(numBytesNeeded, false);  // Prefer low memory
 
-        // Default to $0400 (screen memory area - often safe to use) if no free space found
+        // Default to $0900 (after system areas and screen) if no free space found
         // This is better than $EC00 which conflicts with high-memory SIDs
-        u16 storageBaseAddr = 0x0400;
+        u16 storageBaseAddr = 0x0900;
         if (freeSpaceResult.has_value()) {
             storageBaseAddr = freeSpaceResult.value();
         } else {
-            util::Logger::warning("Could not find free memory for save/restore storage, using $0400");
+            util::Logger::warning("Could not find free memory for save/restore storage, using $0900");
         }
 
         //; Save Modified Addresses PRG

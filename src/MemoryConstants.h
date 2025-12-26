@@ -75,11 +75,12 @@ namespace sidwinder {
         std::optional<u16> findFreePages(int numPages, bool preferHighMemory = true) const {
             if (numPages <= 0 || numPages > NUM_PAGES) return std::nullopt;
 
+            // Start from $0900 to avoid zero page, stack, system areas, and screen memory
+            constexpr int MIN_SAFE_PAGE = 0x09;
+
             if (preferHighMemory) {
                 // Search from high memory down (but before I/O area at $D0)
-                // Start at $CF and work down, or start at $FE and work down
-                // Actually, let's start just before I/O ($CF) and work down
-                for (int startPage = 0xCF - numPages + 1; startPage >= 0x02; --startPage) {
+                for (int startPage = 0xCF - numPages + 1; startPage >= MIN_SAFE_PAGE; --startPage) {
                     if (arePagesAvailable(startPage, numPages)) {
                         return static_cast<u16>(startPage << 8);
                     }
@@ -91,8 +92,8 @@ namespace sidwinder {
                     }
                 }
             } else {
-                // Search from low memory up (avoiding zero page and stack)
-                for (int startPage = 0x02; startPage <= 0xCF - numPages + 1; ++startPage) {
+                // Search from low memory up (starting at $0900)
+                for (int startPage = MIN_SAFE_PAGE; startPage <= 0xCF - numPages + 1; ++startPage) {
                     if (arePagesAvailable(startPage, numPages)) {
                         return static_cast<u16>(startPage << 8);
                     }

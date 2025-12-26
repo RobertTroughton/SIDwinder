@@ -119,8 +119,8 @@ class SIDwinderPRGExporter {
         usedRanges.sort((a, b) => a.start - b.start);
 
         // Look for gaps that can fit the routines
-        // Start searching from $0200 (after zero page and stack)
-        let prevEnd = 0x0200;
+        // Start searching from $0900 (after zero page, stack, system areas, and screen)
+        let prevEnd = 0x0900;
 
         for (const range of usedRanges) {
             // Skip if this range starts before our search point
@@ -161,9 +161,9 @@ class SIDwinderPRGExporter {
             return this.alignToPage(afterIO);
         }
 
-        // Last resort: use $0200 and hope for the best
-        console.warn(`Could not find ${routineSize} bytes for save/restore routines, using $0200`);
-        return 0x0200;
+        // Last resort: use $0900 and hope for the best
+        console.warn(`Could not find ${routineSize} bytes for save/restore routines, using $0900`);
+        return 0x0900;
     }
 
     calculateSaveRestoreSize(modifiedAddresses) {
