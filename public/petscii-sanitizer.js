@@ -191,56 +191,40 @@ class PETSCIISanitizer {
     }
 
     /**
-     * Convert sanitized text to PETSCII byte array
-     * Ensures exactly one byte per character
+     * Convert sanitized text to C64 screen codes
+     * Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
      * @param {string} text - Already sanitized ASCII text
-     * @param {boolean} lowercase - Use lowercase PETSCII mode (default true)
-     * @returns {Uint8Array} - PETSCII byte array
+     * @param {boolean} lowercase - Use lowercase mode (default true, ignored - always uses font layout)
+     * @returns {Uint8Array} - Screen code byte array
      */
     toPETSCIIBytes(text, lowercase = true) {
         const bytes = [];
 
         for (let i = 0; i < text.length; i++) {
             const code = text.charCodeAt(i);
-            let petscii;
+            let screenCode;
 
-            if (lowercase) {
-                // C64 lowercase mode (includes both upper and lower)
-                if (code >= 65 && code <= 90) {
-                    // Uppercase A-Z stays as-is in PETSCII
-                    petscii = code;
-                } else if (code >= 97 && code <= 122) {
-                    // Lowercase a-z becomes PETSCII 1-26
-                    petscii = code - 96;
-                } else if (code >= 32 && code <= 64) {
-                    // Space through @ stays as-is
-                    petscii = code;
-                } else if (code >= 91 && code <= 96) {
-                    // [ \ ] ^ _ ` stay as-is
-                    petscii = code;
-                } else if (code >= 123 && code <= 126) {
-                    // { | } ~ stay as-is
-                    petscii = code;
-                } else {
-                    // Default to space
-                    petscii = 32;
-                }
+            // Convert ASCII to C64 screen codes matching font layout
+            // Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+            if (code >= 65 && code <= 90) {
+                // A-Z uppercase -> screen codes 1-26
+                screenCode = code - 64;
+            } else if (code >= 97 && code <= 122) {
+                // a-z lowercase -> screen codes 65-90
+                screenCode = code - 32;
+            } else if (code >= 32 && code <= 63) {
+                // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                screenCode = code;
+            } else if (code === 64) {
+                // @ -> screen code 0
+                screenCode = 0;
             } else {
-                // Uppercase/graphics mode
-                if (code >= 97 && code <= 122) {
-                    // Convert lowercase to uppercase
-                    petscii = code - 32;
-                } else if (code >= 32 && code <= 126) {
-                    // Everything else in ASCII range stays as-is
-                    petscii = code;
-                } else {
-                    // Default to space
-                    petscii = 32;
-                }
+                // Default to space
+                screenCode = 32;
             }
 
-            // Ensure we only push one byte (0-255)
-            bytes.push(petscii & 0xFF);
+            // Ensure screen code is in valid range
+            bytes.push(screenCode & 0xFF);
         }
 
         return new Uint8Array(bytes);
