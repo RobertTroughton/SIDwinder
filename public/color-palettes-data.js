@@ -171,12 +171,17 @@ function generateColorTable(paletteIndex, tableSize) {
     const gradient = palette.gradient;
     const result = new Uint8Array(tableSize);
 
+    // COLOR_TABLE_SIZE = MAX_BAR_HEIGHT + 9, so actual max height is tableSize - 9
+    // Use this as the reference for 100% so bars reach full brightness at max height
+    const maxHeight = tableSize - 9;
+
     // First entry (height 0) uses the base color from gradient
     result[0] = gradient[0].color;
 
     for (let i = 1; i < tableSize; i++) {
-        // Map table position to percentage (1 to tableSize-1 maps to ~0-100%)
-        const pct = (i / (tableSize - 1)) * 100;
+        // Map table position to percentage based on actual max bar height
+        // At i = maxHeight, we want pct = 100%
+        const pct = Math.min((i / maxHeight) * 100, 100);
 
         // Find the two gradient stops this percentage falls between
         let color = gradient[0].color;
