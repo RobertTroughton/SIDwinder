@@ -34,12 +34,12 @@
 //; =============================================================================
 
 * = DATA_ADDRESS "Data Block"
-    .fill $08, $00                      // Reserved bytes 0-7
+    .fill $60, $00                      // Reserved bytes 0-95 (includes borderColor at $0D, backgroundColor at $0E)
 colorEffectMode:
-    .byte $00                           // Byte 8: Color effect mode (0=Height, 1=LineGradient, 2=Solid)
+    .byte $00                           // Byte 96 ($60): Color effect mode (0=Height, 1=LineGradient, 2=Solid)
 lineGradientColors:
-    .fill TOTAL_SPECTRUM_HEIGHT, $0b    // Bytes 9-18: Line gradient colors for mirrored display
-    .fill $100 - $09 - TOTAL_SPECTRUM_HEIGHT, $00  // Fill rest of reserved space
+    .fill TOTAL_SPECTRUM_HEIGHT, $0b    // Bytes 97-106 ($61-$6A): Line gradient colors for mirrored display
+    .fill $100 - $61 - TOTAL_SPECTRUM_HEIGHT, $00  // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 

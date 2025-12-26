@@ -19,8 +19,8 @@
       "backgroundColor": "0x400E",
       "barCharsAddress": "0x7F00",
       "colorTableAddress": "0x6E00",
-      "colorEffectModeAddress": "0x4008",
-      "lineGradientColorsAddress": "0x4009",
+      "colorEffectModeAddress": "0x4060",
+      "lineGradientColorsAddress": "0x4061",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -37,8 +37,8 @@
       "backgroundColor": "0x800E",
       "barCharsAddress": "0xBF00",
       "colorTableAddress": "0xAE00",
-      "colorEffectModeAddress": "0x8008",
-      "lineGradientColorsAddress": "0x8009",
+      "colorEffectModeAddress": "0x8060",
+      "lineGradientColorsAddress": "0x8061",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
