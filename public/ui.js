@@ -1146,8 +1146,8 @@ class UIController {
             <label class="option-label">${config.label}</label>
             <div class="option-control">
                 <div class="textarea-container">
-                    <textarea 
-                        id="${config.id}" 
+                    <textarea
+                        id="${config.id}"
                         maxlength="${config.maxLength || 255}"
                         rows="3"
                         placeholder="${config.description || ''}"
@@ -1161,6 +1161,9 @@ class UIController {
                 </div>
             </div>
         `;
+        } else if (config.type === 'colorPicker') {
+            // Color picker using color slider UI
+            html += this.createColorSliderHTML(config);
         }
 
         html += '</div>';

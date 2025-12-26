@@ -68,7 +68,7 @@
     },
     {
       "id": "colorPalette",
-      "label": "Color Palette",
+      "label": "Colour Palette",
       "type": "imageGrid",
       "default": 0,
       "values": [
@@ -83,13 +83,13 @@
     },
     {
       "id": "colorEffect",
-      "label": "Color Effect",
+      "label": "Colour Effect",
       "type": "imageGrid",
       "default": 0,
       "values": [
-        { "value": 0, "label": "Dynamic Pulse", "shortLabel": "pulse", "image": "PNG/Effects/effect-height.png" },
-        { "value": 1, "label": "Fixed Gradient", "shortLabel": "gradient", "image": "PNG/Effects/effect-gradient.png" },
-        { "value": 2, "label": "Fixed Single Colour", "shortLabel": "solid", "image": "PNG/Effects/effect-solid.png" }
+        { "value": 0, "label": "Dynamic Pulse", "shortLabel": "Dynamic Pulse", "image": "PNG/Effects/effect-height.png" },
+        { "value": 1, "label": "Fixed Gradient", "shortLabel": "Fixed Gradient", "image": "PNG/Effects/effect-gradient.png" },
+        { "value": 2, "label": "Fixed Single Colour", "shortLabel": "Fixed Colour", "image": "PNG/Effects/effect-solid.png" }
       ]
     },
     {
