@@ -1206,8 +1206,7 @@ class UIController {
                      data-font-path="${v.imagePath}"
                      title="${v.label}">
                     <img class="font-thumbnail-img"
-                         alt="${v.label}"
-                         style="width:64px;height:64px;background:#000;">
+                         alt="${v.label}">
                     <span class="selected-check">✓</span>
                     <span class="style-name">${v.shortLabel}</span>
                 </div>

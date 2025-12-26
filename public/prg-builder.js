@@ -494,28 +494,26 @@ class SIDwinderPRGExporter {
 
     stringToPETSCII(str, length) {
         const bytes = new Uint8Array(length);
-        bytes.fill(0x20);
+        bytes.fill(0);  // Screen code 0 = space (ASCII 32)
 
         if (str && str.length > 0) {
             const maxLen = Math.min(str.length, length);
 
             for (let i = 0; i < maxLen; i++) {
                 const code = str.charCodeAt(i);
-                let petscii = 0x20;
+                let screenCode = 0;  // Default to space (screen code 0 = ASCII 32)
 
-                if (code >= 65 && code <= 90) {
-                    petscii = code;
-                } else if (code >= 97 && code <= 122) {
-                    petscii = code - 32;
-                } else if (code >= 48 && code <= 57) {
-                    petscii = code;
-                } else if (code === 32) {
-                    petscii = 0x20;
+                // Convert ASCII to screen code by subtracting 32
+                // ASCII 32-127 maps to screen codes 0-95
+                // This aligns with our charset where glyph N = ASCII (N+32)
+                if (code >= 32 && code <= 127) {
+                    screenCode = code - 32;
                 } else {
-                    petscii = code;
+                    // Out of range - use space
+                    screenCode = 0;
                 }
 
-                bytes[i] = petscii & 0xFF;
+                bytes[i] = screenCode & 0xFF;
             }
         }
 

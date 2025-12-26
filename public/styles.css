@@ -2771,6 +2771,11 @@ body {
     image-rendering: crisp-edges;
 }
 
+/* Font thumbnails should scale to fill the container */
+.bar-style-thumbnail img.font-thumbnail-img {
+    object-fit: cover;
+}
+
 .bar-style-thumbnail::after {
     content: '';
     position: absolute;
