@@ -349,20 +349,31 @@ class SIDwinderPRGExporter {
         data[0x0E] = 0x00; // BackgroundColour (will be overwritten by options if present)
         data[0x0F] = selectedSong & 0xFF;
 
+        // Apply font case conversion if needed
+        let nameStr = header.name || '';
+        let authorStr = header.author || '';
+        let copyrightStr = header.copyright || '';
+
+        if (typeof FONT_DATA !== 'undefined' && this.currentFontCaseType !== undefined) {
+            nameStr = FONT_DATA.convertTextForFont(nameStr, this.currentFontCaseType);
+            authorStr = FONT_DATA.convertTextForFont(authorStr, this.currentFontCaseType);
+            copyrightStr = FONT_DATA.convertTextForFont(copyrightStr, this.currentFontCaseType);
+        }
+
         // SID Name at $xx10-$xx2F
-        const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
+        const nameBytes = this.stringToPETSCII(this.centerString(nameStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
 
         // Author Name at $xx30-$xx4F
-        const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
+        const authorBytes = this.stringToPETSCII(this.centerString(authorStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x30 + i] = authorBytes[i];
         }
 
         // Copyright at $xx50-$xx6F
-        const copyrightBytes = this.stringToPETSCII(this.centerString(header.copyright || '', 32), 32);
+        const copyrightBytes = this.stringToPETSCII(this.centerString(copyrightStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x50 + i] = copyrightBytes[i];
         }
@@ -749,6 +760,9 @@ class SIDwinderPRGExporter {
             return [];
         }
 
+        // Reset font case type for this export
+        this.currentFontCaseType = undefined;
+
         // Initialize sanitizer if not already done
         if (!this.sanitizer) {
             this.sanitizer = new PETSCIISanitizer();
@@ -759,6 +773,34 @@ class SIDwinderPRGExporter {
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
             if (!element) continue;
+
+            // Special handling for font when charset data should be injected
+            if (optionConfig.id === 'font' && layout.charsetAddress) {
+                const fontIndex = parseInt(element.value);
+                const validIndex = !isNaN(fontIndex) ? fontIndex : (optionConfig.default ?? 0);
+
+                // Get font data from the global FONT_DATA
+                if (typeof FONT_DATA !== 'undefined') {
+                    try {
+                        const fontData = await FONT_DATA.getFontData(validIndex);
+                        if (fontData) {
+                            const targetAddress = parseInt(layout.charsetAddress);
+                            optionComponents.push({
+                                data: fontData,
+                                loadAddress: targetAddress,
+                                name: `font_charset`
+                            });
+
+                            // Store the font case type for text conversion
+                            this.currentFontCaseType = FONT_DATA.getFontCaseType(validIndex);
+                        }
+                    } catch (fontError) {
+                        console.warn('Failed to load font, using default:', fontError);
+                        // Continue without custom font - binary will have default
+                    }
+                }
+                continue; // Skip normal processing for this option
+            }
 
             // Special handling for barStyle when character data should be injected
             if (optionConfig.id === 'barStyle' && vizConfig.barStyleType && layout.barCharsAddress) {

@@ -18,6 +18,7 @@
       "borderColor": "0x400D",
       "backgroundColor": "0x400E",
       "barCharsAddress": "0x7F00",
+      "charsetAddress": "0x7800",
       "colorTableAddress": "0x5F80",
       "colorEffectModeAddress": "0x4060",
       "lineGradientColorsAddress": "0x4061",
@@ -37,6 +38,7 @@
       "borderColor": "0x800D",
       "backgroundColor": "0x800E",
       "barCharsAddress": "0xBF00",
+      "charsetAddress": "0xB800",
       "colorTableAddress": "0x9F80",
       "colorEffectModeAddress": "0x8060",
       "lineGradientColorsAddress": "0x8061",
@@ -121,6 +123,20 @@
   ],
 
   "options": [
+    {
+      "id": "font",
+      "label": "Font",
+      "type": "imageGrid",
+      "default": 0,
+      "values": [
+        { "value": 0, "label": "Classic", "shortLabel": "classic", "image": "PNG/Fonts/font-classic.png" },
+        { "value": 1, "label": "Bold", "shortLabel": "bold", "image": "PNG/Fonts/font-bold.png" },
+        { "value": 2, "label": "Thin", "shortLabel": "thin", "image": "PNG/Fonts/font-thin.png" },
+        { "value": 3, "label": "Retro", "shortLabel": "retro", "image": "PNG/Fonts/font-retro.png" },
+        { "value": 4, "label": "Pixel", "shortLabel": "pixel", "image": "PNG/Fonts/font-pixel.png" },
+        { "value": 5, "label": "Rounded", "shortLabel": "rounded", "image": "PNG/Fonts/font-rounded.png" }
+      ]
+    },
     {
       "id": "barStyle",
       "label": "Bar Style",
