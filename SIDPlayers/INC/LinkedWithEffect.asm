@@ -87,15 +87,15 @@ EffectLoop:
     bcc !hold+
 
 !fadeOut:
-    // Fade out phase: wave moves from right (19) to left (0)
-    // Columns LEFT of wave = white (still visible)
+    // Fade out phase: wave moves from left (0) to right (19)
+    // Columns LEFT of wave = black (already hidden)
     // Columns at wave = gradient (cyan->lightblue->blue->black)
-    // Columns RIGHT of wave = black (already hidden)
+    // Columns RIGHT of wave = white (still visible)
     lda effectFrame
     sec
     sbc #EFFECT_HOLD_END
     lsr                     // Divide by 2 to map 50 frames to ~25 steps
-    sta effectWave          // Wave position (0 to 24, clamped to 19)
+    sta effectWave          // Wave position (0 to ~25, clamped to 19)
     cmp #EFFECT_WIDTH
     bcc !doFadeOut+
     lda #EFFECT_WIDTH-1
@@ -103,13 +103,13 @@ EffectLoop:
 !doFadeOut:
     ldx #EFFECT_WIDTH-1
 !foLoop:
-    // Calculate distance from wave: wavePos - X
-    lda effectWave
+    // Calculate distance from wave: X - wavePos
+    lda effectXPos,x
     sec
-    sbc effectXPos,x
-    bmi !foVisible+         // X > wave, still visible (white)
+    sbc effectWave
+    bmi !foHidden+          // X < wave, already hidden (black)
     cmp #4
-    bcs !foHidden+          // X far left of wave, already hidden (black)
+    bcs !foVisible+         // X far right of wave, still visible (white)
     // In gradient zone
     tay
     lda EffectColOut,y
@@ -211,13 +211,13 @@ effectSaved:    .byte 0, 0, 0, 0
 // X position lookup (just 0-19)
 effectXPos:     .fill EFFECT_WIDTH, i
 
-// Fade-in colors: brown(9) -> green(5) -> light green(13) -> white(1)
-// Index 0 = at wave, index 3 = 3 chars right of wave
-EffectColIn:    .byte 9, 5, 13, 1
+// Fade-in colors (reversed): white(1) -> light green(13) -> green(5) -> brown(9)
+// Index 0 = at wave (brightest), index 3 = edge near black (darkest transition)
+EffectColIn:    .byte 1, 13, 5, 9
 
-// Fade-out colors: cyan(3) -> light blue(14) -> blue(6) -> black(0)
-// Index 0 = at wave, index 3 = 3 chars right of wave
-EffectColOut:   .byte 3, 14, 6, 0
+// Fade-out colors (reversed): blue(6) -> light blue(14) -> cyan(3) -> white(1)
+// Index 0 = at wave (darkest transition), index 3 = edge near white (brightest)
+EffectColOut:   .byte 6, 14, 3, 1
 
 // "    Linked With    " (20 chars)
 EffectLine1:
