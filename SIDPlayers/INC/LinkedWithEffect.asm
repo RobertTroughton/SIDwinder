@@ -21,19 +21,25 @@
 // =============================================================================
 
 RunLinkedWithEffect:
-    // Save and setup VIC state
+    // Save VIC state
     lda $d011
     sta effectSaved
     lda $d018
     sta effectSaved+1
     lda $dd00
     sta effectSaved+2
+    lda $d021
+    sta effectSaved+3
+
+    // Setup for effect: text mode, ROM charset lowercase, bank 0
     lda #$1b
     sta $d011
     lda #$17
     sta $d018
     lda #$97
     sta $dd00
+    lda #$00            // Black background
+    sta $d021
 
     // Clear screen
     ldx #0
@@ -53,7 +59,7 @@ RunLinkedWithEffect:
     sta $0400 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
     lda EffectLine2,x
     sta $0400 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
-    lda #0
+    lda #0              // Start with black (invisible)
     sta $d800 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
     sta $d800 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
     dex
@@ -71,7 +77,7 @@ EffectLoop:
     bit $d011
     bmi *-3
 
-    // Calculate wave position and mode based on frame
+    // Determine phase based on frame counter
     lda effectFrame+1
     bne !fadeOut+
     lda effectFrame
@@ -81,74 +87,94 @@ EffectLoop:
     bcc !hold+
 
 !fadeOut:
+    // Fade out phase: wave moves from right (19) to left (0)
+    // Columns LEFT of wave = white (still visible)
+    // Columns at wave = gradient (cyan->lightblue->blue->black)
+    // Columns RIGHT of wave = black (already hidden)
     lda effectFrame
     sec
     sbc #EFFECT_HOLD_END
-    lsr
-    eor #$ff              // Invert for fade out direction
-    clc
-    adc #EFFECT_WIDTH
+    lsr                     // Divide by 2 to map 50 frames to ~25 steps
+    sta effectWave          // Wave position (0 to 24, clamped to 19)
+    cmp #EFFECT_WIDTH
+    bcc !doFadeOut+
+    lda #EFFECT_WIDTH-1
     sta effectWave
-    lda #1                // Mode 1 = fade out
-    bne !doColor+
+!doFadeOut:
+    ldx #EFFECT_WIDTH-1
+!foLoop:
+    // Calculate distance from wave: wavePos - X
+    lda effectWave
+    sec
+    sbc effectXPos,x
+    bmi !foVisible+         // X > wave, still visible (white)
+    cmp #4
+    bcs !foHidden+          // X far left of wave, already hidden (black)
+    // In gradient zone
+    tay
+    lda EffectColOut,y
+    jmp !foStore+
+!foVisible:
+    lda #1                  // White
+    jmp !foStore+
+!foHidden:
+    lda #0                  // Black
+!foStore:
+    sta $d800 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
+    sta $d800 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
+    dex
+    bpl !foLoop-
+    jmp !next+
 
 !fadeIn:
+    // Fade in phase: wave moves from right (19) to left (0)
+    // Columns LEFT of wave = black (not yet revealed)
+    // Columns at wave = gradient (brown->green->lightgreen->white)
+    // Columns RIGHT of wave = white (already revealed)
     lda #EFFECT_FADE_IN_END-1
     sec
     sbc effectFrame
-    lsr
+    lsr                     // Divide by 2
+    sta effectWave          // Wave starts at ~24, goes to 0
+    cmp #EFFECT_WIDTH
+    bcc !doFadeIn+
+    lda #EFFECT_WIDTH-1
     sta effectWave
-    lda #0                // Mode 0 = fade in
-    beq !doColor+
+!doFadeIn:
+    ldx #EFFECT_WIDTH-1
+!fiLoop:
+    // Calculate distance from wave: wavePos - X
+    lda effectWave
+    sec
+    sbc effectXPos,x
+    bmi !fiRevealed+        // X > wave, already revealed (white)
+    cmp #4
+    bcs !fiHidden+          // X far left of wave, still hidden (black)
+    // In gradient zone
+    tay
+    lda EffectColIn,y
+    jmp !fiStore+
+!fiRevealed:
+    lda #1                  // White
+    jmp !fiStore+
+!fiHidden:
+    lda #0                  // Black
+!fiStore:
+    sta $d800 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
+    sta $d800 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
+    dex
+    bpl !fiLoop-
+    jmp !next+
 
 !hold:
-    lda #1                // White
+    // Hold phase: all white
+    lda #1
     ldx #EFFECT_WIDTH-1
 !hLoop:
     sta $d800 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
     sta $d800 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
     dex
     bpl !hLoop-
-    jmp !next+
-
-!doColor:
-    sta effectMode
-    ldx #EFFECT_WIDTH-1
-!cLoop:
-    txa
-    sec
-    sbc effectWave
-    bmi !cBright+
-    cmp #3
-    bcs !cDark+
-    tay
-    lda effectMode
-    beq !fadeInCol+
-    lda EffectColOut,y
-    jmp !cStore+
-!fadeInCol:
-    lda EffectColIn,y
-    jmp !cStore+
-!cDark:
-    lda effectMode
-    bne !cWhite+
-    lda #0
-    beq !cStore+
-!cWhite:
-    lda #1
-    bne !cStore+
-!cBright:
-    lda effectMode
-    beq !cW2+
-    lda #0
-    beq !cStore+
-!cW2:
-    lda #1
-!cStore:
-    sta $d800 + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
-    sta $d800 + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
-    dex
-    bpl !cLoop-
 
 !next:
     inc effectFrame
@@ -163,12 +189,15 @@ EffectLoop:
     jmp EffectLoop
 
 !done:
+    // Restore VIC state
     lda effectSaved
     sta $d011
     lda effectSaved+1
     sta $d018
     lda effectSaved+2
     sta $dd00
+    lda effectSaved+3
+    sta $d021
     rts
 
 // =============================================================================
@@ -177,12 +206,18 @@ EffectLoop:
 
 effectFrame:    .word 0
 effectWave:     .byte 0
-effectMode:     .byte 0
-effectSaved:    .byte 0, 0, 0
+effectSaved:    .byte 0, 0, 0, 0
 
-// Color gradients (3 colors each for smaller code)
-EffectColIn:    .byte $0b, $0c, $01      // black->grey->white
-EffectColOut:   .byte $0c, $0b, $00      // white->grey->black
+// X position lookup (just 0-19)
+effectXPos:     .fill EFFECT_WIDTH, i
+
+// Fade-in colors: brown(9) -> green(5) -> light green(13) -> white(1)
+// Index 0 = at wave, index 3 = 3 chars right of wave
+EffectColIn:    .byte 9, 5, 13, 1
+
+// Fade-out colors: cyan(3) -> light blue(14) -> blue(6) -> black(0)
+// Index 0 = at wave, index 3 = 3 chars right of wave
+EffectColOut:   .byte 3, 14, 6, 0
 
 // "    Linked With    " (20 chars)
 EffectLine1:
