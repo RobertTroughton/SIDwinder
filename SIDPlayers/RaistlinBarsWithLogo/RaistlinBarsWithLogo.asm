@@ -127,6 +127,7 @@ songNameColor:
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+// Note: LinkedWithEffect not included due to memory constraints in this visualizer
 
 //; =============================================================================
 //; DATA
@@ -155,6 +156,9 @@ Initialize:
 	sta $d020
 
     jsr InitKeyboard
+
+    // Note: LinkedWithEffect disabled for this visualizer due to memory constraints
+    // jsr RunLinkedWithEffect
 
 	jsr SetupStableRaster
 	jsr SetupSystem

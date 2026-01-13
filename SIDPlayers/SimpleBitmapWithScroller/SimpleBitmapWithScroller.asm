@@ -49,6 +49,7 @@
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
+.import source "../INC/LinkedWithEffect.asm"
 
 // =============================================================================
 // INITIALIZATION ENTRY POINT
@@ -72,6 +73,10 @@ Initialize:
     sta $d021
 
     jsr InitKeyboard
+
+    // Run the "Linked With SIDquake" intro effect
+    jsr RunLinkedWithEffect
+
     jsr CopyROMFont
 
     lda SongNumber

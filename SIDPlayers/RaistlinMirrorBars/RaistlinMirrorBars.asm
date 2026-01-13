@@ -110,6 +110,7 @@ artistNameColor:
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+.import source "../INC/LinkedWithEffect.asm"
 
 //; =============================================================================
 //; DATA
@@ -138,6 +139,9 @@ Initialize:
 	sta $d020
 
     jsr InitKeyboard
+
+    // Run the "Linked With SIDquake" intro effect
+    jsr RunLinkedWithEffect
 
 	jsr SetupStableRaster
 	jsr SetupSystem
