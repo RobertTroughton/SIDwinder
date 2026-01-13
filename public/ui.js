@@ -1755,8 +1755,12 @@ class UIController {
         const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
 
         try {
+            // Sanitize filename: lowercase, remove .sid extension, keep only a-z, 0-9, -, !
             const baseName = this.currentFileName ?
-                this.currentFileName.replace(/\.sid$/i, '').toLowerCase() : 'output';
+                this.currentFileName
+                    .replace(/\.sid$/i, '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\-!]/g, '') : 'output';
 
             // Update progress
             this.updateBusy('Loading Visualizer', 'Reading configuration...');
