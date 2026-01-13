@@ -19,7 +19,9 @@
 .var BITMAP_BANK                    = 1
 .var SCREEN_BANK                    = 2
 .var COLOUR_BANK                    = 3
-.var SPRITES_INDEX                  = 0
+.var SPRITES_INDEX                  = $30   //; so the sprites will occupy the space that was used for the colour data
+
+.var CharSetShadowAddress           = VIC_BANK_ADDRESS + $0000
 
 .var ScrollColour					= DATA_ADDRESS + $80
 
@@ -105,6 +107,14 @@ Initialize:
         lda BITMAP_COLOUR_DATA + (i * 256), y
         sta $d800 + (i * 256), y
     }
+    iny
+    bne !loop-
+
+    ldy #$00
+    lda #$00
+!loop:
+    sta SPRITES_DATA + (0 * 256), y
+    sta SPRITES_DATA + (1 * 256), y
     iny
     bne !loop-
 
@@ -336,7 +346,7 @@ ReadScroller:
     lsr
     lsr
     lsr
-    ora #$58
+    ora #>CharSetShadowAddress
     sta InCharPtr + 2
     txa
     asl
@@ -395,7 +405,7 @@ CopyROMFont:
 InPtr:
     lda $d800, y
 OutPtr:
-    sta $5800, y
+    sta CharSetShadowAddress, y
     iny
     bne InPtr
 
@@ -453,9 +463,6 @@ VICConfigEnd:
 * = SCROLLTEXT_ADDR "ScrollText"
 
     .byte $53, $49, $44, $17, $09, $0e, $04, $05, $12, $20, $20, $2d, $2d, $2d, $20, $20, $00
-
-* = SPRITES_DATA "Sprite Data"
-    .fill $200, $00
 
 * = BITMAP_MAP_DATA "Bitmap MAP Data"
     .fill $2000, $00
