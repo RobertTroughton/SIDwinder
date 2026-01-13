@@ -1,6 +1,7 @@
 {
   "name": "Raistlin Bars",
   "maxCallsPerFrame": 2,
+  "needsSaveRestore": true,
   "barStyleType": "water",
   "colorPaletteType": "water",
   "colorEffectType": "water",

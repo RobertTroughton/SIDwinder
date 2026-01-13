@@ -2,6 +2,7 @@
   "name": "Default",
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
+  "needsSaveRestore": false,
   "layouts": {
     "bank4000": {
       "binary": "prg/default-4000.bin",
