@@ -315,7 +315,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1, needsSaveRestore = true) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -334,15 +334,27 @@ class SIDwinderPRGExporter {
         data[4] = sidInfo.playAddress & 0xFF;
         data[5] = (sidInfo.playAddress >> 8) & 0xFF;
 
-        // JMP SaveModifiedMemory at $xx06
-        data[6] = 0x4C;
-        data[7] = saveRoutineAddr & 0xFF;
-        data[8] = (saveRoutineAddr >> 8) & 0xFF;
+        if (needsSaveRestore) {
+            // JMP SaveModifiedMemory at $xx06
+            data[6] = 0x4C;
+            data[7] = saveRoutineAddr & 0xFF;
+            data[8] = (saveRoutineAddr >> 8) & 0xFF;
 
-        // JMP RestoreModifiedMemory at $xx09
-        data[9] = 0x4C;
-        data[10] = restoreRoutineAddr & 0xFF;
-        data[11] = (restoreRoutineAddr >> 8) & 0xFF;
+            // JMP RestoreModifiedMemory at $xx09
+            data[9] = 0x4C;
+            data[10] = restoreRoutineAddr & 0xFF;
+            data[11] = (restoreRoutineAddr >> 8) & 0xFF;
+        } else {
+            // RTS + NOP + NOP at $xx06 (BackupSIDMemory - never called)
+            data[6] = 0x60;  // RTS
+            data[7] = 0xEA;  // NOP
+            data[8] = 0xEA;  // NOP
+
+            // RTS + NOP + NOP at $xx09 (RestoreSIDMemory - never called)
+            data[9] = 0x60;  // RTS
+            data[10] = 0xEA; // NOP
+            data[11] = 0xEA; // NOP
+        }
 
         data[0x0C] = effectiveCallsPerFrame & 0xFF;
         data[0x0D] = 0x00; // BorderColour (will be overwritten by options if present)
@@ -1249,13 +1261,14 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
-            // NEW ARCHITECTURE: Place save/restore routines in safe memory
-            // The data block contains JMPs that point directly to these routines
-            let saveRoutineAddr = 0;
-            let restoreRoutineAddr = 0;
-
             // Check if this visualizer needs save/restore functionality
             const needsSaveRestore = vizConfig?.needsSaveRestore !== false;
+
+            // Place save/restore routines in safe memory (only if needed)
+            // The data block contains JMPs that point directly to these routines,
+            // or RTS instructions if save/restore is not needed
+            let saveRoutineAddr = 0;
+            let restoreRoutineAddr = 0;
 
             if (needsSaveRestore && this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
@@ -1282,26 +1295,14 @@ class SIDwinderPRGExporter {
                 // Add the actual routines - data block JMPs point directly to these
                 this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
                 this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-
-            } else {
-                // Visualizer doesn't need save/restore, or no analysis results available
-                // Create minimal RTS stubs - these are never called but the data block
-                // still needs valid addresses for the JMP instructions
-                const dummyRoutine = new Uint8Array([0x60]); // RTS
-
-                // Place after data block
-                const safeAddress = this.alignToPage(dataLoadAddress + 0x100);
-                restoreRoutineAddr = safeAddress;
-                saveRoutineAddr = safeAddress + 1;
-
-                this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
-                this.builder.addComponent(new Uint8Array([0x60]), saveRoutineAddr, 'Dummy Save');
             }
+            // When needsSaveRestore is false, we don't add any components - the data block
+            // will contain RTS instructions directly at the save/restore entry points
 
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
             const sidChipCount = this.analyzer.analysisResults?.sidChipCount || 1;
 
-            // The data block JMPs point directly to the save/restore routines
+            // The data block contains JMPs to save/restore routines, or RTS if not needed
             const dataBlock = this.generateDataBlock(
                 {
                     initAddress: actualInitAddress,
@@ -1311,13 +1312,14 @@ class SIDwinderPRGExporter {
                 },
                 this.analyzer.analysisResults,
                 header,
-                saveRoutineAddr,      // Point directly to save routine
-                restoreRoutineAddr,   // Point directly to restore routine
+                saveRoutineAddr,
+                restoreRoutineAddr,
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,
                 modifiedCount,
-                sidChipCount
+                sidChipCount,
+                needsSaveRestore
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
