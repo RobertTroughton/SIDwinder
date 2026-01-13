@@ -20,8 +20,11 @@
 const NUM_COLOR_PALETTES = 7;
 
 // Size constants - extra bytes for safety margin
-const COLOR_TABLE_SIZE_WATER = 120;   // For RaistlinBars (MAX_BAR_HEIGHT=111 + padding)
-const COLOR_TABLE_SIZE_MIRROR = 80;   // For RaistlinMirrorBars (MAX_BAR_HEIGHT=71 + padding)
+// MAX_BAR_HEIGHT = TOP_SPECTRUM_HEIGHT * 8 - 1, COLOR_TABLE_SIZE = MAX_BAR_HEIGHT + 9
+const COLOR_TABLE_SIZE_WATER = 120;        // For RaistlinBars (TOP=14, MAX_BAR_HEIGHT=111)
+const COLOR_TABLE_SIZE_MIRROR = 80;        // For RaistlinMirrorBars (TOP=9, MAX_BAR_HEIGHT=71)
+const COLOR_TABLE_SIZE_WATER_LOGO = 72;    // For RaistlinBarsWithLogo (TOP=8, MAX_BAR_HEIGHT=63)
+const COLOR_TABLE_SIZE_MIRROR_LOGO = 48;   // For RaistlinMirrorBarsWithLogo (TOP=5, MAX_BAR_HEIGHT=39)
 
 // Color palette definitions - each defines colors from bottom to top
 // Format: array of {color, percentage} where percentage is 0-100 for position in gradient
@@ -217,6 +220,18 @@ function generateMirrorColorData(paletteIndex) {
     return colorTable;
 }
 
+// Generate color table for water-style visualizers with logo (RaistlinBarsWithLogo)
+function generateWaterLogoColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_WATER_LOGO);
+    return colorTable;
+}
+
+// Generate color table for mirror-style visualizers with logo (RaistlinMirrorBarsWithLogo)
+function generateMirrorLogoColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_MIRROR_LOGO);
+    return colorTable;
+}
+
 // Color effect types
 const COLOR_EFFECT_HEIGHT = 0;      // Dynamic - color based on bar height
 const COLOR_EFFECT_LINE_GRADIENT = 1; // Static - fixed colors per screen line
@@ -365,6 +380,8 @@ const DARKER_COLOR_MAP = new Uint8Array([
 // Cache for generated data
 const waterColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 const mirrorColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const waterLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const mirrorLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 
 // Get color palette data for a specific visualizer type
 function getColorPaletteData(paletteType, paletteIndex) {
@@ -382,6 +399,16 @@ function getColorPaletteData(paletteType, paletteIndex) {
             mirrorColorCache[paletteIndex] = generateMirrorColorData(paletteIndex);
         }
         return mirrorColorCache[paletteIndex];
+    } else if (paletteType === 'waterlogo') {
+        if (!waterLogoColorCache[paletteIndex]) {
+            waterLogoColorCache[paletteIndex] = generateWaterLogoColorData(paletteIndex);
+        }
+        return waterLogoColorCache[paletteIndex];
+    } else if (paletteType === 'mirrorlogo') {
+        if (!mirrorLogoColorCache[paletteIndex]) {
+            mirrorLogoColorCache[paletteIndex] = generateMirrorLogoColorData(paletteIndex);
+        }
+        return mirrorLogoColorCache[paletteIndex];
     }
 
     return null;
@@ -421,6 +448,8 @@ window.COLOR_PALETTES_DATA = {
     getDarkerColorMap: () => DARKER_COLOR_MAP,
     COLOR_TABLE_SIZE_WATER: COLOR_TABLE_SIZE_WATER,
     COLOR_TABLE_SIZE_MIRROR: COLOR_TABLE_SIZE_MIRROR,
+    COLOR_TABLE_SIZE_WATER_LOGO: COLOR_TABLE_SIZE_WATER_LOGO,
+    COLOR_TABLE_SIZE_MIRROR_LOGO: COLOR_TABLE_SIZE_MIRROR_LOGO,
     NUM_COLOR_PALETTES: NUM_COLOR_PALETTES,
     // Color effect functions and constants
     COLOR_EFFECT_HEIGHT: COLOR_EFFECT_HEIGHT,

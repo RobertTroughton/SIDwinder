@@ -91,9 +91,10 @@ songNameColor:
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 
-//; Color table configuration
+//; Color table configuration - placed in unused sprite area ($2E00-$2FFF)
+//; Since this visualizer doesn't use sprites, we can use that memory for the color table
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $4000 //; $8000-807F
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00 //; Within 16k bank (was $4000 outside bank)
 
 //; =============================================================================
 //; INCLUDES

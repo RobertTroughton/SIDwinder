@@ -83,7 +83,7 @@ songNameColor:
 .const SCREEN1_BANK						= 13	//; $7400-$77FF
 .const CHARSET_BANK						= 7		//; $7800-$7EFF and $7F00-7FFF
 .const BITMAP_BANK						= 1		//; $6000-$6DBF
-.const SPRITE_BASE_INDEX				= $B8	//; $6E00-$6FFF
+.const SPRITE_BASE_INDEX				= $B9	//; $6E40-$6FFF (7 sprites) - moved up to create 128-byte gap for color table
 
 //; Calculated addresses
 .const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
@@ -107,9 +107,10 @@ songNameColor:
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
 
-//; Color table configuration
+//; Color table configuration - placed in gap between bitmap and sprites ($2DC0-$2E3F)
+//; With SPRITE_BASE_INDEX at $B9, sprites start at $2E40, giving 128-byte gap for 72-byte color table
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $4000 //; $8000-807F
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2DC0 //; Within 16k bank (was $4000 outside bank)
 
 //; =============================================================================
 //; INCLUDES
@@ -466,17 +467,17 @@ UpdateSprites:
 	ldx spriteAnimationIndex
 
 	lda spriteSineTable, x
-	.for (var i = 0; i < 8; i++) {
+	.for (var i = 0; i < 7; i++) {
 		sta $d000 + (i * 2)
-		.if (i != 7) {
+		.if (i != 6) {
 			clc
 			adc #$30
 		}
 	}
-	ldy #$c0
+	ldy #$40							//; Sprite 6 always has X MSB set
 	lda $d000 + (5 * 2)
 	bmi !skip+
-	ldy #$e0
+	ldy #$60							//; Sprites 5 and 6 have X MSB set
 !skip:
 	sty $d010
 
@@ -484,8 +485,12 @@ UpdateSprites:
 	lsr
 	lsr
 	and #$07
+	cmp #$07							//; Clamp to 0-6 (7 frames)
+	bne !noClamp+
+	lda #$00
+!noClamp:
 	ora #SPRITE_BASE_INDEX
-	.for (var i = 0; i < 8; i++) {
+	.for (var i = 0; i < 7; i++) {
 		sta SPRITE_POINTERS_0 + i
 		sta SPRITE_POINTERS_1 + i
 	}
@@ -585,7 +590,7 @@ VICConfigStart:
 	.byte SKIP_REGISTER					//; D012
 	.byte SKIP_REGISTER					//; D013
 	.byte SKIP_REGISTER					//; D014
-	.byte $ff							//; Sprite enable
+	.byte $7f							//; Sprite enable (7 sprites: 0-6)
 	.byte $18							//; D016
 	.byte $00							//; Sprite Y expand
 	.byte D018_VALUE_BITMAP				//; Memory setup
@@ -593,7 +598,7 @@ VICConfigStart:
 	.byte SKIP_REGISTER					//; D01A
 	.byte $00							//; Sprite priority
 	.byte $00							//; Sprite multicolor
-	.byte $ff							//; Sprite X expand
+	.byte $7f							//; Sprite X expand (7 sprites: 0-6)
 	.byte $00							//; Sprite-sprite collision
 	.byte $00							//; Sprite-background collision
 	.byte SKIP_REGISTER					//; Border color - loaded from data block
@@ -643,11 +648,11 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 
 //; =============================================================================
-//; SPRITE DATA
+//; SPRITE DATA (7 animation frames to fit within 16k bank)
 //; =============================================================================
 
 * = SPRITES_ADDRESS "Water Sprites"
-	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
+	.fill min(7 * 64, file_waterSpritesData.getSize()), file_waterSpritesData.get(i)
 
 //; =============================================================================
 //; CHARSET DATA
