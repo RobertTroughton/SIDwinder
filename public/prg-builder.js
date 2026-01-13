@@ -730,7 +730,6 @@ class SIDwinderPRGExporter {
                             fileData = result.data;
 
                             if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                                console.log('Default PNG converted to valid C64 image format');
                             } else {
                                 console.warn('Default PNG conversion resulted in unexpected C64 image format');
                             }

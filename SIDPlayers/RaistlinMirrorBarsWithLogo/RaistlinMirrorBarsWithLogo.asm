@@ -93,7 +93,7 @@ songNameColor:
 
 //; Color table configuration
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00  //; Before screen 0
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $4000 //; $8000-807F
 
 //; =============================================================================
 //; INCLUDES

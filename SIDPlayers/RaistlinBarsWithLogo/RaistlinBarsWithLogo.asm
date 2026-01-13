@@ -81,7 +81,7 @@ songNameColor:
 
 .const SCREEN0_BANK						= 12	//; $7000-$73FF
 .const SCREEN1_BANK						= 13	//; $7400-$77FF
-.const CHARSET_BANK						= 7		//; $7800-$7DFF and $7F00-7FFF
+.const CHARSET_BANK						= 7		//; $7800-$7EFF and $7F00-7FFF
 .const BITMAP_BANK						= 1		//; $6000-$6DBF
 .const SPRITE_BASE_INDEX				= $B8	//; $6E00-$6FFF
 
@@ -109,7 +109,7 @@ songNameColor:
 
 //; Color table configuration
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= BITMAP_ADDRESS + $1E00 //; $7E00-7EFF
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $4000 //; $8000-807F
 
 //; =============================================================================
 //; INCLUDES
@@ -654,7 +654,7 @@ heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 //; =============================================================================
 
 * = CHARSET_ADDRESS "Font"
-	.fill min($600, file_charsetData.getSize()), file_charsetData.get(i)
+	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 //; This area is filled at build time by the web app based on BarStyle selection
