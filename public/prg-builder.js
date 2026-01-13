@@ -840,8 +840,18 @@ class SIDwinderPRGExporter {
                         const fontData = await FONT_DATA.getFontData(vizConfig.fontType, validIndex, fallbackConfig);
                         if (fontData) {
                             const targetAddress = parseInt(layout.charsetAddress);
+                            // Respect charsetSize limit if specified in layout config
+                            // This prevents overwriting color tables that may be placed
+                            // immediately after the font data (e.g., RaistlinBarsWithLogo)
+                            let fontDataToInject = fontData;
+                            if (layout.charsetSize) {
+                                const maxSize = parseInt(layout.charsetSize);
+                                if (fontData.length > maxSize) {
+                                    fontDataToInject = fontData.slice(0, maxSize);
+                                }
+                            }
                             optionComponents.push({
-                                data: fontData,
+                                data: fontDataToInject,
                                 loadAddress: targetAddress,
                                 name: `font_charset`
                             });
