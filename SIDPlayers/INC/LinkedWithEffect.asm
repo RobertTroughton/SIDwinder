@@ -105,6 +105,6 @@ ColourFadeValues:       .fill 70, $00
                         .byte $0b, $0c, $0f
                         .fill 80, $01
                         .byte $0d, $05, $09
-                        .fill 20, $00
+                        .fill 48, $00
                         .byte $ff
 
