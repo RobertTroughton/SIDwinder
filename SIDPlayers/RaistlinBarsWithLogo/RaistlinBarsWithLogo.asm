@@ -81,8 +81,8 @@ songNameColor:
 
 .const SCREEN0_BANK						= 12	//; $7000-$73FF
 .const SCREEN1_BANK						= 13	//; $7400-$77FF
-.const CHARSET_BANK						= 7		//; $7800-$7FFF
-.const BITMAP_BANK						= 1		//; $6000-$6C7F
+.const CHARSET_BANK						= 7		//; $7800-$7BFF and $7F00-7FFF
+.const BITMAP_BANK						= 1		//; $6000-$6DBF
 .const SPRITE_BASE_INDEX				= $B8	//; $6E00-$6FFF
 
 //; Calculated addresses
@@ -109,7 +109,7 @@ songNameColor:
 
 //; Color table configuration
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= BITMAP_ADDRESS - $80    //; 128 bytes before bitmap
+.const COLOR_TABLE_ADDRESS				= BITMAP_ADDRESS + $1C00 //; $7C00-7CFF
 
 //; =============================================================================
 //; INCLUDES
@@ -127,7 +127,7 @@ songNameColor:
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
-// Note: LinkedWithEffect not included due to memory constraints in this visualizer
+.import source "../INC/LinkedWithEffect.asm"
 
 //; =============================================================================
 //; DATA
@@ -149,19 +149,20 @@ previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 
-	jsr VSync
+	lda #$35
+	sta $01
 
-	lda #$00
-	sta $d011
-	sta $d020
+    jsr RunLinkedWithEffect
 
     jsr InitKeyboard
 
-    // Note: LinkedWithEffect disabled for this visualizer due to memory constraints
-    // jsr RunLinkedWithEffect
-
 	jsr SetupStableRaster
-	jsr SetupSystem
+
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
+
 	jsr NMIFix
 
 	jsr InitializeVIC
@@ -219,21 +220,6 @@ MainLoop:
 	sta currentScreenBuffer
 
 	jmp MainLoop
-
-//; =============================================================================
-//; SYSTEM SETUP
-//; =============================================================================
-
-SetupSystem:
-	lda #$35
-	sta $01
-
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-
-	rts
 
 //; =============================================================================
 //; VIC INITIALIZATION
@@ -634,10 +620,6 @@ darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
 							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
 
 //; =============================================================================
-//; Note: Color table data moved to COLOR_TABLE_ADDRESS section
-//; =============================================================================
-
-//; =============================================================================
 //; DATA SECTION - Display Mapping
 //; =============================================================================
 
@@ -672,7 +654,7 @@ heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 //; =============================================================================
 
 * = CHARSET_ADDRESS "Font"
-	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
+	.fill min($400, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 //; This area is filled at build time by the web app based on BarStyle selection

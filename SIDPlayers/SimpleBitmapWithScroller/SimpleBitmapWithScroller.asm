@@ -19,9 +19,7 @@
 .var BITMAP_BANK                    = 1
 .var SCREEN_BANK                    = 2
 .var COLOUR_BANK                    = 3
-.var SPRITES_INDEX                  = $30   //; so the sprites will occupy the space that was used for the colour data
-
-.var CharSetShadowAddress           = VIC_BANK_ADDRESS + $0000
+.var SPRITES_INDEX                  = $00
 
 .var ScrollColour					= DATA_ADDRESS + $80
 
@@ -63,6 +61,8 @@ Initialize:
     lda #$35
     sta $01
 
+    jsr RunLinkedWithEffect
+
     jsr VSync
 
     lda #$00
@@ -75,11 +75,6 @@ Initialize:
     sta $d021
 
     jsr InitKeyboard
-
-    // Run the "Linked With SIDquake" intro effect
-    jsr RunLinkedWithEffect
-
-    jsr CopyROMFont
 
     lda SongNumber
     sta CurrentSong
@@ -107,14 +102,6 @@ Initialize:
         lda BITMAP_COLOUR_DATA + (i * 256), y
         sta $d800 + (i * 256), y
     }
-    iny
-    bne !loop-
-
-    ldy #$00
-    lda #$00
-!loop:
-    sta SPRITES_DATA + (0 * 256), y
-    sta SPRITES_DATA + (1 * 256), y
     iny
     bne !loop-
 
@@ -346,13 +333,16 @@ ReadScroller:
     lsr
     lsr
     lsr
-    ora #>CharSetShadowAddress
+    ora #$d8            //; ROM Charset High Byte
     sta InCharPtr + 2
     txa
     asl
     asl
     asl
     sta InCharPtr + 1
+
+    lda #$33
+    sta $01
 
     ldx #7
     ldy #(7 * 3)
@@ -364,6 +354,9 @@ InCharPtr:
     dey
     dex
     bpl InCharPtr
+
+    lda #$35
+    sta $01
 
     inc ReadScroller + 1
     bne !skip+
@@ -392,32 +385,6 @@ InitializeVIC:
 	bpl !loop-
 
 	rts
-
-CopyROMFont:
-
-    lda $01
-    pha
-    lda #$33
-    sta $01
-
-    ldx #$08
-    ldy #$00
-InPtr:
-    lda $d800, y
-OutPtr:
-    sta CharSetShadowAddress, y
-    iny
-    bne InPtr
-
-    inc InPtr + 2
-    inc OutPtr + 2
-    dex
-    bne InPtr
-
-    pla
-    sta $01
-
-    rts
 
 //; =============================================================================
 //; DATA SECTION - VIC Configuration
@@ -473,3 +440,6 @@ VICConfigEnd:
 
 * = BITMAP_COLOUR_DATA "Bitmap COL Data"
     .fill $400, $00
+
+* = SPRITES_DATA
+    .fill $200, $00

@@ -132,19 +132,20 @@ previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
 
-	jsr VSync
+	lda #$35
+	sta $01
 
-	lda #$00
-	sta $d011
-	sta $d020
+    jsr RunLinkedWithEffect
 
     jsr InitKeyboard
 
-    // Run the "Linked With SIDquake" intro effect
-    jsr RunLinkedWithEffect
-
 	jsr SetupStableRaster
-	jsr SetupSystem
+
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
+
 	jsr NMIFix
 
 	jsr InitializeVIC
@@ -204,21 +205,6 @@ MainLoop:
 	sta currentScreenBuffer
 
 	jmp MainLoop
-
-//; =============================================================================
-//; SYSTEM SETUP
-//; =============================================================================
-
-SetupSystem:
-	lda #$35
-	sta $01
-
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-
-	rts
 
 //; =============================================================================
 //; VIC INITIALIZATION

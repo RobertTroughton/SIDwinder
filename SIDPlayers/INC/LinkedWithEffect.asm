@@ -20,19 +20,31 @@
 .var VIC_COLOURMEMORY = $d800
 
 // =============================================================================
+// DATA
+// =============================================================================
+
+EffectLine1:            .byte $20, $20, $20, $20, $4c, $09, $0e, $0b, $05, $04, $20, $57, $09, $14, $08, $20, $20, $20, $20, $20
+EffectLine2:            .byte $53, $49, $44, $11, $15, $01, $0b, $05, $2e, $43, $36, $34, $04, $05, $0d, $0f, $2e, $03, $0f, $0d
+ColourFadeValues:       .fill 70, $00
+                        .byte $0b, $0c, $0f
+                        .fill 80, $01
+                        .byte $0d, $05, $09
+                        .fill 48, $00
+                        .byte $ff
+
+// =============================================================================
 // EFFECT ENTRY POINT
 // =============================================================================
 
 RunLinkedWithEffect:
 
-    lda #$1b
-    sta $d011
-    lda #$17
-    sta $d018
-    lda #$97
-    sta $dd00
+    jsr VSync
+
     lda #$00
+    sta $d020
     sta $d021
+
+    jsr VSync
 
     // Clear screen
     ldx #0
@@ -59,52 +71,47 @@ RunLinkedWithEffect:
     dex
     bpl !txt-
 
+    jsr VSync
+
+    lda #$17
+    sta $d018
+    lda #$97
+    sta $dd00
+    lda #$08
+    sta $d016
+    lda #$00
+    sta $d015
+    lda #$1b
+    sta $d011
+
     ldy #$00
 
+OuterLoop:
+    ldy #$00
+
+    jsr VSync
+
+    ldx #0
 !loop:
-    jsr DoVSync
-
-    .for (var i = 0; i < 20; i++)
-    {
-        lda ColourFadeValues + i, y
-        sta VIC_COLOURMEMORY + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X + i
-        sta VIC_COLOURMEMORY + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X + i
-    }
-    lda ColourFadeValues + 20, y
-    bmi !fin+
-
+    lda ColourFadeValues, y
+    sta VIC_COLOURMEMORY + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X, x
+    sta VIC_COLOURMEMORY + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X, x
     iny
-    jmp !loop-
+    inx
+    cpx #20
+    bne !loop-
 
-!fin:
-    jsr DoVSync
+    inc OuterLoop + 1
+
+    lda ColourFadeValues, y
+    bpl OuterLoop
+
+    jsr VSync
     lda #$00
     sta $d011
-    jmp DoVSync
+    jmp VSync
 
 !continue:
     jmp !loop-
 
-
-DoVSync:
-    bit $d011
-    bpl *-3
-    bit $d011
-    bmi *-3
-    rts
-
-
-
-// =============================================================================
-// DATA
-// =============================================================================
-
-EffectLine1:            .byte $20, $20, $20, $20, $4c, $09, $0e, $0b, $05, $04, $20, $57, $09, $14, $08, $20, $20, $20, $20, $20
-EffectLine2:            .byte $53, $49, $44, $11, $15, $01, $0b, $05, $2e, $43, $36, $34, $04, $05, $0d, $0f, $2e, $03, $0f, $0d
-ColourFadeValues:       .fill 70, $00
-                        .byte $0b, $0c, $0f
-                        .fill 80, $01
-                        .byte $0d, $05, $09
-                        .fill 48, $00
-                        .byte $ff
 

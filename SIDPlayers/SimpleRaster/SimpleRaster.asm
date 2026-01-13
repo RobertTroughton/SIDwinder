@@ -63,16 +63,9 @@ Initialize:
     lda #$35
     sta $01
 
-    jsr VSync
-
-    lda #$00
-    sta $d011
-    sta $d020
+    jsr RunLinkedWithEffect
 
     jsr InitKeyboard
-
-    // Run the "Linked With SIDquake" intro effect
-    jsr RunLinkedWithEffect
 
     lda SongNumber
     sta CurrentSong
