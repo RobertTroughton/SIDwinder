@@ -2,6 +2,7 @@
   "name": "Simple Bitmap With Scroller",
   "maxCallsPerFrame": 6,
   "version": "1.0",
+  "needsSaveRestore": false,
 
   "layouts": {
     "bank4000": {

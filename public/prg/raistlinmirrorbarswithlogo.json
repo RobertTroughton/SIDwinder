@@ -2,6 +2,7 @@
   "name": "Raistlin Mirror Bars With Logo",
   "version": "1.0",
   "maxCallsPerFrame": 1,
+  "needsSaveRestore": true,
   "barStyleType": "mirror",
   "colorPaletteType": "mirror",
   "colorEffectType": "mirrorlogo",

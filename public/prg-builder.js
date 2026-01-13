@@ -1254,7 +1254,10 @@ class SIDwinderPRGExporter {
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
 
-            if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
+            // Check if this visualizer needs save/restore functionality
+            const needsSaveRestore = vizConfig?.needsSaveRestore !== false;
+
+            if (needsSaveRestore && this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
                 // Calculate the routine size FIRST to know how much space we need
@@ -1281,8 +1284,9 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
 
             } else {
-                console.warn('No analysis results for save/restore routines');
-                // Create dummy RTS routines at a safe location
+                // Visualizer doesn't need save/restore, or no analysis results available
+                // Create minimal RTS stubs - these are never called but the data block
+                // still needs valid addresses for the JMP instructions
                 const dummyRoutine = new Uint8Array([0x60]); // RTS
 
                 // Place after data block

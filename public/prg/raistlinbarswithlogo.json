@@ -2,6 +2,7 @@
   "name": "Raistlin Bars With Logo",
   "version": "1.0",
   "maxCallsPerFrame": 1,
+  "needsSaveRestore": true,
   "barStyleType": "water",
   "colorPaletteType": "water",
   "colorEffectType": "waterlogo",

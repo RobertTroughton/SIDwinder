@@ -1,6 +1,7 @@
 {
   "name": "Simple Raster",
   "maxCallsPerFrame": 8,
+  "needsSaveRestore": false,
   "layouts": {
     "bank4000": {
       "binary": "prg/simpleraster-4000.bin",
