@@ -492,7 +492,7 @@ class SIDwinderPRGExporter {
         return result;
     }
 
-    stringToPETSCII(str, length) {
+    stringToPETSCIIRaw(str, length, useSystemFont = false) {
         const bytes = new Uint8Array(length);
         bytes.fill(32);  // Default to space (screen code 32)
 
@@ -503,24 +503,44 @@ class SIDwinderPRGExporter {
                 const code = str.charCodeAt(i);
                 let screenCode = 32;  // Default to space
 
-                // Convert ASCII to C64 screen codes
-                // Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
-                if (code >= 65 && code <= 90) {
-                    // A-Z uppercase -> screen codes 1-26
-                    screenCode = code - 64;
-                } else if (code >= 97 && code <= 122) {
-                    // a-z lowercase -> screen codes 65-90
-                    screenCode = code - 32;
-                } else if (code >= 32 && code <= 63) {
-                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
-                    screenCode = code;
-                } else if (code === 64) {
-                    // @ -> screen code 0
-                    screenCode = 0;
+                if (useSystemFont) {
+                    // C64 system font in lowercase mode:
+                    // Screen codes 1-26 = lowercase a-z
+                    // Screen codes 65-90 = uppercase A-Z
+                    if (code >= 65 && code <= 90) {
+                        // A-Z uppercase -> screen codes 65-90
+                        screenCode = code;
+                    } else if (code >= 97 && code <= 122) {
+                        // a-z lowercase -> screen codes 1-26
+                        screenCode = code - 96;
+                    } else if (code >= 32 && code <= 63) {
+                        // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                        screenCode = code;
+                    } else if (code === 64) {
+                        // @ -> screen code 0
+                        screenCode = 0;
+                    } else {
+                        // Anything else: try to map to valid range 0-95
+                        screenCode = ((code % 96) + 96) % 96;
+                    }
                 } else {
-                    // Anything else: try to map to valid range 0-95
-                    // Use modulo to wrap into range
-                    screenCode = ((code % 96) + 96) % 96;
+                    // Custom font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+                    if (code >= 65 && code <= 90) {
+                        // A-Z uppercase -> screen codes 1-26
+                        screenCode = code - 64;
+                    } else if (code >= 97 && code <= 122) {
+                        // a-z lowercase -> screen codes 65-90
+                        screenCode = code - 32;
+                    } else if (code >= 32 && code <= 63) {
+                        // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                        screenCode = code;
+                    } else if (code === 64) {
+                        // @ -> screen code 0
+                        screenCode = 0;
+                    } else {
+                        // Anything else: try to map to valid range 0-95
+                        screenCode = ((code % 96) + 96) % 96;
+                    }
                 }
 
                 // Ensure screen code is in valid range 0-95
@@ -775,6 +795,9 @@ class SIDwinderPRGExporter {
 
         // Reset font case type for this export
         this.currentFontCaseType = undefined;
+
+        // Determine if we should use system font mapping (no custom fontType means system font)
+        this.useSystemFontMapping = !vizConfig.fontType;
 
         // Initialize sanitizer if not already done
         if (!this.sanitizer) {
@@ -1032,7 +1055,7 @@ class SIDwinderPRGExporter {
                         reportUnknown: false
                     });
 
-                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
 
                     optionComponents.push({
                         data: data,
@@ -1069,8 +1092,8 @@ class SIDwinderPRGExporter {
                         this.sanitizer.showWarningDialog(sanitized.warnings);
                     }
 
-                    // Convert to PETSCII bytes
-                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+                    // Convert to PETSCII bytes - use system font mapping if no custom font
+                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
 
                     // Add null terminator
                     const data = new Uint8Array(petsciiData.length + 1);
@@ -1104,8 +1127,8 @@ class SIDwinderPRGExporter {
             reportUnknown: false  // Don't report for metadata fields
         });
 
-        // Convert to PETSCII bytes
-        return this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+        // Convert to PETSCII bytes - use system font mapping if no custom font
+        return this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
     }
 
     // Update the centerString method to use sanitizer

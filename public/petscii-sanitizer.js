@@ -192,35 +192,56 @@ class PETSCIISanitizer {
 
     /**
      * Convert sanitized text to C64 screen codes
-     * Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
      * @param {string} text - Already sanitized ASCII text
-     * @param {boolean} lowercase - Use lowercase mode (default true, ignored - always uses font layout)
+     * @param {boolean} useSystemFont - If true, use C64 system font mapping (lowercase at 1-26);
+     *                                  if false, use custom font mapping (uppercase at 1-26)
      * @returns {Uint8Array} - Screen code byte array
      */
-    toPETSCIIBytes(text, lowercase = true) {
+    toPETSCIIBytes(text, useSystemFont = false) {
         const bytes = [];
 
         for (let i = 0; i < text.length; i++) {
             const code = text.charCodeAt(i);
             let screenCode;
 
-            // Convert ASCII to C64 screen codes matching font layout
-            // Font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
-            if (code >= 65 && code <= 90) {
-                // A-Z uppercase -> screen codes 1-26
-                screenCode = code - 64;
-            } else if (code >= 97 && code <= 122) {
-                // a-z lowercase -> screen codes 65-90
-                screenCode = code - 32;
-            } else if (code >= 32 && code <= 63) {
-                // Space, symbols, digits (ASCII 32-63) -> same screen codes
-                screenCode = code;
-            } else if (code === 64) {
-                // @ -> screen code 0
-                screenCode = 0;
+            if (useSystemFont) {
+                // C64 system font in lowercase mode:
+                // Screen codes 1-26 = lowercase a-z
+                // Screen codes 65-90 = uppercase A-Z (shown as graphics in uppercase mode)
+                if (code >= 65 && code <= 90) {
+                    // A-Z uppercase -> screen codes 65-90
+                    screenCode = code;
+                } else if (code >= 97 && code <= 122) {
+                    // a-z lowercase -> screen codes 1-26
+                    screenCode = code - 96;
+                } else if (code >= 32 && code <= 63) {
+                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                    screenCode = code;
+                } else if (code === 64) {
+                    // @ -> screen code 0
+                    screenCode = 0;
+                } else {
+                    // Default to space
+                    screenCode = 32;
+                }
             } else {
-                // Default to space
-                screenCode = 32;
+                // Custom font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+                if (code >= 65 && code <= 90) {
+                    // A-Z uppercase -> screen codes 1-26
+                    screenCode = code - 64;
+                } else if (code >= 97 && code <= 122) {
+                    // a-z lowercase -> screen codes 65-90
+                    screenCode = code - 32;
+                } else if (code >= 32 && code <= 63) {
+                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
+                    screenCode = code;
+                } else if (code === 64) {
+                    // @ -> screen code 0
+                    screenCode = 0;
+                } else {
+                    // Default to space
+                    screenCode = 32;
+                }
             }
 
             // Ensure screen code is in valid range
