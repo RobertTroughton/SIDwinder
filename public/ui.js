@@ -1756,7 +1756,7 @@ class UIController {
 
         try {
             const baseName = this.currentFileName ?
-                this.currentFileName.replace('.sid', '') : 'output';
+                this.currentFileName.replace(/\.sid$/i, '').toLowerCase() : 'output';
 
             // Update progress
             this.updateBusy('Loading Visualizer', 'Reading configuration...');

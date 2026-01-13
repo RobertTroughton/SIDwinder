@@ -783,6 +783,10 @@ class SIDwinderPRGExporter {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
+        // Always set useSystemFontMapping based on whether visualizer has a custom fontType
+        // This must be done BEFORE any early returns so it's available for text rendering
+        this.useSystemFontMapping = !vizConfig?.fontType;
+
         if (!vizConfig || !vizConfig.options) {
             return [];
         }
@@ -795,9 +799,6 @@ class SIDwinderPRGExporter {
 
         // Reset font case type for this export
         this.currentFontCaseType = undefined;
-
-        // Determine if we should use system font mapping (no custom fontType means system font)
-        this.useSystemFontMapping = !vizConfig.fontType;
 
         // Initialize sanitizer if not already done
         if (!this.sanitizer) {
