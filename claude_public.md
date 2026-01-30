@@ -823,16 +823,6 @@
                             <span class="info-label">Max CPU Cycles:</span>
                             <span class="info-value" id="maxCycles">-</span>
                         </div>
-                        
-                        <div class="info-row" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                            <div class="checkbox-container">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="addSaveRestoreCheckbox">
-                                    Add Save/Restore Functions
-                                </label>
-                                <div class="checkbox-hint">Adds JSR-able save/restore routines for modified memory</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -1024,6 +1014,8 @@
     <script src="image-preview-manager.js"></script>
     <script src="compressor-manager.js"></script>
     <script src="bar-styles-data.js"></script>
+    <script src="color-palettes-data.js"></script>
+    <script src="font-data.js"></script>
     <script src="prg-builder.js"></script>
     <script src="hvsc-browser.js"></script>
     <script src="hvsc-random.js"></script>
@@ -3966,6 +3958,10 @@ body {
     image-rendering: crisp-edges;
 }
 
+.bar-style-thumbnail img.font-thumbnail-img {
+    object-fit: cover;
+}
+
 .bar-style-thumbnail::after {
     content: '';
     position: absolute;
@@ -4001,6 +3997,31 @@ body {
 
 .bar-style-thumbnail.selected .selected-check {
     display: flex;
+}
+
+.bar-style-thumbnail .style-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.75);
+    color: #ccc;
+    font-size: 9px;
+    text-align: center;
+    padding: 2px 1px;
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bar-style-thumbnail.selected .style-name {
+    color: #fff;
+    background: rgba(102, 126, 234, 0.8);
+}
+
+.bar-style-thumbnail:hover .style-name {
+    color: #fff;
 }
 
 .bar-style-thumbnail.placeholder {
@@ -4221,6 +4242,413 @@ window.BAR_STYLES_DATA = {
     BAR_STYLE_SIZE_WATER: BAR_STYLE_SIZE_WATER,
     BAR_STYLE_SIZE_MIRROR: BAR_STYLE_SIZE_MIRROR,
     NUM_BAR_STYLES: NUM_BAR_STYLES
+};
+```
+
+
+### FILE: public/color-palettes-data.js
+```js
+const NUM_COLOR_PALETTES = 7;
+
+const COLOR_TABLE_SIZE_WATER = 120;        
+const COLOR_TABLE_SIZE_MIRROR = 80;        
+const COLOR_TABLE_SIZE_WATER_LOGO = 72;    
+const COLOR_TABLE_SIZE_MIRROR_LOGO = 48;   
+
+const COLOR_PALETTE_GRADIENTS = [
+    
+    {
+        name: "Rainbow",
+        description: "Classic rainbow gradient from bottom to top",
+        borderColor: 0x00,      
+        backgroundColor: 0x00,  
+        previewImage: "PNG/Palettes/palette-rainbow.png",
+        gradient: [
+            { color: 0x0B, pct: 0 },    
+            { color: 0x09, pct: 3 },    
+            { color: 0x06, pct: 20 },   
+            { color: 0x04, pct: 37 },   
+            { color: 0x0E, pct: 52 },   
+            { color: 0x0D, pct: 67 },   
+            { color: 0x07, pct: 85 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Fire",
+        description: "Hot flames from red to yellow to white",
+        borderColor: 0x00,      
+        backgroundColor: 0x00,  
+        previewImage: "PNG/Palettes/palette-fire.png",
+        gradient: [
+            { color: 0x0B, pct: 0 },    
+            { color: 0x09, pct: 8 },    
+            { color: 0x02, pct: 20 },   
+            { color: 0x0A, pct: 35 },   
+            { color: 0x08, pct: 50 },   
+            { color: 0x07, pct: 70 },   
+            { color: 0x0F, pct: 88 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Ice",
+        description: "Cool ice colors from deep blue to white",
+        borderColor: 0x06,      
+        backgroundColor: 0x06,  
+        previewImage: "PNG/Palettes/palette-ice.png",
+        gradient: [
+            { color: 0x06, pct: 0 },    
+            { color: 0x06, pct: 15 },   
+            { color: 0x06, pct: 30 },   
+            { color: 0x0E, pct: 45 },   
+            { color: 0x0E, pct: 55 },   
+            { color: 0x03, pct: 70 },   
+            { color: 0x03, pct: 82 },   
+            { color: 0x0F, pct: 92 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Forest",
+        description: "Natural green forest gradient",
+        borderColor: 0x00,      
+        backgroundColor: 0x00,  
+        previewImage: "PNG/Palettes/palette-forest.png",
+        gradient: [
+            { color: 0x0B, pct: 0 },    
+            { color: 0x0B, pct: 10 },   
+            { color: 0x05, pct: 25 },   
+            { color: 0x05, pct: 40 },   
+            { color: 0x0D, pct: 55 },   
+            { color: 0x0D, pct: 70 },   
+            { color: 0x07, pct: 85 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Purple Haze",
+        description: "Deep purple to pink gradient",
+        borderColor: 0x00,      
+        backgroundColor: 0x00,  
+        previewImage: "PNG/Palettes/palette-purplehaze.png",
+        gradient: [
+            { color: 0x0B, pct: 0 },    
+            { color: 0x06, pct: 12 },   
+            { color: 0x04, pct: 28 },   
+            { color: 0x04, pct: 42 },   
+            { color: 0x0A, pct: 58 },   
+            { color: 0x0A, pct: 72 },   
+            { color: 0x0F, pct: 88 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Ocean",
+        description: "Deep sea blues and cyans",
+        borderColor: 0x06,      
+        backgroundColor: 0x06,  
+        previewImage: "PNG/Palettes/palette-ocean.png",
+        gradient: [
+            { color: 0x06, pct: 0 },    
+            { color: 0x06, pct: 10 },   
+            { color: 0x06, pct: 25 },   
+            { color: 0x0E, pct: 42 },   
+            { color: 0x03, pct: 58 },   
+            { color: 0x0D, pct: 75 },   
+            { color: 0x0F, pct: 90 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    },
+
+    {
+        name: "Monochrome",
+        description: "Classic grey scale",
+        borderColor: 0x00,      
+        backgroundColor: 0x00,  
+        previewImage: "PNG/Palettes/palette-mono.png",
+        gradient: [
+            { color: 0x0B, pct: 0 },    
+            { color: 0x0B, pct: 18 },   
+            { color: 0x0B, pct: 35 },   
+            { color: 0x0C, pct: 52 },   
+            { color: 0x0C, pct: 68 },   
+            { color: 0x0F, pct: 85 },   
+            { color: 0x01, pct: 100 }   
+        ]
+    }
+];
+
+function generateColorTable(paletteIndex, tableSize) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
+    const result = new Uint8Array(tableSize);
+
+    const maxHeight = tableSize - 9;
+
+    result[0] = gradient[0].color;
+
+    for (let i = 1; i < tableSize; i++) {
+        
+        const pct = Math.min((i / maxHeight) * 100, 100);
+
+        let color = gradient[0].color;
+
+        for (let g = 0; g < gradient.length - 1; g++) {
+            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
+                
+                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
+                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
+                break;
+            }
+            if (pct > gradient[g + 1].pct) {
+                color = gradient[g + 1].color;
+            }
+        }
+
+        result[i] = color;
+    }
+
+    return result;
+}
+
+function generateWaterColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_WATER);
+    return colorTable;
+}
+
+function generateMirrorColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_MIRROR);
+    return colorTable;
+}
+
+function generateWaterLogoColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_WATER_LOGO);
+    return colorTable;
+}
+
+function generateMirrorLogoColorData(paletteIndex) {
+    const colorTable = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_MIRROR_LOGO);
+    return colorTable;
+}
+
+const COLOR_EFFECT_HEIGHT = 0;      
+const COLOR_EFFECT_LINE_GRADIENT = 1; 
+const COLOR_EFFECT_SOLID = 2;       
+
+const LINE_COUNT_WATER = 17;        
+const LINE_COUNT_WATER_LOGO = 11;   
+const LINE_COUNT_MIRROR = 18;       
+const LINE_COUNT_MIRROR_LOGO = 10;  
+
+function generateLineGradientWater(paletteIndex, topHeight, bottomHeight) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
+    const totalLines = topHeight + bottomHeight;
+    const result = new Uint8Array(totalLines);
+
+    for (let line = 0; line < topHeight; line++) {
+        let pct;
+        if (line === topHeight - 1) {
+            pct = 0;  
+        } else {
+            
+            pct = 100 - (line / (topHeight - 2)) * 80;
+        }
+
+        let color = gradient[0].color;
+        for (let g = 0; g < gradient.length - 1; g++) {
+            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
+                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
+                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
+                break;
+            }
+            if (pct > gradient[g + 1].pct) {
+                color = gradient[g + 1].color;
+            }
+        }
+        result[line] = color;
+    }
+
+    const topDarkColor = result[topHeight - 1];
+    const bottomDarkColor = DARKER_COLOR_MAP[topDarkColor];
+    for (let line = 0; line < bottomHeight; line++) {
+        if (line === bottomHeight - 1) {
+            result[topHeight + line] = bottomDarkColor;  
+        } else {
+            
+            result[topHeight + line] = DARKER_COLOR_MAP[result[topHeight - 2]];
+        }
+    }
+
+    return result;
+}
+
+function generateLineGradientMirror(paletteIndex, halfHeight) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    const gradient = palette.gradient;
+    const totalLines = halfHeight * 2;
+    const result = new Uint8Array(totalLines);
+
+    for (let line = 0; line < halfHeight; line++) {
+        let pct;
+        if (line === 0) {
+            pct = 0;  
+        } else {
+            
+            pct = 20 + ((line - 1) / (halfHeight - 2)) * 80;
+        }
+
+        let color = gradient[0].color;
+        for (let g = 0; g < gradient.length - 1; g++) {
+            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
+                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
+                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
+                break;
+            }
+            if (pct > gradient[g + 1].pct) {
+                color = gradient[g + 1].color;
+            }
+        }
+        result[line] = color;
+    }
+
+    for (let line = 0; line < halfHeight; line++) {
+        result[halfHeight + line] = result[halfHeight - 1 - line];
+    }
+
+    return result;
+}
+
+function generateSolidColors(paletteIndex, lineCount) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    
+    const brightestColor = palette.gradient[palette.gradient.length - 1].color;
+    const result = new Uint8Array(lineCount);
+    result.fill(brightestColor);
+    return result;
+}
+
+const DARKER_COLOR_MAP = new Uint8Array([
+    0x00,  
+    0x0C,  
+    0x09,  
+    0x0E,  
+    0x06,  
+    0x09,  
+    0x0B,  
+    0x08,  
+    0x02,  
+    0x0B,  
+    0x02,  
+    0x0B,  
+    0x0B,  
+    0x05,  
+    0x06,  
+    0x0C   
+]);
+
+const waterColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const mirrorColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const waterLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+const mirrorLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
+
+function getColorPaletteData(paletteType, paletteIndex) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+
+    if (paletteType === 'water') {
+        if (!waterColorCache[paletteIndex]) {
+            waterColorCache[paletteIndex] = generateWaterColorData(paletteIndex);
+        }
+        return waterColorCache[paletteIndex];
+    } else if (paletteType === 'mirror') {
+        if (!mirrorColorCache[paletteIndex]) {
+            mirrorColorCache[paletteIndex] = generateMirrorColorData(paletteIndex);
+        }
+        return mirrorColorCache[paletteIndex];
+    } else if (paletteType === 'waterlogo') {
+        if (!waterLogoColorCache[paletteIndex]) {
+            waterLogoColorCache[paletteIndex] = generateWaterLogoColorData(paletteIndex);
+        }
+        return waterLogoColorCache[paletteIndex];
+    } else if (paletteType === 'mirrorlogo') {
+        if (!mirrorLogoColorCache[paletteIndex]) {
+            mirrorLogoColorCache[paletteIndex] = generateMirrorLogoColorData(paletteIndex);
+        }
+        return mirrorLogoColorCache[paletteIndex];
+    }
+
+    return null;
+}
+
+function getColorPaletteInfo() {
+    return COLOR_PALETTE_GRADIENTS.map((palette, index) => ({
+        value: index,
+        name: palette.name,
+        description: palette.description,
+        previewImage: palette.previewImage,
+        borderColor: palette.borderColor,
+        backgroundColor: palette.backgroundColor
+    }));
+}
+
+function getColorPaletteDetails(paletteIndex) {
+    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
+        paletteIndex = 0;
+    }
+    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
+    return {
+        name: palette.name,
+        borderColor: palette.borderColor,
+        backgroundColor: palette.backgroundColor,
+        previewImage: palette.previewImage
+    };
+}
+
+window.COLOR_PALETTES_DATA = {
+    getColorPaletteData: getColorPaletteData,
+    getColorPaletteInfo: getColorPaletteInfo,
+    getColorPaletteDetails: getColorPaletteDetails,
+    getDarkerColorMap: () => DARKER_COLOR_MAP,
+    COLOR_TABLE_SIZE_WATER: COLOR_TABLE_SIZE_WATER,
+    COLOR_TABLE_SIZE_MIRROR: COLOR_TABLE_SIZE_MIRROR,
+    COLOR_TABLE_SIZE_WATER_LOGO: COLOR_TABLE_SIZE_WATER_LOGO,
+    COLOR_TABLE_SIZE_MIRROR_LOGO: COLOR_TABLE_SIZE_MIRROR_LOGO,
+    NUM_COLOR_PALETTES: NUM_COLOR_PALETTES,
+    
+    COLOR_EFFECT_HEIGHT: COLOR_EFFECT_HEIGHT,
+    COLOR_EFFECT_LINE_GRADIENT: COLOR_EFFECT_LINE_GRADIENT,
+    COLOR_EFFECT_SOLID: COLOR_EFFECT_SOLID,
+    generateLineGradientWater: generateLineGradientWater,
+    generateLineGradientMirror: generateLineGradientMirror,
+    generateSolidColors: generateSolidColors,
+    LINE_COUNT_WATER: LINE_COUNT_WATER,
+    LINE_COUNT_WATER_LOGO: LINE_COUNT_WATER_LOGO,
+    LINE_COUNT_MIRROR: LINE_COUNT_MIRROR,
+    LINE_COUNT_MIRROR_LOGO: LINE_COUNT_MIRROR_LOGO
 };
 ```
 
@@ -4711,6 +5139,497 @@ document.addEventListener('DOMContentLoaded', () => {
         window.freshFloatingNotes = new FreshFloatingNotes();
     }, 1000);
 });
+```
+
+
+### FILE: public/font-data.js
+```js
+const FONT_CASE_MIXED = 0;      
+const FONT_CASE_UPPER_ONLY = 1; 
+const FONT_CASE_LOWER_ONLY = 2; 
+
+const FONT_DIMENSIONS = {
+    '1x2': {
+        name: '1×2 (Doubled Height)',
+        description: 'Standard doubled-height font for song/artist names',
+        pngWidth: 256,
+        pngHeight: 48,
+        glyphWidth: 8,
+        glyphHeight: 16,
+        glyphsPerRow: 32,
+        glyphRows: 3,
+        totalGlyphs: 96,
+        charsetSize: 1792,  
+        folder: 'PNG/Fonts/1x2'  
+    },
+    '1x1': {
+        name: '1×1 (Single Height)',
+        description: 'Standard single-height font',
+        pngWidth: 256,
+        pngHeight: 24,
+        glyphWidth: 8,
+        glyphHeight: 8,
+        glyphsPerRow: 32,
+        glyphRows: 3,
+        totalGlyphs: 96,
+        charsetSize: 768,  
+        folder: 'PNG/Fonts/1x1'
+    }
+};
+
+const KNOWN_FONTS = {
+    '1x2': [
+        { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED, hasBinaryFallback: true },
+        { id: 'cupid', name: 'Cupid', caseType: FONT_CASE_MIXED },
+        { id: 'mermaid', name: 'Mermaid', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'yazoo', name: 'Yazoo', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'compyx', name: 'Compyx', caseType: FONT_CASE_MIXED },
+        { id: 'flex', name: 'Flex', caseType: FONT_CASE_UPPER_ONLY }
+    ],
+    '1x1': [
+        { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED }
+    ]
+};
+
+const FONT_BYTES_PER_CHAR = 8;
+
+const fontDataCache = new Map();
+
+const fontListCache = new Map();
+
+function getFontPath(fontType, fontId) {
+    const dim = FONT_DIMENSIONS[fontType];
+    if (!dim) return null;
+    return `${dim.folder}/font-${fontType}-${fontId}.png`;
+}
+
+async function discoverFonts(fontType) {
+    
+    if (fontListCache.has(fontType)) {
+        return fontListCache.get(fontType);
+    }
+
+    const dimension = FONT_DIMENSIONS[fontType];
+    if (!dimension) {
+        console.warn(`Unknown font type: ${fontType}`);
+        return [];
+    }
+
+    const knownFonts = KNOWN_FONTS[fontType] || [];
+    const fonts = knownFonts.map((font, index) => {
+        const imagePath = getFontPath(fontType, font.id);
+        return {
+            value: index,
+            id: font.id,
+            label: font.name,
+            shortLabel: font.id,
+            caseType: font.caseType,
+            hasBinaryFallback: font.hasBinaryFallback || false,
+            image: imagePath,
+            source: imagePath
+        };
+    });
+
+    fontListCache.set(fontType, fonts);
+    return fonts;
+}
+
+async function getFontsForType(fontType) {
+    return await discoverFonts(fontType);
+}
+
+function convertPNG1x2ToCharset(imageData, threshold = 128) {
+    const { data, width, height } = imageData;
+    const dim = FONT_DIMENSIONS['1x2'];
+
+    if (width !== dim.pngWidth || height !== dim.pngHeight) {
+        throw new Error(`Invalid 1x2 font PNG size: ${width}x${height}. Expected ${dim.pngWidth}x${dim.pngHeight}`);
+    }
+
+    const charset = new Uint8Array(dim.charsetSize);
+    charset.fill(0);
+
+    for (let glyphIndex = 0; glyphIndex < dim.totalGlyphs; glyphIndex++) {
+        const glyphRow = Math.floor(glyphIndex / dim.glyphsPerRow);
+        const glyphCol = glyphIndex % dim.glyphsPerRow;
+
+        const startX = glyphCol * dim.glyphWidth;
+        const startY = glyphRow * dim.glyphHeight;
+
+        const charIndexTop = glyphIndex;           
+        const charIndexBottom = 128 + glyphIndex;  
+
+        if (charIndexTop < 96) {
+            for (let row = 0; row < 8; row++) {
+                let byte = 0;
+                for (let col = 0; col < 8; col++) {
+                    const px = startX + col;
+                    const py = startY + row;
+                    const pixelIndex = (py * width + px) * 4;
+
+                    const r = data[pixelIndex];
+                    const g = data[pixelIndex + 1];
+                    const b = data[pixelIndex + 2];
+                    const a = data[pixelIndex + 3];
+                    const brightness = (r + g + b) / 3;
+
+                    if (a > 128 && brightness >= threshold) {
+                        byte |= (0x80 >> col);
+                    }
+                }
+                charset[charIndexTop * FONT_BYTES_PER_CHAR + row] = byte;
+            }
+        }
+
+        if (charIndexBottom < 224) {  
+            for (let row = 0; row < 8; row++) {
+                let byte = 0;
+                for (let col = 0; col < 8; col++) {
+                    const px = startX + col;
+                    const py = startY + 8 + row;
+                    const pixelIndex = (py * width + px) * 4;
+
+                    const r = data[pixelIndex];
+                    const g = data[pixelIndex + 1];
+                    const b = data[pixelIndex + 2];
+                    const a = data[pixelIndex + 3];
+                    const brightness = (r + g + b) / 3;
+
+                    if (a > 128 && brightness >= threshold) {
+                        byte |= (0x80 >> col);
+                    }
+                }
+                charset[charIndexBottom * FONT_BYTES_PER_CHAR + row] = byte;
+            }
+        }
+    }
+
+    return charset;
+}
+
+function convertPNG1x1ToCharset(imageData, threshold = 128) {
+    const { data, width, height } = imageData;
+    const dim = FONT_DIMENSIONS['1x1'];
+
+    if (width !== dim.pngWidth || height !== dim.pngHeight) {
+        throw new Error(`Invalid 1x1 font PNG size: ${width}x${height}. Expected ${dim.pngWidth}x${dim.pngHeight}`);
+    }
+
+    const charset = new Uint8Array(dim.charsetSize);
+    charset.fill(0);
+
+    for (let glyphIndex = 0; glyphIndex < dim.totalGlyphs; glyphIndex++) {
+        const glyphRow = Math.floor(glyphIndex / dim.glyphsPerRow);
+        const glyphCol = glyphIndex % dim.glyphsPerRow;
+
+        const startX = glyphCol * dim.glyphWidth;
+        const startY = glyphRow * dim.glyphHeight;
+
+        const charIndex = 32 + glyphIndex;
+
+        for (let row = 0; row < 8; row++) {
+            let byte = 0;
+            for (let col = 0; col < 8; col++) {
+                const px = startX + col;
+                const py = startY + row;
+                const pixelIndex = (py * width + px) * 4;
+
+                const r = data[pixelIndex];
+                const g = data[pixelIndex + 1];
+                const b = data[pixelIndex + 2];
+                const a = data[pixelIndex + 3];
+                const brightness = (r + g + b) / 3;
+
+                if (a > 128 && brightness >= threshold) {
+                    byte |= (0x80 >> col);
+                }
+            }
+            charset[charIndex * FONT_BYTES_PER_CHAR + row] = byte;
+        }
+    }
+
+    return charset;
+}
+
+async function loadFontPNG(url, fontType = '1x2') {
+    const cacheKey = `${url}:${fontType}`;
+    if (fontDataCache.has(cacheKey)) {
+        return fontDataCache.get(cacheKey);
+    }
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                let charset;
+                if (fontType === '1x2') {
+                    charset = convertPNG1x2ToCharset(imageData);
+                } else if (fontType === '1x1') {
+                    charset = convertPNG1x1ToCharset(imageData);
+                } else {
+                    throw new Error(`Unknown font type: ${fontType}`);
+                }
+
+                fontDataCache.set(cacheKey, charset);
+                resolve(charset);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error(`Failed to load font image: ${url}`));
+        };
+
+        img.src = url;
+    });
+}
+
+async function loadFontFromFile(file, fontType = '1x2') {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const img = new Image();
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                    let charset;
+                    if (fontType === '1x2') {
+                        charset = convertPNG1x2ToCharset(imageData);
+                    } else if (fontType === '1x1') {
+                        charset = convertPNG1x1ToCharset(imageData);
+                    } else {
+                        throw new Error(`Unknown font type: ${fontType}`);
+                    }
+
+                    resolve(charset);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            img.onerror = () => {
+                reject(new Error('Failed to load font image'));
+            };
+
+            img.src = e.target.result;
+        };
+
+        reader.onerror = () => {
+            reject(new Error('Failed to read font file'));
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+async function loadFontFromBinary(url, offset, size) {
+    const cacheKey = `binary:${url}:${offset}:${size}`;
+    if (fontDataCache.has(cacheKey)) {
+        return fontDataCache.get(cacheKey);
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to load binary font from ${url}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const fullData = new Uint8Array(arrayBuffer);
+
+    if (offset + size > fullData.length) {
+        throw new Error(`Binary file too small: need ${offset + size} bytes, got ${fullData.length}`);
+    }
+
+    const charsetData = fullData.slice(offset, offset + size);
+    fontDataCache.set(cacheKey, charsetData);
+    return charsetData;
+}
+
+const fontThumbnailCache = new Map();
+
+async function generateFontThumbnail(url) {
+    const cacheKey = `thumb:${url}`;
+    if (fontThumbnailCache.has(cacheKey)) {
+        return fontThumbnailCache.get(cacheKey);
+    }
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 64, 64);
+
+                const srcWidth = Math.min(64, img.width);
+                const srcHeight = Math.min(64, img.height);
+                ctx.drawImage(img, 0, 0, srcWidth, srcHeight, 0, 0, srcWidth, srcHeight);
+
+                const dataUrl = canvas.toDataURL('image/png');
+                fontThumbnailCache.set(cacheKey, dataUrl);
+                resolve(dataUrl);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error(`Failed to load font image for thumbnail: ${url}`));
+        };
+
+        img.src = url;
+    });
+}
+
+async function getFontThumbnails(fontType) {
+    const fonts = await discoverFonts(fontType);
+    const thumbnails = new Map();
+
+    await Promise.all(fonts.map(async (font) => {
+        if (font.source) {
+            try {
+                const thumbnail = await generateFontThumbnail(font.source);
+                thumbnails.set(font.id, thumbnail);
+            } catch (e) {
+                console.warn(`Failed to generate thumbnail for font ${font.id}:`, e);
+            }
+        }
+    }));
+
+    return thumbnails;
+}
+
+async function getFontData(fontType, fontIndex, fallbackConfig = null) {
+    const fonts = await discoverFonts(fontType);
+
+    if (fontIndex < 0 || fontIndex >= fonts.length) {
+        fontIndex = 0;
+    }
+
+    const font = fonts[fontIndex];
+    if (!font) {
+        
+        if (fallbackConfig && fallbackConfig.binarySource) {
+            console.warn('No fonts defined, using binary fallback');
+            const dim = FONT_DIMENSIONS[fontType];
+            return await loadFontFromBinary(
+                fallbackConfig.binarySource,
+                fallbackConfig.binaryOffset,
+                dim ? dim.charsetSize : 1792
+            );
+        }
+        console.error('No fonts available and no fallback configured');
+        return new Uint8Array(FONT_DIMENSIONS[fontType]?.charsetSize || 1792);
+    }
+
+    if (font.source) {
+        try {
+            return await loadFontPNG(font.source, fontType);
+        } catch (pngError) {
+            console.warn(`PNG font "${font.label}" not available:`, pngError.message);
+        }
+    }
+
+    if (fontIndex === 0 && fallbackConfig && fallbackConfig.binarySource) {
+        try {
+            console.log('Using binary fallback for default font');
+            const dim = FONT_DIMENSIONS[fontType];
+            return await loadFontFromBinary(
+                fallbackConfig.binarySource,
+                fallbackConfig.binaryOffset,
+                dim ? dim.charsetSize : 1792
+            );
+        } catch (binaryError) {
+            console.warn('Binary fallback failed:', binaryError);
+        }
+    }
+
+    if (fontIndex !== 0) {
+        console.warn(`Font "${font.label}" not available, falling back to default`);
+        return await getFontData(fontType, 0, fallbackConfig);
+    }
+
+    console.error('All font loading attempts failed');
+    return new Uint8Array(FONT_DIMENSIONS[fontType]?.charsetSize || 1792);
+}
+
+async function getFontCaseType(fontType, fontIndex) {
+    const fonts = await discoverFonts(fontType);
+    if (fontIndex < 0 || fontIndex >= fonts.length) {
+        return FONT_CASE_MIXED;
+    }
+    return fonts[fontIndex].caseType ?? FONT_CASE_MIXED;
+}
+
+function convertTextForFont(text, caseType) {
+    switch (caseType) {
+        case FONT_CASE_UPPER_ONLY:
+            return text.toUpperCase();
+        case FONT_CASE_LOWER_ONLY:
+            return text.toLowerCase();
+        case FONT_CASE_MIXED:
+        default:
+            return text;
+    }
+}
+
+function getFontDimension(fontType) {
+    return FONT_DIMENSIONS[fontType] || null;
+}
+
+window.FONT_DATA = {
+    
+    getFontData: getFontData,
+    getFontsForType: getFontsForType,
+    discoverFonts: discoverFonts,
+    loadFontPNG: loadFontPNG,
+    loadFontFromFile: loadFontFromFile,
+    loadFontFromBinary: loadFontFromBinary,
+    getFontPath: getFontPath,
+
+    convertPNG1x2ToCharset: convertPNG1x2ToCharset,
+    convertPNG1x1ToCharset: convertPNG1x1ToCharset,
+
+    generateFontThumbnail: generateFontThumbnail,
+    getFontThumbnails: getFontThumbnails,
+
+    getFontCaseType: getFontCaseType,
+    convertTextForFont: convertTextForFont,
+    getFontDimension: getFontDimension,
+
+    FONT_CASE_MIXED: FONT_CASE_MIXED,
+    FONT_CASE_UPPER_ONLY: FONT_CASE_UPPER_ONLY,
+    FONT_CASE_LOWER_ONLY: FONT_CASE_LOWER_ONLY,
+    FONT_DIMENSIONS: FONT_DIMENSIONS,
+    KNOWN_FONTS: KNOWN_FONTS
+};
 ```
 
 
@@ -6040,49 +6959,52 @@ class PETSCIISanitizer {
         };
     }
 
-    toPETSCIIBytes(text, lowercase = true) {
+    toPETSCIIBytes(text, useSystemFont = false) {
         const bytes = [];
 
         for (let i = 0; i < text.length; i++) {
             const code = text.charCodeAt(i);
-            let petscii;
+            let screenCode;
 
-            if (lowercase) {
+            if (useSystemFont) {
                 
                 if (code >= 65 && code <= 90) {
                     
-                    petscii = code;
+                    screenCode = code;
                 } else if (code >= 97 && code <= 122) {
                     
-                    petscii = code - 96;
-                } else if (code >= 32 && code <= 64) {
+                    screenCode = code - 96;
+                } else if (code >= 32 && code <= 63) {
                     
-                    petscii = code;
-                } else if (code >= 91 && code <= 96) {
+                    screenCode = code;
+                } else if (code === 64) {
                     
-                    petscii = code;
-                } else if (code >= 123 && code <= 126) {
-                    
-                    petscii = code;
+                    screenCode = 0;
                 } else {
                     
-                    petscii = 32;
+                    screenCode = 32;
                 }
             } else {
                 
-                if (code >= 97 && code <= 122) {
+                if (code >= 65 && code <= 90) {
                     
-                    petscii = code - 32;
-                } else if (code >= 32 && code <= 126) {
+                    screenCode = code - 64;
+                } else if (code >= 97 && code <= 122) {
                     
-                    petscii = code;
+                    screenCode = code - 32;
+                } else if (code >= 32 && code <= 63) {
+                    
+                    screenCode = code;
+                } else if (code === 64) {
+                    
+                    screenCode = 0;
                 } else {
                     
-                    petscii = 32;
+                    screenCode = 32;
                 }
             }
 
-            bytes.push(petscii & 0xFF);
+            bytes.push(screenCode & 0xFF);
         }
 
         return new Uint8Array(bytes);
@@ -6166,7 +7088,7 @@ class PNGConverter {
                 );
 
                 if (convertResult !== 1) {
-                    throw new Error('Image contains too many colors per 8x8 character cell (max 4 colors allowed)');
+                    throw new Error('Image cannot be converted: too many colors per 8x8 character cell (max 4 for multicolor, max 2 for hires)');
                 }
 
                 const backgroundColor = this.Module.ccall(
@@ -6190,7 +7112,14 @@ class PNGConverter {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
                 }
-                const c64BitmapSize = 10003;
+                const bitmapMode = this.Module.ccall(
+                    'png_converter_get_bitmap_mode',
+                    'number',
+                    [],
+                    []
+                );
+
+                const c64BitmapSize = 10004;
                 const bitmapPtr = this.Module._malloc(c64BitmapSize);
 
                 try {
@@ -6204,8 +7133,8 @@ class PNGConverter {
                     const bitmapData = new Uint8Array(actualSize);
                     bitmapData.set(this.Module.HEAPU8.subarray(bitmapPtr, bitmapPtr + actualSize));
 
-                    if (actualSize !== 10003) {
-                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10003)`);
+                    if (actualSize !== 10004) {
+                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10004)`);
                     }
                     if (bitmapData[0] !== 0x00 || bitmapData[1] !== 0x60) {
                         console.warn(`Unexpected load address: ${bitmapData[1].toString(16)}${bitmapData[0].toString(16)} (should be $6000)`);
@@ -6216,7 +7145,8 @@ class PNGConverter {
                         data: bitmapData,
                         backgroundColor: backgroundColor,
                         backgroundColorName: this.getColorName(backgroundColor),
-                        format: 'C64_BITMAP',
+                        bitmapMode: bitmapMode, 
+                        format: bitmapMode === 1 ? 'C64_HIRES_BITMAP' : 'C64_BITMAP',
                         width: 320,
                         height: 200
                     };
@@ -6429,6 +7359,62 @@ class SIDwinderPRGExporter {
         return (address + 0xFF) & 0xFF00;
     }
 
+    findSafeMemoryForRoutines(routineSize, sidLoadAddress, sidDataLength) {
+        
+        const usedRanges = [];
+
+        for (const comp of this.builder.components) {
+            usedRanges.push({
+                start: comp.loadAddress,
+                end: comp.loadAddress + comp.size
+            });
+        }
+
+        usedRanges.push({ start: 0xD000, end: 0xE000 });
+
+        usedRanges.sort((a, b) => a.start - b.start);
+
+        let prevEnd = 0x0900;
+
+        for (const range of usedRanges) {
+            
+            if (range.end <= prevEnd) continue;
+
+            const gapStart = prevEnd;
+            const gapEnd = range.start;
+
+            if (gapStart >= 0xD000 && gapStart < 0xE000) {
+                prevEnd = Math.max(prevEnd, range.end);
+                continue;
+            }
+
+            const effectiveGapEnd = Math.min(gapEnd, 0xD000);
+            const gapSize = effectiveGapEnd - gapStart;
+
+            if (gapSize >= routineSize) {
+                
+                return this.alignToPage(gapStart);
+            }
+
+            prevEnd = Math.max(prevEnd, range.end);
+        }
+
+        if (prevEnd < 0xD000) {
+            const gapSize = 0xD000 - prevEnd;
+            if (gapSize >= routineSize) {
+                return this.alignToPage(prevEnd);
+            }
+        }
+
+        const afterIO = Math.max(prevEnd, 0xE000);
+        if (afterIO + routineSize <= 0xFFFF) {
+            return this.alignToPage(afterIO);
+        }
+
+        console.warn(`Could not find ${routineSize} bytes for save/restore routines, using $0900`);
+        return 0x0900;
+    }
+
     calculateSaveRestoreSize(modifiedAddresses) {
         const filtered = modifiedAddresses.filter(addr => {
             if (addr >= 0x0100 && addr <= 0x01FF) return false;
@@ -6458,14 +7444,11 @@ class SIDwinderPRGExporter {
 
     selectValidLayouts(vizConfig, sidLoadAddress, sidSize, modifiedAddresses = null) {
         const validLayouts = [];
-        
-        let effectiveSidStart = sidLoadAddress - 6; 
+
+        let effectiveSidStart = sidLoadAddress;
         let effectiveSidEnd = sidLoadAddress + sidSize;
-        
-        if (modifiedAddresses && modifiedAddresses.length > 0) {
-            const sizes = this.calculateSaveRestoreSize(modifiedAddresses);
-            effectiveSidEnd += sizes.totalSize; 
-        }
+
+        if (effectiveSidEnd > 0xFFFF) effectiveSidEnd = 0xFFFF;
 
         for (const [key, layout] of Object.entries(vizConfig.layouts)) {
             const vizStart = parseInt(layout.baseAddress);
@@ -6476,16 +7459,22 @@ class SIDwinderPRGExporter {
             const sidStartHex = '$' + effectiveSidStart.toString(16).toUpperCase().padStart(4, '0');
             const sidEndHex = '$' + effectiveSidEnd.toString(16).toUpperCase().padStart(4, '0');
 
+            let saveRestoreStart = effectiveSidEnd;
+            if (!hasOverlap && vizEnd > saveRestoreStart) {
+                
+                saveRestoreStart = this.alignToPage(vizEnd);
+            }
+
             validLayouts.push({
                 key: key,
                 layout: layout,
                 valid: !hasOverlap,
                 vizStart: vizStart,
                 vizEnd: vizEnd,
-                saveRestoreStart: effectiveSidEnd - (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
-                saveRestoreEnd: effectiveSidEnd,
+                saveRestoreStart: saveRestoreStart,
+                saveRestoreEnd: saveRestoreStart + (modifiedAddresses ? this.calculateSaveRestoreSize(modifiedAddresses).totalSize : 0),
                 overlapReason: hasOverlap ?
-                    `Overlaps with SID+routines (${sidStartHex}-${sidEndHex})` :
+                    `Overlaps with SID (${sidStartHex}-${sidEndHex})` :
                     null
             });
         }
@@ -6562,7 +7551,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1, needsSaveRestore = true) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -6579,30 +7568,52 @@ class SIDwinderPRGExporter {
         data[4] = sidInfo.playAddress & 0xFF;
         data[5] = (sidInfo.playAddress >> 8) & 0xFF;
 
-        data[6] = 0x4C;
-        data[7] = saveRoutineAddr & 0xFF;
-        data[8] = (saveRoutineAddr >> 8) & 0xFF;
+        if (needsSaveRestore) {
+            
+            data[6] = 0x4C;
+            data[7] = saveRoutineAddr & 0xFF;
+            data[8] = (saveRoutineAddr >> 8) & 0xFF;
 
-        data[9] = 0x4C;
-        data[10] = restoreRoutineAddr & 0xFF;
-        data[11] = (restoreRoutineAddr >> 8) & 0xFF;
+            data[9] = 0x4C;
+            data[10] = restoreRoutineAddr & 0xFF;
+            data[11] = (restoreRoutineAddr >> 8) & 0xFF;
+        } else {
+            
+            data[6] = 0x60;  
+            data[7] = 0xEA;  
+            data[8] = 0xEA;  
+
+            data[9] = 0x60;  
+            data[10] = 0xEA; 
+            data[11] = 0xEA; 
+        }
 
         data[0x0C] = effectiveCallsPerFrame & 0xFF;
         data[0x0D] = 0x00; 
         data[0x0E] = 0x00; 
         data[0x0F] = selectedSong & 0xFF;
 
-        const nameBytes = this.stringToPETSCII(this.centerString(header.name || '', 32), 32);
+        let nameStr = header.name || '';
+        let authorStr = header.author || '';
+        let copyrightStr = header.copyright || '';
+
+        if (typeof FONT_DATA !== 'undefined' && this.currentFontCaseType !== undefined) {
+            nameStr = FONT_DATA.convertTextForFont(nameStr, this.currentFontCaseType);
+            authorStr = FONT_DATA.convertTextForFont(authorStr, this.currentFontCaseType);
+            copyrightStr = FONT_DATA.convertTextForFont(copyrightStr, this.currentFontCaseType);
+        }
+
+        const nameBytes = this.stringToPETSCII(this.centerString(nameStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x10 + i] = nameBytes[i];
         }
 
-        const authorBytes = this.stringToPETSCII(this.centerString(header.author || '', 32), 32);
+        const authorBytes = this.stringToPETSCII(this.centerString(authorStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x30 + i] = authorBytes[i];
         }
 
-        const copyrightBytes = this.stringToPETSCII(this.centerString(header.copyright || '', 32), 32);
+        const copyrightBytes = this.stringToPETSCII(this.centerString(copyrightStr, 32), 32);
         for (let i = 0; i < 32; i++) {
             data[0x50 + i] = copyrightBytes[i];
         }
@@ -6630,6 +7641,8 @@ class SIDwinderPRGExporter {
 
         data[0xCB] = modifiedCount & 0xFF;
         data[0xCC] = (modifiedCount >> 8) & 0xFF;
+
+        data[0xCD] = Math.min(Math.max(sidChipCount, 1), 4) & 0xFF;
 
         let zpString = 'NONE';
         if (analysisResults) {
@@ -6713,30 +7726,60 @@ class SIDwinderPRGExporter {
         return result;
     }
 
-    stringToPETSCII(str, length) {
+    stringToPETSCIIRaw(str, length, useSystemFont = false) {
         const bytes = new Uint8Array(length);
-        bytes.fill(0x20);
+        bytes.fill(32);  
 
         if (str && str.length > 0) {
             const maxLen = Math.min(str.length, length);
 
             for (let i = 0; i < maxLen; i++) {
                 const code = str.charCodeAt(i);
-                let petscii = 0x20;
+                let screenCode = 32;  
 
-                if (code >= 65 && code <= 90) {
-                    petscii = code;
-                } else if (code >= 97 && code <= 122) {
-                    petscii = code - 32;
-                } else if (code >= 48 && code <= 57) {
-                    petscii = code;
-                } else if (code === 32) {
-                    petscii = 0x20;
+                if (useSystemFont) {
+                    
+                    if (code >= 65 && code <= 90) {
+                        
+                        screenCode = code;
+                    } else if (code >= 97 && code <= 122) {
+                        
+                        screenCode = code - 96;
+                    } else if (code >= 32 && code <= 63) {
+                        
+                        screenCode = code;
+                    } else if (code === 64) {
+                        
+                        screenCode = 0;
+                    } else {
+                        
+                        screenCode = ((code % 96) + 96) % 96;
+                    }
                 } else {
-                    petscii = code;
+                    
+                    if (code >= 65 && code <= 90) {
+                        
+                        screenCode = code - 64;
+                    } else if (code >= 97 && code <= 122) {
+                        
+                        screenCode = code - 32;
+                    } else if (code >= 32 && code <= 63) {
+                        
+                        screenCode = code;
+                    } else if (code === 64) {
+                        
+                        screenCode = 0;
+                    } else {
+                        
+                        screenCode = ((code % 96) + 96) % 96;
+                    }
                 }
 
-                bytes[i] = petscii & 0xFF;
+                if (screenCode < 0 || screenCode > 95) {
+                    screenCode = 32;  
+                }
+
+                bytes[i] = screenCode & 0xFF;
             }
         }
 
@@ -6857,7 +7900,7 @@ class SIDwinderPRGExporter {
                         const result = await converter.convertPNGToC64(file);
                         fileData = result.data;
 
-                        if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
+                        if ((fileData.length === 10003 || fileData.length === 10004) && fileData[0] === 0x00 && fileData[1] === 0x60) {
                             
                         } else {
                             console.warn('Unexpected C64 image format - this may cause issues');
@@ -6902,8 +7945,7 @@ class SIDwinderPRGExporter {
                             const result = await converter.convertPNGToC64(file);
                             fileData = result.data;
 
-                            if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                                console.log('Default PNG converted to valid C64 image format');
+                            if ((fileData.length === 10003 || fileData.length === 10004) && fileData[0] === 0x00 && fileData[1] === 0x60) {
                             } else {
                                 console.warn('Default PNG conversion resulted in unexpected C64 image format');
                             }
@@ -6964,6 +8006,8 @@ class SIDwinderPRGExporter {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
+        this.useSystemFontMapping = !vizConfig?.fontType;
+
         if (!vizConfig || !vizConfig.options) {
             return [];
         }
@@ -6974,6 +8018,8 @@ class SIDwinderPRGExporter {
             return [];
         }
 
+        this.currentFontCaseType = undefined;
+
         if (!this.sanitizer) {
             this.sanitizer = new PETSCIISanitizer();
         }
@@ -6983,6 +8029,45 @@ class SIDwinderPRGExporter {
         for (const optionConfig of vizConfig.options) {
             const element = document.getElementById(optionConfig.id);
             if (!element) continue;
+
+            if (optionConfig.id === 'font' && layout.charsetAddress && vizConfig.fontType) {
+                const fontIndex = parseInt(element.value);
+                const validIndex = !isNaN(fontIndex) ? fontIndex : (optionConfig.default ?? 0);
+
+                if (typeof FONT_DATA !== 'undefined') {
+                    try {
+                        
+                        const fallbackConfig = {
+                            binarySource: layout.binary,
+                            binaryOffset: parseInt(layout.charsetAddress) - parseInt(layout.baseAddress)
+                        };
+
+                        const fontData = await FONT_DATA.getFontData(vizConfig.fontType, validIndex, fallbackConfig);
+                        if (fontData) {
+                            const targetAddress = parseInt(layout.charsetAddress);
+                            
+                            let fontDataToInject = fontData;
+                            if (layout.charsetSize) {
+                                const maxSize = parseInt(layout.charsetSize);
+                                if (fontData.length > maxSize) {
+                                    fontDataToInject = fontData.slice(0, maxSize);
+                                }
+                            }
+                            optionComponents.push({
+                                data: fontDataToInject,
+                                loadAddress: targetAddress,
+                                name: `font_charset`
+                            });
+
+                            this.currentFontCaseType = await FONT_DATA.getFontCaseType(vizConfig.fontType, validIndex);
+                        }
+                    } catch (fontError) {
+                        console.warn('Failed to load font, using default:', fontError);
+                        
+                    }
+                }
+                continue; 
+            }
 
             if (optionConfig.id === 'barStyle' && vizConfig.barStyleType && layout.barCharsAddress) {
                 const styleIndex = parseInt(element.value);
@@ -6996,6 +8081,178 @@ class SIDwinderPRGExporter {
                             data: charData,
                             loadAddress: targetAddress,
                             name: `barStyle_chars`
+                        });
+                    }
+                }
+                continue; 
+            }
+
+            if (optionConfig.id === 'colorPalette' && vizConfig.colorPaletteType && layout.colorTableAddress) {
+                const paletteIndex = parseInt(element.value);
+                const validIndex = !isNaN(paletteIndex) ? paletteIndex : (optionConfig.default ?? 0);
+
+                const colorEffectElement = document.getElementById('colorEffect');
+                const colorEffectIndex = colorEffectElement ? parseInt(colorEffectElement.value) : 0;
+                const validEffectIndex = !isNaN(colorEffectIndex) ? colorEffectIndex : 0;
+
+                if (typeof COLOR_PALETTES_DATA !== 'undefined') {
+                    
+                    if (validEffectIndex === 0) {
+                        const colorData = COLOR_PALETTES_DATA.getColorPaletteData(vizConfig.colorPaletteType, validIndex);
+                        if (colorData) {
+                            const targetAddress = parseInt(layout.colorTableAddress);
+                            optionComponents.push({
+                                data: colorData,
+                                loadAddress: targetAddress,
+                                name: `colorPalette_table`
+                            });
+                        }
+                    }
+
+                    const paletteDetails = COLOR_PALETTES_DATA.getColorPaletteDetails(validIndex);
+                    if (paletteDetails) {
+                        
+                        if (layout.borderColor) {
+                            const borderData = new Uint8Array(1);
+                            borderData[0] = paletteDetails.borderColor & 0xFF;
+                            optionComponents.push({
+                                data: borderData,
+                                loadAddress: parseInt(layout.borderColor),
+                                name: `colorPalette_border`
+                            });
+                        }
+                        
+                        if (layout.spectrometerBgColorAddress) {
+                            const specBgData = new Uint8Array(1);
+                            specBgData[0] = paletteDetails.backgroundColor & 0xFF;
+                            optionComponents.push({
+                                data: specBgData,
+                                loadAddress: parseInt(layout.spectrometerBgColorAddress),
+                                name: `colorPalette_spectrometer_bg`
+                            });
+                        } else if (layout.backgroundColor) {
+                            const bgData = new Uint8Array(1);
+                            bgData[0] = paletteDetails.backgroundColor & 0xFF;
+                            optionComponents.push({
+                                data: bgData,
+                                loadAddress: parseInt(layout.backgroundColor),
+                                name: `colorPalette_background`
+                            });
+                        }
+                    }
+                }
+                continue; 
+            }
+
+            if (optionConfig.id === 'colorEffect' && vizConfig.colorEffectType && layout.colorEffectModeAddress) {
+                const effectIndex = parseInt(element.value);
+                const validEffectIndex = !isNaN(effectIndex) ? effectIndex : (optionConfig.default ?? 0);
+
+                const colorPaletteElement = document.getElementById('colorPalette');
+                const paletteIndex = colorPaletteElement ? parseInt(colorPaletteElement.value) : 0;
+                const validPaletteIndex = !isNaN(paletteIndex) ? paletteIndex : 0;
+
+                if (typeof COLOR_PALETTES_DATA !== 'undefined') {
+                    
+                    const effectModeData = new Uint8Array(1);
+                    effectModeData[0] = validEffectIndex & 0xFF;
+                    optionComponents.push({
+                        data: effectModeData,
+                        loadAddress: parseInt(layout.colorEffectModeAddress),
+                        name: `colorEffect_mode`
+                    });
+
+                    if (validEffectIndex !== 0 && layout.lineGradientColorsAddress) {
+                        let lineColors;
+                        const effectType = vizConfig.colorEffectType;
+
+                        if (validEffectIndex === 1) {
+                            
+                            if (effectType === 'water') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientWater(validPaletteIndex, 14, 3);
+                            } else if (effectType === 'waterlogo') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientWater(validPaletteIndex, 8, 3);
+                            } else if (effectType === 'mirror') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 9);
+                            } else if (effectType === 'mirrorlogo') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 5);
+                            }
+                        } else if (validEffectIndex === 2) {
+                            
+                            let lineCount;
+                            if (effectType === 'water') lineCount = 17;
+                            else if (effectType === 'waterlogo') lineCount = 11;
+                            else if (effectType === 'mirror') lineCount = 18;
+                            else if (effectType === 'mirrorlogo') lineCount = 10;
+                            else lineCount = 17;
+
+                            const barColorElement = document.getElementById('barColor');
+                            const barColor = barColorElement ? (parseInt(barColorElement.value) & 0x0F) : 1;
+
+                            lineColors = new Uint8Array(lineCount);
+                            lineColors.fill(barColor);
+                        }
+
+                        if (lineColors) {
+                            optionComponents.push({
+                                data: lineColors,
+                                loadAddress: parseInt(layout.lineGradientColorsAddress),
+                                name: `colorEffect_lineColors`
+                            });
+                        }
+                    }
+                }
+                continue; 
+            }
+
+            if (optionConfig.type === 'colorPicker') {
+                const colorValue = parseInt(element.value);
+                const validColor = !isNaN(colorValue) ? (colorValue & 0x0F) : (optionConfig.default ?? 0);
+
+                if (optionConfig.id === 'songNameColor' && layout.songNameColorAddress) {
+                    const colorData = new Uint8Array(1);
+                    colorData[0] = validColor;
+                    optionComponents.push({
+                        data: colorData,
+                        loadAddress: parseInt(layout.songNameColorAddress),
+                        name: 'songNameColor'
+                    });
+                } else if (optionConfig.id === 'artistNameColor' && layout.artistNameColorAddress) {
+                    const colorData = new Uint8Array(1);
+                    colorData[0] = validColor;
+                    optionComponents.push({
+                        data: colorData,
+                        loadAddress: parseInt(layout.artistNameColorAddress),
+                        name: 'artistNameColor'
+                    });
+                } else if (optionConfig.id === 'bgColor') {
+                    
+                    if (layout.borderColor) {
+                        const borderData = new Uint8Array(1);
+                        borderData[0] = validColor;
+                        optionComponents.push({
+                            data: borderData,
+                            loadAddress: parseInt(layout.borderColor),
+                            name: 'bgColor_border'
+                        });
+                    }
+                    if (layout.spectrometerBgColorAddress) {
+                        
+                        const specBgData = new Uint8Array(1);
+                        specBgData[0] = validColor;
+                        optionComponents.push({
+                            data: specBgData,
+                            loadAddress: parseInt(layout.spectrometerBgColorAddress),
+                            name: 'bgColor_spectrometer'
+                        });
+                    } else if (layout.backgroundColor) {
+                        
+                        const bgData = new Uint8Array(1);
+                        bgData[0] = validColor;
+                        optionComponents.push({
+                            data: bgData,
+                            loadAddress: parseInt(layout.backgroundColor),
+                            name: 'bgColor_background'
                         });
                     }
                 }
@@ -7028,7 +8285,7 @@ class SIDwinderPRGExporter {
                         reportUnknown: false
                     });
 
-                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+                    const data = this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
 
                     optionComponents.push({
                         data: data,
@@ -7062,7 +8319,7 @@ class SIDwinderPRGExporter {
                         this.sanitizer.showWarningDialog(sanitized.warnings);
                     }
 
-                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+                    const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
 
                     const data = new Uint8Array(petsciiData.length + 1);
                     data.set(petsciiData);
@@ -7093,7 +8350,7 @@ class SIDwinderPRGExporter {
             reportUnknown: false  
         });
 
-        return this.sanitizer.toPETSCIIBytes(sanitized.text, true);
+        return this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
     }
 
     centerString(str, length) {
@@ -7204,84 +8461,33 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
+            const needsSaveRestore = vizConfig?.needsSaveRestore !== false;
+
             let saveRoutineAddr = 0;
             let restoreRoutineAddr = 0;
-            let saveJmpAddr = 0;
-            let restoreJmpAddr = 0;
 
-            if (this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
+            if (needsSaveRestore && this.analyzer.analysisResults && this.analyzer.analysisResults.modifiedAddresses) {
                 const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses);
 
-                let highestEndAddress = actualSidAddress + sidInfo.data.length;
-                
-                for (const comp of this.builder.components) {
-                    const compEnd = comp.loadAddress + comp.size;
-                    if (compEnd > highestEndAddress) {
-                        highestEndAddress = compEnd;
-                    }
-                }
-                
-                const safeAddress = this.alignToPage(highestEndAddress);
-                
+                const routineSizes = this.calculateSaveRestoreSize(modifiedAddrs);
+                const totalRoutineSize = routineSizes.totalSize;
+
+                let safeAddress = this.findSafeMemoryForRoutines(totalRoutineSize, actualSidAddress, sidInfo.data.length);
+
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
-                
+
                 restoreRoutineAddr = safeAddress;
-                
+
                 saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-                
+
                 const finalSaveRoutine = this.generateOptimizedSaveRoutine(modifiedAddrs, restoreRoutineAddr);
 
                 this.builder.addComponent(restoreRoutine, restoreRoutineAddr, 'Restore Routine');
                 this.builder.addComponent(finalSaveRoutine, saveRoutineAddr, 'Save Routine');
-
-                restoreJmpAddr = actualSidAddress - 6;
-                saveJmpAddr = actualSidAddress - 3;
-                
-                const restoreJmp = new Uint8Array([
-                    0x4C,  
-                    restoreRoutineAddr & 0xFF,
-                    (restoreRoutineAddr >> 8) & 0xFF
-                ]);
-                
-                const saveJmp = new Uint8Array([
-                    0x4C,  
-                    saveRoutineAddr & 0xFF,
-                    (saveRoutineAddr >> 8) & 0xFF
-                ]);
-
-                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Restore JMP');
-                this.builder.addComponent(saveJmp, saveJmpAddr, 'Save JMP');
-                
-            } else {
-                console.warn('No analysis results for save/restore routines');
-                const dummyRoutine = new Uint8Array([0x60]); 
-                
-                let highestEndAddress = actualSidAddress + sidInfo.data.length;
-                for (const comp of this.builder.components) {
-                    const compEnd = comp.loadAddress + comp.size;
-                    if (compEnd > highestEndAddress) {
-                        highestEndAddress = compEnd;
-                    }
-                }
-                const safeAddress = this.alignToPage(highestEndAddress);
-                
-                restoreRoutineAddr = safeAddress;
-                saveRoutineAddr = restoreRoutineAddr + 1;
-                
-                this.builder.addComponent(dummyRoutine, restoreRoutineAddr, 'Dummy Restore');
-                this.builder.addComponent(dummyRoutine, saveRoutineAddr, 'Dummy Save');
-                
-                restoreJmpAddr = actualSidAddress - 6;
-                saveJmpAddr = actualSidAddress - 3;
-                
-                const restoreJmp = new Uint8Array([0x4C, restoreRoutineAddr & 0xFF, (restoreRoutineAddr >> 8) & 0xFF]);
-                const saveJmp = new Uint8Array([0x4C, saveRoutineAddr & 0xFF, (saveRoutineAddr >> 8) & 0xFF]);
-                
-                this.builder.addComponent(restoreJmp, restoreJmpAddr, 'Dummy Restore JMP');
-                this.builder.addComponent(saveJmp, saveJmpAddr, 'Dummy Save JMP');
             }
-
+            
             const numCallsPerFrame = this.analyzer.analysisResults?.numCallsPerFrame || 1;
+            const sidChipCount = this.analyzer.analysisResults?.sidChipCount || 1;
 
             const dataBlock = this.generateDataBlock(
                 {
@@ -7292,12 +8498,14 @@ class SIDwinderPRGExporter {
                 },
                 this.analyzer.analysisResults,
                 header,
-                saveJmpAddr,      
-                restoreJmpAddr,   
+                saveRoutineAddr,
+                restoreRoutineAddr,
                 numCallsPerFrame,
                 configMaxCallsPerFrame,
                 selectedSong,
-                modifiedCount
+                modifiedCount,
+                sidChipCount,
+                needsSaveRestore
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');
@@ -7852,13 +9060,6 @@ class UIController {
             this.exportModifiedSID();
         });
 
-        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
-        if (addSaveRestoreCheckbox) {
-            addSaveRestoreCheckbox.addEventListener('change', () => {
-                this.checkForModifications();
-            });
-        }
-
         this.elements.exportPRGButton.addEventListener('click', () => {
             this.exportPRGWithVisualizer();
         });
@@ -8192,16 +9393,12 @@ class UIController {
             currentAuthor !== this.originalMetadata.author ||
             currentCopyright !== this.originalMetadata.copyright;
 
-        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
-        const checkboxChecked = addSaveRestoreCheckbox ? addSaveRestoreCheckbox.checked : false;
-
         this.hasModifications = hasChanges;
 
-        const shouldEnable = hasChanges || checkboxChecked;
-        this.elements.exportModifiedSIDButton.disabled = !shouldEnable;
+        this.elements.exportModifiedSIDButton.disabled = !hasChanges;
 
         if (this.elements.exportHint) {
-            this.elements.exportHint.style.display = shouldEnable ? 'none' : 'block';
+            this.elements.exportHint.style.display = hasChanges ? 'none' : 'block';
         }
     }
 
@@ -8223,11 +9420,6 @@ class UIController {
         this.currentFileName = file.name;
         this.hasModifications = false;
         this.elements.exportModifiedSIDButton.disabled = true;
-
-        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
-        if (addSaveRestoreCheckbox) {
-            addSaveRestoreCheckbox.checked = false;
-        }
 
         this.showBusy('Loading SID File', 'Reading and analyzing file...');
         this.hideMessages();
@@ -8605,34 +9797,12 @@ class UIController {
     createLayoutSelectorHTML(visualizer, config) {
         const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
-        const modifiedAddresses = this.analysisResults?.modifiedAddresses || 0;
-        const modifiedCount = this.analysisResults?.modifiedAddresses?.length || 0;
+        const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
 
-        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
-        const hasSaveRestore = addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked && modifiedCount > 0;
-        
         let sidStart = sidLoadAddress;
         let sidEnd = sidLoadAddress + sidSize - 1;
-        
-        if (hasSaveRestore) {
-            
-            sidStart = sidLoadAddress - 6;
-            
-            const filteredAddrs = Array.from(modifiedAddresses).filter(addr => {
-                if (addr >= 0x0100 && addr <= 0x01FF) return false; 
-                if (addr >= 0xD400 && addr <= 0xD7FF) return false; 
-                return true;
-            });
-            
-            const restoreSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 4 : 5), 0) + 1;
-            
-            const saveSize = filteredAddrs.reduce((sum, addr) => sum + (addr < 256 ? 5 : 6), 0) + 1;
-            
-            const actualCodeSize = sidSize - 2;
-            const saveRestoreStart = sidLoadAddress + actualCodeSize;
-            
-            sidEnd = saveRestoreStart + restoreSize + saveSize - 1;
-        }
+
+        if (sidEnd > 0xFFFF) sidEnd = 0xFFFF;
 
         if (!this.prgExporter) {
             this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
@@ -8736,7 +9906,13 @@ class UIController {
     }
 
     createOptionHTML(config) {
-        let html = `<div class="option-row">`;
+        
+        let dataAttrs = '';
+        if (config.showWhen) {
+            const showWhenJson = JSON.stringify(config.showWhen).replace(/"/g, '&quot;');
+            dataAttrs = ` data-show-when="${showWhenJson}" data-option-id="${config.id}"`;
+        }
+        let html = `<div class="option-row"${dataAttrs}>`;
 
         if (config.type === 'number') {
             
@@ -8759,6 +9935,9 @@ class UIController {
                 </div>
             `;
             }
+        } else if (config.type === 'fontSelector') {
+            
+            html += this.createFontSelectorHTML(config, this.visualizerConfig?.fontType || '1x2');
         } else if (config.type === 'imageGrid' || (config.type === 'select' && config.id === 'barStyle')) {
             
             html += this.createBarStyleGridHTML(config);
@@ -8791,8 +9970,8 @@ class UIController {
             <label class="option-label">${config.label}</label>
             <div class="option-control">
                 <div class="textarea-container">
-                    <textarea 
-                        id="${config.id}" 
+                    <textarea
+                        id="${config.id}"
                         maxlength="${config.maxLength || 255}"
                         rows="3"
                         placeholder="${config.description || ''}"
@@ -8806,6 +9985,9 @@ class UIController {
                 </div>
             </div>
         `;
+        } else if (config.type === 'colorPicker') {
+            
+            html += this.createColorSliderHTML(config);
         }
 
         html += '</div>';
@@ -8849,13 +10031,94 @@ class UIController {
     `;
     }
 
+    createFontSelectorHTML(config, fontType) {
+        const defaultValue = config.default || 0;
+
+        let fonts = [];
+        if (typeof FONT_DATA !== 'undefined' && FONT_DATA.KNOWN_FONTS[fontType]) {
+            const dim = FONT_DATA.FONT_DIMENSIONS[fontType];
+            fonts = FONT_DATA.KNOWN_FONTS[fontType].map((font, index) => ({
+                value: index,
+                label: font.name,
+                shortLabel: font.id,
+                id: font.id,
+                imagePath: `${dim.folder}/font-${fontType}-${font.id}.png`
+            }));
+        }
+
+        if (fonts.length === 0) {
+            
+            return `
+                <div class="bar-style-container">
+                    <span class="bar-style-label">${config.label}</span>
+                    <div class="font-no-fonts">No fonts available for this visualizer</div>
+                    <input type="hidden" id="${config.id}" value="0">
+                </div>
+            `;
+        }
+
+        const thumbnailsHTML = fonts.map(v => {
+            const isSelected = v.value === defaultValue;
+            return `
+                <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
+                     data-value="${v.value}"
+                     data-font-id="${v.id}"
+                     data-font-path="${v.imagePath}"
+                     title="${v.label}">
+                    <img class="font-thumbnail-img"
+                         alt="${v.label}">
+                    <span class="selected-check">✓</span>
+                    <span class="style-name">${v.shortLabel}</span>
+                </div>
+            `;
+        }).join('');
+
+        setTimeout(() => this.loadFontThumbnails(config.id, fontType), 0);
+
+        return `
+            <div class="bar-style-container">
+                <span class="bar-style-label">${config.label}</span>
+                <div class="bar-style-grid" id="${config.id}-grid" data-config-id="${config.id}" data-font-type="${fontType}">
+                    ${thumbnailsHTML}
+                </div>
+                <input type="hidden" id="${config.id}" value="${defaultValue}">
+            </div>
+        `;
+    }
+
+    async loadFontThumbnails(configId, fontType) {
+        const grid = document.getElementById(`${configId}-grid`);
+        if (!grid) return;
+
+        const thumbnailDivs = grid.querySelectorAll('.bar-style-thumbnail');
+        for (const div of thumbnailDivs) {
+            const fontPath = div.dataset.fontPath;
+            const img = div.querySelector('.font-thumbnail-img');
+            if (fontPath && img) {
+                try {
+                    
+                    const thumbnailDataUrl = await FONT_DATA.generateFontThumbnail(fontPath);
+                    img.src = thumbnailDataUrl;
+                } catch (e) {
+                    
+                    div.classList.add('placeholder');
+                    img.style.display = 'none';
+                    const fontId = div.dataset.fontId || div.dataset.value;
+                    div.querySelector('.style-name').insertAdjacentHTML('beforebegin', `<span>${fontId}</span>`);
+                }
+            }
+        }
+    }
+
     createBarStyleGridHTML(config) {
         const defaultValue = config.default || 0;
 
         const thumbnailsHTML = config.values.map(v => {
             const isSelected = v.value === defaultValue;
             
-            const imagePath = `prg/bar-styles/style-${v.value}.png`;
+            const imagePath = v.image || `prg/bar-styles/style-${v.value}.png`;
+            
+            const displayLabel = v.shortLabel || v.label.split(' - ')[0] || v.label;
 
             return `
                 <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
@@ -8863,8 +10126,9 @@ class UIController {
                      title="${v.label}">
                     <img src="${imagePath}"
                          alt="Style ${v.value}"
-                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.innerHTML += '<span>${v.value}</span><span class=\\'selected-check\\'>✓</span>';">
+                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
                     <span class="selected-check">✓</span>
+                    <span class="style-name">${displayLabel}</span>
                 </div>
             `;
         }).join('');
@@ -9065,8 +10329,14 @@ class UIController {
                     thumb.classList.remove('selected');
                 });
                 thumbnail.classList.add('selected');
+
+                if (configId === 'colorEffect') {
+                    this.updateConditionalVisibility();
+                }
             });
         });
+
+        this.updateConditionalVisibility();
 
         document.querySelectorAll('.load-text-btn').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -9090,11 +10360,32 @@ class UIController {
             displayEl.innerHTML = `
             <span class="color-swatch" style="background: ${color.hex}"></span>
             <span class="color-text">
-                <span class="color-number">${value}</span>: 
+                <span class="color-number">${value}</span>:
                 <span class="color-name">${color.name}</span>
             </span>
         `;
         }
+    }
+
+    updateConditionalVisibility() {
+        
+        document.querySelectorAll('.option-row[data-show-when]').forEach(row => {
+            const showWhen = JSON.parse(row.dataset.showWhen);
+            let shouldShow = true;
+
+            for (const [dependsOnId, allowedValues] of Object.entries(showWhen)) {
+                const dependsOnElement = document.getElementById(dependsOnId);
+                if (dependsOnElement) {
+                    const currentValue = parseInt(dependsOnElement.value);
+                    if (!allowedValues.includes(currentValue)) {
+                        shouldShow = false;
+                        break;
+                    }
+                }
+            }
+
+            row.style.display = shouldShow ? '' : 'none';
+        });
     }
 
     updateFileInfo(header) {
@@ -9223,13 +10514,11 @@ class UIController {
             } else {
                 
                 const extraAddresses = sidChipAddresses.slice(1); 
-                const extraList = extraAddresses.map((addr, idx) =>
-                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
-                ).join('\n');
+                const extraLines = extraAddresses.map((addr, idx) =>
+                    `<div style="font-size: 0.85em; text-align: right;">Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}</div>`
+                ).join('');
 
-                this.elements.sidChipCount.innerHTML = `${count}<br><span style="font-size: 0.85em; color: #aaa;">${extraAddresses.map((addr, idx) =>
-                    `Extra SID ${idx + 1}: ${this.formatHex(addr, 4)}`
-                ).join('<br>')}</span>`;
+                this.elements.sidChipCount.innerHTML = `<div style="text-align: right;">${count}</div>${extraLines}`;
             }
         }
     }
@@ -9242,22 +10531,10 @@ class UIController {
             return;
         }
 
-        const addSaveRestoreCheckbox = document.getElementById('addSaveRestoreCheckbox');
-        let finalData = modifiedData;
-        
-        if (addSaveRestoreCheckbox && addSaveRestoreCheckbox.checked) {
-            
-            finalData = this.addSaveRestoreFunctionsToSID(modifiedData);
-            if (!finalData) {
-                this.showExportStatus('Failed to add save/restore functions', 'error');
-                return;
-            }
-        }
-
         const baseName = this.currentFileName ?
             this.currentFileName.replace('.sid', '') : 'modified';
 
-        this.downloadFile(finalData, `${baseName}_edited.sid`);
+        this.downloadFile(modifiedData, `${baseName}_edited.sid`);
         this.showExportStatus('SID file exported successfully!', 'success');
 
         this.originalMetadata = {
@@ -9271,165 +10548,6 @@ class UIController {
         if (this.elements.exportHint) {
             this.elements.exportHint.style.display = 'block';
         }
-    }
-
-    addSaveRestoreFunctionsToSID(sidData) {
-        
-        if (!this.analyzer.analysisResults || !this.analyzer.analysisResults.modifiedAddresses) {
-            console.warn('No analysis results, cannot add save/restore functions');
-            return sidData; 
-        }
-
-        try {
-            
-            const header = this.sidHeader || this.analyzer.sidHeader;
-            if (!header) {
-                console.error('No SID header available');
-                return null;
-            }
-
-            const loadAddress = header.loadAddress;
-            const dataOffset = header.dataOffset || 0x7C; 
-            
-            const originalData = sidData.slice(dataOffset);
-            
-            let codeData = originalData;
-            let hasLoadAddressBytes = false;
-            
-            if (originalData.length >= 2) {
-                const dataLoadAddr = originalData[0] | (originalData[1] << 8);
-                
-                if (dataLoadAddr === loadAddress || (sidData[8] === 0 && sidData[9] === 0)) {
-                    codeData = originalData.slice(2);
-                    hasLoadAddressBytes = true;
-                }
-            }
-            
-            const dataSize = codeData.length;
-
-            const modifiedAddrs = Array.from(this.analyzer.analysisResults.modifiedAddresses)
-                .filter(addr => {
-                    if (addr >= 0x0100 && addr <= 0x01FF) return false; 
-                    if (addr >= 0xD400 && addr <= 0xD7FF) return false; 
-                    return true;
-                })
-                .sort((a, b) => a - b);
-
-            if (modifiedAddrs.length === 0) {
-                console.warn('No modified addresses to save/restore');
-                return sidData; 
-            }
-
-            const sidEndAddress = loadAddress + dataSize;
-            const restoreRoutineAddr = sidEndAddress;
-            
-            const restoreRoutine = this.generateRestoreRoutineBytes(modifiedAddrs);
-            const saveRoutineAddr = restoreRoutineAddr + restoreRoutine.length;
-            
-            const saveRoutine = this.generateSaveRoutineBytes(modifiedAddrs, restoreRoutineAddr);
-            
-            const restoreJmpAddr = loadAddress - 6;
-            const saveJmpAddr = loadAddress - 3;
-            
-            const restoreJmp = new Uint8Array([
-                0x4C, 
-                restoreRoutineAddr & 0xFF,
-                (restoreRoutineAddr >> 8) & 0xFF
-            ]);
-            
-            const saveJmp = new Uint8Array([
-                0x4C, 
-                saveRoutineAddr & 0xFF,
-                (saveRoutineAddr >> 8) & 0xFF
-            ]);
-
-            const newLoadAddress = restoreJmpAddr;
-            const newDataSize = 2 + 6 + dataSize + restoreRoutine.length + saveRoutine.length;
-            
-            const newSIDData = new Uint8Array(dataOffset + newDataSize);
-            
-            newSIDData.set(sidData.slice(0, dataOffset));
-            
-            newSIDData[8] = 0x00;
-            newSIDData[9] = 0x00;
-            
-            let offset = dataOffset;
-            
-            newSIDData[offset++] = newLoadAddress & 0xFF;
-            newSIDData[offset++] = (newLoadAddress >> 8) & 0xFF;
-            
-            newSIDData.set(restoreJmp, offset);
-            offset += 3;
-            newSIDData.set(saveJmp, offset);
-            offset += 3;
-            newSIDData.set(codeData, offset);
-            offset += dataSize;
-            newSIDData.set(restoreRoutine, offset);
-            offset += restoreRoutine.length;
-            newSIDData.set(saveRoutine, offset);
-
-            console.log(`Added save/restore functions to SID:`);
-            console.log(`  New load address: $${newLoadAddress.toString(16).toUpperCase()}`);
-            console.log(`  Restore JMP at: $${restoreJmpAddr.toString(16).toUpperCase()} -> $${restoreRoutineAddr.toString(16).toUpperCase()}`);
-            console.log(`  Save JMP at: $${saveJmpAddr.toString(16).toUpperCase()} -> $${saveRoutineAddr.toString(16).toUpperCase()}`);
-            console.log(`  Call restore with: JSR $${restoreJmpAddr.toString(16).toUpperCase()}`);
-            console.log(`  Call save with: JSR $${saveJmpAddr.toString(16).toUpperCase()}`);
-
-            return newSIDData;
-
-        } catch (error) {
-            console.error('Error adding save/restore functions:', error);
-            return null;
-        }
-    }
-
-    generateRestoreRoutineBytes(modifiedAddresses) {
-        const code = [];
-        
-        for (const addr of modifiedAddresses) {
-            
-            code.push(0xA9); 
-            code.push(0x00); 
-            
-            if (addr < 256) {
-                code.push(0x85); 
-                code.push(addr);
-            } else {
-                code.push(0x8D); 
-                code.push(addr & 0xFF);
-                code.push((addr >> 8) & 0xFF);
-            }
-        }
-        
-        code.push(0x60); 
-        return new Uint8Array(code);
-    }
-
-    generateSaveRoutineBytes(modifiedAddresses, restoreRoutineAddr) {
-        const code = [];
-        let restoreOffset = 0;
-        
-        for (const addr of modifiedAddresses) {
-            
-            if (addr < 256) {
-                code.push(0xA5); 
-                code.push(addr);
-            } else {
-                code.push(0xAD); 
-                code.push(addr & 0xFF);
-                code.push((addr >> 8) & 0xFF);
-            }
-            
-            const targetAddr = restoreRoutineAddr + restoreOffset + 1; 
-            code.push(0x8D); 
-            code.push(targetAddr & 0xFF);
-            code.push((targetAddr >> 8) & 0xFF);
-            
-            restoreOffset += (addr < 256) ? 4 : 5; 
-        }
-        
-        code.push(0x60); 
-        return new Uint8Array(code);
     }
 
     async exportPRGWithVisualizer() {
@@ -9456,8 +10574,12 @@ class UIController {
         const selectedSong = songSelector ? parseInt(songSelector.value) : this.sidHeader.startSong;
 
         try {
+            
             const baseName = this.currentFileName ?
-                this.currentFileName.replace('.sid', '') : 'output';
+                this.currentFileName
+                    .replace(/\.sid$/i, '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\-!]/g, '') : 'output';
 
             this.updateBusy('Loading Visualizer', 'Reading configuration...');
 

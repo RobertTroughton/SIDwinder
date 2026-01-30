@@ -7,7 +7,7 @@ Total players found: 9
 Files: 1
 
 ### FILE: SIDPlayers/Default/Default.asm
-*Original size: 17025 bytes, Cleaned: 14165 bytes (reduced by 16.8%)*
+*Original size: 17042 bytes, Cleaned: 14183 bytes (reduced by 16.8%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -73,14 +73,12 @@ Files: 1
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
+.import source "../INC/LinkedWithEffect.asm"
 Initialize:
     sei
     lda #$35
     sta $01
-    jsr VSync
-    lda #$00
-    sta $d011
-    sta $d020
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
     lda SongNumber
     sta CurrentSong
@@ -654,7 +652,7 @@ SpaceText:          .text "SPACE = Fast Forward (Hold)"
 
 
 ## Player: INC
-Files: 7
+Files: 8
 
 ### FILE: SIDPlayers/INC/BarStyles.asm
 *Original size: 29425 bytes, Cleaned: 21169 bytes (reduced by 28.1%)*
@@ -1127,7 +1125,7 @@ BarStyleMirror7:
 ```
 
 ### FILE: SIDPlayers/INC/Common.asm
-*Original size: 4960 bytes, Cleaned: 3995 bytes (reduced by 19.5%)*
+*Original size: 5174 bytes, Cleaned: 4079 bytes (reduced by 21.2%)*
 ```asm
 #importonce
 .var SIDInit						= DATA_ADDRESS + $00
@@ -1148,6 +1146,8 @@ BarStyleMirror7:
 .var NumSongs						= DATA_ADDRESS + $c8
 .var ClockType						= DATA_ADDRESS + $c9
 .var SIDModel						= DATA_ADDRESS + $ca
+.var NumSIDChips					= DATA_ADDRESS + $cd
+.var BitmapMode						= DATA_ADDRESS + $70
 .var ZPUsageData					= DATA_ADDRESS + $e0
 NMIFix:
 		lda #$35
@@ -1757,8 +1757,90 @@ GetKeyWithShift:
 TempKey: .byte 0
 ```
 
+### FILE: SIDPlayers/INC/LinkedWithEffect.asm
+*Original size: 3026 bytes, Cleaned: 2052 bytes (reduced by 32.2%)*
+```asm
+#importonce
+.const EFFECT_TOTAL_FRAMES      = 200
+.const EFFECT_FADE_IN_END       = 50
+.const EFFECT_HOLD_END          = 150
+.const EFFECT_LINE1_Y           = 11
+.const EFFECT_LINE2_Y           = 13
+.const EFFECT_LINE_X            = 10
+.const EFFECT_WIDTH             = 20
+.var ScreenAddress = $0400
+.var VIC_COLOURMEMORY = $d800
+EffectLine1:            .byte $20, $20, $20, $20, $4c, $09, $0e, $0b, $05, $04, $20, $57, $09, $14, $08, $20, $20, $20, $20, $20
+EffectLine2:            .byte $53, $49, $44, $11, $15, $01, $0b, $05, $2e, $43, $36, $34, $04, $05, $0d, $0f, $2e, $03, $0f, $0d
+ColourFadeValues:       .fill 70, $00
+                        .byte $0b, $0c, $0f
+                        .fill 80, $01
+                        .byte $0d, $05, $09
+                        .fill 48, $00
+                        .byte $ff
+RunLinkedWithEffect:
+    jsr VSync
+    lda #$00
+    sta $d020
+    sta $d021
+    jsr VSync
+    ldx #0
+    lda #$20
+!clr:
+    sta ScreenAddress + (0 * 256),x
+    sta ScreenAddress + (1 * 256),x
+    sta ScreenAddress + (2 * 256),x
+    sta ScreenAddress + (3 * 256),x
+    inx
+    bne !clr-
+    ldx #EFFECT_WIDTH-1
+!txt:
+    lda EffectLine1,x
+    sta ScreenAddress + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
+    lda EffectLine2,x
+    sta ScreenAddress + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
+    lda #0
+    sta VIC_COLOURMEMORY + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
+    sta VIC_COLOURMEMORY + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
+    dex
+    bpl !txt-
+    jsr VSync
+    lda #$17
+    sta $d018
+    lda #$97
+    sta $dd00
+    lda #$08
+    sta $d016
+    lda #$00
+    sta $d015
+    lda #$1b
+    sta $d011
+    ldy #$00
+OuterLoop:
+    ldy #$00
+    jsr VSync
+    ldx #0
+!loop:
+    lda ColourFadeValues, y
+    sta VIC_COLOURMEMORY + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X, x
+    sta VIC_COLOURMEMORY + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X, x
+    iny
+    inx
+    cpx #20
+    bne !loop-
+    inc OuterLoop + 1
+    lda ColourFadeValues, y
+    bpl OuterLoop
+    jsr VSync
+    lda #$00
+    sta $d011
+    jmp VSync
+!continue:
+    jmp !loop-
+```
+
 ### FILE: SIDPlayers/INC/MusicPlayback.asm
-*Original size: 1782 bytes, Cleaned: 719 bytes (reduced by 59.7%)*
+*Original size: 2658 bytes, Cleaned: 1214 bytes (reduced by 54.3%)*
 ```asm
 #importonce
 JustPlayMusic:
@@ -1788,15 +1870,45 @@ AnalyseMusic:
     jsr SIDPlay
     jsr RestoreSIDMemory
     ldy #24
-!loop:
+!loopSID1:
     lda $d400, y
     sta sidRegisterMirror, y
     dey
-    bpl !loop-
+    bpl !loopSID1-
+    lda NumSIDChips
+    cmp #2
+    bcc !skipSID2+
+    ldy #24
+!loopSID2:
+    lda $d420, y
+    sta sidRegisterMirror + 25, y
+    dey
+    bpl !loopSID2-
+!skipSID2:
+    lda NumSIDChips
+    cmp #3
+    bcc !skipSID3+
+    ldy #24
+!loopSID3:
+    lda $d440, y
+    sta sidRegisterMirror + 50, y
+    dey
+    bpl !loopSID3-
+!skipSID3:
+    lda NumSIDChips
+    cmp #4
+    bcc !skipSID4+
+    ldy #24
+!loopSID4:
+    lda $d460, y
+    sta sidRegisterMirror + 75, y
+    dey
+    bpl !loopSID4-
+!skipSID4:
     pla
     sta $01
     jmp AnalyzeSIDRegisters
-sidRegisterMirror: .fill 25, 0
+sidRegisterMirror: .fill 100, 0
 #endif
 #if INCLUDE_MUSIC_ANALYSIS
 PlayMusicWithAnalysis:
@@ -1806,7 +1918,7 @@ PlayMusicWithAnalysis:
 ```
 
 ### FILE: SIDPlayers/INC/Spectrometer.asm
-*Original size: 6857 bytes, Cleaned: 3406 bytes (reduced by 50.3%)*
+*Original size: 8861 bytes, Cleaned: 4884 bytes (reduced by 44.9%)*
 ```asm
 #importonce
 .align NUM_FREQUENCY_BARS
@@ -1821,26 +1933,113 @@ targetBarHeights:           .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
 barHeights:                 .fill NUM_FREQUENCY_BARS, 0
 .byte $00, $00
-.align 4
-voiceReleaseHi:             .fill 3, 0
-                            .byte BAR_DECREASE_RATE
-.align 4
-voiceReleaseLo:             .fill 3, 0
-                            .byte 0
+.align 16
+voiceReleaseHi:             .fill 12, 0
+                            .fill 4, BAR_DECREASE_RATE
+.align 16
+voiceReleaseLo:             .fill 12, 0
+                            .fill 4, 0
 .align 128
 neighbourSmoothVals: .fill MAX_BAR_HEIGHT + 1, floor(i * 32.0 / 100.0)
 .align 128
 neighbourSmoothVals2: .fill MAX_BAR_HEIGHT + 1, floor(i * 12.0 / 100.0)
+.const zpRegPtr    = $FB
+.const zpVoiceIdx  = $FD
+.const zpTempByte  = $FE
 AnalyzeSIDRegisters:
-    .for (var voice = 0; voice < 3; voice++) {
-    lda sidRegisterMirror + (voice * 7) + 4
+    lda zpRegPtr
+    pha
+    lda zpRegPtr + 1
+    pha
+    lda zpVoiceIdx
+    pha
+    lda zpTempByte
+    pha
+    lda #<sidRegisterMirror
+    sta zpRegPtr
+    lda #>sidRegisterMirror
+    sta zpRegPtr + 1
+    lda #0
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
+    lda NumSIDChips
+    cmp #2
+    bcs !doSID2+
+    jmp !restoreZP+
+!doSID2:
+    lda #<(sidRegisterMirror + 25)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 25)
+    sta zpRegPtr + 1
+    lda #3
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
+    lda NumSIDChips
+    cmp #3
+    bcs !doSID3+
+    jmp !restoreZP+
+!doSID3:
+    lda #<(sidRegisterMirror + 50)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 50)
+    sta zpRegPtr + 1
+    lda #6
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
+    lda NumSIDChips
+    cmp #4
+    bcc !restoreZP+
+    lda #<(sidRegisterMirror + 75)
+    sta zpRegPtr
+    lda #>(sidRegisterMirror + 75)
+    sta zpRegPtr + 1
+    lda #9
+    sta zpVoiceIdx
+    jsr AnalyzeSIDChip
+!restoreZP:
+    pla
+    sta zpTempByte
+    pla
+    sta zpVoiceIdx
+    pla
+    sta zpRegPtr + 1
+    pla
+    sta zpRegPtr
+    rts
+AnalyzeSIDChip:
+    jsr AnalyzeSingleVoice
+    clc
+    lda zpRegPtr
+    adc #7
+    sta zpRegPtr
+    bcc !nc1+
+    inc zpRegPtr + 1
+!nc1:
+    inc zpVoiceIdx
+    jsr AnalyzeSingleVoice
+    clc
+    lda zpRegPtr
+    adc #7
+    sta zpRegPtr
+    bcc !nc2+
+    inc zpRegPtr + 1
+!nc2:
+    inc zpVoiceIdx
+    jmp AnalyzeSingleVoice
+AnalyzeSingleVoice:
+    ldy #4
+    lda (zpRegPtr), y
     and #$08
-    bne AnalyzeFrequency
-    lda sidRegisterMirror + (voice * 7) + 4
+    bne !analyzeFreq+
+    lda (zpRegPtr), y
     and #$01
-    beq !skipVoice+
-AnalyzeFrequency:
-    ldy sidRegisterMirror + (voice * 7) + 1
+    bne !analyzeFreq+
+    rts
+!analyzeFreq:
+    ldy #1
+    lda (zpRegPtr), y
+    sta zpTempByte
+    tay
     cpy #$40
     bcs !useHighTable+
     cpy #$10
@@ -1850,61 +2049,73 @@ AnalyzeFrequency:
     asl
     asl
     asl
-    sta tempIndex + 1
-    lda sidRegisterMirror + (voice * 7) + 0
+    sta !tempOra+ + 1
+    ldy #0
+    lda (zpRegPtr), y
     lsr
     lsr
     lsr
     lsr
-tempIndex:
+!tempOra:
     ora #$00
     tax
     lda FreqToBarLo, x
     tax
     jmp !gotBar+
 !useMidTable:
-    tya
+    lda zpTempByte
     sec
     sbc #$10
     asl
     asl
-    sta tempIndex2 + 1
-    lda sidRegisterMirror + (voice * 7) + 0
+    sta !tempOra2+ + 1
+    ldy #0
+    lda (zpRegPtr), y
     lsr
     lsr
     lsr
     lsr
     lsr
     lsr
-tempIndex2:
+!tempOra2:
     ora #$00
     tax
     lda FreqToBarMid, x
     tax
     jmp !gotBar+
 !useHighTable:
+    ldy zpTempByte
     lda FreqToBarHi, y
     tax
 !gotBar:
-        lda sidRegisterMirror + (voice * 7) + 6
-        and #$0f
-        tay
-        lda releaseRateHi, y
-        sta voiceReleaseHi + voice
-        lda releaseRateLo, y
-        sta voiceReleaseLo + voice
-        lda sidRegisterMirror + (voice * 7) + 6
-        lsr
-        lsr
-        lsr
-        lsr
-        tay
-        lda sustainToHeight, y
-        sta targetBarHeights, x
-        lda #voice
-        sta barVoiceMap, x
-    !skipVoice:
-    }
+    ldy #6
+    lda (zpRegPtr), y
+    and #$0f
+    tay
+    lda releaseRateHi, y
+    ldy zpVoiceIdx
+    sta voiceReleaseHi, y
+    ldy #6
+    lda (zpRegPtr), y
+    and #$0f
+    tay
+    lda releaseRateLo, y
+    ldy zpVoiceIdx
+    sta voiceReleaseLo, y
+    ldy #6
+    lda (zpRegPtr), y
+    lsr
+    lsr
+    lsr
+    lsr
+    tay
+    lda sustainToHeight, y
+    cmp targetBarHeights, x
+    bcc !skipVoice+
+    sta targetBarHeights, x
+    lda zpVoiceIdx
+    sta barVoiceMap, x
+!skipVoice:
     rts
 UpdateBars:
     ldx #0
@@ -2029,22 +2240,36 @@ ResyncLoop:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBars/RaistlinBars.asm
-*Original size: 17432 bytes, Cleaned: 11698 bytes (reduced by 32.9%)*
+*Original size: 18583 bytes, Cleaned: 11524 bytes (reduced by 38.0%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+.const NUM_FREQUENCY_BARS				= 40
+.const TOP_SPECTRUM_HEIGHT				= 14
+.const BOTTOM_SPECTRUM_HEIGHT			= 3
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $0D, $00
+borderColor:
+    .byte $00
+backgroundColor:
+    .byte $00
+    .fill $60 - $0F, $00
+colorEffectMode:
+    .byte $00
+lineGradientColors:
+    .fill TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT, $0b
+songNameColor:
+    .byte $01
+artistNameColor:
+    .byte $0f
+    .fill $100 - $61 - (TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT) - 2, $00
 * = CODE_ADDRESS "Main Code"
     jmp Initialize
 .var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
-.const NUM_FREQUENCY_BARS				= 40
-.const TOP_SPECTRUM_HEIGHT				= 14
-.const BOTTOM_SPECTRUM_HEIGHT			= 3
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 0
@@ -2060,6 +2285,7 @@ Files: 1
 .const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
 .const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
 .const SPRITES_ADDRESS					= VIC_BANK_ADDRESS + (SPRITE_BASE_INDEX * $40)
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2D80
 .const SPRITE_POINTERS_0				= SCREEN0_ADDRESS + $3F8
 .const SPRITE_POINTERS_1				= SCREEN1_ADDRESS + $3F8
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
@@ -2068,8 +2294,7 @@ Files: 1
 .const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
-.const NUM_COLOR_PALETTES				= 3
-.const COLORS_PER_PALETTE				= 8
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
@@ -2084,6 +2309,7 @@ Files: 1
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+.import source "../INC/LinkedWithEffect.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -2092,16 +2318,19 @@ previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
-	jsr VSync
-	lda #$00
-	sta $d011
-	sta $d020
+	lda #$35
+	sta $01
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
 	jsr SetupStableRaster
-	jsr SetupSystem
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
 	jsr NMIFix
 	jsr InitializeVIC
 	jsr ClearScreens
+	jsr InitializeColors
 	jsr DisplaySongInfo
 	jsr init_D011_D012_values
 	ldy #$00
@@ -2140,14 +2369,6 @@ MainLoop:
 	lda #$00
 	sta visualizationUpdateFlag
 	jmp MainLoop
-SetupSystem:
-	lda #$35
-	sta $01
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-	rts
 .const SKIP_REGISTER = $e1
 InitializeVIC:
 	ldx #VICConfigEnd - VICConfigStart - 1
@@ -2159,7 +2380,18 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
-	jsr InitializeColors
+	lda borderColor
+	sta $d020
+	sta $d027
+	sta $d028
+	sta $d029
+	sta $d02a
+	sta $d02b
+	sta $d02c
+	sta $d02d
+	sta $d02e
+	lda backgroundColor
+	sta $d021
 	rts
 MainIRQ:
 	pha
@@ -2200,7 +2432,6 @@ MainIRQ:
 	inc frame256Counter
 !skip:
 	jsr JustPlayMusic
-	jsr UpdateColors
 	jsr AnalyseMusic
 	jsr UpdateBars
 	jsr UpdateSprites
@@ -2260,6 +2491,8 @@ NextIRQLdx:
 	sta $ffff
 	rts
 RenderBars:
+	lda colorEffectMode
+	bne !colorsDone+
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
@@ -2338,41 +2571,6 @@ RenderToScreen1:
 		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-UpdateColors:
-	lda frameCounter
-	bne !done+
-	inc frame256Counter
-	lda #$00
-	sta colorUpdateIndex
-	ldx currentPalette
-	inx
-	cpx #NUM_COLOR_PALETTES
-	bne !setPalette+
-	ldx #$00
-!setPalette:
-	stx currentPalette
-	lda colorPalettesLo, x
-	sta !readColor+ + 1
-	lda colorPalettesHi, x
-	sta !readColor+ + 2
-!done:
-	ldx colorUpdateIndex
-	bmi !exit+
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-!readColor:
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inc colorUpdateIndex
-	lda colorUpdateIndex
-	cmp #MAX_BAR_HEIGHT + 5
-	bne !exit+
-	lda #$ff
-	sta colorUpdateIndex
-!exit:
-	rts
 UpdateSprites:
 	ldx spriteAnimationIndex
 	lda spriteSineTable, x
@@ -2432,7 +2630,7 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	lda ArtistName, y
@@ -2441,24 +2639,28 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
-	lda #$0f
+	lda artistNameColor
 	sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
 	sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	dey
 	bpl !loop-
 	rts
 InitializeColors:
-	ldx #0
-!loop:
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inx
-	cpx #MAX_BAR_HEIGHT + 5
-	bne !loop-
+	lda colorEffectMode
+	beq !done+
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + TOP_SPECTRUM_HEIGHT + line
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+!done:
 	rts
 SetupMusic:
 	ldy #24
@@ -2496,8 +2698,8 @@ VICConfigStart:
 	.byte $ff
 	.byte $00
 	.byte $00
-	.byte $00
-	.byte $00
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
 	.byte $00, $00
 	.byte $00, $00, $00
 	.byte $00, $00, $00, $00
@@ -2508,25 +2710,16 @@ frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
 spriteAnimationIndex:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
 							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
-colorPalettes:
-	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01
-	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01
-	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01
-colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
-colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
-heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(COLORS_PER_PALETTE - 1, floor((i * COLORS_PER_PALETTE) / MAX_BAR_HEIGHT)))
-heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
 	.fill MAX_BAR_HEIGHT, 233
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 * = SPRITES_ADDRESS "Water Sprites"
 	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
 * = CHARSET_ADDRESS "Font"
@@ -2544,23 +2737,37 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinBarsWithLogo/RaistlinBarsWithLogo.asm
-*Original size: 16922 bytes, Cleaned: 11237 bytes (reduced by 33.6%)*
+*Original size: 18601 bytes, Cleaned: 11161 bytes (reduced by 40.0%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+.const NUM_FREQUENCY_BARS				= 40
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 8
+.const BOTTOM_SPECTRUM_HEIGHT			= 3
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $0D, $00
+borderColor:
+    .byte $00
+backgroundColor:
+    .byte $00
+    .fill $60 - $0F, $00
+colorEffectMode:
+    .byte $00
+lineGradientColors:
+    .fill TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT, $0b
+songNameColor:
+    .byte $01
+spectrometerBgColor:
+    .byte $00
+    .fill $100 - $61 - (TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT) - 1 - 1, $00
 * = CODE_ADDRESS "Main Code"
     jmp Initialize
 .var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
 .var file_waterSpritesData = LoadBinary("WaterSprites.map")
-.const NUM_FREQUENCY_BARS				= 40
-.const LOGO_HEIGHT						= 11
-.const TOP_SPECTRUM_HEIGHT				= 8
-.const BOTTOM_SPECTRUM_HEIGHT			= 3
 .const BAR_INCREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 23
@@ -2573,7 +2780,7 @@ Files: 1
 .const SCREEN1_BANK						= 13
 .const CHARSET_BANK						= 7
 .const BITMAP_BANK						= 1
-.const SPRITE_BASE_INDEX				= $B8
+.const SPRITE_BASE_INDEX				= $B9
 .const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
 .const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
@@ -2589,8 +2796,8 @@ Files: 1
 .const WATER_REFLECTION_HEIGHT			= BOTTOM_SPECTRUM_HEIGHT * 8
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 .const REFLECTION_OFFSET				= WATER_REFLECTION_HEIGHT - 7
-.const NUM_COLOR_PALETTES				= 3
-.const COLORS_PER_PALETTE				= 8
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2DC0
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -2602,6 +2809,7 @@ Files: 1
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+.import source "../INC/LinkedWithEffect.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -2610,16 +2818,19 @@ previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
-	jsr VSync
-	lda #$00
-	sta $d011
-	sta $d020
+	lda #$35
+	sta $01
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
 	jsr SetupStableRaster
-	jsr SetupSystem
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
 	jsr NMIFix
 	jsr InitializeVIC
 	jsr DrawScreens
+	jsr InitializeColors
 	ldy #$00
 	lda #$00
 !loop:
@@ -2656,14 +2867,6 @@ MainLoop:
 	eor #$01
 	sta currentScreenBuffer
 	jmp MainLoop
-SetupSystem:
-	lda #$35
-	sta $01
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-	rts
 .const SKIP_REGISTER = $e1
 InitializeVIC:
 	ldx #VICConfigEnd - VICConfigStart - 1
@@ -2675,7 +2878,18 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
-	jsr InitializeColors
+	lda borderColor
+	sta $d020
+	sta $d027
+	sta $d028
+	sta $d029
+	sta $d02a
+	sta $d02b
+	sta $d02c
+	sta $d02d
+	sta $d02e
+	lda backgroundColor
+	sta $d021
 	rts
 MainIRQ:
 	pha
@@ -2685,7 +2899,11 @@ MainIRQ:
 	pha
 	lda #D018_VALUE_BITMAP
 	sta $d018
+	lda #$08
+	ldx BitmapMode
+	bne !hiresBitmap+
 	lda #$18
+!hiresBitmap:
 	sta $d016
 	lda #$3b
 	sta $d011
@@ -2697,7 +2915,6 @@ MainIRQ:
 	inc visualizationUpdateFlag
 	jsr PlayMusicWithAnalysis
 	jsr UpdateBars
-	jsr UpdateColors
 	jsr UpdateSprites
 	inc frameCounter
 	bne !skip+
@@ -2731,9 +2948,10 @@ SpectrometerDisplayIRQ:
 	dex
 	bpl !loop-
 	nop
+	nop
 	lda #$1b
 	sta $d011
-	lda #$00
+	lda spectrometerBgColor
 	sta $d021
 SpectrometerD018:
 	lda #$00
@@ -2756,6 +2974,8 @@ SpectrometerD018:
 	pla
 	rti
 RenderBars:
+	lda colorEffectMode
+	bne !colorsDone+
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
@@ -2832,63 +3052,32 @@ RenderToScreen1:
 		sta SCREEN1_ADDRESS + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
 	}
 	jmp !loop-
-UpdateColors:
-	lda frameCounter
-	bne !done+
-	inc frame256Counter
-	lda #$00
-	sta colorUpdateIndex
-	ldx currentPalette
-	inx
-	cpx #NUM_COLOR_PALETTES
-	bne !setPalette+
-	ldx #$00
-!setPalette:
-	stx currentPalette
-	lda colorPalettesLo, x
-	sta !readColor+ + 1
-	lda colorPalettesHi, x
-	sta !readColor+ + 2
-!done:
-	ldx colorUpdateIndex
-	bmi !exit+
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-!readColor:
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inc colorUpdateIndex
-	lda colorUpdateIndex
-	cmp #MAX_BAR_HEIGHT + 5
-	bne !exit+
-	lda #$ff
-	sta colorUpdateIndex
-!exit:
-	rts
 UpdateSprites:
 	ldx spriteAnimationIndex
 	lda spriteSineTable, x
-	.for (var i = 0; i < 8; i++) {
+	.for (var i = 0; i < 7; i++) {
 		sta $d000 + (i * 2)
-		.if (i != 7) {
+		.if (i != 6) {
 			clc
 			adc #$30
 		}
 	}
-	ldy #$c0
+	ldy #$40
 	lda $d000 + (5 * 2)
 	bmi !skip+
-	ldy #$e0
+	ldy #$60
 !skip:
 	sty $d010
 	lda frameCounter
 	lsr
 	lsr
 	and #$07
+	cmp #$07
+	bne !noClamp+
+	lda #$00
+!noClamp:
 	ora #SPRITE_BASE_INDEX
-	.for (var i = 0; i < 8; i++) {
+	.for (var i = 0; i < 7; i++) {
 		sta SPRITE_POINTERS_0 + i
 		sta SPRITE_POINTERS_1 + i
 	}
@@ -2916,24 +3105,28 @@ DrawScreens:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	dey
 	bpl !loop-
 	rts
 InitializeColors:
-	ldx #0
-!loop:
-	lda #$0b
-	ldy heightToColorIndex, x
-	bmi !useDefault+
-	lda colorPalettes, y
-!useDefault:
-	sta heightToColor, x
-	inx
-	cpx #MAX_BAR_HEIGHT + 5
-	bne !loop-
+	lda colorEffectMode
+	beq !done+
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	.for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	.for (var line = 0; line < BOTTOM_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + TOP_SPECTRUM_HEIGHT + line
+		sta $d800 + ((SPECTRUM_START_LINE + TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT - 1 - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+!done:
 	rts
 SetupMusic:
 	ldy #24
@@ -2960,7 +3153,7 @@ VICConfigStart:
 	.byte SKIP_REGISTER
 	.byte SKIP_REGISTER
 	.byte SKIP_REGISTER
-	.byte $ff
+	.byte $7f
 	.byte $18
 	.byte $00
 	.byte D018_VALUE_BITMAP
@@ -2968,11 +3161,11 @@ VICConfigStart:
 	.byte SKIP_REGISTER
 	.byte $00
 	.byte $00
-	.byte $ff
+	.byte $7f
 	.byte $00
 	.byte $00
-	.byte $00
-	.byte $00
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
 	.byte $00, $00
 	.byte $00, $00, $00
 	.byte $00, $00, $00, $00
@@ -2983,27 +3176,18 @@ frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
 spriteAnimationIndex:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 darkerColorMap:				.byte $00, $0c, $09, $0e, $06, $09, $0b, $08
 							.byte $02, $0b, $02, $0b, $0b, $05, $06, $0c
-colorPalettes:
-	.byte $09, $04, $05, $05, $0d, $0d, $0f, $01
-	.byte $09, $06, $0e, $0e, $03, $03, $0f, $01
-	.byte $09, $02, $0a, $0a, $07, $07, $0f, $01
-colorPalettesLo:			.fill NUM_COLOR_PALETTES, <(colorPalettes + i * COLORS_PER_PALETTE)
-colorPalettesHi:			.fill NUM_COLOR_PALETTES, >(colorPalettes + i * COLORS_PER_PALETTE)
-heightToColorIndex:			.byte $ff
-							.fill MAX_BAR_HEIGHT + 4, max(0, min(floor(((i * COLORS_PER_PALETTE) + (random() * (MAX_BAR_HEIGHT * 0.8) - (MAX_BAR_HEIGHT * 0.4))) / MAX_BAR_HEIGHT), COLORS_PER_PALETTE - 1))
-heightToColor:				.fill MAX_BAR_HEIGHT + 5, $0b
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
 	.fill MAX_BAR_HEIGHT, 233
 spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 * = SPRITES_ADDRESS "Water Sprites"
-	.fill file_waterSpritesData.getSize(), file_waterSpritesData.get(i)
+	.fill min(7 * 64, file_waterSpritesData.getSize()), file_waterSpritesData.get(i)
 * = CHARSET_ADDRESS "Font"
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
@@ -3023,21 +3207,35 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBars/RaistlinMirrorBars.asm
-*Original size: 13067 bytes, Cleaned: 8198 bytes (reduced by 37.3%)*
+*Original size: 15441 bytes, Cleaned: 9004 bytes (reduced by 41.7%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+.const NUM_FREQUENCY_BARS				= 40
+.const TOP_SPECTRUM_HEIGHT				= 9
+.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $0D, $00
+borderColor:
+    .byte $00
+backgroundColor:
+    .byte $00
+    .fill $60 - $0F, $00
+colorEffectMode:
+    .byte $00
+lineGradientColors:
+    .fill TOTAL_SPECTRUM_HEIGHT, $0b
+songNameColor:
+    .byte $01
+artistNameColor:
+    .byte $0f
+    .fill $100 - $75, $00
 * = CODE_ADDRESS "Main Code"
     jmp Initialize
 .var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
-.const NUM_FREQUENCY_BARS				= 40
-.const TOP_SPECTRUM_HEIGHT				= 9
-.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 .const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.6)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 0
@@ -3050,10 +3248,12 @@ Files: 1
 .const SCREEN0_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
 .const SCREEN1_ADDRESS					= VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
 .const CHARSET_ADDRESS					= VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00
 .const D018_VALUE_0						= (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
 .const D018_VALUE_1						= (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
 #define INCLUDE_SPACE_FASTFORWARD
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
@@ -3068,6 +3268,7 @@ Files: 1
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+.import source "../INC/LinkedWithEffect.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -3076,16 +3277,19 @@ previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
-	jsr VSync
-	lda #$00
-	sta $d011
-	sta $d020
+	lda #$35
+	sta $01
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
 	jsr SetupStableRaster
-	jsr SetupSystem
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
 	jsr NMIFix
 	jsr InitializeVIC
 	jsr ClearScreens
+	jsr InitializeColors
 	jsr DisplaySongInfo
 	jsr init_D011_D012_values
 	ldy #$00
@@ -3124,14 +3328,6 @@ MainLoop:
 	eor #$01
 	sta currentScreenBuffer
 	jmp MainLoop
-SetupSystem:
-	lda #$35
-	sta $01
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-	rts
 .const SKIP_REGISTER = $e1
 InitializeVIC:
 	ldx #VICConfigEnd - VICConfigStart - 1
@@ -3143,6 +3339,10 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
+	lda borderColor
+	sta $d020
+	lda backgroundColor
+	sta $d021
 	rts
 MainIRQ:
 	pha
@@ -3244,6 +3444,8 @@ NextIRQLdx:
 	sta $ffff
 	rts
 RenderBars:
+	lda colorEffectMode
+	bne !skipColorLoop+
 	ldy #NUM_FREQUENCY_BARS - 1
 !colorLoop:
 	ldx smoothedHeights, y
@@ -3257,6 +3459,7 @@ RenderBars:
 !skip:
 	dey
 	bpl !colorLoop-
+!skipColorLoop:
 	lda currentScreenBuffer
 	beq !renderScreen1+
 	jmp RenderToScreen0
@@ -3324,7 +3527,7 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	lda ArtistName, y
@@ -3333,11 +3536,24 @@ DisplaySongInfo:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
-	lda #$0f
+	lda artistNameColor
 	sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
 	sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 	dey
 	bpl !loop-
+	rts
+InitializeColors:
+	lda colorEffectMode
+	beq !done+
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+!done:
 	rts
 SetupMusic:
 	ldy #24
@@ -3375,8 +3591,8 @@ VICConfigStart:
 	.byte $00
 	.byte $00
 	.byte $00
-	.byte $00
-	.byte $00
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
 	.byte $00, $00
 	.byte $00, $00, $00
 	.byte $00, $00, $00, $00
@@ -3387,14 +3603,6 @@ frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
-heightColorTable:
-	.fill 2, $0B
-	.fill 12, $09
-	.fill 12, $06
-	.fill 12, $04
-	.fill 11, $0E
-	.fill 11, $0D
-	.fill 12, $07
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
@@ -3403,6 +3611,8 @@ barCharacterMap:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 	.fill BAR_STYLE_SIZE_MIRROR, $00
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightColorTable:			.fill COLOR_TABLE_SIZE, $0b
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill $400, $00
 * = SCREEN1_ADDRESS "Screen 1"
@@ -3414,22 +3624,36 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/RaistlinMirrorBarsWithLogo/RaistlinMirrorBarsWithLogo.asm
-*Original size: 12596 bytes, Cleaned: 7833 bytes (reduced by 37.8%)*
+*Original size: 15066 bytes, Cleaned: 8610 bytes (reduced by 42.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
+.const NUM_FREQUENCY_BARS				= 40
+.const LOGO_HEIGHT						= 11
+.const TOP_SPECTRUM_HEIGHT				= 5
+.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $0D, $00
+borderColor:
+    .byte $00
+backgroundColor:
+    .byte $00
+    .fill $60 - $0F, $00
+colorEffectMode:
+    .byte $00
+lineGradientColors:
+    .fill TOTAL_SPECTRUM_HEIGHT, $0b
+songNameColor:
+    .byte $01
+spectrometerBgColor:
+    .byte $00
+    .fill $100 - $61 - TOTAL_SPECTRUM_HEIGHT - 1 - 1, $00
 * = CODE_ADDRESS "Main Code"
     jmp Initialize
 .var VIC_BANK						= floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var file_charsetData = LoadBinary("CharSet.map")
-.const NUM_FREQUENCY_BARS				= 40
-.const LOGO_HEIGHT						= 11
-.const TOP_SPECTRUM_HEIGHT				= 5
-.const TOTAL_SPECTRUM_HEIGHT			= TOP_SPECTRUM_HEIGHT * 2
 .const BAR_INCREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE				= (TOP_SPECTRUM_HEIGHT * 0.2)
 .const SONG_TITLE_LINE					= 23
@@ -3449,6 +3673,8 @@ Files: 1
 .const D018_VALUE_BITMAP				= (SCREEN0_BANK * 16) + (BITMAP_BANK * 8)
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
+.const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00
 #define INCLUDE_PLUS_MINUS_SONGCHANGE
 #define INCLUDE_09ALPHA_SONGCHANGE
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
@@ -3460,6 +3686,7 @@ Files: 1
 .import source "../INC/Spectrometer.asm"
 .import source "../INC/FreqTable.asm"
 .import source "../INC/BarStyles.asm"
+.import source "../INC/LinkedWithEffect.asm"
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen0:     .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
@@ -3468,16 +3695,19 @@ previousHeightsScreen1:     .fill NUM_FREQUENCY_BARS, 255
 previousColors:             .fill NUM_FREQUENCY_BARS, 255
 Initialize:
 	sei
-	jsr VSync
-	lda #$00
-	sta $d011
-	sta $d020
+	lda #$35
+	sta $01
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
 	jsr SetupStableRaster
-	jsr SetupSystem
+	lda #(63 - VIC_BANK)
+	sta $dd00
+	lda #VIC_BANK
+	sta $dd02
 	jsr NMIFix
 	jsr InitializeVIC
 	jsr DrawScreens
+	jsr InitializeColors
 	ldy #$00
 	lda #$00
 !loop:
@@ -3516,14 +3746,6 @@ MainLoop:
 	eor #$01
 	sta currentScreenBuffer
 	jmp MainLoop
-SetupSystem:
-	lda #$35
-	sta $01
-	lda #(63 - VIC_BANK)
-	sta $dd00
-	lda #VIC_BANK
-	sta $dd02
-	rts
 .const SKIP_REGISTER = $e1
 InitializeVIC:
 	ldx #VICConfigEnd - VICConfigStart - 1
@@ -3535,6 +3757,10 @@ InitializeVIC:
 !skip:
 	dex
 	bpl !loop-
+	lda borderColor
+	sta $d020
+	lda backgroundColor
+	sta $d021
 	rts
 MainIRQ:
 	pha
@@ -3544,7 +3770,11 @@ MainIRQ:
 	pha
 	lda #D018_VALUE_BITMAP
 	sta $d018
+	lda #$08
+	ldx BitmapMode
+	bne !hiresBitmap+
 	lda #$18
+!hiresBitmap:
 	sta $d016
 	lda #$3b
 	sta $d011
@@ -3589,7 +3819,7 @@ SpectrometerDisplayIRQ:
 	bpl !loop-
 	lda #$1b
 	sta $d011
-	lda #$00
+	lda spectrometerBgColor
 	sta $d021
 SpectrometerD018:
 	lda #$00
@@ -3612,6 +3842,8 @@ SpectrometerD018:
 	pla
 	rti
 RenderBars:
+	lda colorEffectMode
+	bne !colorsDone+
 	ldy #NUM_FREQUENCY_BARS
 !colorLoop:
 	dey
@@ -3689,11 +3921,24 @@ DrawScreens:
 	ora #$80
 	sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-	lda #$01
+	lda songNameColor
 	sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
 	sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 	dey
 	bpl !loop-
+	rts
+InitializeColors:
+	lda colorEffectMode
+	beq !done+
+	ldx #NUM_FREQUENCY_BARS - 1
+!barLoop:
+	.for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
+		lda lineGradientColors + line
+		sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
+	}
+	dex
+	bpl !barLoop-
+!done:
 	rts
 SetupMusic:
 	ldy #24
@@ -3731,8 +3976,8 @@ VICConfigStart:
 	.byte $00
 	.byte $00
 	.byte $00
-	.byte $00
-	.byte $00
+	.byte SKIP_REGISTER
+	.byte SKIP_REGISTER
 	.byte $00, $00
 	.byte $00, $00, $00
 	.byte $00, $00, $00, $00
@@ -3742,21 +3987,7 @@ visualizationUpdateFlag:	.byte $00
 frameCounter:				.byte $00
 frame256Counter:			.byte $00
 currentScreenBuffer:		.byte $00
-colorUpdateIndex:			.byte $00
-currentPalette:				.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
-heightColorTable:
-	.fill 2, $0B
-	.fill 4, $09
-	.fill 4, $02
-	.fill 4, $06
-	.fill 4, $08
-	.fill 4, $04
-	.fill 4, $05
-	.fill 5, $0E
-	.fill 5, $0A
-	.fill 6, $0D
-	.fill 7, $07
 	.fill MAX_BAR_HEIGHT, 224
 barCharacterMap:
 	.fill 8, 225 + i
@@ -3765,6 +3996,8 @@ barCharacterMap:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
 	.fill BAR_STYLE_SIZE_MIRROR, $00
+* = COLOR_TABLE_ADDRESS "Color Table"
+heightColorTable:			.fill COLOR_TABLE_SIZE, $0b
 * = SCREEN0_ADDRESS "Screen 0"
 	.fill LOGO_HEIGHT * 40, $00
 	.fill $400 - (LOGO_HEIGHT * 40), $20
@@ -3780,7 +4013,7 @@ barCharacterMap:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleBitmap/SimpleBitmap.asm
-*Original size: 4392 bytes, Cleaned: 3266 bytes (reduced by 25.6%)*
+*Original size: 4487 bytes, Cleaned: 3329 bytes (reduced by 25.8%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3809,15 +4042,12 @@ Files: 1
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
+.import source "../INC/LinkedWithEffect.asm"
 Initialize:
-    sei
-    lda #$35
-    sta $01
-    jsr VSync
-    lda #$00
-    sta $d011
-    sta $d020
-    sta $d021
+	sei
+	lda #$35
+	sta $01
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
     lda SongNumber
     sta CurrentSong
@@ -3862,7 +4092,11 @@ Initialize:
     sta $dd02
     lda #D018Value
     sta $d018
+    lda #$08
+    ldx BitmapMode
+    bne !hiresBitmap+
     lda #$18
+!hiresBitmap:
     sta $d016
     lda #$00
     sta $d015
@@ -3935,7 +4169,7 @@ callCount:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleBitmapWithScroller/SimpleBitmapWithScroller.asm
-*Original size: 9939 bytes, Cleaned: 7573 bytes (reduced by 23.8%)*
+*Original size: 10007 bytes, Cleaned: 7517 bytes (reduced by 24.9%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -3949,7 +4183,7 @@ Files: 1
 .var BITMAP_BANK                    = 1
 .var SCREEN_BANK                    = 2
 .var COLOUR_BANK                    = 3
-.var SPRITES_INDEX                  = 0
+.var SPRITES_INDEX                  = $00
 .var ScrollColour					= DATA_ADDRESS + $80
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
@@ -3968,19 +4202,26 @@ Files: 1
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
+.import source "../INC/LinkedWithEffect.asm"
 Initialize:
     sei
     lda #$35
     sta $01
+    jsr RunLinkedWithEffect
     jsr VSync
     lda #$00
     sta $d011
     sta $d020
     jsr InitializeVIC
+    lda #$08
+    ldx BitmapMode
+    bne !hiresBitmap+
+    lda #$18
+!hiresBitmap:
+    sta $d016
     lda BitmapScreenColour
     sta $d021
     jsr InitKeyboard
-    jsr CopyROMFont
     lda SongNumber
     sta CurrentSong
     lda NumSongs
@@ -4184,13 +4425,15 @@ ReadScroller:
     lsr
     lsr
     lsr
-    ora #$58
+    ora #$d8
     sta InCharPtr + 2
     txa
     asl
     asl
     asl
     sta InCharPtr + 1
+    lda #$33
+    sta $01
     ldx #7
     ldy #(7 * 3)
 InCharPtr:
@@ -4201,6 +4444,8 @@ InCharPtr:
     dey
     dex
     bpl InCharPtr
+    lda #$35
+    sta $01
     inc ReadScroller + 1
     bne !skip+
     inc ReadScroller + 2
@@ -4218,26 +4463,6 @@ InitializeVIC:
 	dex
 	bpl !loop-
 	rts
-CopyROMFont:
-    lda $01
-    pha
-    lda #$33
-    sta $01
-    ldx #$08
-    ldy #$00
-InPtr:
-    lda $d800, y
-OutPtr:
-    sta $5800, y
-    iny
-    bne InPtr
-    inc InPtr + 2
-    inc OutPtr + 2
-    dex
-    bne InPtr
-    pla
-    sta $01
-    rts
 VICConfigStart:
 	.byte $00, $ea
 	.byte $00, $ea
@@ -4272,8 +4497,6 @@ VICConfigStart:
 VICConfigEnd:
 * = SCROLLTEXT_ADDR "ScrollText"
     .byte $53, $49, $44, $17, $09, $0e, $04, $05, $12, $20, $20, $2d, $2d, $2d, $20, $20, $00
-* = SPRITES_DATA "Sprite Data"
-    .fill $200, $00
 * = BITMAP_MAP_DATA "Bitmap MAP Data"
     .fill $2000, $00
 * = BITMAP_SCREEN_DATA "Bitmap SCR Data"
@@ -4281,6 +4504,8 @@ VICConfigEnd:
     .fill 8, SPRITES_INDEX + i
 * = BITMAP_COLOUR_DATA "Bitmap COL Data"
     .fill $400, $00
+* = SPRITES_DATA
+    .fill $200, $00
 ```
 
 
@@ -4288,7 +4513,7 @@ VICConfigEnd:
 Files: 1
 
 ### FILE: SIDPlayers/SimpleRaster/SimpleRaster.asm
-*Original size: 4302 bytes, Cleaned: 2032 bytes (reduced by 52.8%)*
+*Original size: 4319 bytes, Cleaned: 2050 bytes (reduced by 52.5%)*
 ```asm
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -4305,14 +4530,12 @@ Files: 1
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
+.import source "../INC/LinkedWithEffect.asm"
 Initialize:
     sei
     lda #$35
     sta $01
-    jsr VSync
-    lda #$00
-    sta $d011
-    sta $d020
+    jsr RunLinkedWithEffect
     jsr InitKeyboard
     lda SongNumber
     sta CurrentSong

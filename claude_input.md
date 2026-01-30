@@ -2249,9 +2249,26 @@ namespace sidwinder {
                 modifiedAddresses.push_back(static_cast<u16>(addr));
             }
         }
+        MemoryPageTracker pageTracker;
+        if (sid_) {
+            pageTracker.markRangeUsed(sid_->getLoadAddress(), sid_->getDataSize());
+        }
+        for (u32 addr = 0; addr < 65536; ++addr) {
+            if (accessFlags[addr] != 0) {
+                pageTracker.markPageUsed(addr >> 8);
+            }
+        }
+        const int numBytesNeeded = static_cast<int>(modifiedAddresses.size());
+        auto freeSpaceResult = pageTracker.findFreeSpace(numBytesNeeded, false);  
+        u16 storageBaseAddr = 0x0900;
+        if (freeSpaceResult.has_value()) {
+            storageBaseAddr = freeSpaceResult.value();
+        } else {
+            util::Logger::warning("Could not find free memory for save/restore storage, using $0900");
+        }
         {
             std::vector<u8> dataBlock;
-            u16 saveAddr = 0xec00;
+            u16 saveAddr = storageBaseAddr;
             for (u16 addr : modifiedAddresses) {
                 if (addr >= 256)
                 {
@@ -2274,7 +2291,7 @@ namespace sidwinder {
         }
         {
             std::vector<u8> dataBlock;
-            u16 saveAddr = 0xec00;
+            u16 saveAddr = storageBaseAddr;
             for (u16 addr : modifiedAddresses) {
                 dataBlock.push_back(0xAD); 
                 dataBlock.push_back(saveAddr & 0xFF);
@@ -6463,7 +6480,76 @@ namespace sidwinder {
 ```cpp
 #pragma once
 #include "Common.h"
+#include <array>
+#include <optional>
 namespace sidwinder {
+    class MemoryPageTracker {
+    public:
+        static constexpr int NUM_PAGES = 256;  
+        MemoryPageTracker() {
+            pages_.fill(false);
+            for (int page = 0xD0; page <= 0xDF; ++page) {
+                pages_[page] = true;
+            }
+            pages_[0xFF] = true;
+        }
+        void markRangeUsed(u16 startAddr, u16 size) {
+            if (size == 0) return;
+            u16 endAddr = startAddr + size - 1;
+            if (endAddr < startAddr) endAddr = 0xFFFF;
+            int startPage = startAddr >> 8;
+            int endPage = endAddr >> 8;
+            for (int page = startPage; page <= endPage; ++page) {
+                pages_[page] = true;
+            }
+        }
+        void markPageUsed(int page) {
+            if (page >= 0 && page < NUM_PAGES) {
+                pages_[page] = true;
+            }
+        }
+        bool isPageUsed(int page) const {
+            return page >= 0 && page < NUM_PAGES && pages_[page];
+        }
+        std::optional<u16> findFreePages(int numPages, bool preferHighMemory = true) const {
+            if (numPages <= 0 || numPages > NUM_PAGES) return std::nullopt;
+            constexpr int MIN_SAFE_PAGE = 0x09;
+            if (preferHighMemory) {
+                for (int startPage = 0xCF - numPages + 1; startPage >= MIN_SAFE_PAGE; --startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+                for (int startPage = 0xFE - numPages + 1; startPage >= 0xE0; --startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+            } else {
+                for (int startPage = MIN_SAFE_PAGE; startPage <= 0xCF - numPages + 1; ++startPage) {
+                    if (arePagesAvailable(startPage, numPages)) {
+                        return static_cast<u16>(startPage << 8);
+                    }
+                }
+            }
+            return std::nullopt;
+        }
+        std::optional<u16> findFreeSpace(int numBytes, bool preferHighMemory = true) const {
+            int numPages = (numBytes + 255) / 256;  
+            return findFreePages(numPages, preferHighMemory);
+        }
+    private:
+        std::array<bool, NUM_PAGES> pages_;
+        bool arePagesAvailable(int startPage, int numPages) const {
+            for (int i = 0; i < numPages; ++i) {
+                int page = startPage + i;
+                if (page < 0 || page >= NUM_PAGES || pages_[page]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
     struct MemoryConstants {
         static constexpr u16 ZERO_PAGE_START = 0x0000;
         static constexpr u16 ZERO_PAGE_END = 0x00FF;
