@@ -86,12 +86,19 @@ class PNGConverter {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
                 }
-                const bitmapMode = this.Module.ccall(
-                    'png_converter_get_bitmap_mode',
-                    'number',
-                    [],
-                    []
-                );
+                // Query bitmap mode (0=multicolor, 1=hires)
+                // Gracefully handle missing WASM export (pre-rebuild)
+                let bitmapMode = 0;
+                try {
+                    bitmapMode = this.Module.ccall(
+                        'png_converter_get_bitmap_mode',
+                        'number',
+                        [],
+                        []
+                    );
+                } catch (e) {
+                    console.warn('png_converter_get_bitmap_mode not available in WASM module - assuming multicolor. Rebuild WASM to enable hires support.');
+                }
 
                 const c64BitmapSize = 10004;
                 const bitmapPtr = this.Module._malloc(c64BitmapSize);
@@ -107,8 +114,8 @@ class PNGConverter {
                     const bitmapData = new Uint8Array(actualSize);
                     bitmapData.set(this.Module.HEAPU8.subarray(bitmapPtr, bitmapPtr + actualSize));
 
-                    if (actualSize !== 10004) {
-                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10004)`);
+                    if (actualSize !== 10003 && actualSize !== 10004) {
+                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10003 or 10004)`);
                     }
                     if (bitmapData[0] !== 0x00 || bitmapData[1] !== 0x60) {
                         console.warn(`Unexpected load address: ${bitmapData[1].toString(16)}${bitmapData[0].toString(16)} (should be $6000)`);
