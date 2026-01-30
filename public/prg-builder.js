@@ -924,8 +924,17 @@ class SIDwinderPRGExporter {
                                 name: `colorPalette_border`
                             });
                         }
-                        // Inject background color if layout specifies address
-                        if (layout.backgroundColor) {
+                        // Inject background color - use spectrometer address for WithLogo visualizers
+                        // (logo bg is determined by PNG conversion, not palette)
+                        if (layout.spectrometerBgColorAddress) {
+                            const specBgData = new Uint8Array(1);
+                            specBgData[0] = paletteDetails.backgroundColor & 0xFF;
+                            optionComponents.push({
+                                data: specBgData,
+                                loadAddress: parseInt(layout.spectrometerBgColorAddress),
+                                name: `colorPalette_spectrometer_bg`
+                            });
+                        } else if (layout.backgroundColor) {
                             const bgData = new Uint8Array(1);
                             bgData[0] = paletteDetails.backgroundColor & 0xFF;
                             optionComponents.push({
@@ -1027,7 +1036,7 @@ class SIDwinderPRGExporter {
                         name: 'artistNameColor'
                     });
                 } else if (optionConfig.id === 'bgColor') {
-                    // Background color affects both border and background
+                    // Background color affects border and spectrometer/background
                     if (layout.borderColor) {
                         const borderData = new Uint8Array(1);
                         borderData[0] = validColor;
@@ -1037,7 +1046,18 @@ class SIDwinderPRGExporter {
                             name: 'bgColor_border'
                         });
                     }
-                    if (layout.backgroundColor) {
+                    if (layout.spectrometerBgColorAddress) {
+                        // WithLogo visualizers: write to spectrometer bg color
+                        // (logo bg is determined by PNG conversion, not user-editable)
+                        const specBgData = new Uint8Array(1);
+                        specBgData[0] = validColor;
+                        optionComponents.push({
+                            data: specBgData,
+                            loadAddress: parseInt(layout.spectrometerBgColorAddress),
+                            name: 'bgColor_spectrometer'
+                        });
+                    } else if (layout.backgroundColor) {
+                        // Non-logo visualizers: write to backgroundColor as before
                         const bgData = new Uint8Array(1);
                         bgData[0] = validColor;
                         optionComponents.push({

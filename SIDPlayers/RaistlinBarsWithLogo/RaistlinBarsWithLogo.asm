@@ -46,7 +46,9 @@ lineGradientColors:
     .fill TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT, $0b  // Bytes 97-107 ($61-$6B): Line gradient colors
 songNameColor:
     .byte $01                           // Song name text color (default: white)
-    .fill $100 - $61 - (TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT) - 1, $00  // Fill rest of reserved space
+spectrometerBgColor:
+    .byte $00                           // Byte ($6D): Spectrometer background color (user-editable)
+    .fill $100 - $61 - (TOP_SPECTRUM_HEIGHT + BOTTOM_SPECTRUM_HEIGHT) - 1 - 1, $00  // Fill rest of reserved space
 
 * = CODE_ADDRESS "Main Code"
 
@@ -327,7 +329,7 @@ SpectrometerDisplayIRQ:
 
 	lda #$1b
 	sta $d011
-	lda #$00
+	lda spectrometerBgColor
 	sta $d021
 SpectrometerD018:
 	lda #$00

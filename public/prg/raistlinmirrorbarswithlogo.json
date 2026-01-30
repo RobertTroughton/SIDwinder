@@ -26,6 +26,7 @@
       "colorEffectModeAddress": "0x4060",
       "lineGradientColorsAddress": "0x4061",
       "songNameColorAddress": "0x406B",
+      "spectrometerBgColorAddress": "0x406C",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x4000",
       "saveRestoreMaxSize": "0x3800"
@@ -47,6 +48,7 @@
       "colorEffectModeAddress": "0x8060",
       "lineGradientColorsAddress": "0x8061",
       "songNameColorAddress": "0x806B",
+      "spectrometerBgColorAddress": "0x806C",
       "saveRestoreLocation": "before",
       "saveRestoreEndAddress": "0x8000",
       "saveRestoreMaxSize": "0x7800"
