@@ -1,5 +1,5 @@
 // png_converter.cpp - PNG to C64 Bitmap Converter for SIDwinder
-// Converts 320x200 PNG images to C64 multicolor bitmap format
+// Converts 320x200 PNG images to C64 multicolor or hires bitmap format
 
 #include <cstdint>
 #include <vector>
@@ -152,6 +152,7 @@ private:
     std::vector<uint8_t> scrData;
     std::vector<uint8_t> colData;
     uint8_t backgroundColor;
+    bool isHiresBitmap; // true = hires (1x1 pixel), false = multicolor (2x1 pixel)
 
     // Color matching statistics
     int exactMatches;
@@ -364,8 +365,112 @@ private:
         }
     }
 
+    // =========================================================================
+    // HIRES BITMAP SUPPORT
+    // =========================================================================
+
+    // Analyze 8x8 character cell for hires mode (1 pixel per bit, max 2 colors)
+    bool analyzeCharCellHires(int charX, int charY, std::set<uint8_t>& colors) {
+        colors.clear();
+
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) { // Step by 1 for hires single pixels
+                int pixelX = charX * 8 + x;
+                int pixelY = charY * 8 + y;
+                uint8_t color = getPixelColor(pixelX, pixelY);
+                colors.insert(color);
+            }
+        }
+
+        // C64 hires mode allows max 2 colors per 8x8 char
+        return colors.size() <= 2;
+    }
+
+    // Test if all character cells are valid for hires mode
+    bool testConversionHires() {
+        for (int charY = 0; charY < 25; charY++) {
+            for (int charX = 0; charX < 40; charX++) {
+                std::set<uint8_t> cellColors;
+                if (!analyzeCharCellHires(charX, charY, cellColors)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Convert 8x8 character cell to hires bitmap data
+    void convertCharCellHires(int charX, int charY) {
+        std::set<uint8_t> cellColors;
+        analyzeCharCellHires(charX, charY, cellColors);
+
+        // Convert set to vector for indexing
+        std::vector<uint8_t> colors(cellColors.begin(), cellColors.end());
+
+        // Pad to 2 colors if cell has only 1 (or 0) unique colors
+        while (colors.size() < 2) {
+            colors.push_back(0);
+        }
+
+        // In hires bitmap mode, screen RAM byte = (foreground << 4) | background
+        // foreground = color for bit=1, background = color for bit=0
+        // Use colors[1] as foreground (bit=1), colors[0] as background (bit=0)
+        int screenIndex = charY * 40 + charX;
+        scrData[screenIndex] = (colors[1] << 4) | colors[0];
+        colData[screenIndex] = 0x00; // Color RAM not used in hires mode
+
+        // Convert pixel data to bitmap - 1 bit per pixel
+        for (int y = 0; y < 8; y++) {
+            uint8_t bitmapByte = 0;
+
+            for (int x = 0; x < 8; x++) {
+                int pixelX = charX * 8 + x;
+                int pixelY = charY * 8 + y;
+
+                uint8_t pixelColor = getPixelColor(pixelX, pixelY);
+
+                // bit=1 for foreground (colors[1]), bit=0 for background (colors[0])
+                if (pixelColor == colors[1]) {
+                    bitmapByte |= (1 << (7 - x));
+                }
+                // else bit stays 0 (background)
+            }
+
+            int bitmapIndex = (charY * 40 + charX) * 8 + y;
+            mapData[bitmapIndex] = bitmapByte;
+        }
+    }
+
+    // Convert PNG to C64 hires format
+    bool convertHires() {
+        if (!imageData) return false;
+
+        // Reset statistics
+        exactMatches = 0;
+        distanceMatches = 0;
+
+        // Verify all character cells are valid for hires
+        if (!testConversionHires()) {
+            return false;
+        }
+
+        // Background color: not really used in hires bitmap mode,
+        // but set it to 0 (black) for the $D021 register
+        backgroundColor = 0;
+
+        // Convert all character cells
+        for (int charY = 0; charY < 25; charY++) {
+            for (int charX = 0; charX < 40; charX++) {
+                convertCharCellHires(charX, charY);
+            }
+        }
+
+        isHiresBitmap = true;
+        return true;
+    }
+
 public:
-    PNGToC64Converter() : imageData(nullptr), width(0), height(0), backgroundColor(0), exactMatches(0), distanceMatches(0) {
+    PNGToC64Converter() : imageData(nullptr), width(0), height(0), backgroundColor(0), isHiresBitmap(false), exactMatches(0), distanceMatches(0) {
         mapData.resize(8000);  // 40x25 chars * 8 bytes each
         scrData.resize(1000);  // 40x25 screen memory
         colData.resize(1000);  // 40x25 color memory
@@ -411,15 +516,20 @@ public:
     }
 
     bool testConversion() {
-        for (int charY = 0; charY < 25; charY++) {
-            for (int charX = 0; charX < 40; charX++) {
+        // Test multicolor first
+        bool mcValid = true;
+        for (int charY = 0; charY < 25 && mcValid; charY++) {
+            for (int charX = 0; charX < 40 && mcValid; charX++) {
                 std::set<uint8_t> cellColors;
                 if (!analyzeCharCell(charX, charY, cellColors)) {
-                    return false;
+                    mcValid = false;
                 }
             }
         }
-        return true;
+        if (mcValid) return true;
+
+        // If MC fails, test hires
+        return testConversionHires();
     }
 
     // Set image data (supports 320x200 or 384x272 VICE screenshots)
@@ -455,53 +565,61 @@ public:
         }
     }
 
-    // Convert PNG to C64 format
+    // Convert PNG to C64 format (auto-detects multicolor vs hires)
     bool convert() {
         if (!imageData) return false;
 
-        // Reset statistics
+        isHiresBitmap = false;
+
+        // Try multicolor first
         exactMatches = 0;
         distanceMatches = 0;
 
         // First pass: find optimal background color
         backgroundColor = findBestBackgroundColor();
 
-        // Second pass: verify all character cells are valid
-        for (int charY = 0; charY < 25; charY++) {
-            for (int charX = 0; charX < 40; charX++) {
+        // Second pass: verify all character cells are valid for MC
+        bool mcValid = true;
+        for (int charY = 0; charY < 25 && mcValid; charY++) {
+            for (int charX = 0; charX < 40 && mcValid; charX++) {
                 std::set<uint8_t> cellColors;
                 if (!analyzeCharCell(charX, charY, cellColors)) {
-                    return false; // Image has too many colors in a character cell
+                    mcValid = false;
+                    break;
                 }
 
                 // Check if colors work with selected background
                 if (cellColors.find(backgroundColor) == cellColors.end()) {
                     if (cellColors.size() > 3) {
-                        return false;
+                        mcValid = false;
                     }
                 }
                 else {
                     if (cellColors.size() > 4) {
-                        return false;
+                        mcValid = false;
                     }
                 }
             }
         }
 
-        // Third pass: convert all character cells
-        for (int charY = 0; charY < 25; charY++) {
-            for (int charX = 0; charX < 40; charX++) {
-                convertCharCell(charX, charY, backgroundColor);
+        if (mcValid) {
+            // Third pass: convert all character cells as multicolor
+            for (int charY = 0; charY < 25; charY++) {
+                for (int charX = 0; charX < 40; charX++) {
+                    convertCharCell(charX, charY, backgroundColor);
+                }
             }
+            return true;
         }
 
-        return true;
+        // MC failed - try hires conversion
+        return convertHires();
     }
 
     // Create C64-compatible file data
     std::vector<uint8_t> createC64BitmapFile() {
         std::vector<uint8_t> bitmapData;
-        bitmapData.reserve(10003); // Standard C64 bitmap file size
+        bitmapData.reserve(10004); // C64 bitmap file size (10003 + 1 mode byte)
 
         // Load address (0x6000) - little endian
         bitmapData.push_back(0x00);
@@ -510,7 +628,7 @@ public:
         // Bitmap data (8000 bytes) - starts at offset 2
         bitmapData.insert(bitmapData.end(), mapData.begin(), mapData.end());
 
-        // Screen memory (1000 bytes) - starts at offset 8002  
+        // Screen memory (1000 bytes) - starts at offset 8002
         bitmapData.insert(bitmapData.end(), scrData.begin(), scrData.end());
 
         // Color memory (1000 bytes) - starts at offset 9002
@@ -518,6 +636,10 @@ public:
 
         // Background color (1 byte) - at offset 10002
         bitmapData.push_back(backgroundColor);
+
+        // Bitmap mode (1 byte) - at offset 10003
+        // 0 = multicolor, 1 = hires
+        bitmapData.push_back(isHiresBitmap ? 1 : 0);
 
         return bitmapData;
     }
@@ -527,6 +649,7 @@ public:
     const std::vector<uint8_t>& getScrData() const { return scrData; }
     const std::vector<uint8_t>& getColData() const { return colData; }
     uint8_t getBackgroundColor() const { return backgroundColor; }
+    bool getIsHires() const { return isHiresBitmap; }
 
     // Get color matching statistics
     void getColorMatchingStats(int& exact, int& distance) {
@@ -575,6 +698,12 @@ extern "C" {
     int png_converter_get_background_color() {
         if (!converter) return 0;
         return converter->getBackgroundColor();
+    }
+
+    // Get bitmap mode (0 = multicolor, 1 = hires)
+    int png_converter_get_bitmap_mode() {
+        if (!converter) return 0;
+        return converter->getIsHires() ? 1 : 0;
     }
 
     // Get component data

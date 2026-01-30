@@ -62,7 +62,7 @@ class PNGConverter {
                 );
 
                 if (convertResult !== 1) {
-                    throw new Error('Image contains too many colors per 8x8 character cell (max 4 colors allowed)');
+                    throw new Error('Image cannot be converted: too many colors per 8x8 character cell (max 4 for multicolor, max 2 for hires)');
                 }
 
                 const backgroundColor = this.Module.ccall(
@@ -86,7 +86,14 @@ class PNGConverter {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
                 }
-                const c64BitmapSize = 10003;
+                const bitmapMode = this.Module.ccall(
+                    'png_converter_get_bitmap_mode',
+                    'number',
+                    [],
+                    []
+                );
+
+                const c64BitmapSize = 10004;
                 const bitmapPtr = this.Module._malloc(c64BitmapSize);
 
                 try {
@@ -100,8 +107,8 @@ class PNGConverter {
                     const bitmapData = new Uint8Array(actualSize);
                     bitmapData.set(this.Module.HEAPU8.subarray(bitmapPtr, bitmapPtr + actualSize));
 
-                    if (actualSize !== 10003) {
-                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10003)`);
+                    if (actualSize !== 10004) {
+                        console.warn(`Unexpected bitmap output size: ${actualSize} (should be 10004)`);
                     }
                     if (bitmapData[0] !== 0x00 || bitmapData[1] !== 0x60) {
                         console.warn(`Unexpected load address: ${bitmapData[1].toString(16)}${bitmapData[0].toString(16)} (should be $6000)`);
@@ -112,7 +119,8 @@ class PNGConverter {
                         data: bitmapData,
                         backgroundColor: backgroundColor,
                         backgroundColorName: this.getColorName(backgroundColor),
-                        format: 'C64_BITMAP',
+                        bitmapMode: bitmapMode, // 0 = multicolor, 1 = hires
+                        format: bitmapMode === 1 ? 'C64_HIRES_BITMAP' : 'C64_BITMAP',
                         width: 320,
                         height: 200
                     };

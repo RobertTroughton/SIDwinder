@@ -71,6 +71,14 @@ Initialize:
 
     jsr InitializeVIC
 
+    // Set $D016 based on bitmap mode (MC=$18, HI=$08)
+    lda #$08
+    ldx BitmapMode
+    bne !hiresBitmap+
+    lda #$18               // Multicolor mode
+!hiresBitmap:
+    sta $d016
+
     lda BitmapScreenColour
     sta $d021
 

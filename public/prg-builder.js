@@ -683,7 +683,7 @@ class SIDwinderPRGExporter {
                         fileData = result.data;
 
                         // Verify standard C64 bitmap structure
-                        if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
+                        if ((fileData.length === 10003 || fileData.length === 10004) && fileData[0] === 0x00 && fileData[1] === 0x60) {
                             // Valid format detected
                         } else {
                             console.warn('Unexpected C64 image format - this may cause issues');
@@ -729,7 +729,7 @@ class SIDwinderPRGExporter {
                             const result = await converter.convertPNGToC64(file);
                             fileData = result.data;
 
-                            if (fileData.length === 10003 && fileData[0] === 0x00 && fileData[1] === 0x60) {
+                            if ((fileData.length === 10003 || fileData.length === 10004) && fileData[0] === 0x00 && fileData[1] === 0x60) {
                             } else {
                                 console.warn('Default PNG conversion resulted in unexpected C64 image format');
                             }

@@ -21,6 +21,7 @@
 .var SIDModel						= DATA_ADDRESS + $ca // 1 byte, 0=6581, 1=8580
 // $CB-$CC reserved for modifiedCount (set by prg-builder.js)
 .var NumSIDChips					= DATA_ADDRESS + $cd // 1 byte, 1-4 SID chips supported
+.var BitmapMode						= DATA_ADDRESS + $70 // 1 byte, 0=multicolor, 1=hires
 .var ZPUsageData					= DATA_ADDRESS + $e0 // 32-byte string
 
 //; =============================================================================

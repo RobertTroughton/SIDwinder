@@ -74,6 +74,12 @@
             "sourceOffset": "0x2712",
             "targetAddress": "0x500E",
             "size": "0x0001"
+          },
+          {
+            "name": "bitmapMode",
+            "sourceOffset": "0x2713",
+            "targetAddress": "0x5070",
+            "size": "0x0001"
           }
         ],
         "bank8000": [
@@ -99,6 +105,12 @@
             "name": "background",
             "sourceOffset": "0x2712",
             "targetAddress": "0x900E",
+            "size": "0x0001"
+          },
+          {
+            "name": "bitmapMode",
+            "sourceOffset": "0x2713",
+            "targetAddress": "0x9070",
             "size": "0x0001"
           }
         ]

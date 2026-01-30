@@ -248,7 +248,11 @@ MainIRQ:
 
 	lda #D018_VALUE_BITMAP
 	sta $d018
-	lda #$18
+	lda #$08
+	ldx BitmapMode
+	bne !hiresBitmap+
+	lda #$18               // Multicolor mode
+!hiresBitmap:
 	sta $d016
 	lda #$3b
 	sta $d011
