@@ -213,7 +213,8 @@ private:
         return findClosestC64Color(r, g, b);
     }
 
-    // Analyze 8x8 character cell for colors
+    // Analyze 8x8 character cell for colors (multicolor mode)
+    // Returns false if pixel pairs don't match or too many colors
     bool analyzeCharCell(int charX, int charY, std::set<uint8_t>& colors) {
         colors.clear();
 
@@ -224,6 +225,10 @@ private:
                 int pixelY = charY * 8 + y;
                 uint8_t color1 = getPixelColor(pixelX, pixelY);
                 uint8_t color2 = getPixelColor(pixelX + 1, pixelY);
+                // MC requires pixel pairs to be identical (double-wide pixels)
+                if (color1 != color2) {
+                    return false;
+                }
                 colors.insert(color1);
             }
         }
