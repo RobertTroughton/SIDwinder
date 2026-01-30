@@ -326,6 +326,7 @@ SpectrometerDisplayIRQ:
 	dex
 	bpl !loop-
 	nop
+	nop
 
 	lda #$1b
 	sta $d011
