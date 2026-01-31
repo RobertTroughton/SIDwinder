@@ -6,7 +6,7 @@
 
   "layouts": {
     "bank4000": {
-      "binary": "prg/simplebitmapwithscroller-4000.bin",
+      "binary": "prg/SimpleBitmapWithScroller-4000.bin",
       "baseAddress": "0x4000",
       "size": "0x4000",
       "dataAddress": "0x5000",
@@ -19,7 +19,7 @@
       "scrollColor": "0x5080"
     },
     "bank8000": {
-      "binary": "prg/simplebitmapwithscroller-8000.bin",
+      "binary": "prg/SimpleBitmapWithScroller-8000.bin",
       "baseAddress": "0x8000",
       "size": "0x4000",
       "dataAddress": "0x9000",

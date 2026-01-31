@@ -1259,9 +1259,9 @@ class SIDwinderPRGExporter {
             const dataLoadAddress = parseInt(layout.dataAddress);
             const visualizerLoadAddress = parseInt(layout.sysAddress);
 
-            const actualSidAddress = sidLoadAddress || sidInfo.loadAddress;
-            const actualInitAddress = sidInitAddress || sidInfo.initAddress || actualSidAddress;
-            const actualPlayAddress = sidPlayAddress || sidInfo.playAddress || (actualSidAddress + 3);
+            const actualSidAddress = (sidLoadAddress != null) ? sidLoadAddress : sidInfo.loadAddress;
+            const actualInitAddress = (sidInitAddress != null) ? sidInitAddress : actualSidAddress;
+            const actualPlayAddress = (sidPlayAddress != null) ? sidPlayAddress : (actualSidAddress + 3);
 
             // Add SID music
             this.builder.addComponent(sidInfo.data, actualSidAddress, 'SID Music');
