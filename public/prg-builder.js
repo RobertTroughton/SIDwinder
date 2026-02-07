@@ -663,8 +663,27 @@ class SIDwinderPRGExporter {
             if (inputElement && inputElement.files.length > 0) {
                 const file = inputElement.files[0];
 
-                // Check if this is a PNG file that needs conversion
-                if (file.type === 'image/png' && file.name.toLowerCase().endsWith('.png')) {
+                // Check if this input uses PETSCII conversion
+                if (inputConfig.convertType === 'petscii' && file.type === 'image/png') {
+                    try {
+                        if (typeof PETSCIIConverter === 'undefined') {
+                            throw new Error('PETSCII converter not loaded. Please refresh the page.');
+                        }
+                        const petsciiConverter = new PETSCIIConverter();
+                        await petsciiConverter.init();
+
+                        // Get background color from bgColor option if available
+                        const bgColorElement = document.getElementById('bgColor');
+                        const bgColor = bgColorElement ? (parseInt(bgColorElement.value) & 0x0F) : 0;
+
+                        fileData = await petsciiConverter.convertPNGToPETSCII(file, bgColor);
+                    } catch (petsciiError) {
+                        console.error('PETSCII conversion failed:', petsciiError);
+                        throw new Error(`PETSCII conversion failed: ${petsciiError.message}`);
+                    }
+                }
+                // Check if this is a PNG file that needs bitmap conversion
+                else if (file.type === 'image/png' && file.name.toLowerCase().endsWith('.png')) {
                     // Check for PNG converter availability
                     if (typeof PNGConverter === 'undefined') {
                         console.error('PNGConverter not available');
@@ -706,8 +725,29 @@ class SIDwinderPRGExporter {
                 try {
                     const rawFileData = await config.loadDefaultFile(inputConfig.default);
 
-                    // Check if the default file is a PNG that needs conversion
-                    if (inputConfig.default.toLowerCase().endsWith('.png') && this.isPNGFile(rawFileData)) {
+                    // Check if this input uses PETSCII conversion for default PNG
+                    if (inputConfig.convertType === 'petscii' && inputConfig.default.toLowerCase().endsWith('.png') && rawFileData && this.isPNGFile(rawFileData)) {
+                        try {
+                            if (typeof PETSCIIConverter === 'undefined') {
+                                throw new Error('PETSCII converter not loaded. Please refresh the page.');
+                            }
+                            const blob = new Blob([rawFileData], { type: 'image/png' });
+                            const pngFile = new File([blob], inputConfig.default.split('/').pop(), { type: 'image/png' });
+
+                            const petsciiConverter = new PETSCIIConverter();
+                            await petsciiConverter.init();
+
+                            const bgColorElement = document.getElementById('bgColor');
+                            const bgColor = bgColorElement ? (parseInt(bgColorElement.value) & 0x0F) : 0;
+
+                            fileData = await petsciiConverter.convertPNGToPETSCII(pngFile, bgColor);
+                        } catch (petsciiError) {
+                            console.error('Default PETSCII conversion failed:', petsciiError);
+                            throw new Error(`Default PETSCII conversion failed: ${petsciiError.message}`);
+                        }
+                    }
+                    // Check if the default file is a PNG that needs bitmap conversion
+                    else if (inputConfig.default.toLowerCase().endsWith('.png') && this.isPNGFile(rawFileData)) {
                         // Check for PNG converter availability
                         if (typeof PNGConverter === 'undefined') {
                             console.error('PNGConverter not available');

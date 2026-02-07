@@ -1,0 +1,102 @@
+{
+  "name": "Default With PETSCII Logo",
+  "description": "Text information display with 12-row PETSCII art logo",
+  "maxCallsPerFrame": 8,
+  "needsSaveRestore": false,
+
+  "layouts": {
+    "bank4000": {
+      "binary": "prg/DefaultWithPETSCIILogo-4000.bin",
+      "size": "0x1000",
+      "baseAddress": "0x4000",
+      "dataAddress": "0x4000",
+      "sysAddress": "0x4100",
+      "binaryDataStart": "0x4000",
+      "binaryDataEnd": "0x4FBF",
+      "borderColor": "0x400D",
+      "backgroundColor": "0x400E",
+      "logoScreenAddress": "0x4C00",
+      "logoColorAddress": "0x4DE0",
+      "logoCharsetTypeAddress": "0x4070"
+    },
+    "bank8000": {
+      "binary": "prg/DefaultWithPETSCIILogo-8000.bin",
+      "size": "0x1000",
+      "baseAddress": "0x8000",
+      "dataAddress": "0x8000",
+      "sysAddress": "0x8100",
+      "binaryDataStart": "0x8000",
+      "binaryDataEnd": "0x8FBF",
+      "borderColor": "0x800D",
+      "backgroundColor": "0x800E",
+      "logoScreenAddress": "0x8C00",
+      "logoColorAddress": "0x8DE0",
+      "logoCharsetTypeAddress": "0x8070"
+    }
+  },
+
+  "inputs": [
+    {
+      "id": "petscii-logo-input",
+      "label": "PETSCII Logo",
+      "type": "file",
+      "accept": ".png",
+      "required": false,
+      "convertType": "petscii",
+      "description": "PNG image to convert to PETSCII art (320x96 recommended)",
+      "galleryFiles": [ "prg/galleries/petscii-logos.json" ],
+      "default": "PNG/PETSCIILogos/0-default.png",
+      "memory": {
+        "bank4000": [
+          {
+            "name": "screenCodes",
+            "sourceOffset": "0x0000",
+            "targetAddress": "0x4C00",
+            "size": "0x01E0"
+          },
+          {
+            "name": "colorData",
+            "sourceOffset": "0x01E0",
+            "targetAddress": "0x4DE0",
+            "size": "0x01E0"
+          },
+          {
+            "name": "charsetType",
+            "sourceOffset": "0x03C0",
+            "targetAddress": "0x4070",
+            "size": "0x0001"
+          }
+        ],
+        "bank8000": [
+          {
+            "name": "screenCodes",
+            "sourceOffset": "0x0000",
+            "targetAddress": "0x8C00",
+            "size": "0x01E0"
+          },
+          {
+            "name": "colorData",
+            "sourceOffset": "0x01E0",
+            "targetAddress": "0x8DE0",
+            "size": "0x01E0"
+          },
+          {
+            "name": "charsetType",
+            "sourceOffset": "0x03C0",
+            "targetAddress": "0x8070",
+            "size": "0x0001"
+          }
+        ]
+      }
+    }
+  ],
+
+  "options": [
+    {
+      "id": "bgColor",
+      "label": "Background Colour",
+      "type": "colorPicker",
+      "default": 0
+    }
+  ]
+}
