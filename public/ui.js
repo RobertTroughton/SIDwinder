@@ -776,7 +776,7 @@ class UIController {
         card.innerHTML = `
         <div class="visualizer-preview">
             <img src="${visualizer.preview}" alt="${visualizer.name}" 
-                 onerror="this.src='previews/default.png'">
+                 onerror="this.onerror=null;this.src='previews/default.png'">
         </div>
         <div class="visualizer-info" ${isDisabled ? `data-reason="${disabledMessage}"` : ''}>
             <h3>${visualizer.name}</h3>

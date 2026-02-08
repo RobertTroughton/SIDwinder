@@ -11,7 +11,7 @@ const VISUALIZERS = [
     {
         id: 'DefaultWithPETSCIILogo',
         name: 'Default With PETSCII Logo',
-        description: 'Text information with a 12-row PETSCII art logo',
+        description: 'Text information with a 9-row PETSCII art logo',
         preview: 'prg/defaultwithpetsciilogo.png',
         config: 'prg/defaultwithpetsciilogo.json'
     },

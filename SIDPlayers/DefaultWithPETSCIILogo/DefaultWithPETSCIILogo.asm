@@ -211,6 +211,7 @@ Initialize:
     lda #D018_LOGO_UPPERCASE
 !storeD018:
     sta LogoD018Value + 1
+    sta LogoD018ValueFF + 1
 
     // Copy logo screen codes to screen RAM (rows 0-8)
     jsr CopyLogoToScreen
@@ -824,13 +825,24 @@ LogoD018Value:
     lda FFCallCounter
     bne !ffCallLoop-
 
+    // Switch to info charset so text area renders correctly during FF
+    lda #D018_INFO
+    sta $d018
+
     jsr UpdateTimer
     jsr UpdateDynamicInfo
 
     jsr CheckSpaceKey
     lda FastForwardActive
-    bne !ffFrameLoop-
+    beq !ffDone+
 
+    // Set D018 back to logo charset for next FF iteration
+LogoD018ValueFF:
+    lda #D018_LOGO_LOWERCASE    // Self-modified at init (same as LogoD018Value)
+    sta $d018
+    jmp !ffFrameLoop-
+
+!ffDone:
     lda #$00
     sta $d020
     sta callCount + 1
