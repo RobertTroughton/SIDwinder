@@ -7,30 +7,30 @@
   "layouts": {
     "bank4000": {
       "binary": "prg/DefaultWithPETSCIILogo-4000.bin",
-      "size": "0x1000",
+      "size": "0x1200",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
-      "binaryDataEnd": "0x4FBF",
+      "binaryDataEnd": "0x50BF",
       "borderColor": "0x400D",
       "backgroundColor": "0x400E",
-      "logoScreenAddress": "0x4C00",
-      "logoColorAddress": "0x4DE0",
+      "logoScreenAddress": "0x4D00",
+      "logoColorAddress": "0x4EE0",
       "logoCharsetTypeAddress": "0x4070"
     },
     "bank8000": {
       "binary": "prg/DefaultWithPETSCIILogo-8000.bin",
-      "size": "0x1000",
+      "size": "0x1200",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
-      "binaryDataEnd": "0x8FBF",
+      "binaryDataEnd": "0x90BF",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E",
-      "logoScreenAddress": "0x8C00",
-      "logoColorAddress": "0x8DE0",
+      "logoScreenAddress": "0x8D00",
+      "logoColorAddress": "0x8EE0",
       "logoCharsetTypeAddress": "0x8070"
     }
   },
@@ -51,13 +51,13 @@
           {
             "name": "screenCodes",
             "sourceOffset": "0x0000",
-            "targetAddress": "0x4C00",
+            "targetAddress": "0x4D00",
             "size": "0x01E0"
           },
           {
             "name": "colorData",
             "sourceOffset": "0x01E0",
-            "targetAddress": "0x4DE0",
+            "targetAddress": "0x4EE0",
             "size": "0x01E0"
           },
           {
@@ -71,13 +71,13 @@
           {
             "name": "screenCodes",
             "sourceOffset": "0x0000",
-            "targetAddress": "0x8C00",
+            "targetAddress": "0x8D00",
             "size": "0x01E0"
           },
           {
             "name": "colorData",
             "sourceOffset": "0x01E0",
-            "targetAddress": "0x8DE0",
+            "targetAddress": "0x8EE0",
             "size": "0x01E0"
           },
           {

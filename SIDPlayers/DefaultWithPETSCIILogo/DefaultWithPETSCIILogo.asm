@@ -970,11 +970,11 @@ ControlsLine3:      .text "1-9, A-Z = Select Song"
 // Placed at known addresses so the web app can inject converted PETSCII data.
 // =============================================================================
 
-* = LOAD_ADDRESS + $0C00 "Logo Screen Data"
+* = LOAD_ADDRESS + $0D00 "Logo Screen Data"
 LogoScreenData:
     .fill LOGO_CELLS, $20              // 480 bytes of screen codes (default: spaces)
 
-* = LOAD_ADDRESS + $0DE0 "Logo Color Data"
+* = LOAD_ADDRESS + $0EE0 "Logo Color Data"
 LogoColorData:
     .fill LOGO_CELLS, $00              // 480 bytes of color data (default: black)
 
