@@ -264,6 +264,13 @@ CheckMinusKey:
 
 SelectSong:
     sta CurrentSong
+#if INCLUDE_TIMER
+    lda #0
+    sta TimerSeconds
+    sta TimerMinutes
+    sta FrameCounter
+    lda CurrentSong
+#endif
     tax
     tay
     jsr SIDInit
