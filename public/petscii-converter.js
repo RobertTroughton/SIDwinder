@@ -6,10 +6,10 @@
  * 256 chars x 8 bytes), then for each 8x8 cell of the input image finds the best
  * matching character + foreground color combination.
  *
- * Output format (961 bytes):
- *   Bytes 0x000-0x1DF: Screen codes (40 x 12 = 480 bytes)
- *   Bytes 0x1E0-0x3BF: Color RAM values (40 x 12 = 480 bytes)
- *   Byte  0x3C0:       Charset type (0 = uppercase, 1 = lowercase)
+ * Output format (721 bytes):
+ *   Bytes 0x000-0x167: Screen codes (40 x 9 = 360 bytes)
+ *   Bytes 0x168-0x2CF: Color RAM values (40 x 9 = 360 bytes)
+ *   Byte  0x2D0:       Charset type (0 = uppercase, 1 = lowercase)
  */
 
 class PETSCIIConverter {
@@ -42,7 +42,7 @@ class PETSCIIConverter {
         ];
 
         this.LOGO_COLS = 40;
-        this.LOGO_ROWS = 12;
+        this.LOGO_ROWS = 9;
         this.CELL_WIDTH = 8;
         this.CELL_HEIGHT = 8;
     }
@@ -123,7 +123,7 @@ class PETSCIIConverter {
      * Find the best matching character + color for an 8x8 cell
      * @param {ImageData} imageData - Source image data
      * @param {number} cellX - Cell column (0-39)
-     * @param {number} cellY - Cell row (0-11)
+     * @param {number} cellY - Cell row (0-8)
      * @param {Uint8Array} charset - Character set data
      * @param {number} bgColorIndex - Background color index (0-15)
      * @returns {{charIndex: number, colorIndex: number, error: number}}
@@ -221,7 +221,7 @@ class PETSCIIConverter {
      * Convert a PNG image to PETSCII logo data
      * @param {File|Blob} pngFile - The PNG file to convert
      * @param {number} bgColorIndex - Background color index (0-15), default 0 (black)
-     * @returns {Promise<Uint8Array>} - 961 bytes: 480 screen codes + 480 colors + 1 charset type
+     * @returns {Promise<Uint8Array>} - 721 bytes: 360 screen codes + 360 colors + 1 charset type
      */
     async convertPNGToPETSCII(pngFile, bgColorIndex = 0) {
         if (!this.uppercaseCharset && !this.lowercaseCharset) {
@@ -265,7 +265,7 @@ class PETSCIIConverter {
         }
 
         // Pack result: screen codes + color data + charset type
-        const totalSize = (this.LOGO_COLS * this.LOGO_ROWS * 2) + 1; // 961 bytes
+        const totalSize = (this.LOGO_COLS * this.LOGO_ROWS * 2) + 1; // 721 bytes
         const result = new Uint8Array(totalSize);
         result.set(bestResult.screenCodes, 0);
         result.set(bestResult.colorData, this.LOGO_COLS * this.LOGO_ROWS);
@@ -275,9 +275,9 @@ class PETSCIIConverter {
     }
 
     /**
-     * Load a PNG file and get its ImageData, scaled to 320x96
+     * Load a PNG file and get its ImageData, scaled to 320x72
      * @param {File|Blob} pngFile - The PNG file
-     * @returns {Promise<ImageData>} - 320x96 ImageData
+     * @returns {Promise<ImageData>} - 320x72 ImageData
      */
     loadPNGImageData(pngFile) {
         return new Promise((resolve, reject) => {
@@ -288,7 +288,7 @@ class PETSCIIConverter {
 
                 img.onload = () => {
                     const targetWidth = this.LOGO_COLS * this.CELL_WIDTH;   // 320
-                    const targetHeight = this.LOGO_ROWS * this.CELL_HEIGHT; // 96
+                    const targetHeight = this.LOGO_ROWS * this.CELL_HEIGHT; // 72
 
                     const canvas = document.createElement('canvas');
                     canvas.width = targetWidth;

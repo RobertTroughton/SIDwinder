@@ -1,16 +1,16 @@
 // =============================================================================
 //                       DEFAULT WITH PETSCII LOGO
-//           Text Details Player with 12-row PETSCII Logo at Top
+//           Text Details Player with 9-row PETSCII Logo at Top
 // =============================================================================
 //
 // Memory Map:
 //   DATA_ADDRESS + $000-$0FF  : Data Block (metadata, config)
 //   CODE_ADDRESS              : Main Code
-//   LOGO_SCREEN_ADDRESS       : PETSCII logo screen codes (480 bytes)
-//   LOGO_COLOR_ADDRESS        : PETSCII logo color data (480 bytes)
+//   LOGO_SCREEN_ADDRESS       : PETSCII logo screen codes (360 bytes)
+//   LOGO_COLOR_ADDRESS        : PETSCII logo color data (360 bytes)
 //
-// The logo occupies screen rows 0-11. Info text is in rows 12-24.
-// An IRQ split at the row 12 boundary switches $d018 to change charset:
+// The logo occupies screen rows 0-8. Info text is in rows 9-24.
+// An IRQ split at the row 9 boundary switches $d018 to change charset:
 //   - Logo area uses the matched PETSCII charset (uppercase or lowercase ROM)
 //   - Info area uses the lowercase/uppercase mixed ROM charset ($1800)
 // =============================================================================
@@ -23,10 +23,10 @@
 // CONFIGURATION
 // =============================================================================
 
-.const LOGO_ROWS                    = 12
+.const LOGO_ROWS                    = 9
 .const LOGO_COLS                    = 40
-.const LOGO_CELLS                   = LOGO_ROWS * LOGO_COLS // 480
-.const INFO_START_ROW               = 12
+.const LOGO_CELLS                   = LOGO_ROWS * LOGO_COLS // 360
+.const INFO_START_ROW               = 9
 .const TOTAL_ROWS                   = 25
 
 // D018 values: screen at $0400 = bank 1
@@ -36,8 +36,7 @@
 .const D018_LOGO_LOWERCASE          = $16
 .const D018_INFO                    = $16   // Info always uses lowercase/mixed ROM
 
-// Raster line where the split occurs (first visible line + 12 rows * 8 pixels)
-// PAL: first visible line ~51, so row 12 starts at 51 + 96 = 147
+// Raster line where the split occurs (first visible line + rows * 8 pixels)
 .const SPLIT_RASTERLINE             = 50 + (LOGO_ROWS * 8) - 1
 
 // =============================================================================
@@ -60,23 +59,25 @@ logoCharsetType:
     jmp Initialize
 
 // =============================================================================
-// DISPLAY LAYOUT - Squeezed info in rows 12-24
+// DISPLAY LAYOUT - Info in rows 9-24 (16 rows, one item per line)
 // =============================================================================
 //
-// Two-column layout with aligned colons:
-//   Left column:  colons at col 12, values at col 14
-//   Right column: colons at col 28, values at col 30
+// All left-column colons aligned at col 14, values start at col 16.
+// Right-column (row 21 only) colon at col 30, value at col 32.
 //
-//   Row 12:      Song Name (centered, 32 chars)
-//   Row 13:      Artist (centered, 32 chars)
-//   Row 14:      Copyright (centered, 32 chars)
-//   Row 15: ----------------------------------------
-//   Row 16:       Memory: $xxxx-$xxxx
-//   Row 17:         Init: $xxxx       Play: $xxxx
-//   Row 18:        Songs: xx         Clock: PAL
-//   Row 19:          SID: 6581          ZP: xxxxxxxx
+//   Row  9:      Song Name (centered, 32 chars)
+//   Row 10:      Artist (centered, 32 chars)
+//   Row 11:      Copyright (centered, 32 chars)
+//   Row 12: ----------------------------------------
+//   Row 13:        Memory: $xxxx-$xxxx
+//   Row 14:          Init: $xxxx
+//   Row 15:          Play: $xxxx
+//   Row 16:      ZP Usage: xxxxxxxxxxxxxxxxxxxxxxxx
+//   Row 17:         Songs: xx
+//   Row 18:         Clock: PAL
+//   Row 19:           SID: 6581
 //   Row 20: ----------------------------------------
-//   Row 21:         Time: 00:00       Song: 01/xx
+//   Row 21:          Time: 00:00          Song: 01/xx
 //   Row 22: ----------------------------------------
 //   Row 23:   F1=Timing Bar   SPACE=Fast Forward
 //   Row 24:   +/-=Next/Prev  1-9,A-Z=Select Song
@@ -90,45 +91,45 @@ logoCharsetType:
 .var Display_ControlsTitle_Colour   = $02  // Red
 .var Display_ControlsInfo_Colour    = $04  // Purple
 
-// Row positions - left column (colon at col 12, value at col 14)
+// Row positions - all colons at col 14, values at col 16
 .var Display_Title_X                = 4
-.var Display_Title_Y                = 12
+.var Display_Title_Y                = 9
 
 .var Display_Artist_X               = 4
-.var Display_Artist_Y               = 13
+.var Display_Artist_Y               = 10
 
 .var Display_Copyright_X            = 4
-.var Display_Copyright_Y            = 14
+.var Display_Copyright_Y            = 11
 
-.var Display_Separator1_Y           = 15
+.var Display_Separator1_Y           = 12
 
-.var Display_Memory_X               = 6     // "Memory:" colon at col 12
-.var Display_Memory_Y               = 16
+.var Display_Memory_X               = 8     // "Memory: " (8 chars) → colon at col 14
+.var Display_Memory_Y               = 13
 
-.var Display_Init_X                 = 8     // "Init:" colon at col 12
-.var Display_Init_Y                 = 17
+.var Display_Init_X                 = 10    // "Init: " (6 chars) → colon at col 14
+.var Display_Init_Y                 = 14
 
-.var Display_Play_X                 = 24    // "Play:" colon at col 28
-.var Display_Play_Y                 = 17
+.var Display_Play_X                 = 10    // "Play: " (6 chars) → colon at col 14
+.var Display_Play_Y                 = 15
 
-.var Display_Songs_X                = 7     // "Songs:" colon at col 12
-.var Display_Songs_Y                = 18
+.var Display_ZP_X                   = 6     // "ZP Usage: " (10 chars) → colon at col 14
+.var Display_ZP_Y                   = 16
 
-.var Display_Clock_X                = 23    // "Clock:" colon at col 28
+.var Display_Songs_X                = 9     // "Songs: " (7 chars) → colon at col 14
+.var Display_Songs_Y                = 17
+
+.var Display_Clock_X                = 9     // "Clock: " (7 chars) → colon at col 14
 .var Display_Clock_Y                = 18
 
-.var Display_SID_X                  = 9     // "SID:" colon at col 12
+.var Display_SID_X                  = 11    // "SID: " (5 chars) → colon at col 14
 .var Display_SID_Y                  = 19
-
-.var Display_ZP_X                   = 26    // "ZP:" colon at col 28
-.var Display_ZP_Y                   = 19
 
 .var Display_Separator2_Y           = 20
 
-.var Display_Time_X                 = 8     // "Time:" colon at col 12
+.var Display_Time_X                 = 10    // "Time: " (6 chars) → colon at col 14
 .var Display_Time_Y                 = 21
 
-.var Display_Song_X                 = 24    // "Song:" colon at col 28
+.var Display_Song_X                 = 26    // "Song: " (6 chars) → colon at col 30
 .var Display_Song_Y                 = 21
 
 .var Display_Separator3_Y           = 22
@@ -211,10 +212,10 @@ Initialize:
 !storeD018:
     sta LogoD018Value + 1
 
-    // Copy logo screen codes to screen RAM (rows 0-11)
+    // Copy logo screen codes to screen RAM (rows 0-8)
     jsr CopyLogoToScreen
 
-    // Copy logo color data to color RAM (rows 0-11)
+    // Copy logo color data to color RAM (rows 0-8)
     jsr CopyLogoColors
 
     // Set initial D018 for logo area
@@ -262,8 +263,8 @@ MainLoop:
 // =============================================================================
 
 CopyLogoToScreen:
-    // Copy 480 bytes of screen codes from staging to $0400
-    // We do this in two chunks: 256 + 224
+    // Copy 360 bytes of screen codes from staging to $0400
+    // We do this in two chunks: 256 + 104
     ldx #0
 !loop1:
     lda LogoScreenData, x
@@ -282,7 +283,7 @@ CopyLogoToScreen:
     rts
 
 CopyLogoColors:
-    // Copy 480 bytes of color data from staging to $D800
+    // Copy 360 bytes of color data from staging to $D800
     ldx #0
 !loop1:
     lda LogoColorData, x
@@ -338,11 +339,11 @@ PopulateMetadata:
     rts
 
 // =============================================================================
-// DRAW STATIC INFO (squeezed layout, rows 12-24)
+// DRAW STATIC INFO (rows 9-24, one item per line)
 // =============================================================================
 
 DrawStaticInfo:
-    // Clear only the info area (rows 12-24) with spaces and set color to 0
+    // Clear info area (rows 9-24 = 16 rows = 640 bytes)
     ldx #0
 !loop:
     lda #$20
@@ -353,7 +354,6 @@ DrawStaticInfo:
     sta COLOR_RAM + (INFO_START_ROW * ROW_WIDTH) + 256, x
     inx
     bne !loop-
-    // Clear remaining bytes (13 rows * 40 = 520 - 256 = 264 bytes)
     ldx #0
 !loop2:
     lda #$20
@@ -364,7 +364,7 @@ DrawStaticInfo:
     cpx #(TOTAL_ROWS - INFO_START_ROW) * ROW_WIDTH - 512
     bne !loop2-
 
-    // Row 12: Title
+    // Row 9: Title
     ldx #Display_Title_X
     ldy #Display_Title_Y
     jsr SetCursor
@@ -373,7 +373,7 @@ DrawStaticInfo:
     ldx #Display_Title_Colour
     jsr PrintString
 
-    // Row 13: Artist
+    // Row 10: Artist
     ldx #Display_Artist_X
     ldy #Display_Artist_Y
     jsr SetCursor
@@ -382,7 +382,7 @@ DrawStaticInfo:
     ldx #Display_Artist_Colour
     jsr PrintString
 
-    // Row 14: Copyright
+    // Row 11: Copyright
     ldx #Display_Copyright_X
     ldy #Display_Copyright_Y
     jsr SetCursor
@@ -391,12 +391,12 @@ DrawStaticInfo:
     ldx #Display_Copyright_Colour
     jsr PrintString
 
-    // Row 15: Separator
+    // Row 12: Separator
     ldx #0
     ldy #Display_Separator1_Y
     jsr DrawSeparator
 
-    // Row 16: Memory (full row)
+    // Row 13: Memory
     ldx #Display_Memory_X
     ldy #Display_Memory_Y
     jsr SetCursor
@@ -420,7 +420,7 @@ DrawStaticInfo:
     lda EndAddress
     jsr PrintHexByte
 
-    // Row 17: Init (left) + Play (right)
+    // Row 14: Init
     ldx #Display_Init_X
     ldy #Display_Init_Y
     jsr SetCursor
@@ -436,6 +436,7 @@ DrawStaticInfo:
     lda InitAddress
     jsr PrintHexByte
 
+    // Row 15: Play
     ldx #Display_Play_X
     ldy #Display_Play_Y
     jsr SetCursor
@@ -451,7 +452,20 @@ DrawStaticInfo:
     lda PlayAddress
     jsr PrintHexByte
 
-    // Row 18: Songs (left) + Clock (right)
+    // Row 16: ZP Usage
+    ldx #Display_ZP_X
+    ldy #Display_ZP_Y
+    jsr SetCursor
+    lda #<ZPLabel
+    ldy #>ZPLabel
+    ldx #Display_InfoTitles_Colour
+    jsr PrintString
+    ldx #Display_InfoValues_Colour
+    lda #<ZPUsageData
+    ldy #>ZPUsageData
+    jsr PrintString
+
+    // Row 17: Songs
     ldx #Display_Songs_X
     ldy #Display_Songs_Y
     jsr SetCursor
@@ -463,6 +477,7 @@ DrawStaticInfo:
     lda NumSongs
     jsr PrintTwoDigits_NoPreZeros
 
+    // Row 18: Clock
     ldx #Display_Clock_X
     ldy #Display_Clock_Y
     jsr SetCursor
@@ -482,7 +497,7 @@ DrawStaticInfo:
     ldx #Display_InfoValues_Colour
     jsr PrintString
 
-    // Row 19: SID (left) + ZP (right)
+    // Row 19: SID
     ldx #Display_SID_X
     ldy #Display_SID_Y
     jsr SetCursor
@@ -501,18 +516,6 @@ DrawStaticInfo:
 !printSID:
     ldx #Display_InfoValues_Colour
     jsr PrintString
-
-    ldx #Display_ZP_X
-    ldy #Display_ZP_Y
-    jsr SetCursor
-    lda #<ZPLabel
-    ldy #>ZPLabel
-    ldx #Display_InfoTitles_Colour
-    jsr PrintString
-    ldx #Display_InfoValues_Colour
-    lda #<ZPUsageData
-    ldy #>ZPUsageData
-    jsr PrintStringShort
 
     // Row 20: Separator
     ldx #0
@@ -546,7 +549,7 @@ DrawStaticInfo:
     ldy #Display_Separator3_Y
     jsr DrawSeparator
 
-    // Rows 23-24: Controls (compact, 2 lines)
+    // Rows 23-24: Controls
     jmp DrawControls
 
 // =============================================================================
@@ -567,7 +570,7 @@ DrawSeparator:
     rts
 
 // =============================================================================
-// DRAW CONTROLS (compact)
+// DRAW CONTROLS
 // =============================================================================
 
 DrawControls:
@@ -600,8 +603,8 @@ DrawControls:
 // =============================================================================
 
 UpdateDynamicInfo:
-    // Time value at col 14 (Display_Time_X=8 + "Time: "=6 chars)
-    ldx #14
+    // Time value at col 16 (Display_Time_X=10 + "Time: "=6 chars)
+    ldx #16
     ldy #Display_Time_Y
     jsr SetCursor
 
@@ -617,8 +620,8 @@ UpdateDynamicInfo:
     cmp #2
     bcc !skip+
 
-    // Song value at col 30 (Display_Song_X=24 + "Song: "=6 chars)
-    ldx #30
+    // Song value at col 32 (Display_Song_X=26 + "Song: "=6 chars)
+    ldx #32
     ldy #Display_Song_Y
     jsr SetCursor
 
@@ -719,26 +722,6 @@ StringReadPtr:
 
     iny
     cpy #32
-    bne !loop-
-
-!done:
-    rts
-
-// Short string print (max 10 chars) for squeezed ZP usage display
-PrintStringShort:
-    sta StringReadPtr2 + 1
-    sty StringReadPtr2 + 2
-
-    ldy #0
-!loop:
-StringReadPtr2:
-    lda $abcd,y
-    beq !done+
-
-    jsr PrintChar
-
-    iny
-    cpy #10
     bne !loop-
 
 !done:
@@ -870,7 +853,7 @@ callCount:
     jsr JustPlayMusic
 
 !done:
-    // Set up the split IRQ at the row 12 boundary
+    // Set up the split IRQ at the row 9 boundary
     lda #SPLIT_RASTERLINE
     sta $d012
     lda $d011
@@ -937,7 +920,7 @@ SplitIRQ:
     rti
 
 // =============================================================================
-// TEXT DATA (compact labels for squeezed layout)
+// TEXT DATA
 // =============================================================================
 
 MemoryLabel:        .text "Memory: "
@@ -946,7 +929,7 @@ InitLabel:          .text "Init: "
                     .byte 0
 PlayLabel:          .text "Play: "
                     .byte 0
-ZPLabel:            .text "ZP: "
+ZPLabel:            .text "ZP Usage: "
                     .byte 0
 SongsLabel:         .text "Songs: "
                     .byte 0
@@ -967,7 +950,7 @@ TimeLabel:          .text "Time: "
 CurrentSongLabel:   .text "Song: "
                     .byte 0
 
-// Control labels (2 lines)
+// Control labels
 ControlsLine1:      .text "F1=Timing Bar  SPACE=Fast Fwd"
                     .byte 0
 ControlsLine2:      .text "+/-=Next/Prev 1-9,A-Z=Select"
@@ -975,16 +958,15 @@ ControlsLine2:      .text "+/-=Next/Prev 1-9,A-Z=Select"
 
 // =============================================================================
 // LOGO DATA at fixed offsets (filled at build time by prg-builder.js)
-// Placed at known addresses so the web app can inject converted PETSCII data.
 // =============================================================================
 
 * = LOAD_ADDRESS + $0D00 "Logo Screen Data"
 LogoScreenData:
-    .fill LOGO_CELLS, $20              // 480 bytes of screen codes (default: spaces)
+    .fill LOGO_CELLS, $20              // 360 bytes of screen codes (default: spaces)
 
-* = LOAD_ADDRESS + $0EE0 "Logo Color Data"
+* = LOAD_ADDRESS + $0E68 "Logo Color Data"
 LogoColorData:
-    .fill LOGO_CELLS, $00              // 480 bytes of color data (default: black)
+    .fill LOGO_CELLS, $00              // 360 bytes of color data (default: black)
 
 // =============================================================================
 // END OF FILE

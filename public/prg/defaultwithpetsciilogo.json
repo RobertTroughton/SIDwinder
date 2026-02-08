@@ -1,36 +1,36 @@
 {
   "name": "Default With PETSCII Logo",
-  "description": "Text information display with 12-row PETSCII art logo",
+  "description": "Text information display with 9-row PETSCII art logo",
   "maxCallsPerFrame": 8,
   "needsSaveRestore": false,
 
   "layouts": {
     "bank4000": {
       "binary": "prg/DefaultWithPETSCIILogo-4000.bin",
-      "size": "0x1200",
+      "size": "0x1000",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
-      "binaryDataEnd": "0x50BF",
+      "binaryDataEnd": "0x4FCF",
       "borderColor": "0x400D",
       "backgroundColor": "0x400E",
       "logoScreenAddress": "0x4D00",
-      "logoColorAddress": "0x4EE0",
+      "logoColorAddress": "0x4E68",
       "logoCharsetTypeAddress": "0x4070"
     },
     "bank8000": {
       "binary": "prg/DefaultWithPETSCIILogo-8000.bin",
-      "size": "0x1200",
+      "size": "0x1000",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
-      "binaryDataEnd": "0x90BF",
+      "binaryDataEnd": "0x8FCF",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E",
       "logoScreenAddress": "0x8D00",
-      "logoColorAddress": "0x8EE0",
+      "logoColorAddress": "0x8E68",
       "logoCharsetTypeAddress": "0x8070"
     }
   },
@@ -43,7 +43,7 @@
       "accept": ".png",
       "required": false,
       "convertType": "petscii",
-      "description": "PNG image to convert to PETSCII art (320x96 recommended)",
+      "description": "PNG image to convert to PETSCII art (320x72 recommended)",
       "galleryFiles": [ "prg/galleries/petscii-logos.json" ],
       "default": "PNG/PETSCIILogos/0-default.png",
       "memory": {
@@ -52,17 +52,17 @@
             "name": "screenCodes",
             "sourceOffset": "0x0000",
             "targetAddress": "0x4D00",
-            "size": "0x01E0"
+            "size": "0x0168"
           },
           {
             "name": "colorData",
-            "sourceOffset": "0x01E0",
-            "targetAddress": "0x4EE0",
-            "size": "0x01E0"
+            "sourceOffset": "0x0168",
+            "targetAddress": "0x4E68",
+            "size": "0x0168"
           },
           {
             "name": "charsetType",
-            "sourceOffset": "0x03C0",
+            "sourceOffset": "0x02D0",
             "targetAddress": "0x4070",
             "size": "0x0001"
           }
@@ -72,17 +72,17 @@
             "name": "screenCodes",
             "sourceOffset": "0x0000",
             "targetAddress": "0x8D00",
-            "size": "0x01E0"
+            "size": "0x0168"
           },
           {
             "name": "colorData",
-            "sourceOffset": "0x01E0",
-            "targetAddress": "0x8EE0",
-            "size": "0x01E0"
+            "sourceOffset": "0x0168",
+            "targetAddress": "0x8E68",
+            "size": "0x0168"
           },
           {
             "name": "charsetType",
-            "sourceOffset": "0x03C0",
+            "sourceOffset": "0x02D0",
             "targetAddress": "0x8070",
             "size": "0x0001"
           }
