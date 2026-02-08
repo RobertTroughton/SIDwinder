@@ -2,7 +2,7 @@
 setlocal
 
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-4000.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\DefaultWithPETSCIILogo\DefaultWithPETSCIILogo.asm -showmem -binfile -o public\prg\DefaultWithPETSCIILogo-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\DefaultWithLogo\DefaultWithLogo.asm -showmem -binfile -o public\prg\DefaultWithLogo-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars-4000.bin || goto :error
@@ -12,7 +12,7 @@ java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=20736 :dataAddress=20480 
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-4000.bin || goto :error
 
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-8000.bin || goto :error
-java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\DefaultWithPETSCIILogo\DefaultWithPETSCIILogo.asm -showmem -binfile -o public\prg\DefaultWithPETSCIILogo-8000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\DefaultWithLogo\DefaultWithLogo.asm -showmem -binfile -o public\prg\DefaultWithLogo-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\RaistlinBarsWithLogo\RaistlinBarsWithLogo.asm -showmem -binfile -o public\prg\RaistlinBarsWithLogo-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\RaistlinMirrorBars\RaistlinMirrorBars.asm -showmem -binfile -o public\prg\RaistlinMirrorBars-8000.bin || goto :error

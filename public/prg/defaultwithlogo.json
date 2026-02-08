@@ -1,12 +1,12 @@
 {
-  "name": "Default With PETSCII Logo",
+  "name": "Default With Logo",
   "description": "Text information display with 9-row PETSCII art logo",
   "maxCallsPerFrame": 8,
   "needsSaveRestore": false,
 
   "layouts": {
     "bank4000": {
-      "binary": "prg/DefaultWithPETSCIILogo-4000.bin",
+      "binary": "prg/DefaultWithLogo-4000.bin",
       "size": "0x1000",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
@@ -20,7 +20,7 @@
       "logoCharsetTypeAddress": "0x4070"
     },
     "bank8000": {
-      "binary": "prg/DefaultWithPETSCIILogo-8000.bin",
+      "binary": "prg/DefaultWithLogo-8000.bin",
       "size": "0x1000",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
@@ -37,8 +37,8 @@
 
   "inputs": [
     {
-      "id": "petscii-logo-input",
-      "label": "PETSCII Logo",
+      "id": "logo-input",
+      "label": "Logo",
       "type": "file",
       "accept": ".png",
       "required": false,

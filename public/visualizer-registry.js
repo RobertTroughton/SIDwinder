@@ -9,11 +9,11 @@ const VISUALIZERS = [
         config: 'prg/default.json'
     },
     {
-        id: 'DefaultWithPETSCIILogo',
-        name: 'Default With PETSCII Logo',
+        id: 'DefaultWithLogo',
+        name: 'Default With Logo',
         description: 'Text information with a 9-row PETSCII art logo',
-        preview: 'prg/defaultwithpetsciilogo.png',
-        config: 'prg/defaultwithpetsciilogo.json'
+        preview: 'prg/defaultwithlogo.png',
+        config: 'prg/defaultwithlogo.json'
     },
     {
         id: 'RaistlinBars',
