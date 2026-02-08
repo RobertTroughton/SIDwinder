@@ -62,6 +62,24 @@ logoCharsetType:
 // =============================================================================
 // DISPLAY LAYOUT - Squeezed info in rows 12-24
 // =============================================================================
+//
+// Two-column layout with aligned colons:
+//   Left column:  colons at col 12, values at col 14
+//   Right column: colons at col 28, values at col 30
+//
+//   Row 12:      Song Name (centered, 32 chars)
+//   Row 13:      Artist (centered, 32 chars)
+//   Row 14:      Copyright (centered, 32 chars)
+//   Row 15: ----------------------------------------
+//   Row 16:       Memory: $xxxx-$xxxx
+//   Row 17:         Init: $xxxx       Play: $xxxx
+//   Row 18:        Songs: xx         Clock: PAL
+//   Row 19:          SID: 6581          ZP: xxxxxxxx
+//   Row 20: ----------------------------------------
+//   Row 21:         Time: 00:00       Song: 01/xx
+//   Row 22: ----------------------------------------
+//   Row 23:   F1=Timing Bar   SPACE=Fast Forward
+//   Row 24:   +/-=Next/Prev  1-9,A-Z=Select Song
 
 .var Display_Title_Colour           = $01  // White
 .var Display_Artist_Colour          = $0c  // Grey
@@ -72,7 +90,7 @@ logoCharsetType:
 .var Display_ControlsTitle_Colour   = $02  // Red
 .var Display_ControlsInfo_Colour    = $04  // Purple
 
-// Row positions (relative to screen, rows 12-24)
+// Row positions - left column (colon at col 12, value at col 14)
 .var Display_Title_X                = 4
 .var Display_Title_Y                = 12
 
@@ -84,45 +102,42 @@ logoCharsetType:
 
 .var Display_Separator1_Y           = 15
 
-.var Display_Memory_X               = 1
+.var Display_Memory_X               = 6     // "Memory:" colon at col 12
 .var Display_Memory_Y               = 16
 
-.var Display_Init_X                 = 22
-.var Display_Init_Y                 = 16
+.var Display_Init_X                 = 8     // "Init:" colon at col 12
+.var Display_Init_Y                 = 17
 
-.var Display_Play_X                 = 1
+.var Display_Play_X                 = 24    // "Play:" colon at col 28
 .var Display_Play_Y                 = 17
 
-.var Display_ZP_X                   = 21
-.var Display_ZP_Y                   = 17
-
-.var Display_Songs_X                = 1
+.var Display_Songs_X                = 7     // "Songs:" colon at col 12
 .var Display_Songs_Y                = 18
 
-.var Display_Clock_X                = 13
+.var Display_Clock_X                = 23    // "Clock:" colon at col 28
 .var Display_Clock_Y                = 18
 
-.var Display_SID_X                  = 26
-.var Display_SID_Y                  = 18
+.var Display_SID_X                  = 9     // "SID:" colon at col 12
+.var Display_SID_Y                  = 19
 
-.var Display_Separator2_Y           = 19
+.var Display_ZP_X                   = 26    // "ZP:" colon at col 28
+.var Display_ZP_Y                   = 19
 
-.var Display_Time_X                 = 1
-.var Display_Time_Y                 = 20
+.var Display_Separator2_Y           = 20
 
-.var Display_Song_X                 = 22
-.var Display_Song_Y                 = 20
+.var Display_Time_X                 = 8     // "Time:" colon at col 12
+.var Display_Time_Y                 = 21
 
-.var Display_Separator3_Y           = 21
+.var Display_Song_X                 = 24    // "Song:" colon at col 28
+.var Display_Song_Y                 = 21
 
-.var Display_Controls_Line1_X       = 1
-.var Display_Controls_Line1_Y       = 22
+.var Display_Separator3_Y           = 22
 
-.var Display_Controls_Line2_X       = 1
-.var Display_Controls_Line2_Y       = 23
+.var Display_Controls_Line1_X       = 3
+.var Display_Controls_Line1_Y       = 23
 
-.var Display_Controls_Line3_X       = 1
-.var Display_Controls_Line3_Y       = 24
+.var Display_Controls_Line2_X       = 3
+.var Display_Controls_Line2_Y       = 24
 
 .const SCREEN_RAM = $0400
 .const COLOR_RAM = $d800
@@ -381,7 +396,7 @@ DrawStaticInfo:
     ldy #Display_Separator1_Y
     jsr DrawSeparator
 
-    // Row 16: Memory + Init (combined on one line)
+    // Row 16: Memory (full row)
     ldx #Display_Memory_X
     ldy #Display_Memory_Y
     jsr SetCursor
@@ -405,6 +420,7 @@ DrawStaticInfo:
     lda EndAddress
     jsr PrintHexByte
 
+    // Row 17: Init (left) + Play (right)
     ldx #Display_Init_X
     ldy #Display_Init_Y
     jsr SetCursor
@@ -420,7 +436,6 @@ DrawStaticInfo:
     lda InitAddress
     jsr PrintHexByte
 
-    // Row 17: Play + ZP
     ldx #Display_Play_X
     ldy #Display_Play_Y
     jsr SetCursor
@@ -436,19 +451,7 @@ DrawStaticInfo:
     lda PlayAddress
     jsr PrintHexByte
 
-    ldx #Display_ZP_X
-    ldy #Display_ZP_Y
-    jsr SetCursor
-    lda #<ZPLabel
-    ldy #>ZPLabel
-    ldx #Display_InfoTitles_Colour
-    jsr PrintString
-    ldx #Display_InfoValues_Colour
-    lda #<ZPUsageData
-    ldy #>ZPUsageData
-    jsr PrintStringShort
-
-    // Row 18: Songs + Clock + SID
+    // Row 18: Songs (left) + Clock (right)
     ldx #Display_Songs_X
     ldy #Display_Songs_Y
     jsr SetCursor
@@ -479,6 +482,7 @@ DrawStaticInfo:
     ldx #Display_InfoValues_Colour
     jsr PrintString
 
+    // Row 19: SID (left) + ZP (right)
     ldx #Display_SID_X
     ldy #Display_SID_Y
     jsr SetCursor
@@ -498,12 +502,24 @@ DrawStaticInfo:
     ldx #Display_InfoValues_Colour
     jsr PrintString
 
-    // Row 19: Separator
+    ldx #Display_ZP_X
+    ldy #Display_ZP_Y
+    jsr SetCursor
+    lda #<ZPLabel
+    ldy #>ZPLabel
+    ldx #Display_InfoTitles_Colour
+    jsr PrintString
+    ldx #Display_InfoValues_Colour
+    lda #<ZPUsageData
+    ldy #>ZPUsageData
+    jsr PrintStringShort
+
+    // Row 20: Separator
     ldx #0
     ldy #Display_Separator2_Y
     jsr DrawSeparator
 
-    // Row 20: Time + Song
+    // Row 21: Time (left) + Song (right, only if multi-song)
     ldx #Display_Time_X
     ldy #Display_Time_Y
     jsr SetCursor
@@ -525,12 +541,12 @@ DrawStaticInfo:
     jsr PrintString
 
 !skipSong:
-    // Row 21: Separator
+    // Row 22: Separator
     ldx #0
     ldy #Display_Separator3_Y
     jsr DrawSeparator
 
-    // Rows 22-24: Controls (compact)
+    // Rows 23-24: Controls (compact, 2 lines)
     jmp DrawControls
 
 // =============================================================================
@@ -564,23 +580,15 @@ DrawControls:
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
+    lda NumSongs
+    cmp #2
+    bcc !done+
+
     ldx #Display_Controls_Line2_X
     ldy #Display_Controls_Line2_Y
     jsr SetCursor
     lda #<ControlsLine2
     ldy #>ControlsLine2
-    ldx #Display_ControlsInfo_Colour
-    jsr PrintString
-
-    lda NumSongs
-    cmp #2
-    bcc !done+
-
-    ldx #Display_Controls_Line3_X
-    ldy #Display_Controls_Line3_Y
-    jsr SetCursor
-    lda #<ControlsLine3
-    ldy #>ControlsLine3
     ldx #Display_ControlsInfo_Colour
     jsr PrintString
 
@@ -592,7 +600,8 @@ DrawControls:
 // =============================================================================
 
 UpdateDynamicInfo:
-    ldx #Display_Time_X + 6
+    // Time value at col 14 (Display_Time_X=8 + "Time: "=6 chars)
+    ldx #14
     ldy #Display_Time_Y
     jsr SetCursor
 
@@ -608,7 +617,8 @@ UpdateDynamicInfo:
     cmp #2
     bcc !skip+
 
-    ldx #Display_Song_X + 6
+    // Song value at col 30 (Display_Song_X=24 + "Song: "=6 chars)
+    ldx #30
     ldy #Display_Song_Y
     jsr SetCursor
 
@@ -714,7 +724,7 @@ StringReadPtr:
 !done:
     rts
 
-// Short string print (max 16 chars) for squeezed ZP usage display
+// Short string print (max 10 chars) for squeezed ZP usage display
 PrintStringShort:
     sta StringReadPtr2 + 1
     sty StringReadPtr2 + 2
@@ -728,7 +738,7 @@ StringReadPtr2:
     jsr PrintChar
 
     iny
-    cpy #16
+    cpy #10
     bne !loop-
 
 !done:
@@ -930,7 +940,7 @@ SplitIRQ:
 // TEXT DATA (compact labels for squeezed layout)
 // =============================================================================
 
-MemoryLabel:        .text "Mem: "
+MemoryLabel:        .text "Memory: "
                     .byte 0
 InitLabel:          .text "Init: "
                     .byte 0
@@ -940,7 +950,7 @@ ZPLabel:            .text "ZP: "
                     .byte 0
 SongsLabel:         .text "Songs: "
                     .byte 0
-ClockLabel:         .text "Clk: "
+ClockLabel:         .text "Clock: "
                     .byte 0
 SIDLabel:           .text "SID: "
                     .byte 0
@@ -957,12 +967,10 @@ TimeLabel:          .text "Time: "
 CurrentSongLabel:   .text "Song: "
                     .byte 0
 
-// Compact control labels (3 lines)
+// Control labels (2 lines)
 ControlsLine1:      .text "F1=Timing Bar  SPACE=Fast Fwd"
                     .byte 0
-ControlsLine2:      .text "+/- = Next/Prev Song"
-                    .byte 0
-ControlsLine3:      .text "1-9, A-Z = Select Song"
+ControlsLine2:      .text "+/-=Next/Prev 1-9,A-Z=Select"
                     .byte 0
 
 // =============================================================================
