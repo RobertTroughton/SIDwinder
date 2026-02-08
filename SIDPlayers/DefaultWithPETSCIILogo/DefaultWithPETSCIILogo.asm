@@ -211,7 +211,6 @@ Initialize:
     lda #D018_LOGO_UPPERCASE
 !storeD018:
     sta LogoD018Value + 1
-    sta LogoD018ValueFF + 1
 
     // Copy logo screen codes to screen RAM (rows 0-8)
     jsr CopyLogoToScreen
@@ -257,6 +256,35 @@ Initialize:
 
 MainLoop:
     jsr CheckKeyboard
+
+    lda FastForwardActive
+    beq MainLoop
+
+    // Fast-forward mode: call SIDPlay multiple times from main loop
+    // IRQs continue firing normally, so D018 splits keep working
+!ffFrameLoop:
+    lda NumCallsPerFrame
+    sta FFCallCounter
+
+!ffCallLoop:
+    jsr SIDPlay
+    inc $d020
+    dec FFCallCounter
+    lda FFCallCounter
+    bne !ffCallLoop-
+
+    jsr UpdateTimer
+    jsr UpdateDynamicInfo
+    jsr CheckSpaceKey
+
+    lda FastForwardActive
+    bne !ffFrameLoop-
+
+    // Fast-forward ended
+    lda #$00
+    sta $d020
+    sta callCount + 1
+
     jmp MainLoop
 
 // =============================================================================
@@ -811,44 +839,10 @@ LogoD018Value:
     lda #D018_LOGO_LOWERCASE    // Self-modified at init based on charset type
     sta $d018
 
+    // Skip music playback if fast-forward is active (MainLoop handles it)
     lda FastForwardActive
-    beq !normalPlay+
+    bne !done+
 
-!ffFrameLoop:
-    lda NumCallsPerFrame
-    sta FFCallCounter
-
-!ffCallLoop:
-    jsr SIDPlay
-    inc $d020
-    dec FFCallCounter
-    lda FFCallCounter
-    bne !ffCallLoop-
-
-    // Switch to info charset so text area renders correctly during FF
-    lda #D018_INFO
-    sta $d018
-
-    jsr UpdateTimer
-    jsr UpdateDynamicInfo
-
-    jsr CheckSpaceKey
-    lda FastForwardActive
-    beq !ffDone+
-
-    // Set D018 back to logo charset for next FF iteration
-LogoD018ValueFF:
-    lda #D018_LOGO_LOWERCASE    // Self-modified at init (same as LogoD018Value)
-    sta $d018
-    jmp !ffFrameLoop-
-
-!ffDone:
-    lda #$00
-    sta $d020
-    sta callCount + 1
-    jmp !done+
-
-!normalPlay:
 callCount:
     ldx #0
     inx
