@@ -35,7 +35,8 @@
 // Each voice section has 48 height levels (0-47), mapped to $10-$3F
 .const MAX_BAR_HEIGHT               = 47
 
-.const BAR_INCREASE_RATE            = ceil(MAX_BAR_HEIGHT / 6.0)
+// Rate of 3 gives sub-pixel smooth movement through Scrap's 8-position character cells
+.const BAR_INCREASE_RATE            = 3
 .const BAR_DECREASE_RATE            = ceil(MAX_BAR_HEIGHT / 24.0)
 
 // =============================================================================
@@ -104,7 +105,7 @@ artistNameColor:
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 232
+.var DEFAULT_RASTERTIMING_Y = 250
 
 .import source "../INC/Common.asm"
 .import source "../INC/Keyboard.asm"
@@ -300,6 +301,11 @@ MainIRQ:
     lda #$35
     sta $01
 
+    // Open bottom border: switch to 24-row mode (RSEL=0)
+    // IRQ fires at line 250, between the RSEL=0 check at 247 and RSEL=1 check at 251
+    lda #$13
+    sta $d011
+
     lda FastForwardActive
     beq !normalPlay+
 
@@ -335,6 +341,11 @@ MainIRQ:
     jsr JustPlayMusic
     jsr AnalyseMusic
     jsr UpdateBarsAllVoices
+
+    // Restore 25-row mode (RSEL=1) so border trick works next frame
+    // Must be set before rasterline 247 of the next frame
+    lda #$1b
+    sta $d011
 
 !done:
     jsr NextIRQ
