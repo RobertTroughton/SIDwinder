@@ -104,9 +104,6 @@ artistNameColor:
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 
-#define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 250
-
 .import source "../INC/Common.asm"
 .import source "../INC/Keyboard.asm"
 .import source "../INC/MusicPlayback.asm"
@@ -149,7 +146,6 @@ Initialize:
     jsr InitializeColors
     jsr DisplaySongInfo
     jsr DisplayRow25
-    jsr init_D011_D012_values
 
     jsr InitializeBarArrays
 
@@ -163,10 +159,9 @@ Initialize:
 
     jsr SetupMusic
 
-    lda #$00
-    sta NextIRQLdx + 1
-    tax
-    jsr set_d011_and_d012
+    // Set up raster IRQ at line 250 (bottom border opening)
+    lda #250
+    sta $d012
 
     lda #<MainIRQ
     sta $fffe
@@ -306,6 +301,10 @@ MainIRQ:
     lda #$35
     sta $01
 
+    // Set ghost byte for bottom border area (sprite-like pattern)
+    lda #$03
+    sta VIC_BANK_ADDRESS + $3FFF
+
     // Open bottom border: switch to 24-row mode (RSEL=0)
     // IRQ fires at line 250, between the RSEL=0 check at 247 and RSEL=1 check at 251
     lda #$13
@@ -315,24 +314,15 @@ MainIRQ:
     beq !normalPlay+
 
 !ffFrameLoop:
-    lda NumCallsPerFrame
-    sta FFCallCounter
-
-!ffCallLoop:
     jsr SIDPlay
     inc $d020
-    dec FFCallCounter
-    bne !ffCallLoop-
 
     jsr CheckSpaceKey
     lda FastForwardActive
     bne !ffFrameLoop-
 
     lda #$00
-    sta NextIRQLdx + 1
     sta $d020
-    tax
-    jsr set_d011_and_d012
     jmp !done+
 
 !normalPlay:
@@ -347,86 +337,58 @@ MainIRQ:
     jsr AnalyseMusic
     jsr UpdateBarsAllVoices
 
+!done:
     // Restore 25-row mode (RSEL=1) so border trick works next frame
-    // Must be set before rasterline 247 of the next frame
     lda #$1b
     sta $d011
 
-!done:
-    jsr NextIRQ
+    // Set up TopBorderIRQ at rasterline 0
+    lda #0
+    sta $d012
 
-    pla
-    sta $01
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
-
-// =============================================================================
-// MUSIC-ONLY INTERRUPT HANDLER
-// =============================================================================
-
-MusicOnlyIRQ:
-    pha
-    txa
-    pha
-    tya
-    pha
-    lda $01
-    pha
-    lda #$35
-    sta $01
-
-    jsr JustPlayMusic
-
-    jsr NextIRQ
-
-    pla
-    sta $01
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
-
-// =============================================================================
-// INTERRUPT CHAINING
-// =============================================================================
-
-NextIRQ:
-
-NextIRQLdx:
-    ldx #$00
-    inx
-    cpx NumCallsPerFrame
-    bne !notLast+
-    ldx #$00
-!notLast:
-    stx NextIRQLdx + 1
-
-    jsr set_d011_and_d012
+    lda #<TopBorderIRQ
+    sta $fffe
+    lda #>TopBorderIRQ
+    sta $ffff
 
     lda #$01
     sta $d019
 
-    cpx #$00
-    bne !musicOnly+
+    pla
+    sta $01
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
+
+// =============================================================================
+// TOP BORDER INTERRUPT HANDLER (rasterline 0)
+// Sets ghost byte to $FF for fully black top border area
+// =============================================================================
+
+TopBorderIRQ:
+    pha
+
+    // Set ghost byte for top border area (fully black)
+    lda #$ff
+    sta VIC_BANK_ADDRESS + $3FFF
+
+    // Set up MainIRQ at rasterline 250
+    lda #250
+    sta $d012
 
     lda #<MainIRQ
     sta $fffe
     lda #>MainIRQ
     sta $ffff
-    rts
 
-!musicOnly:
-    lda #<MusicOnlyIRQ
-    sta $fffe
-    lda #>MusicOnlyIRQ
-    sta $ffff
-    rts
+    lda #$01
+    sta $d019
+
+    pla
+    rti
 
 // =============================================================================
 // CONVERT SMOOTHED HEIGHTS TO COLUMN BUFFERS

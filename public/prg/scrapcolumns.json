@@ -1,6 +1,6 @@
 {
   "name": "Scrap Columns",
-  "maxCallsPerFrame": 2,
+  "maxCallsPerFrame": 1,
   "needsSaveRestore": true,
   "fontType": "none",
 
