@@ -34,7 +34,9 @@
 .const BAR_INCREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 
-.const MAX_BAR_HEIGHT               = TOP_SPECTRUM_HEIGHT * 8 - 1
+// Scrap's char tables require buffer values in range $10-$3F (48 values per section)
+// Total height range = 3 sections * 48 = 144 levels (0-143)
+.const MAX_BAR_HEIGHT               = 143
 
 // =============================================================================
 // DATA BLOCK
@@ -423,7 +425,9 @@ NextIRQLdx:
 // =============================================================================
 // CONVERT SMOOTHED HEIGHTS TO COLUMN BUFFERS
 // Merges 40 frequency bars into 20 columns (max of each pair)
-// Then splits each column height into 3 sections (0-63 each)
+// Then splits each column height into 3 sections
+// Output values are in range $10-$3F as required by Scrap's char tables
+// Each section has 48 levels (0-47) mapped to $10-$3F
 // =============================================================================
 
 ConvertToColumns:
@@ -438,57 +442,52 @@ ConvertToColumns:
     bcs !first+
     lda smoothedHeights + 1, y
 !first:
-    // A now contains the merged height (0 to MAX_BAR_HEIGHT = 191)
+    // A now contains the merged height (0 to MAX_BAR_HEIGHT = 143)
 
-    // Split into 3 sections:
-    // Section 3 (lowest, bottom of screen): min(63, height)
-    // Section 2 (lower, middle): min(63, max(0, height-64))
-    // Section 1 (upper, top): min(63, max(0, height-128))
+    // Split into 3 sections of 48 levels each:
+    // Height   0-47:  lowest = height,       lower = 0, upper = 0
+    // Height  48-95:  lowest = 47,           lower = height-48, upper = 0
+    // Height 96-143:  lowest = 47,           lower = 47, upper = height-96
+    // Then add $10 to each to get $10-$3F range
 
-    cmp #128
-    bcc !below128+
+    cmp #96
+    bcc !below96+
 
-    // Height >= 128: all three sections active
-    pha
-    lda #63
-    sta columnBuffer + NUM_COLUMNS, x       // sinebuffer2 (lower) = 63
-    sta columnBuffer + (NUM_COLUMNS * 2), x // sinebuffer3 (lowest) = 63
-    pla
+    // Height >= 96: all three sections active
     sec
-    sbc #128
-    cmp #63
-    bcc !storeUpper+
-    lda #63
-!storeUpper:
-    sta columnBuffer, x                     // sinebuffer (upper)
+    sbc #96
+    clc
+    adc #$10
+    sta columnBuffer, x                     // upper = (height-96) + $10
+    lda #$3F
+    sta columnBuffer + NUM_COLUMNS, x       // lower = $3F (full)
+    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = $3F (full)
     jmp !next+
 
-!below128:
-    cmp #64
-    bcc !below64+
+!below96:
+    cmp #48
+    bcc !below48+
 
-    // Height 64-127: lower + lowest active, upper off
-    pha
-    lda #$00
-    sta columnBuffer, x                     // sinebuffer (upper) = 0
-    lda #63
-    sta columnBuffer + (NUM_COLUMNS * 2), x // sinebuffer3 (lowest) = 63
-    pla
+    // Height 48-95: lower + lowest active, upper at minimum
     sec
-    sbc #64
-    cmp #63
-    bcc !storeLower+
-    lda #63
-!storeLower:
-    sta columnBuffer + NUM_COLUMNS, x       // sinebuffer2 (lower)
+    sbc #48
+    clc
+    adc #$10
+    sta columnBuffer + NUM_COLUMNS, x       // lower = (height-48) + $10
+    lda #$10
+    sta columnBuffer, x                     // upper = $10 (minimum)
+    lda #$3F
+    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = $3F (full)
     jmp !next+
 
-!below64:
-    // Height 0-63: only lowest active
-    sta columnBuffer + (NUM_COLUMNS * 2), x // sinebuffer3 (lowest)
-    lda #$00
-    sta columnBuffer, x                     // sinebuffer (upper) = 0
-    sta columnBuffer + NUM_COLUMNS, x       // sinebuffer2 (lower) = 0
+!below48:
+    // Height 0-47: only lowest active, others at minimum
+    clc
+    adc #$10
+    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = height + $10
+    lda #$10
+    sta columnBuffer, x                     // upper = $10 (minimum)
+    sta columnBuffer + NUM_COLUMNS, x       // lower = $10 (minimum)
 
 !next:
     dex
