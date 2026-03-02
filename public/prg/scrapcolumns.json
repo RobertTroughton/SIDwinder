@@ -1,0 +1,50 @@
+{
+  "name": "Scrap Columns",
+  "maxCallsPerFrame": 2,
+  "needsSaveRestore": true,
+  "fontType": "none",
+
+  "layouts": {
+    "bank4000": {
+      "binary": "prg/ScrapColumns-4000.bin",
+      "size": "0x4000",
+      "baseAddress": "0x4000",
+      "dataAddress": "0x4000",
+      "sysAddress": "0x4100",
+      "binaryDataStart": "0x4000",
+      "binaryDataEnd": "0x7FFF",
+      "borderColor": "0x400D",
+      "backgroundColor": "0x400E",
+      "songNameColorAddress": "0x4072",
+      "artistNameColorAddress": "0x4073",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x4000",
+      "saveRestoreMaxSize": "0x3800"
+    },
+    "bank8000": {
+      "binary": "prg/ScrapColumns-8000.bin",
+      "size": "0x4000",
+      "baseAddress": "0x8000",
+      "dataAddress": "0x8000",
+      "sysAddress": "0x8100",
+      "binaryDataStart": "0x8000",
+      "binaryDataEnd": "0xBFFF",
+      "borderColor": "0x800D",
+      "backgroundColor": "0x800E",
+      "songNameColorAddress": "0x8072",
+      "artistNameColorAddress": "0x8073",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x8000",
+      "saveRestoreMaxSize": "0x7800"
+    }
+  },
+
+  "options": [
+    {
+      "id": "bgColor",
+      "label": "Background Colour",
+      "type": "colorPicker",
+      "default": 0
+    }
+  ]
+}
