@@ -6,7 +6,7 @@
 //
 // 20 multicolor 3D columns across the full screen width.
 // Each column is 2 characters wide, 24 rows tall (3 sections of 8 rows).
-// Bar heights driven by SID frequency analysis (40 bars merged to 20 columns).
+// Each section shows one SID voice independently (V0=upper, V1=lower, V2=lowest).
 //
 // Memory Map (VIC Bank relative):
 //   +$3800-$3FFF : CharSet (MC mode)
@@ -25,18 +25,18 @@
 // CONFIGURATION CONSTANTS
 // =============================================================================
 
-.const NUM_FREQUENCY_BARS           = 40
+.const NUM_BARS_PER_VOICE            = 20
 .const NUM_COLUMNS                  = 20
 
-.const TOP_SPECTRUM_HEIGHT          = 24
+.const TOP_SPECTRUM_HEIGHT          = 8
 .const BOTTOM_SPECTRUM_HEIGHT       = 0
 
 .const BAR_INCREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 1.3)
 .const BAR_DECREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 0.2)
 
 // Scrap's char tables require buffer values in range $10-$3F (48 values per section)
-// Total height range = 3 sections * 48 = 144 levels (0-143)
-.const MAX_BAR_HEIGHT               = 143
+// Each voice section has 48 height levels (0-47), mapped to $10-$3F
+.const MAX_BAR_HEIGHT               = 47
 
 // =============================================================================
 // DATA BLOCK
@@ -110,8 +110,8 @@ artistNameColor:
 .import source "../INC/Keyboard.asm"
 .import source "../INC/MusicPlayback.asm"
 .import source "../INC/StableRasterSetup.asm"
-.import source "../INC/Spectrometer.asm"
-.import source "../INC/FreqTable.asm"
+.import source "../INC/SpectrometerPerVoice.asm"
+.import source "../INC/FreqTable20.asm"
 .import source "../INC/LinkedWithEffect.asm"
 
 // =============================================================================
@@ -150,17 +150,10 @@ Initialize:
     jsr DisplayRow25
     jsr init_D011_D012_values
 
-    ldy #$00
-    lda #$00
-!loop:
-    sta barHeights - 2, y
-    sta smoothedHeights - 2, y
-    iny
-    cpy #NUM_FREQUENCY_BARS + 4
-    bne !loop-
+    jsr InitializeBarArrays
 
-    // Clear column buffers
-    lda #$00
+    // Clear column buffers to $10 (minimum visible, valid range $10-$3F)
+    lda #$10
     ldx #59
 !clrBuf:
     sta columnBuffer, x
@@ -196,7 +189,7 @@ MainLoop:
     lda visualizationUpdateFlag
     beq MainLoop
 
-    jsr ApplySmoothing
+    jsr ApplySmoothingAllVoices
     jsr ConvertToColumns
     jsr columnseffect
 
@@ -344,7 +337,7 @@ MainIRQ:
 
     jsr JustPlayMusic
     jsr AnalyseMusic
-    jsr UpdateBars
+    jsr UpdateBarsAllVoices
 
 !done:
     jsr NextIRQ
@@ -424,72 +417,31 @@ NextIRQLdx:
 
 // =============================================================================
 // CONVERT SMOOTHED HEIGHTS TO COLUMN BUFFERS
-// Merges 40 frequency bars into 20 columns (max of each pair)
-// Then splits each column height into 3 sections
-// Output values are in range $10-$3F as required by Scrap's char tables
-// Each section has 48 levels (0-47) mapped to $10-$3F
+// Each voice's smoothed heights (0-47) are mapped to $10-$3F
+// Voice 0 → upper section, Voice 1 → lower section, Voice 2 → lowest section
 // =============================================================================
 
 ConvertToColumns:
     ldx #NUM_COLUMNS - 1
 !loop:
-    // Get max of bar pair: smoothedHeights[x*2] and smoothedHeights[x*2+1]
-    txa
-    asl
-    tay
-    lda smoothedHeights, y
-    cmp smoothedHeights + 1, y
-    bcs !first+
-    lda smoothedHeights + 1, y
-!first:
-    // A now contains the merged height (0 to MAX_BAR_HEIGHT = 143)
-
-    // Split into 3 sections of 48 levels each:
-    // Height   0-47:  lowest = height,       lower = 0, upper = 0
-    // Height  48-95:  lowest = 47,           lower = height-48, upper = 0
-    // Height 96-143:  lowest = 47,           lower = 47, upper = height-96
-    // Then add $10 to each to get $10-$3F range
-
-    cmp #96
-    bcc !below96+
-
-    // Height >= 96: all three sections active
-    sec
-    sbc #96
+    // Voice 0 → upper section (rows 0-7)
+    lda smoothedHeightsV0, x
     clc
     adc #$10
-    sta columnBuffer, x                     // upper = (height-96) + $10
-    lda #$3F
-    sta columnBuffer + NUM_COLUMNS, x       // lower = $3F (full)
-    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = $3F (full)
-    jmp !next+
+    sta columnBuffer, x
 
-!below96:
-    cmp #48
-    bcc !below48+
-
-    // Height 48-95: lower + lowest active, upper at minimum
-    sec
-    sbc #48
+    // Voice 1 → lower section (rows 8-15)
+    lda smoothedHeightsV1, x
     clc
     adc #$10
-    sta columnBuffer + NUM_COLUMNS, x       // lower = (height-48) + $10
-    lda #$10
-    sta columnBuffer, x                     // upper = $10 (minimum)
-    lda #$3F
-    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = $3F (full)
-    jmp !next+
+    sta columnBuffer + NUM_COLUMNS, x
 
-!below48:
-    // Height 0-47: only lowest active, others at minimum
+    // Voice 2 → lowest section (rows 16-23)
+    lda smoothedHeightsV2, x
     clc
     adc #$10
-    sta columnBuffer + (NUM_COLUMNS * 2), x // lowest = height + $10
-    lda #$10
-    sta columnBuffer, x                     // upper = $10 (minimum)
-    sta columnBuffer + NUM_COLUMNS, x       // lower = $10 (minimum)
+    sta columnBuffer + (NUM_COLUMNS * 2), x
 
-!next:
     dex
     bpl !loop-
     rts
