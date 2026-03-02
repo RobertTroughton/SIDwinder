@@ -286,8 +286,8 @@ InitializeVIC:
     dex
     bpl !sprPtr-
 
-    lda #$00
-    sta SCREEN_ADDRESS + $3FF
+    lda #$03
+    sta VIC_BANK_ADDRESS + $3FFF
 
     rts
 
@@ -470,7 +470,7 @@ ClearScreen:
     sta SCREEN_ADDRESS + $000, x
     sta SCREEN_ADDRESS + $100, x
     sta SCREEN_ADDRESS + $200, x
-    sta SCREEN_ADDRESS + $300, x
+    sta SCREEN_ADDRESS + $2e8, x
     inx
     bne !loop-
     rts
