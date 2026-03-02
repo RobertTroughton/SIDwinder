@@ -204,8 +204,6 @@ MainLoop:
 
 InitializeVIC:
     // Set multicolor text mode
-    lda #$1b
-    sta $d011
     lda #$d8                            // MC on ($d0 | $08)
     sta $d016
     lda #D018_VALUE
@@ -282,9 +280,8 @@ InitializeVIC:
     dex
     bpl !sprPtr-
 
-    // VIC bank setup byte at top of bank
-    lda #%00000011
-    sta VIC_BANK_ADDRESS + $3FFF
+    lda #$00
+    sta SCREEN_ADDRESS + $3FF
 
     rts
 
@@ -452,7 +449,7 @@ ConvertToColumns:
 
 ClearScreen:
     ldx #$00
-    lda #$20
+    lda #$fe
 !loop:
     sta SCREEN_ADDRESS + $000, x
     sta SCREEN_ADDRESS + $100, x
@@ -463,35 +460,25 @@ ClearScreen:
     rts
 
 DisplaySongInfo:
-    // Song name on row 0 (above the columns, rows 0-1)
-    // Artist name on row 24 (below the columns, at very bottom of visible screen)
-    // Columns occupy rows 1-24, so put song name on row 0 only
-    // Actually, we have 25 visible rows. Columns use rows 0-23 in the original.
-    // For SIDwinder, let's not display song/artist text - the columns fill the screen.
-    // The text info is shown in the LinkedWith intro anyway.
+
     rts
 
 InitializeColors:
-    // Set color RAM for 3 sections (each 8 rows of 40 columns):
-    // Rows 0-7 (upper/V0): dark grey ($0b)
-    // Rows 8-15 (lower/V1): light grey ($0f)
-    // Rows 16-23 (lowest/V2): brown ($09)
-    ldx #39
-!loop:
-    lda #$0B
-    .for (var r = 0; r < 8; r++) {
-        sta $d800 + (r * 40), x
-    }
-    lda #$0F
-    .for (var r = 8; r < 16; r++) {
-        sta $d800 + (r * 40), x
-    }
+
+    ldy #$00
+!colLoop:
+    lda #$0b
+    sta $d800, y
+    sta $d800 + 64, y
+    lda #$0f
+    sta $d800 + 320, y
+    sta $d800 + 384, y
     lda #$09
-    .for (var r = 16; r < 24; r++) {
-        sta $d800 + (r * 40), x
-    }
-    dex
-    bpl !loop-
+    sta $d800 + 640, y
+    sta $d800 + 704, y
+    iny
+    bne !colLoop-
+
     rts
 
 DisplayRow25:
