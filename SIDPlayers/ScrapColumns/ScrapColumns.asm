@@ -11,11 +11,11 @@
 // Memory Map (VIC Bank relative):
 //   +$3800-$3FFF : CharSet (MC mode)
 //   +$3000-$33FF : Screen
-//   +$2B00-$2B77 : Upper char lookup table
-//   +$2B80-$2BF7 : Lower char lookup table
-//   +$2C00-$2C77 : Lowest char lookup table
-//   +$2C80-$2CBF : Conversion table
-//   +$2CC0-$2CFF : Column height buffers (3 x 20 bytes)
+//   +$2C00-$2C77 : Upper char lookup table
+//   +$2C80-$2CF7 : Lower char lookup table
+//   +$2D00-$2D77 : Lowest char lookup table
+//   +$2D80-$2DBF : Conversion table
+//   +$2DC0-$2DFF : Column height buffers (3 x 20 bytes)
 
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
@@ -31,12 +31,12 @@
 .const TOP_SPECTRUM_HEIGHT          = 8
 .const BOTTOM_SPECTRUM_HEIGHT       = 0
 
-.const BAR_INCREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 1.3)
-.const BAR_DECREASE_RATE            = ceil(TOP_SPECTRUM_HEIGHT * 0.2)
-
 // Scrap's char tables require buffer values in range $10-$3F (48 values per section)
 // Each voice section has 48 height levels (0-47), mapped to $10-$3F
 .const MAX_BAR_HEIGHT               = 47
+
+.const BAR_INCREASE_RATE            = ceil(MAX_BAR_HEIGHT / 6.0)
+.const BAR_DECREASE_RATE            = ceil(MAX_BAR_HEIGHT / 24.0)
 
 // =============================================================================
 // DATA BLOCK
@@ -79,18 +79,18 @@ artistNameColor:
 .const D018_VALUE                   = (SCREEN_BANK * 16) + (CHARSET_BANK * 2)
 
 // Char lookup tables placed after code (page-aligned for indexed addressing)
-.const UPPER_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2B00
-.const LOWER_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2B80
-.const LOWEST_TABLE_ADDRESS         = VIC_BANK_ADDRESS + $2C00
-.const CONV_TABLE_ADDRESS           = VIC_BANK_ADDRESS + $2C80
-.const COLUMN_BUFFERS_ADDRESS       = VIC_BANK_ADDRESS + $2CC0
+.const UPPER_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2C00
+.const LOWER_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2C80
+.const LOWEST_TABLE_ADDRESS         = VIC_BANK_ADDRESS + $2D00
+.const CONV_TABLE_ADDRESS           = VIC_BANK_ADDRESS + $2D80
+.const COLUMN_BUFFERS_ADDRESS       = VIC_BANK_ADDRESS + $2DC0
 
 // Sprite data - 64-byte aligned within VIC bank (placed before screen)
 .const SPRITE_DATA_ADDRESS          = VIC_BANK_ADDRESS + $2FC0
 .const SPRITE_POINTER               = ($2FC0 / $40)
 
 // Color table (for compatibility with prg-builder, though not actively used for dynamic colors)
-.const COLOR_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2D00
+.const COLOR_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2E00
 .const COLOR_TABLE_SIZE             = MAX_BAR_HEIGHT + 9
 
 // =============================================================================
@@ -472,42 +472,26 @@ DisplaySongInfo:
     rts
 
 InitializeColors:
-    // Set color RAM for 3 sections:
-    // Rows 0-7 (upper): dark grey ($0b) - cyan highlight on columns
-    // Rows 8-15 (lower): light grey ($0f) - yellow highlight on columns
-    // Rows 16-23 (lowest): brown ($09) - white highlight on columns
-    ldy #0
-!colLoop:
+    // Set color RAM for 3 sections (each 8 rows of 40 columns):
+    // Rows 0-7 (upper/V0): dark grey ($0b)
+    // Rows 8-15 (lower/V1): light grey ($0f)
+    // Rows 16-23 (lowest/V2): brown ($09)
+    ldx #39
+!loop:
     lda #$0B
-    sta $d800, y
-    sta $d800 + 64, y
-    lda #$0f
-    sta $d800 + 320, y
-    sta $d800 + 384, y
+    .for (var r = 0; r < 8; r++) {
+        sta $d800 + (r * 40), x
+    }
+    lda #$0F
+    .for (var r = 8; r < 16; r++) {
+        sta $d800 + (r * 40), x
+    }
     lda #$09
-    sta $d800 + 640, y
-    sta $d800 + 704, y
-    iny
-    cpy #64
-    bne !colLoop-
-
-    // Fill remaining rows with dark grey
-    ldy #0
-    lda #$0b
-!colLoop2:
-    sta $d800 + 128, y
-    sta $d800 + 192, y
-    sta $d800 + 256, y
-    sta $d800 + 448, y
-    sta $d800 + 512, y
-    sta $d800 + 576, y
-    sta $d800 + 768, y
-    sta $d800 + 832, y
-    sta $d800 + 896, y
-    iny
-    cpy #64
-    bne !colLoop2-
-
+    .for (var r = 16; r < 24; r++) {
+        sta $d800 + (r * 40), x
+    }
+    dex
+    bpl !loop-
     rts
 
 DisplayRow25:
