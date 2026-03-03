@@ -427,7 +427,7 @@ ConvertToColumns:
 
 ClearScreen:
     ldx #$00
-    lda #$fe
+    lda #$fc
 !loop:
     sta SCREEN_ADDRESS + $000, x
     sta SCREEN_ADDRESS + $100, x
@@ -545,90 +545,90 @@ columnseffect:
 // CHARACTER LOOKUP TABLES (from Scrap's original)
 // =============================================================================
 
-// Upper section: $fe = empty row, character codes for filled rows
+// Upper section: $fc = empty row, character codes for filled rows
 // Each "height level" is 15 bytes: 8 interleaved height entries + 7 body chars
 // Indexed by convtable[height] to get starting offset within table
 
 * = UPPER_TABLE_ADDRESS "Upper Char Table"
 upper:
 // Height 7 (barely visible - only last row)
-c07: .byte $fe
-c0f: .byte $fe
-c17: .byte $fe
-c1f: .byte $fe
-c27: .byte $fe
-c2f: .byte $fe
-c37: .byte $fe
+c07: .byte $fc
+c0f: .byte $fc
+c17: .byte $fc
+c1f: .byte $fc
+c27: .byte $fc
+c2f: .byte $fc
+c37: .byte $fc
 c3f: .byte $00
      .byte $02, $04, $06, $06, $06, $06, $06
 // Height 6
-c06: .byte $fe
-c0e: .byte $fe
-c16: .byte $fe
-c1e: .byte $fe
-c26: .byte $fe
-c2e: .byte $fe
-c36: .byte $fe
+c06: .byte $fc
+c0e: .byte $fc
+c16: .byte $fc
+c1e: .byte $fc
+c26: .byte $fc
+c2e: .byte $fc
+c36: .byte $fc
 c3e: .byte $10
      .byte $12, $14, $16, $16, $16, $16, $16
 // Height 5
-c05: .byte $fe
-c0d: .byte $fe
-c15: .byte $fe
-c1d: .byte $fe
-c25: .byte $fe
-c2d: .byte $fe
-c35: .byte $fe
+c05: .byte $fc
+c0d: .byte $fc
+c15: .byte $fc
+c1d: .byte $fc
+c25: .byte $fc
+c2d: .byte $fc
+c35: .byte $fc
 c3d: .byte $20
      .byte $22, $24, $26, $26, $26, $26, $26
 // Height 4
-c04: .byte $fe
-c0c: .byte $fe
-c14: .byte $fe
-c1c: .byte $fe
-c24: .byte $fe
-c2c: .byte $fe
-c34: .byte $fe
+c04: .byte $fc
+c0c: .byte $fc
+c14: .byte $fc
+c1c: .byte $fc
+c24: .byte $fc
+c2c: .byte $fc
+c34: .byte $fc
 c3c: .byte $30
      .byte $32, $34, $36, $36, $36, $36, $36
 // Height 3
-c03: .byte $fe
-c0b: .byte $fe
-c13: .byte $fe
-c1b: .byte $fe
-c23: .byte $fe
-c2b: .byte $fe
-c33: .byte $fe
+c03: .byte $fc
+c0b: .byte $fc
+c13: .byte $fc
+c1b: .byte $fc
+c23: .byte $fc
+c2b: .byte $fc
+c33: .byte $fc
 c3b: .byte $40
      .byte $42, $44, $46, $46, $46, $46, $46
 // Height 2
-c02: .byte $fe
-c0a: .byte $fe
-c12: .byte $fe
-c1a: .byte $fe
-c22: .byte $fe
-c2a: .byte $fe
-c32: .byte $fe
+c02: .byte $fc
+c0a: .byte $fc
+c12: .byte $fc
+c1a: .byte $fc
+c22: .byte $fc
+c2a: .byte $fc
+c32: .byte $fc
 c3a: .byte $50
      .byte $52, $54, $56, $56, $56, $56, $56
 // Height 1
-c01: .byte $fe
-c09: .byte $fe
-c11: .byte $fe
-c19: .byte $fe
-c21: .byte $fe
-c29: .byte $fe
-c31: .byte $fe
+c01: .byte $fc
+c09: .byte $fc
+c11: .byte $fc
+c19: .byte $fc
+c21: .byte $fc
+c29: .byte $fc
+c31: .byte $fc
 c39: .byte $60
      .byte $62, $64, $66, $66, $66, $66, $66
 // Height 0 (tallest - all 8 rows visible)
-c00: .byte $fe
-c08: .byte $fe
-c10: .byte $fe
-c18: .byte $fe
-c20: .byte $fe
-c28: .byte $fe
-c30: .byte $fe
+c00: .byte $fc
+c08: .byte $fc
+c10: .byte $fc
+c18: .byte $fc
+c20: .byte $fc
+c28: .byte $fc
+c30: .byte $fc
 c38: .byte $70
      .byte $72, $74, $76, $76, $76, $76, $76
 
