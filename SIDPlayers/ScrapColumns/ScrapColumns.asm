@@ -159,18 +159,16 @@ Initialize:
 
     jsr SetupMusic
 
-    // Set up raster IRQ at line 250 (bottom border opening)
+    lda #$01
+    sta $d01a
+
     lda #250
     sta $d012
-
     lda #<MainIRQ
     sta $fffe
     lda #>MainIRQ
     sta $ffff
-
-    lda #$01
-    sta $d01a
-    sta $d019
+    dec $d019
 
     jsr VSync
 
@@ -306,9 +304,17 @@ MainIRQ:
     sta VIC_BANK_ADDRESS + $3FFF
 
     // Open bottom border: switch to 24-row mode (RSEL=0)
-    // IRQ fires at line 250, between the RSEL=0 check at 247 and RSEL=1 check at 251
     lda #$13
     sta $d011
+
+    lda #0
+    sta $d012
+    lda #<TopBorderIRQ
+    sta $fffe
+    lda #>TopBorderIRQ
+    sta $ffff
+    dec $d019
+    cli
 
     lda FastForwardActive
     beq !normalPlay+
@@ -338,22 +344,6 @@ MainIRQ:
     jsr UpdateBarsAllVoices
 
 !done:
-    // Restore 25-row mode (RSEL=1) so border trick works next frame
-    lda #$1b
-    sta $d011
-
-    // Set up TopBorderIRQ at rasterline 0
-    lda #0
-    sta $d012
-
-    lda #<TopBorderIRQ
-    sta $fffe
-    lda #>TopBorderIRQ
-    sta $ffff
-
-    lda #$01
-    sta $d019
-
     pla
     sta $01
     pla
@@ -371,22 +361,29 @@ MainIRQ:
 TopBorderIRQ:
     pha
 
+    lda $01
+    pha
+    lda #$35
+    sta $01
+
     // Set ghost byte for top border area (fully black)
     lda #$ff
     sta VIC_BANK_ADDRESS + $3FFF
 
-    // Set up MainIRQ at rasterline 250
+    // Restore 25-row mode (RSEL=1) so border trick works next frame
+    lda #$1b
+    sta $d011
+
     lda #250
     sta $d012
-
     lda #<MainIRQ
     sta $fffe
     lda #>MainIRQ
     sta $ffff
+    dec $d019
 
-    lda #$01
-    sta $d019
-
+    pla
+    sta $01
     pla
     rti
 
