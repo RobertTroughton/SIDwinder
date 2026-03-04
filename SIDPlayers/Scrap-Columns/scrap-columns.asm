@@ -1,5 +1,6 @@
 
-.var music = LoadSid ("/Users/olima/C64_Resources/Human_Race.sid")
+// NOTE: Update this path to point to a local SID file for standalone testing
+.var music = LoadSid ("Human_Race.sid")
 * = music.location "Music"
 .fill music.size, music.getData (i)
 

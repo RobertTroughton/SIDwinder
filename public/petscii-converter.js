@@ -99,17 +99,6 @@ class PETSCIIConverter {
     }
 
     /**
-     * Get the 8-byte bitmap pattern for a character from a charset
-     * @param {Uint8Array} charset - The charset data (2048 bytes)
-     * @param {number} charIndex - Character index (0-255)
-     * @returns {Uint8Array} - 8 bytes of character bitmap data
-     */
-    getCharBitmap(charset, charIndex) {
-        const offset = (charIndex & 0xFF) * 8;
-        return charset.slice(offset, offset + 8);
-    }
-
-    /**
      * Calculate the squared color distance between two RGB colors
      */
     colorDistanceSq(r1, g1, b1, r2, g2, b2) {
@@ -134,17 +123,24 @@ class PETSCIIConverter {
         const startX = cellX * this.CELL_WIDTH;
         const startY = cellY * this.CELL_HEIGHT;
 
-        // Pre-extract the 8x8 pixel RGB values from the source image
-        const cellPixels = new Array(64);
+        // Pre-extract the 8x8 pixel RGB values into flat typed arrays
+        const cellR = new Uint8Array(64);
+        const cellG = new Uint8Array(64);
+        const cellB = new Uint8Array(64);
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const px = startX + col;
                 const py = startY + row;
+                const i = row * 8 + col;
                 if (px < width && py < imageData.height) {
                     const idx = (py * width + px) * 4;
-                    cellPixels[row * 8 + col] = [data[idx], data[idx + 1], data[idx + 2]];
+                    cellR[i] = data[idx];
+                    cellG[i] = data[idx + 1];
+                    cellB[i] = data[idx + 2];
                 } else {
-                    cellPixels[row * 8 + col] = [bgColor[0], bgColor[1], bgColor[2]];
+                    cellR[i] = bgColor[0];
+                    cellG[i] = bgColor[1];
+                    cellB[i] = bgColor[2];
                 }
             }
         }
@@ -155,12 +151,12 @@ class PETSCIIConverter {
 
         // Try all 256 characters
         for (let ch = 0; ch < 256; ch++) {
-            const charBitmap = this.getCharBitmap(charset, ch);
+            const charOffset = (ch & 0xFF) * 8;
 
             // Count set and clear pixels for early optimization
             let setBits = 0;
             for (let b = 0; b < 8; b++) {
-                let byte = charBitmap[b];
+                let byte = charset[charOffset + b];
                 while (byte) { setBits += byte & 1; byte >>= 1; }
             }
 
@@ -168,8 +164,7 @@ class PETSCIIConverter {
                 // All pixels are background - only one option, check it
                 let error = 0;
                 for (let i = 0; i < 64; i++) {
-                    const [sr, sg, sb] = cellPixels[i];
-                    error += this.colorDistanceSq(sr, sg, sb, bgColor[0], bgColor[1], bgColor[2]);
+                    error += this.colorDistanceSq(cellR[i], cellG[i], cellB[i], bgColor[0], bgColor[1], bgColor[2]);
                 }
                 if (error < bestError) {
                     bestError = error;
@@ -188,15 +183,15 @@ class PETSCIIConverter {
                 let error = 0;
 
                 for (let row = 0; row < 8; row++) {
-                    let bits = charBitmap[row];
+                    let bits = charset[charOffset + row];
                     for (let col = 0; col < 8; col++) {
-                        const pixel = cellPixels[row * 8 + col];
+                        const pi = row * 8 + col;
                         const isSet = (bits & 0x80) !== 0;
                         bits <<= 1;
 
                         const dispColor = isSet ? fgColor : bgColor;
                         error += this.colorDistanceSq(
-                            pixel[0], pixel[1], pixel[2],
+                            cellR[pi], cellG[pi], cellB[pi],
                             dispColor[0], dispColor[1], dispColor[2]
                         );
 
