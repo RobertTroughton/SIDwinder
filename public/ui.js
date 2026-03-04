@@ -1268,7 +1268,7 @@ class UIController {
                      title="${v.label}">
                     <img src="${imagePath}"
                          alt="Style ${v.value}"
-                         onerror="this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
+                         onerror="this.onerror=null;this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
                     <span class="selected-check">✓</span>
                     <span class="style-name">${displayLabel}</span>
                 </div>
