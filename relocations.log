@@ -1,0 +1,7 @@
+--------------- 
+Relocating SIDs 
+--------------- 
+ 
+SUCCESS: "SID/dane-elderscrollers.sid" SID file relocated OK with matching before/after trace outputs
+Error: No input file specified for relocate command
+SUCCESS: "SID/larshoff-recovery.sid" SID file relocated OK with matching before/after trace outputs
