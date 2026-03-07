@@ -1,12 +1,12 @@
 /* Genesis Project Common Header Styles */
-/* This file can be shared across all Genesis Project sites */
+/* Unified with SIDquake dark theme */
 
 .genesis-header {
-	background-color: #1a1a1a;
-	border-bottom: 2px solid #404040;
+	background-color: var(--bg-primary, #0f1117);
+	border-bottom: 1px solid var(--border, #2a2d42);
 	padding: 0;
 	margin: 0;
-	font-family: -apple-system, system-ui, sans-serif;
+	font-family: var(--font-sans, -apple-system, system-ui, sans-serif);
 	position: relative;
 	z-index: 1000;
 	display: flex;
@@ -21,7 +21,7 @@
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
-	padding: 0.5rem 2rem;
+	padding: 0.4rem 2rem;
 	box-sizing: border-box;
 }
 
@@ -32,8 +32,8 @@
 }
 
 .genesis-nav-label {
-	color: #606060;
-	font-size: 0.7rem;
+	color: var(--text-muted, #636980);
+	font-size: 0.65rem;
 	text-transform: uppercase;
 	letter-spacing: 0.15em;
 	margin-right: -1rem;
@@ -42,64 +42,65 @@
 
 .genesis-nav-links {
 	display: flex;
-	gap: 1.25rem;
+	gap: 0.5rem;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-	.genesis-nav-links li {
-		margin: 0;
-	}
+.genesis-nav-links li {
+	margin: 0;
+}
 
-/* More specific selectors to override global styles */
+/* Links */
 .genesis-header .genesis-nav-links a[href],
 .genesis-header .genesis-nav-links a[href]:link,
 .genesis-header .genesis-nav-links a[href]:visited {
-	color: #b0b0b0;
+	color: var(--text-muted, #636980);
 	text-decoration: none;
 	font-weight: 500;
-	font-size: 0.85rem;
+	font-size: 0.8rem;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	transition: all 0.2s ease;
+	transition: all 0.15s ease;
 	padding: 0.25rem 0.5rem;
-	border-radius: 2px;
+	border-radius: var(--radius-sm, 6px);
 	display: block;
 	position: relative;
 }
 
-	.genesis-header .genesis-nav-links a[href]:hover,
-	.genesis-header .genesis-nav-links a[href]:active {
-		color: #e0e0e0;
-		background-color: #2a2a2a;
-	}
+.genesis-header .genesis-nav-links a[href]:hover,
+.genesis-header .genesis-nav-links a[href]:active {
+	color: var(--text-primary, #e8eaed);
+	background-color: var(--bg-elevated, #242738);
+}
 
-	.genesis-header .genesis-nav-links a[href].active,
-	.genesis-header .genesis-nav-links a[href].active:link,
-	.genesis-header .genesis-nav-links a[href].active:visited,
-	.genesis-header .genesis-nav-links a[href].active:hover {
-		color: #ffffff;
-		background-color: #303030;
-	}
+.genesis-header .genesis-nav-links a[href].active,
+.genesis-header .genesis-nav-links a[href].active:link,
+.genesis-header .genesis-nav-links a[href].active:visited,
+.genesis-header .genesis-nav-links a[href].active:hover {
+	color: var(--accent-light, #8ba4ff);
+	background-color: var(--bg-surface, #1c1f2e);
+}
 
 .genesis-nav-links a.active::after {
 	content: '';
 	position: absolute;
-	bottom: -8px;
+	bottom: -6px;
 	left: 50%;
 	transform: translateX(-50%);
 	width: 30%;
 	height: 2px;
-	background-color: #606060;
+	background-color: var(--accent, #6c8cff);
+	border-radius: 1px;
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
 	.genesis-header-inner {
 		flex-direction: column;
-		padding: 0.75rem 1rem;
-		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		gap: 0.4rem;
 	}
 
 	.genesis-nav {
@@ -110,11 +111,11 @@
 
 	.genesis-nav-label {
 		margin-right: 0;
-		margin-bottom: 0.25rem;
+		margin-bottom: 0.2rem;
 	}
 
 	.genesis-nav-links {
-		gap: 0.5rem;
+		gap: 0.35rem;
 		flex-wrap: wrap;
 		justify-content: center;
 	}
@@ -122,8 +123,8 @@
 	.genesis-header .genesis-nav-links a[href],
 	.genesis-header .genesis-nav-links a[href]:link,
 	.genesis-header .genesis-nav-links a[href]:visited {
-		font-size: 0.8rem;
-		padding: 0.35rem 0.6rem;
+		font-size: 0.75rem;
+		padding: 0.3rem 0.5rem;
 	}
 
 	.genesis-nav-links a.active::after {
@@ -142,6 +143,6 @@
 	.genesis-header .genesis-nav-links a[href]:visited {
 		flex: 1;
 		text-align: center;
-		min-width: 80px;
+		min-width: 70px;
 	}
 }
