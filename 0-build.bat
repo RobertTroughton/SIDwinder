@@ -42,23 +42,8 @@ echo.
 echo SID Players built successfully.
 echo.
 
-REM --- Step 3: WASM Build (optional, with 15-second timeout) ---
-echo [3/3] WASM Build
-echo.
-echo Rebuild WASM modules? This is slow and only needed if you changed
-echo files in the wasm/ directory (cpu6510_wasm.cpp, sid_processor.cpp, etc.)
-echo.
-
-choice /C YN /T 15 /D Y /M "Rebuild WASM? (auto-YES in 15 seconds)"
-
-if errorlevel 2 (
-    echo.
-    echo Skipping WASM build.
-    goto :done
-)
-
-echo.
-echo Building WASM modules...
+REM --- Step 3: WASM Build ---
+echo [3/3] Building WASM modules...
 echo.
 
 REM Set up Emscripten environment

@@ -19,8 +19,8 @@ See ARCHITECTURE.md for detailed component documentation.
 
 Run `0-build.bat` (Windows). It does three things:
 1. Generates frequency lookup table (FreqTableGen.py)
-2. Builds SID player .bin files from KickAss assembly (fast)
-3. Optionally rebuilds WASM modules via Emscripten (slow, 15s auto-yes prompt)
+2. Builds SID player .bin files from KickAss assembly
+3. Rebuilds WASM modules via Emscripten
 
 ### Prerequisites
 - Java (for KickAss.jar assembler)
