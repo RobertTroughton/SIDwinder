@@ -6,8 +6,13 @@ echo SIDwinder Build Script
 echo ========================================
 echo.
 
-REM --- Step 1: Build SID Players for Web ---
-echo [1/2] Building SID Players for Web...
+REM --- Step 1: Generate Frequency Table ---
+echo [1/3] Generating Frequency Table...
+python.exe FreqTableGen.py || goto :error
+echo.
+
+REM --- Step 2: Build SID Players for Web ---
+echo [2/3] Building SID Players for Web...
 echo.
 
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-4000.bin || goto :error
@@ -37,8 +42,8 @@ echo.
 echo SID Players built successfully.
 echo.
 
-REM --- Step 2: WASM Build (optional, with 15-second timeout) ---
-echo [2/2] WASM Build
+REM --- Step 3: WASM Build (optional, with 15-second timeout) ---
+echo [3/3] WASM Build
 echo.
 echo Rebuild WASM modules? This is slow and only needed if you changed
 echo files in the wasm/ directory (cpu6510_wasm.cpp, sid_processor.cpp, etc.)

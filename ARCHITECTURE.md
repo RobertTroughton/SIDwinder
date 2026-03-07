@@ -145,7 +145,7 @@ JavaScript port of TSCrunch 1.3.1:
 - `.png` preview image
 - Gallery JSON files referencing assets in `public/PNG/`
 
-Built from KickAss assembly in `SIDPlayers/` via `build.bat`.
+Built from KickAss assembly in `SIDPlayers/` via `0-build.bat`.
 
 ### C64 Assembly Players (`SIDPlayers/`)
 
@@ -153,7 +153,7 @@ KickAss assembly source for each visualizer type:
 - Main file (e.g., `RaistlinBars.asm`)
 - Shared includes in `INC/`: Common.asm, Spectrometer.asm, MusicPlayback.asm, Keyboard.asm, StableRasterSetup.asm, BarStyles.asm
 - Binary data: FreqTable.bin, SoundbarSine.bin, character sets
-- Compiled by `build.bat` using KickAss.jar
+- Compiled by `0-build.bat` using KickAss.jar
 
 ## Data Flow
 

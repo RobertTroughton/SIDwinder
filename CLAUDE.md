@@ -17,18 +17,20 @@ See ARCHITECTURE.md for detailed component documentation.
 
 ## Build
 
-Run `build.bat` (Windows). It does two things:
-1. Builds SID player .bin files from KickAss assembly (fast)
-2. Optionally rebuilds WASM modules via Emscripten (slow, 15s auto-yes prompt)
+Run `0-build.bat` (Windows). It does three things:
+1. Generates frequency lookup table (FreqTableGen.py)
+2. Builds SID player .bin files from KickAss assembly (fast)
+3. Optionally rebuilds WASM modules via Emscripten (slow, 15s auto-yes prompt)
 
 ### Prerequisites
 - Java (for KickAss.jar assembler)
-- Emscripten SDK (only if rebuilding WASM - set EMSDK_PATH in build.bat)
+- Python 3 (for FreqTableGen.py)
+- Emscripten SDK (only if rebuilding WASM - set EMSDK_PATH in 0-build.bat)
 - Node.js (for dev dependencies only)
 
 ### Local dev server
 ```
-0-runserver.bat          # or: python -m http.server 8000 -d public
+1-runserver.bat          # or: python -m http.server 8000 -d public
 npx serve public         # alternative
 ```
 
@@ -61,13 +63,13 @@ KickAss assembly files in `SIDPlayers/`. Pre-compiled to `.bin` at three load ad
 
 ### Adding a new visualizer
 1. Create assembly in `SIDPlayers/NewName/`
-2. Add KickAss build lines to `build.bat` for each load address
+2. Add KickAss build lines to `0-build.bat` for each load address
 3. Add entry to `public/visualizer-registry.js`
 4. Create config JSON + preview PNG in `public/prg/NewName/`
 
 ### Modifying WASM emulation
 1. Edit C++ in `wasm/` (cpu6510_wasm.cpp, sid_processor.cpp, or png_converter.cpp)
-2. Run `build.bat` and answer Y to WASM rebuild
+2. Run `0-build.bat` and answer Y to WASM rebuild
 3. New .wasm + .js files land in `public/`
 
 ### Modifying the web UI
