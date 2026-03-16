@@ -2877,7 +2877,7 @@ body {
     font-size: 0.7em;
     color: var(--text-secondary);
     font-family: var(--font-mono);
-    min-width: 28px;
+    width: 5ch;
     text-align: center;
 }
 
@@ -2891,7 +2891,7 @@ body {
     font-size: 0.7em;
     color: var(--text-muted);
     font-family: var(--font-mono);
-    min-width: 32px;
+    width: 5ch;
     text-align: right;
     margin-left: 2px;
     padding-left: var(--space-xs);

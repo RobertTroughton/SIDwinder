@@ -29,12 +29,12 @@ class SIDPlayer {
                 <button class="sid-player-btn sid-player-restart" title="Restart" disabled>
                     <i class="fas fa-undo"></i>
                 </button>
-                <div class="sid-player-subtune" style="display:none;">
-                    <button class="sid-player-btn sid-player-prev" title="Previous subtune">
+                <div class="sid-player-subtune">
+                    <button class="sid-player-btn sid-player-prev" title="Previous subtune" disabled>
                         <i class="fas fa-step-backward"></i>
                     </button>
                     <span class="sid-player-subtune-display">1/1</span>
-                    <button class="sid-player-btn sid-player-next" title="Next subtune">
+                    <button class="sid-player-btn sid-player-next" title="Next subtune" disabled>
                         <i class="fas fa-step-forward"></i>
                     </button>
                 </div>
@@ -145,12 +145,7 @@ class SIDPlayer {
         this.els.stopBtn.disabled = false;
         this.els.restartBtn.disabled = false;
 
-        if (this.totalSubtunes > 1) {
-            this.els.subtuneContainer.style.display = 'flex';
-            this.updateSubtuneDisplay();
-        } else {
-            this.els.subtuneContainer.style.display = 'none';
-        }
+        this.updateSubtuneDisplay();
 
         // Auto-set SID model based on file preference
         const prefModel = player.getSIDModel();
@@ -260,10 +255,14 @@ class SIDPlayer {
     reset() {
         this.cleanup();
         this.loaded = false;
+        this.totalSubtunes = 1;
+        this.currentSubtune = 0;
         this.els.playBtn.disabled = true;
         this.els.stopBtn.disabled = true;
         this.els.restartBtn.disabled = true;
-        this.els.subtuneContainer.style.display = 'none';
+        this.els.prevBtn.disabled = true;
+        this.els.nextBtn.disabled = true;
+        this.els.subtuneDisplay.textContent = '1/1';
         this.els.time.textContent = '0:00';
     }
 }
