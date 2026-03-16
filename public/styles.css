@@ -2908,12 +2908,17 @@ body {
     font-size: 0.65em;
     font-family: var(--font-mono);
     color: var(--text-secondary);
-    background: transparent;
+    background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 2px 4px;
     cursor: pointer;
     outline: none;
+}
+
+.sid-player-quality-select option {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
 }
 
 .sid-player-quality-select:hover {

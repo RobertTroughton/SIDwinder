@@ -77,6 +77,10 @@ class SIDPlayer {
             sessionStorage.setItem('sidSamplingMethod', method);
             const player = getSharedSIDPlayback();
             player.setSamplingMethod(method);
+            // Sync all other quality selects on the page
+            document.querySelectorAll('.sid-player-quality-select').forEach(sel => {
+                if (sel !== this.els.qualitySelect) sel.value = method;
+            });
         });
     }
 
