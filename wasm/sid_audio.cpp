@@ -785,7 +785,7 @@ int audio_load_sid(const uint8_t* data, int length) {
     for (int i = 0; i < S.sidCount; i++) {
         S.sid[i].reset();
         S.sid[i].set_chip_model(model);
-        S.sid[i].set_sampling_parameters(S.clockFreq, reSID::SAMPLE_FAST, S.sampleRate);
+        S.sid[i].set_sampling_parameters(S.clockFreq, reSID::SAMPLE_INTERPOLATE, S.sampleRate);
     }
 
     // Handle per-chip model if different (v2+ flags)

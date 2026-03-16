@@ -39,6 +39,13 @@ class SIDPlayer {
                     </button>
                 </div>
                 <div class="sid-player-time">0:00</div>
+                <div class="sid-player-quality">
+                    <select class="sid-player-quality-select" title="Sampling quality">
+                        <option value="0">Fast</option>
+                        <option value="1">Interpolate</option>
+                        <option value="2">Resample</option>
+                    </select>
+                </div>
             </div>
             <div class="sid-player-credit">Playback by <a href="https://github.com/libsidplayfp/resid" target="_blank" rel="noopener">reSID</a></div>
         `;
@@ -52,6 +59,7 @@ class SIDPlayer {
             subtuneContainer: this.container.querySelector('.sid-player-subtune'),
             subtuneDisplay: this.container.querySelector('.sid-player-subtune-display'),
             time: this.container.querySelector('.sid-player-time'),
+            qualitySelect: this.container.querySelector('.sid-player-quality-select'),
         };
 
         this.els.playBtn.addEventListener('click', () => this.togglePlay());
@@ -59,6 +67,17 @@ class SIDPlayer {
         this.els.restartBtn.addEventListener('click', () => this.restart());
         this.els.prevBtn.addEventListener('click', () => this.prevSubtune());
         this.els.nextBtn.addEventListener('click', () => this.nextSubtune());
+
+        // Restore sampling quality from session
+        const savedQuality = sessionStorage.getItem('sidSamplingMethod');
+        this.els.qualitySelect.value = savedQuality !== null ? savedQuality : '1';
+
+        this.els.qualitySelect.addEventListener('change', () => {
+            const method = parseInt(this.els.qualitySelect.value, 10);
+            sessionStorage.setItem('sidSamplingMethod', method);
+            const player = getSharedSIDPlayback();
+            player.setSamplingMethod(method);
+        });
     }
 
     takeOwnership() {
@@ -133,6 +152,12 @@ class SIDPlayer {
         const prefModel = player.getSIDModel();
         if (prefModel) {
             player.setModel(prefModel);
+        }
+
+        // Apply saved sampling quality
+        const savedQuality = sessionStorage.getItem('sidSamplingMethod');
+        if (savedQuality !== null) {
+            player.setSamplingMethod(parseInt(savedQuality, 10));
         }
     }
 

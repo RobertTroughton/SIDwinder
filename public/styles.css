@@ -2898,6 +2898,33 @@ body {
     border-left: 1px solid var(--border);
 }
 
+.sid-player-quality {
+    margin-left: 2px;
+    padding-left: var(--space-xs);
+    border-left: 1px solid var(--border);
+}
+
+.sid-player-quality-select {
+    font-size: 0.65em;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    outline: none;
+}
+
+.sid-player-quality-select:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.sid-player-quality-select:focus {
+    border-color: var(--accent);
+}
+
 .sid-player-credit {
     font-size: 0.75em;
     color: var(--text-muted);
