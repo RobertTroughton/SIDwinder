@@ -1,26 +1,19 @@
 // sid-player.js - SID Playback Component
-// Wraps jsSID (by Hermit) to provide playback UI for SIDquake
-// Uses a shared jsSID instance to avoid multiple AudioContexts
+// Wraps reSID (via WASM) to provide playback UI for SIDwinder
+// Uses a shared SIDPlayback instance to avoid multiple AudioContexts
 
-var _sharedJsSID = null;
 var _activeSIDPlayerInstance = null;
-
-function getSharedJsSID() {
-    if (!_sharedJsSID) {
-        _sharedJsSID = new jsSID(4096, 0.0005);
-    }
-    return _sharedJsSID;
-}
 
 class SIDPlayer {
     constructor(containerEl) {
         this.container = containerEl;
         this.isPlaying = false;
-        this.currentBlobUrl = null;
         this.currentSubtune = 0;
         this.totalSubtunes = 1;
         this.playTimeInterval = null;
         this.loaded = false;
+        this._pendingData = null;
+        this._pendingUrl = null;
         this.buildUI();
     }
 
@@ -47,7 +40,7 @@ class SIDPlayer {
                 </div>
                 <div class="sid-player-time">0:00</div>
             </div>
-            <div class="sid-player-credit">Playback by <a href="https://hermit.sidrip.com" target="_blank" rel="noopener">jsSID</a> by Hermit</div>
+            <div class="sid-player-credit">Playback by <a href="https://github.com/libsidplayfp/resid" target="_blank" rel="noopener">reSID</a></div>
         `;
 
         this.els = {
@@ -77,55 +70,51 @@ class SIDPlayer {
     }
 
     onLostOwnership() {
-        // Another player took over the shared jsSID instance
+        // Another player took over the shared playback instance
         this.isPlaying = false;
         this.els.playBtn.innerHTML = '<i class="fas fa-play"></i>';
         this.els.playBtn.title = 'Play';
         this.stopTimeUpdate();
     }
 
-    loadFromBinary(data, filename) {
+    async loadFromBinary(data, filename) {
         this.stop();
         this.takeOwnership();
 
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-        }
+        const player = getSharedSIDPlayback();
 
-        const player = getSharedJsSID();
-        const blob = new Blob([data], { type: 'application/octet-stream' });
-        this.currentBlobUrl = URL.createObjectURL(blob);
-
-        player.setloadcallback(() => {
+        player.setLoadCallback(() => {
             this.onLoaded(filename);
         });
 
-        player.loadinit(this.currentBlobUrl, 0);
+        try {
+            await player.loadFromArrayBuffer(data.buffer || data);
+        } catch (e) {
+            console.error('SIDPlayer: Failed to load SID data:', e);
+        }
     }
 
-    loadFromUrl(url, filename) {
+    async loadFromUrl(url, filename) {
         this.stop();
         this.takeOwnership();
 
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-            this.currentBlobUrl = null;
-        }
+        const player = getSharedSIDPlayback();
 
-        const player = getSharedJsSID();
-
-        player.setloadcallback(() => {
+        player.setLoadCallback(() => {
             this.onLoaded(filename);
         });
 
-        player.loadinit(url, 0);
+        try {
+            await player.loadFromUrl(url);
+        } catch (e) {
+            console.error('SIDPlayer: Failed to load SID URL:', e);
+        }
     }
 
     onLoaded(filename) {
-        const player = getSharedJsSID();
-        this.totalSubtunes = player.getsubtunes() || 1;
-        // Use the SID file's default start song (1-based in header, convert to 0-based)
-        const startSong = player.getstartsong();
+        const player = getSharedSIDPlayback();
+        this.totalSubtunes = player.getSubtuneCount() || 1;
+        const startSong = player.getStartSong();
         this.currentSubtune = Math.max(0, Math.min(startSong - 1, this.totalSubtunes - 1));
         this.loaded = true;
 
@@ -141,11 +130,10 @@ class SIDPlayer {
         }
 
         // Auto-set SID model based on file preference
-        const prefModel = player.getprefmodel();
+        const prefModel = player.getSIDModel();
         if (prefModel) {
-            player.setmodel(prefModel);
+            player.setModel(prefModel);
         }
-
     }
 
     togglePlay() {
@@ -159,13 +147,10 @@ class SIDPlayer {
     play() {
         if (!this.loaded) return;
         this.takeOwnership();
-        const player = getSharedJsSID();
-        // initsubtune resets emulation and activates a mute period inside jsSID
-        // that outputs silence for two buffer cycles, preventing any stale audio
-        // from the previous tune leaking through the ScriptProcessorNode pipeline.
+        const player = getSharedSIDPlayback();
         player.pause();
-        player.initsubtune(this.currentSubtune);
-        player.playcont();
+        player.setSubtune(this.currentSubtune);
+        player.play();
         this.isPlaying = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.els.playBtn.title = 'Pause';
@@ -173,7 +158,7 @@ class SIDPlayer {
     }
 
     pause() {
-        const player = getSharedJsSID();
+        const player = getSharedSIDPlayback();
         player.pause();
         this.isPlaying = false;
         this.els.playBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -182,8 +167,8 @@ class SIDPlayer {
     }
 
     stop() {
-        if (_activeSIDPlayerInstance === this && _sharedJsSID) {
-            _sharedJsSID.stop();
+        if (_activeSIDPlayerInstance === this && _sharedSIDPlayback) {
+            _sharedSIDPlayback.stop();
         }
         this.isPlaying = false;
         this.els.playBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -223,8 +208,8 @@ class SIDPlayer {
         this.stopTimeUpdate();
         this.playTimeInterval = setInterval(() => {
             if (this.isPlaying) {
-                const player = getSharedJsSID();
-                const seconds = player.getplaytime();
+                const player = getSharedSIDPlayback();
+                const seconds = player.getPlayTime();
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
                 this.els.time.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -241,10 +226,6 @@ class SIDPlayer {
 
     cleanup() {
         this.stop();
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-            this.currentBlobUrl = null;
-        }
     }
 
     reset() {
