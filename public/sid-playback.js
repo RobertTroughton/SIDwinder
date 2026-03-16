@@ -83,12 +83,6 @@ class SIDPlayback {
             audio_get_sid_count:     cwrap('audio_get_sid_count', 'number', []),
             audio_get_play_time:     cwrap('audio_get_play_time', 'number', []),
             audio_get_is_ntsc:       cwrap('audio_get_is_ntsc', 'number', []),
-            audio_get_play_address:  cwrap('audio_get_play_address', 'number', []),
-            audio_get_volume:        cwrap('audio_get_volume', 'number', []),
-            audio_read_memory:       cwrap('audio_read_memory', 'number', ['number']),
-            audio_get_dbg_sid_writes: cwrap('audio_get_dbg_sid_writes', 'number', []),
-            audio_get_dbg_play_pc:   cwrap('audio_get_dbg_play_pc', 'number', []),
-            audio_get_dbg_play_sp:   cwrap('audio_get_dbg_play_sp', 'number', []),
             audio_cleanup:           cwrap('audio_cleanup', null, []),
         };
     }
@@ -122,22 +116,6 @@ class SIDPlayback {
                 output[i] = 0;
             }
         }
-
-        // Debug: log first few callbacks and then periodically
-        if (!this._debugCount) this._debugCount = 0;
-        this._debugCount++;
-        if (this._debugCount <= 5 || this._debugCount % 100 === 0) {
-            let maxAbs = 0;
-            for (let i = 0; i < generated; i++) {
-                const v = Math.abs(int16View[i]);
-                if (v > maxAbs) maxAbs = v;
-            }
-            const sidWrites = this.api.audio_get_dbg_sid_writes();
-            const pc = this.api.audio_get_dbg_play_pc();
-            const sp = this.api.audio_get_dbg_play_sp();
-            const vol = this.api.audio_get_volume();
-            console.log(`[SIDPlayback] cb#${this._debugCount}: maxSample=${maxAbs}, sidWrites=${sidWrites}, vol=${vol}, PC=$${pc.toString(16).padStart(4,'0')}, SP=$${sp.toString(16).padStart(2,'0')}`);
-        }
     }
 
     async loadFromArrayBuffer(arrayBuffer) {
@@ -168,9 +146,6 @@ class SIDPlayback {
         this._isNTSC = this.api.audio_get_is_ntsc() !== 0;
 
         this.loaded = true;
-        this._debugCount = 0;  // Reset debug for new SID
-
-        console.log(`[SIDPlayback] SID loaded: "${this._title}" by ${this._author}, subtunes=${this._subtunes}, startSong=${this._startSong}, model=${this._sidModel}, chips=${this._sidCount}`);
 
         if (this._loadCallback) {
             this._loadCallback();
@@ -187,17 +162,10 @@ class SIDPlayback {
     setSubtune(subtune) {
         if (!this.loaded) return;
         this.api.audio_set_subtune(subtune);
-        const playAddr = this.api.audio_get_play_address();
-        const vol = this.api.audio_get_volume();
-        console.log(`[SIDPlayback] setSubtune(${subtune}): playAddr=$${playAddr.toString(16).padStart(4,'0')}, volume=${vol}`);
-        this._debugCount = 0;  // Re-log callbacks after subtune change
     }
 
     play() {
-        if (!this.loaded) {
-            console.warn('[SIDPlayback] play() called but not loaded');
-            return;
-        }
+        if (!this.loaded) return;
 
         // Resume audio context if suspended (browser autoplay policy)
         if (this.audioCtx.state === 'suspended') {
@@ -205,8 +173,16 @@ class SIDPlayback {
         }
 
         this.playing = true;
+
+        // Fade in from silence to mask stale audio in ScriptProcessorNode's
+        // internal buffer queue (pre-filled with old song data before the
+        // WASM engine was reset). ~150ms covers two buffer lengths at 4096/48kHz.
+        const now = this.audioCtx.currentTime;
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(0, now);
+        this.gainNode.gain.linearRampToValueAtTime(this.volume, now + 0.15);
+
         this.gainNode.connect(this.audioCtx.destination);
-        console.log(`[SIDPlayback] play() - audioCtx.state=${this.audioCtx.state}, playing=${this.playing}`);
     }
 
     pause() {
@@ -229,7 +205,8 @@ class SIDPlayback {
     setVolume(vol) {
         this.volume = vol;
         if (this.gainNode) {
-            this.gainNode.gain.value = vol;
+            this.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
+            this.gainNode.gain.setValueAtTime(vol, this.audioCtx.currentTime);
         }
     }
 
