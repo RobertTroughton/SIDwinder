@@ -160,16 +160,16 @@ class SIDPlayer {
         if (!this.loaded) return;
         this.takeOwnership();
         const player = getSharedJsSID();
-        // Disconnect first so the stale ScriptProcessorNode buffer plays to nowhere.
-        // Then reinit the emulation (without connecting — using initsubtune instead
-        // of start, which would reconnect immediately). Wait one buffer cycle
-        // (~4096 samples at 44.1kHz = 93ms) for onaudioprocess to fill a fresh
-        // buffer, then connect to hear clean audio from the new tune.
-        try { player.pause(); } catch(e) { /* may not be connected */ }
+        // Disconnect first so any stale ScriptProcessorNode buffer drains to nowhere.
+        // Reinit emulation without connecting (initsubtune vs start which reconnects
+        // immediately). Wait for two buffer cycles (~4096 samples each at 44.1kHz =
+        // ~186ms) to ensure double-buffered pipeline is fully flushed with fresh
+        // audio, then connect.
+        player.pause();
         player.initsubtune(this.currentSubtune);
         setTimeout(() => {
             player.playcont();
-        }, 120);
+        }, 220);
         this.isPlaying = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.els.playBtn.title = 'Pause';
