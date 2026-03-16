@@ -144,10 +144,6 @@ class SIDPlayer {
             player.setmodel(prefModel);
         }
 
-        // Pre-initialize emulation so the ScriptProcessorNode starts generating
-        // fresh audio immediately (while still disconnected from output).
-        // This flushes stale buffers from any previously-loaded tune.
-        player.start(0);
     }
 
     togglePlay() {
