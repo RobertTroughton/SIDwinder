@@ -86,6 +86,9 @@ class SIDPlayback {
             audio_get_play_address:  cwrap('audio_get_play_address', 'number', []),
             audio_get_volume:        cwrap('audio_get_volume', 'number', []),
             audio_read_memory:       cwrap('audio_read_memory', 'number', ['number']),
+            audio_get_dbg_sid_writes: cwrap('audio_get_dbg_sid_writes', 'number', []),
+            audio_get_dbg_play_pc:   cwrap('audio_get_dbg_play_pc', 'number', []),
+            audio_get_dbg_play_sp:   cwrap('audio_get_dbg_play_sp', 'number', []),
             audio_cleanup:           cwrap('audio_cleanup', null, []),
         };
     }
@@ -129,7 +132,11 @@ class SIDPlayback {
                 const v = Math.abs(int16View[i]);
                 if (v > maxAbs) maxAbs = v;
             }
-            console.log(`[SIDPlayback] cb#${this._debugCount}: generated=${generated}/${numSamples}, maxSample=${maxAbs}`);
+            const sidWrites = this.api.audio_get_dbg_sid_writes();
+            const pc = this.api.audio_get_dbg_play_pc();
+            const sp = this.api.audio_get_dbg_play_sp();
+            const vol = this.api.audio_get_volume();
+            console.log(`[SIDPlayback] cb#${this._debugCount}: maxSample=${maxAbs}, sidWrites=${sidWrites}, vol=${vol}, PC=$${pc.toString(16).padStart(4,'0')}, SP=$${sp.toString(16).padStart(2,'0')}`);
         }
     }
 

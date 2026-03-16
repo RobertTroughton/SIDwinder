@@ -29,6 +29,11 @@ static const int MAX_SID_CHIPS = 3;
 #define FLAG_V 0x40
 #define FLAG_N 0x80
 
+// ---- Debug counters ----
+static int dbg_sid_writes = 0;    // SID register writes per play call
+static int dbg_play_cycles = 0;   // CPU cycles used by play routine
+static uint16_t dbg_last_write_addr = 0;
+
 // ---- Playback state ----
 static struct {
     // 6510 CPU registers
@@ -92,6 +97,8 @@ static inline void mem_write(uint16_t addr, uint8_t val) {
     // Primary SID at $D400
     if (addr >= 0xD400 && addr <= 0xD41F) {
         S.sid[0].write(addr & 0x1F, val);
+        dbg_sid_writes++;
+        dbg_last_write_addr = addr;
         return;
     }
     // Multi-SID chips
@@ -854,7 +861,11 @@ int audio_generate(int16_t* buffer, int numSamples) {
         // If we've exhausted the current frame, call the play routine
         if (S.remainingCycles <= 0) {
             if (S.playAddress == 0) break;  // No play routine
+            dbg_sid_writes = 0;
+            uint16_t pc_before = S.pc;
+            uint8_t sp_before = S.sp;
             cpu_jsr(S.playAddress, (uint32_t)S.cyclesPerFrame);
+            dbg_play_cycles = S.cyclesPerFrame; // approximate
             S.remainingCycles += S.cyclesPerFrame;
         }
 
@@ -950,6 +961,15 @@ int audio_get_volume() { return S.memory[0xD418] & 0x0F; }
 
 EMSCRIPTEN_KEEPALIVE
 int audio_read_memory(int addr) { return S.memory[addr & 0xFFFF]; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_get_dbg_sid_writes() { return dbg_sid_writes; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_get_dbg_play_pc() { return S.pc; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_get_dbg_play_sp() { return S.sp; }
 
 EMSCRIPTEN_KEEPALIVE
 void audio_cleanup() {
