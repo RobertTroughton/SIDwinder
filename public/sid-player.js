@@ -165,7 +165,7 @@ class SIDPlayer {
         // of start, which would reconnect immediately). Wait one buffer cycle
         // (~4096 samples at 44.1kHz = 93ms) for onaudioprocess to fill a fresh
         // buffer, then connect to hear clean audio from the new tune.
-        player.pause();
+        try { player.pause(); } catch(e) { /* may not be connected */ }
         player.initsubtune(this.currentSubtune);
         setTimeout(() => {
             player.playcont();
