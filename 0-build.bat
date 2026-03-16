@@ -84,7 +84,7 @@ call emcc cpu6510_wasm.cpp sid_processor.cpp png_converter.cpp sid_audio.cpp ^
     -s MODULARIZE=1 ^
     -s EXPORT_NAME="SIDwinderModule" ^
     -s ALLOW_MEMORY_GROWTH=1 ^
-    -s INITIAL_MEMORY=16777216 ^
+    -s INITIAL_MEMORY=33554432 ^
     -s MAXIMUM_MEMORY=67108864 ^
     -s NO_EXIT_RUNTIME=1 ^
     -s ENVIRONMENT="web" ^
