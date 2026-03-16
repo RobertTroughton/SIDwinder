@@ -6,6 +6,9 @@ window.hvscBrowser = (function () {
     let currentSelection = null;
     let entries = [];
 
+    // HVSC preview player instance
+    let hvscPlayer = null;
+
     // Add an initialization flag
     let hvscInitialized = false;
 
@@ -216,9 +219,33 @@ window.hvscBrowser = (function () {
         document.querySelectorAll('.file-item').forEach(item => {
             item.classList.remove('selected');
         });
-        
+
         event.currentTarget.classList.add('selected');
         currentSelection = entry;
+
+        // Preview SID file on single click
+        if (!entry.isDirectory) {
+            previewSID(entry);
+        }
+    }
+
+    function previewSID(entry) {
+        if (!hvscPlayer) {
+            const container = document.getElementById('hvscPlayerContainer');
+            if (container) {
+                hvscPlayer = new SIDPlayer(container);
+            }
+        }
+        if (hvscPlayer) {
+            const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
+            hvscPlayer.loadFromUrl(sidUrl, entry.name);
+        }
+    }
+
+    function stopPreview() {
+        if (hvscPlayer) {
+            hvscPlayer.stop();
+        }
     }
 
     function handleItemDoubleClick(entry) {
@@ -263,6 +290,9 @@ window.hvscBrowser = (function () {
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
+            // Stop preview playback when selecting
+            stopPreview();
+
             // Use the Netlify function for downloading
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
 
@@ -295,6 +325,7 @@ window.hvscBrowser = (function () {
     return {
         navigateUp: navigateUp,
         navigateHome: navigateHome,
-        fetchDirectory: fetchDirectory
+        fetchDirectory: fetchDirectory,
+        stopPreview: stopPreview
     };
 })();

@@ -2811,3 +2811,147 @@ body {
         justify-content: center;
     }
 }
+
+/* ==========================================================================
+   SID Player Component
+   ========================================================================== */
+
+.sid-player {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-sm);
+}
+
+.sid-player-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.sid-player-title {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sid-player-author {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sid-player-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-shrink: 0;
+}
+
+.sid-player-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 0.8em;
+    padding: 0;
+}
+
+.sid-player-btn:hover:not(:disabled) {
+    background: var(--accent-dim);
+    border-color: var(--border-accent);
+    color: var(--accent-light);
+}
+
+.sid-player-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.sid-player-play:not(:disabled) {
+    background: var(--accent-dim);
+    border-color: var(--border-accent);
+    color: var(--accent);
+}
+
+.sid-player-play:hover:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+}
+
+.sid-player-subtune {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: var(--space-xs);
+    padding-left: var(--space-xs);
+    border-left: 1px solid var(--border);
+}
+
+.sid-player-subtune-display {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    min-width: 28px;
+    text-align: center;
+}
+
+.sid-player-subtune .sid-player-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65em;
+}
+
+.sid-player-time {
+    font-size: 0.75em;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    min-width: 36px;
+    text-align: right;
+    margin-left: var(--space-xs);
+}
+
+/* HVSC Browser Player - compact styling */
+.hvsc-player-container {
+    padding: var(--space-xs) var(--space-sm);
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.hvsc-player-container .sid-player {
+    margin-top: 0;
+    background: var(--bg-surface);
+}
+
+/* Main page player container */
+.sid-player-container {
+    margin-top: var(--space-sm);
+}
+
+@media (max-width: 600px) {
+    .sid-player {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-sm);
+    }
+
+    .sid-player-controls {
+        justify-content: center;
+    }
+}

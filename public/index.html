@@ -75,6 +75,7 @@
             <div class="song-title-section disabled" id="songTitleSection">
                 <div class="song-title" id="songTitle">[ No SID Loaded ]</div>
                 <div class="song-author" id="songAuthor">Load a SID file to begin</div>
+                <div class="sid-player-container" id="mainPlayerContainer"></div>
             </div>
 
             <!-- Error Message -->
@@ -330,6 +331,9 @@
                         <span id="itemCount">0 items</span>
                         <span style="margin-left: auto; font-size: 11px;">Double-click to select a SID file</span>
                     </div>
+
+                    <!-- HVSC Playback Preview -->
+                    <div class="hvsc-player-container" id="hvscPlayerContainer"></div>
                 </div>
             </div>
         </div>
@@ -371,6 +375,8 @@
     <script src="color-palettes-data.js"></script>
     <script src="font-data.js"></script>
     <script src="prg-builder.js"></script>
+    <script src="lib/jsSID.js"></script>
+    <script src="sid-player.js"></script>
     <script src="hvsc-browser.js"></script>
     <script src="hvsc-random.js"></script>
     <script src="ui.js"></script>

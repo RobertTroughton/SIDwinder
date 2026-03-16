@@ -32,8 +32,10 @@ class UIController {
         this.selectedVisualizer = null;
         this.visualizerConfig = null;
         this.hvscBrowserWindow = null;
+        this.mainPlayer = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
+        this.initMainPlayer();
     }
 
     cacheElements() {
@@ -146,6 +148,7 @@ class UIController {
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
                 document.getElementById('hvscModal').classList.remove('visible');
+                if (window.hvscBrowser) hvscBrowser.stopPreview();
             });
         }
 
@@ -154,12 +157,20 @@ class UIController {
                 const modal = document.getElementById('hvscModal');
                 if (modal.classList.contains('visible')) {
                     modal.classList.remove('visible');
+                    if (window.hvscBrowser) hvscBrowser.stopPreview();
                 }
             }
         });
 
         // Initialize the UI in "attract mode"
         this.initializeAttractMode();
+    }
+
+    initMainPlayer() {
+        const container = document.getElementById('mainPlayerContainer');
+        if (container) {
+            this.mainPlayer = new SIDPlayer(container);
+        }
     }
 
     openHVSCBrowser() {
@@ -522,6 +533,11 @@ class UIController {
         try {
             // Read file
             const buffer = await file.arrayBuffer();
+
+            // Load into playback player
+            if (this.mainPlayer) {
+                this.mainPlayer.loadFromBinary(new Uint8Array(buffer), file.name);
+            }
 
             // Update busy message
             this.updateBusy('Parsing SID Header', 'Extracting metadata...');
