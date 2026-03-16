@@ -124,7 +124,9 @@ class SIDPlayer {
     onLoaded(filename) {
         const player = getSharedJsSID();
         this.totalSubtunes = player.getsubtunes() || 1;
-        this.currentSubtune = 0;
+        // Use the SID file's default start song (1-based in header, convert to 0-based)
+        const startSong = player.getstartsong();
+        this.currentSubtune = Math.max(0, Math.min(startSong - 1, this.totalSubtunes - 1));
         this.loaded = true;
 
         this.els.playBtn.disabled = false;
@@ -158,14 +160,15 @@ class SIDPlayer {
         if (!this.loaded) return;
         this.takeOwnership();
         const player = getSharedJsSID();
-        // Mute before connecting to suppress any stale ScriptProcessorNode buffer
-        // (~4096 samples = 93ms of potentially old audio). The pre-init in
-        // onLoaded() handles most cases, but this catches fast play-after-load.
-        player.setvolume(0);
-        player.start(this.currentSubtune);
-        player.playcont();
+        // Disconnect first so the stale ScriptProcessorNode buffer plays to nowhere.
+        // Then reinit the emulation (without connecting — using initsubtune instead
+        // of start, which would reconnect immediately). Wait one buffer cycle
+        // (~4096 samples at 44.1kHz = 93ms) for onaudioprocess to fill a fresh
+        // buffer, then connect to hear clean audio from the new tune.
+        player.pause();
+        player.initsubtune(this.currentSubtune);
         setTimeout(() => {
-            player.setvolume(1);
+            player.playcont();
         }, 120);
         this.isPlaying = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
