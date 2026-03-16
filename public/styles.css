@@ -2898,6 +2898,22 @@ body {
     border-left: 1px solid var(--border);
 }
 
+.sid-player-credit {
+    font-size: 0.75em;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 4px;
+}
+
+.sid-player-credit a {
+    color: var(--text-muted);
+    text-decoration: underline;
+}
+
+.sid-player-credit a:hover {
+    color: var(--text-secondary);
+}
+
 /* HVSC Browser Player - compact styling */
 .hvsc-player-container {
     padding: var(--space-xs) var(--space-sm);

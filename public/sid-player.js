@@ -7,7 +7,7 @@ var _activeSIDPlayerInstance = null;
 
 function getSharedJsSID() {
     if (!_sharedJsSID) {
-        _sharedJsSID = new jsSID(16384, 0.0005);
+        _sharedJsSID = new jsSID(4096, 0.0005);
     }
     return _sharedJsSID;
 }
@@ -47,6 +47,7 @@ class SIDPlayer {
                 </div>
                 <div class="sid-player-time">0:00</div>
             </div>
+            <div class="sid-player-credit">Playback by <a href="https://hermit.sidrip.com" target="_blank" rel="noopener">jsSID</a> by Hermit</div>
         `;
 
         this.els = {
@@ -142,6 +143,11 @@ class SIDPlayer {
         if (prefModel) {
             player.setmodel(prefModel);
         }
+
+        // Pre-initialize emulation so the ScriptProcessorNode starts generating
+        // fresh audio immediately (while still disconnected from output).
+        // This flushes stale buffers from any previously-loaded tune.
+        player.start(0);
     }
 
     togglePlay() {
@@ -156,12 +162,15 @@ class SIDPlayer {
         if (!this.loaded) return;
         this.takeOwnership();
         const player = getSharedJsSID();
+        // Mute before connecting to suppress any stale ScriptProcessorNode buffer
+        // (~4096 samples = 93ms of potentially old audio). The pre-init in
+        // onLoaded() handles most cases, but this catches fast play-after-load.
+        player.setvolume(0);
         player.start(this.currentSubtune);
-        // Short delay lets the ScriptProcessorNode buffer fill with fresh audio
-        // from the newly-initialized tune, preventing stale audio bleed-through
+        player.playcont();
         setTimeout(() => {
-            player.playcont();
-        }, 50);
+            player.setvolume(1);
+        }, 120);
         this.isPlaying = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.els.playBtn.title = 'Pause';
