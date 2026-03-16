@@ -97,6 +97,10 @@ static inline void mem_write(uint16_t addr, uint8_t val) {
     // Primary SID at $D400
     if (addr >= 0xD400 && addr <= 0xD41F) {
         S.sid[0].write(addr & 0x1F, val);
+        // Flush MOS8580 write pipeline: with SAMPLE_FAST + MOS8580, reSID
+        // defers writes to a single-slot pipeline (only the LAST write is
+        // stored). Clock 1 cycle to apply each write immediately.
+        S.sid[0].clock();
         dbg_sid_writes++;
         dbg_last_write_addr = addr;
         return;
@@ -105,6 +109,7 @@ static inline void mem_write(uint16_t addr, uint8_t val) {
     for (int i = 1; i < S.sidCount; i++) {
         if (addr >= S.sidAddress[i] && addr < S.sidAddress[i] + 0x20) {
             S.sid[i].write(addr & 0x1F, val);
+            S.sid[i].clock();
             return;
         }
     }
