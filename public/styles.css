@@ -2951,6 +2951,7 @@ body {
     padding: var(--space-xs) var(--space-sm);
     border-top: 1px solid var(--border);
     background: var(--bg-secondary);
+    text-align: center;
 }
 
 .hvsc-player-container .sid-player {
