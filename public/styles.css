@@ -2816,66 +2816,36 @@ body {
    SID Player Component
    ========================================================================== */
 
+/* SID Player - compact pill controls */
 .sid-player {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    margin-top: var(--space-sm);
-}
-
-.sid-player-info {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.sid-player-title {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.sid-player-author {
-    font-size: 0.75em;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.sid-player-controls {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: var(--space-xs);
-    flex-shrink: 0;
+    padding: 4px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    margin-top: var(--space-sm);
 }
 
 .sid-player-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
     color: var(--text-primary);
     cursor: pointer;
     transition: all var(--transition-fast);
-    font-size: 0.8em;
+    font-size: 0.75em;
     padding: 0;
 }
 
 .sid-player-btn:hover:not(:disabled) {
     background: var(--accent-dim);
-    border-color: var(--border-accent);
     color: var(--accent-light);
 }
 
@@ -2886,7 +2856,6 @@ body {
 
 .sid-player-play:not(:disabled) {
     background: var(--accent-dim);
-    border-color: var(--border-accent);
     color: var(--accent);
 }
 
@@ -2899,13 +2868,13 @@ body {
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-left: var(--space-xs);
+    margin-left: 2px;
     padding-left: var(--space-xs);
     border-left: 1px solid var(--border);
 }
 
 .sid-player-subtune-display {
-    font-size: 0.75em;
+    font-size: 0.7em;
     color: var(--text-secondary);
     font-family: var(--font-mono);
     min-width: 28px;
@@ -2913,18 +2882,20 @@ body {
 }
 
 .sid-player-subtune .sid-player-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 0.65em;
+    width: 22px;
+    height: 22px;
+    font-size: 0.6em;
 }
 
 .sid-player-time {
-    font-size: 0.75em;
+    font-size: 0.7em;
     color: var(--text-muted);
     font-family: var(--font-mono);
-    min-width: 36px;
+    min-width: 32px;
     text-align: right;
-    margin-left: var(--space-xs);
+    margin-left: 2px;
+    padding-left: var(--space-xs);
+    border-left: 1px solid var(--border);
 }
 
 /* HVSC Browser Player - compact styling */
@@ -2942,16 +2913,4 @@ body {
 /* Main page player container */
 .sid-player-container {
     margin-top: var(--space-sm);
-}
-
-@media (max-width: 600px) {
-    .sid-player {
-        flex-direction: column;
-        align-items: stretch;
-        gap: var(--space-sm);
-    }
-
-    .sid-player-controls {
-        justify-content: center;
-    }
 }

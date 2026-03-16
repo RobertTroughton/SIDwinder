@@ -27,36 +27,32 @@ class SIDPlayer {
     buildUI() {
         this.container.innerHTML = `
             <div class="sid-player">
-                <div class="sid-player-info">
-                    <div class="sid-player-title" title="Song title">No SID loaded</div>
-                    <div class="sid-player-author" title="Author"></div>
-                </div>
-                <div class="sid-player-controls">
-                    <button class="sid-player-btn sid-player-play" title="Play" disabled>
-                        <i class="fas fa-play"></i>
+                <button class="sid-player-btn sid-player-play" title="Play" disabled>
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="sid-player-btn sid-player-stop" title="Stop" disabled>
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button class="sid-player-btn sid-player-restart" title="Restart" disabled>
+                    <i class="fas fa-undo"></i>
+                </button>
+                <div class="sid-player-subtune" style="display:none;">
+                    <button class="sid-player-btn sid-player-prev" title="Previous subtune">
+                        <i class="fas fa-step-backward"></i>
                     </button>
-                    <button class="sid-player-btn sid-player-stop" title="Stop" disabled>
-                        <i class="fas fa-stop"></i>
+                    <span class="sid-player-subtune-display">1/1</span>
+                    <button class="sid-player-btn sid-player-next" title="Next subtune">
+                        <i class="fas fa-step-forward"></i>
                     </button>
-                    <div class="sid-player-subtune" style="display:none;">
-                        <button class="sid-player-btn sid-player-prev" title="Previous subtune">
-                            <i class="fas fa-step-backward"></i>
-                        </button>
-                        <span class="sid-player-subtune-display">1/1</span>
-                        <button class="sid-player-btn sid-player-next" title="Next subtune">
-                            <i class="fas fa-step-forward"></i>
-                        </button>
-                    </div>
-                    <div class="sid-player-time">0:00</div>
                 </div>
+                <div class="sid-player-time">0:00</div>
             </div>
         `;
 
         this.els = {
-            title: this.container.querySelector('.sid-player-title'),
-            author: this.container.querySelector('.sid-player-author'),
             playBtn: this.container.querySelector('.sid-player-play'),
             stopBtn: this.container.querySelector('.sid-player-stop'),
+            restartBtn: this.container.querySelector('.sid-player-restart'),
             prevBtn: this.container.querySelector('.sid-player-prev'),
             nextBtn: this.container.querySelector('.sid-player-next'),
             subtuneContainer: this.container.querySelector('.sid-player-subtune'),
@@ -66,6 +62,7 @@ class SIDPlayer {
 
         this.els.playBtn.addEventListener('click', () => this.togglePlay());
         this.els.stopBtn.addEventListener('click', () => this.stop());
+        this.els.restartBtn.addEventListener('click', () => this.restart());
         this.els.prevBtn.addEventListener('click', () => this.prevSubtune());
         this.els.nextBtn.addEventListener('click', () => this.nextSubtune());
     }
@@ -125,16 +122,13 @@ class SIDPlayer {
 
     onLoaded(filename) {
         const player = getSharedJsSID();
-        const title = player.gettitle().trim() || filename || 'Unknown';
-        const author = player.getauthor().trim();
         this.totalSubtunes = player.getsubtunes() || 1;
         this.currentSubtune = 0;
         this.loaded = true;
 
-        this.els.title.textContent = title;
-        this.els.author.textContent = author;
         this.els.playBtn.disabled = false;
         this.els.stopBtn.disabled = false;
+        this.els.restartBtn.disabled = false;
 
         if (this.totalSubtunes > 1) {
             this.els.subtuneContainer.style.display = 'flex';
@@ -163,7 +157,11 @@ class SIDPlayer {
         this.takeOwnership();
         const player = getSharedJsSID();
         player.start(this.currentSubtune);
-        player.playcont();
+        // Short delay lets the ScriptProcessorNode buffer fill with fresh audio
+        // from the newly-initialized tune, preventing stale audio bleed-through
+        setTimeout(() => {
+            player.playcont();
+        }, 50);
         this.isPlaying = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         this.els.playBtn.title = 'Pause';
@@ -188,6 +186,11 @@ class SIDPlayer {
         this.els.playBtn.title = 'Play';
         this.els.time.textContent = '0:00';
         this.stopTimeUpdate();
+    }
+
+    restart() {
+        if (!this.loaded) return;
+        this.play();
     }
 
     prevSubtune() {
@@ -243,10 +246,9 @@ class SIDPlayer {
     reset() {
         this.cleanup();
         this.loaded = false;
-        this.els.title.textContent = 'No SID loaded';
-        this.els.author.textContent = '';
         this.els.playBtn.disabled = true;
         this.els.stopBtn.disabled = true;
+        this.els.restartBtn.disabled = true;
         this.els.subtuneContainer.style.display = 'none';
         this.els.time.textContent = '0:00';
     }
