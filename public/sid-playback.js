@@ -83,6 +83,9 @@ class SIDPlayback {
             audio_get_sid_count:     cwrap('audio_get_sid_count', 'number', []),
             audio_get_play_time:     cwrap('audio_get_play_time', 'number', []),
             audio_get_is_ntsc:       cwrap('audio_get_is_ntsc', 'number', []),
+            audio_get_play_address:  cwrap('audio_get_play_address', 'number', []),
+            audio_get_volume:        cwrap('audio_get_volume', 'number', []),
+            audio_read_memory:       cwrap('audio_read_memory', 'number', ['number']),
             audio_cleanup:           cwrap('audio_cleanup', null, []),
         };
     }
@@ -175,8 +178,10 @@ class SIDPlayback {
 
     setSubtune(subtune) {
         if (!this.loaded) return;
-        console.log(`[SIDPlayback] setSubtune(${subtune})`);
         this.api.audio_set_subtune(subtune);
+        const playAddr = this.api.audio_get_play_address();
+        const vol = this.api.audio_get_volume();
+        console.log(`[SIDPlayback] setSubtune(${subtune}): playAddr=$${playAddr.toString(16).padStart(4,'0')}, volume=${vol}`);
         this._debugLogged = false;  // Re-log first callback after subtune change
     }
 

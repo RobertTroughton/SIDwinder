@@ -719,6 +719,62 @@ int audio_load_sid(const uint8_t* data, int length) {
     S.memory[0xDC04] = 0x24;  // CIA1 Timer A default
     S.memory[0xDC05] = 0x40;
 
+    // ---- Minimal C64 Kernal environment for SID compatibility ----
+    // Many SID tunes JSR to Kernal ROM routines or JMP to IRQ exit points.
+    // Without stubs, those addresses contain 0x00 (BRK) which causes infinite
+    // BRK loops that eat all CPU cycles and prevent the init/play routines
+    // from completing.  Only place stubs where memory is still zero (i.e. not
+    // overwritten by the SID's own code/data).
+
+    // Kernal IRQ exit at $EA31  (PLA/TAY/PLA/TAX/PLA/RTI)
+    // Play routines that are IRQ handlers typically JMP $EA31 to exit.
+    if (S.memory[0xEA31] == 0) {
+        static const uint8_t ea31[] = {0x68,0xA8,0x68,0xAA,0x68,0x40};
+        memcpy(&S.memory[0xEA31], ea31, sizeof(ea31));
+    }
+
+    // $EA81 - another common Kernal IRQ exit (just RTI)
+    if (S.memory[0xEA81] == 0) {
+        S.memory[0xEA81] = 0x40; // RTI
+    }
+
+    // Kernal jump table ($FF81-$FFF3, every 3 bytes) → RTS
+    // SID init routines sometimes call SCINIT ($FF81), IOINIT ($FF84), etc.
+    for (int addr = 0xFF81; addr <= 0xFFF3; addr += 3) {
+        if (S.memory[addr] == 0) {
+            S.memory[addr] = 0x60; // RTS
+        }
+    }
+
+    // RTI at $FF48 (standard Kernal IRQ entry point)
+    if (S.memory[0xFF48] == 0) {
+        S.memory[0xFF48] = 0x40; // RTI
+    }
+
+    // Hardware IRQ vector ($FFFE/$FFFF) → $FF48 (RTI)
+    if (S.memory[0xFFFE] == 0 && S.memory[0xFFFF] == 0) {
+        S.memory[0xFFFE] = 0x48;
+        S.memory[0xFFFF] = 0xFF;
+    }
+
+    // Hardware NMI vector ($FFFA/$FFFB) → $FF48 (RTI)
+    if (S.memory[0xFFFA] == 0 && S.memory[0xFFFB] == 0) {
+        S.memory[0xFFFA] = 0x48;
+        S.memory[0xFFFB] = 0xFF;
+    }
+
+    // Software IRQ vector ($0314/$0315) → $EA31 (Kernal IRQ exit)
+    if (S.memory[0x0314] == 0 && S.memory[0x0315] == 0) {
+        S.memory[0x0314] = 0x31;
+        S.memory[0x0315] = 0xEA;
+    }
+
+    // Software NMI vector ($0318/$0319) → $EA81 (RTI)
+    if (S.memory[0x0318] == 0 && S.memory[0x0319] == 0) {
+        S.memory[0x0318] = 0x81;
+        S.memory[0x0319] = 0xEA;
+    }
+
     // Initialize reSID chips
     reSID::chip_model model = (S.chipModel == 8580) ? reSID::MOS8580 : reSID::MOS6581;
     for (int i = 0; i < S.sidCount; i++) {
@@ -885,6 +941,15 @@ double audio_get_play_time() {
 
 EMSCRIPTEN_KEEPALIVE
 int audio_get_is_ntsc() { return S.isNTSC ? 1 : 0; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_get_play_address() { return S.playAddress; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_get_volume() { return S.memory[0xD418] & 0x0F; }
+
+EMSCRIPTEN_KEEPALIVE
+int audio_read_memory(int addr) { return S.memory[addr & 0xFFFF]; }
 
 EMSCRIPTEN_KEEPALIVE
 void audio_cleanup() {
