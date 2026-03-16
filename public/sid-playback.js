@@ -1,12 +1,11 @@
 // sid-playback.js - reSID-based SID playback engine for SIDwinder
-// Replaces jsSID with cycle-accurate reSID emulation via WASM.
-// Uses ScriptProcessorNode for audio output (AudioWorklet upgrade possible later).
+// Wraps reSID (via WASM) with AudioWorkletNode for glitch-free output.
 
 class SIDPlayback {
     constructor(bufferSize = 4096) {
         this.bufferSize = bufferSize;
         this.audioCtx = null;
-        this.scriptNode = null;
+        this.workletNode = null;
         this.gainNode = null;
         this.module = null;
         this.api = null;
@@ -55,14 +54,21 @@ class SIDPlayback {
         // Allocate a persistent WASM buffer for audio samples (int16)
         this.wasmBufferPtr = this.module._malloc(this.bufferSize * 2);
 
-        // Create ScriptProcessorNode for audio output
-        this.scriptNode = this.audioCtx.createScriptProcessor(this.bufferSize, 0, 1);
-        this.scriptNode.onaudioprocess = (e) => this._onAudioProcess(e);
+        // Register AudioWorklet processor and create node
+        await this.audioCtx.audioWorklet.addModule('sid-worklet-processor.js');
+        this.workletNode = new AudioWorkletNode(this.audioCtx, 'sid-worklet-processor');
+
+        // Generate samples when the worklet needs more
+        this.workletNode.port.onmessage = (e) => {
+            if (e.data.type === 'need-samples' && this.playing && this.loaded) {
+                this._generateAndPost();
+            }
+        };
 
         // Gain node for volume control
         this.gainNode = this.audioCtx.createGain();
         this.gainNode.gain.value = this.volume;
-        this.scriptNode.connect(this.gainNode);
+        this.workletNode.connect(this.gainNode);
     }
 
     _bindAPI() {
@@ -87,35 +93,26 @@ class SIDPlayback {
         };
     }
 
-    _onAudioProcess(event) {
-        const output = event.outputBuffer.getChannelData(0);
-
-        if (!this.playing || !this.loaded) {
-            output.fill(0);
-            return;
-        }
-
-        // Generate int16 samples from WASM
-        const numSamples = output.length;
-        const generated = this.api.audio_generate(this.wasmBufferPtr, numSamples);
-
-        if (generated <= 0) {
-            output.fill(0);
-            return;
-        }
+    _generateAndPost() {
+        const generated = this.api.audio_generate(this.wasmBufferPtr, this.bufferSize);
+        if (generated <= 0) return;
 
         // Read samples from WASM heap (use HEAPU8.buffer fresh after WASM call
         // to handle ALLOW_MEMORY_GROWTH buffer detachment)
         const heap = this.module.HEAPU8.buffer;
         const int16View = new Int16Array(heap, this.wasmBufferPtr, generated);
 
-        for (let i = 0; i < numSamples; i++) {
-            if (i < generated) {
-                output[i] = int16View[i] / 32768.0;
-            } else {
-                output[i] = 0;
-            }
+        // Convert int16 to float32 for the worklet
+        const floatSamples = new Float32Array(generated);
+        for (let i = 0; i < generated; i++) {
+            floatSamples[i] = int16View[i] / 32768.0;
         }
+
+        // Transfer the buffer to the worklet (zero-copy)
+        this.workletNode.port.postMessage(
+            { type: 'samples', samples: floatSamples },
+            [floatSamples.buffer]
+        );
     }
 
     async loadFromArrayBuffer(arrayBuffer) {
@@ -174,19 +171,29 @@ class SIDPlayback {
 
         this.playing = true;
 
-        // Fade in from silence to mask stale audio in ScriptProcessorNode's
-        // internal buffer queue (pre-filled with old song data before the
-        // WASM engine was reset). ~150ms covers two buffer lengths at 4096/48kHz.
+        // Flush any stale samples and tell worklet to start accepting new ones
+        this.workletNode.port.postMessage({ type: 'stop' });
+        this.workletNode.port.postMessage({ type: 'start' });
+
+        // Pre-fill the worklet queue so playback starts immediately
+        for (let i = 0; i < 3; i++) {
+            this._generateAndPost();
+        }
+
+        // Fade in from silence to mask any transition click (~85ms)
         const now = this.audioCtx.currentTime;
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(0, now);
-        this.gainNode.gain.linearRampToValueAtTime(this.volume, now + 0.15);
+        this.gainNode.gain.linearRampToValueAtTime(this.volume, now + 0.085);
 
         this.gainNode.connect(this.audioCtx.destination);
     }
 
     pause() {
         this.playing = false;
+        if (this.workletNode) {
+            this.workletNode.port.postMessage({ type: 'stop' });
+        }
         try {
             this.gainNode.disconnect(this.audioCtx.destination);
         } catch (e) {
