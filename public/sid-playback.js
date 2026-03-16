@@ -91,10 +91,7 @@ class SIDPlayback {
         const output = event.outputBuffer.getChannelData(0);
 
         if (!this.playing || !this.loaded) {
-            // Output silence
-            for (let i = 0; i < output.length; i++) {
-                output[i] = 0;
-            }
+            output.fill(0);
             return;
         }
 
@@ -102,12 +99,15 @@ class SIDPlayback {
         const numSamples = output.length;
         const generated = this.api.audio_generate(this.wasmBufferPtr, numSamples);
 
-        // Convert int16 WASM buffer to float32 output
-        const int16View = new Int16Array(
-            this.module.HEAP16.buffer,
-            this.wasmBufferPtr,
-            generated
-        );
+        if (generated <= 0) {
+            output.fill(0);
+            return;
+        }
+
+        // Read samples from WASM heap (use HEAPU8.buffer fresh after WASM call
+        // to handle ALLOW_MEMORY_GROWTH buffer detachment)
+        const heap = this.module.HEAPU8.buffer;
+        const int16View = new Int16Array(heap, this.wasmBufferPtr, generated);
 
         for (let i = 0; i < numSamples; i++) {
             if (i < generated) {
@@ -115,6 +115,17 @@ class SIDPlayback {
             } else {
                 output[i] = 0;
             }
+        }
+
+        // Debug: log first callback to verify audio pipeline
+        if (!this._debugLogged) {
+            this._debugLogged = true;
+            let maxAbs = 0;
+            for (let i = 0; i < generated; i++) {
+                const v = Math.abs(int16View[i]);
+                if (v > maxAbs) maxAbs = v;
+            }
+            console.log(`[SIDPlayback] first callback: generated=${generated}/${numSamples}, maxSample=${maxAbs}, sampleRate=${this.audioCtx.sampleRate}`);
         }
     }
 
@@ -146,6 +157,9 @@ class SIDPlayback {
         this._isNTSC = this.api.audio_get_is_ntsc() !== 0;
 
         this.loaded = true;
+        this._debugLogged = false;  // Reset debug for new SID
+
+        console.log(`[SIDPlayback] SID loaded: "${this._title}" by ${this._author}, subtunes=${this._subtunes}, startSong=${this._startSong}, model=${this._sidModel}, chips=${this._sidCount}`);
 
         if (this._loadCallback) {
             this._loadCallback();
@@ -161,11 +175,16 @@ class SIDPlayback {
 
     setSubtune(subtune) {
         if (!this.loaded) return;
+        console.log(`[SIDPlayback] setSubtune(${subtune})`);
         this.api.audio_set_subtune(subtune);
+        this._debugLogged = false;  // Re-log first callback after subtune change
     }
 
     play() {
-        if (!this.loaded) return;
+        if (!this.loaded) {
+            console.warn('[SIDPlayback] play() called but not loaded');
+            return;
+        }
 
         // Resume audio context if suspended (browser autoplay policy)
         if (this.audioCtx.state === 'suspended') {
@@ -174,6 +193,7 @@ class SIDPlayback {
 
         this.playing = true;
         this.gainNode.connect(this.audioCtx.destination);
+        console.log(`[SIDPlayback] play() - audioCtx.state=${this.audioCtx.state}, playing=${this.playing}`);
     }
 
     pause() {

@@ -791,9 +791,13 @@ int audio_generate(int16_t* buffer, int numSamples) {
     int16_t mixBuf[8192];
     int totalGenerated = 0;
 
-    while (totalGenerated < numSamples) {
+    int loopGuard = 0;
+    const int maxLoops = numSamples + 256;  // Safety limit
+
+    while (totalGenerated < numSamples && loopGuard++ < maxLoops) {
         // If we've exhausted the current frame, call the play routine
         if (S.remainingCycles <= 0) {
+            if (S.playAddress == 0) break;  // No play routine
             cpu_jsr(S.playAddress, (uint32_t)S.cyclesPerFrame);
             S.remainingCycles += S.cyclesPerFrame;
         }
@@ -819,6 +823,11 @@ int audio_generate(int16_t* buffer, int numSamples) {
         S.remainingCycles = delta;  // reSID updates delta with remaining cycles
         totalGenerated += generated;
         S.totalCycles += cyclesConsumed;
+
+        // If clock() generated 0 samples and consumed 0 cycles, force progress
+        if (generated == 0 && cyclesConsumed == 0) {
+            S.remainingCycles = 0;  // Force next frame
+        }
     }
 
     return totalGenerated;
