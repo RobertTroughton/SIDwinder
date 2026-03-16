@@ -615,10 +615,29 @@ static uint16_t be16(uint8_t hi, uint8_t lo) { return (hi << 8) | lo; }
 
 EMSCRIPTEN_KEEPALIVE
 void audio_init(double sampleRate) {
-    memset(&S, 0, sizeof(S));
+    // Zero POD fields without touching reSID::SID objects (which have constructors)
+    S.pc = 0; S.sp = 0; S.a = 0; S.x = 0; S.y = 0; S.st = 0;
+    memset(S.memory, 0, sizeof(S.memory));
+    S.sidCount = 1;
+    for (int i = 0; i < MAX_SID_CHIPS; i++) {
+        S.sidAddress[i] = 0;
+        S.sid[i].reset();
+    }
+    S.sidAddress[0] = 0xD400;
+    S.loadAddress = 0; S.initAddress = 0; S.playAddress = 0;
+    S.songs = 0; S.startSong = 0; S.speed = 0;
+    S.name[0] = 0; S.author[0] = 0; S.copyright[0] = 0;
+    S.flags = 0; S.secondSIDAddr = 0; S.thirdSIDAddr = 0;
+    S.clockFreq = PAL_CLOCK;
     S.sampleRate = sampleRate > 0 ? sampleRate : 48000.0;
-    S.chipModel = 6581;
+    S.cyclesPerFrame = PAL_CYCLES_PER_FRAME;
+    S.currentSubtune = 0;
+    S.isNTSC = false;
     S.loaded = false;
+    S.remainingCycles = 0;
+    S.playRoutineActive = false;
+    S.totalCycles = 0;
+    S.chipModel = 6581;
 }
 
 EMSCRIPTEN_KEEPALIVE
