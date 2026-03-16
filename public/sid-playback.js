@@ -120,15 +120,16 @@ class SIDPlayback {
             }
         }
 
-        // Debug: log first callback to verify audio pipeline
-        if (!this._debugLogged) {
-            this._debugLogged = true;
+        // Debug: log first few callbacks and then periodically
+        if (!this._debugCount) this._debugCount = 0;
+        this._debugCount++;
+        if (this._debugCount <= 5 || this._debugCount % 100 === 0) {
             let maxAbs = 0;
             for (let i = 0; i < generated; i++) {
                 const v = Math.abs(int16View[i]);
                 if (v > maxAbs) maxAbs = v;
             }
-            console.log(`[SIDPlayback] first callback: generated=${generated}/${numSamples}, maxSample=${maxAbs}, sampleRate=${this.audioCtx.sampleRate}`);
+            console.log(`[SIDPlayback] cb#${this._debugCount}: generated=${generated}/${numSamples}, maxSample=${maxAbs}`);
         }
     }
 
@@ -160,7 +161,7 @@ class SIDPlayback {
         this._isNTSC = this.api.audio_get_is_ntsc() !== 0;
 
         this.loaded = true;
-        this._debugLogged = false;  // Reset debug for new SID
+        this._debugCount = 0;  // Reset debug for new SID
 
         console.log(`[SIDPlayback] SID loaded: "${this._title}" by ${this._author}, subtunes=${this._subtunes}, startSong=${this._startSong}, model=${this._sidModel}, chips=${this._sidCount}`);
 
@@ -182,7 +183,7 @@ class SIDPlayback {
         const playAddr = this.api.audio_get_play_address();
         const vol = this.api.audio_get_volume();
         console.log(`[SIDPlayback] setSubtune(${subtune}): playAddr=$${playAddr.toString(16).padStart(4,'0')}, volume=${vol}`);
-        this._debugLogged = false;  // Re-log first callback after subtune change
+        this._debugCount = 0;  // Re-log callbacks after subtune change
     }
 
     play() {
