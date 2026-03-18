@@ -171,21 +171,27 @@ class UIController {
         });
 
         const closeBtn = document.getElementById('hvscModalClose');
+        const closeHVSCModal = () => {
+            const modal = document.getElementById('hvscModal');
+            if (!modal.classList.contains('visible')) return;
+            modal.classList.remove('visible');
+            if (window.hvscBrowser) hvscBrowser.stopPreview();
+        };
+
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                document.getElementById('hvscModal').classList.remove('visible');
-                if (window.hvscBrowser) hvscBrowser.stopPreview();
+            closeBtn.addEventListener('click', closeHVSCModal);
+        }
+
+        // Click outside modal content to close
+        const hvscModal = document.getElementById('hvscModal');
+        if (hvscModal) {
+            hvscModal.addEventListener('click', (e) => {
+                if (e.target === hvscModal) closeHVSCModal();
             });
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('hvscModal');
-                if (modal.classList.contains('visible')) {
-                    modal.classList.remove('visible');
-                    if (window.hvscBrowser) hvscBrowser.stopPreview();
-                }
-            }
+            if (e.key === 'Escape') closeHVSCModal();
         });
 
         // Initialize the UI in "attract mode"

@@ -335,6 +335,9 @@ window.hvscBrowser = (function () {
 
     function stopPreview() {
         if (hvscPlayer) {
+            // Clear any pending load callback to prevent late autoplay
+            const player = getSharedSIDPlayback();
+            player.setLoadCallback(null);
             hvscPlayer.stop();
         }
     }
