@@ -1406,6 +1406,7 @@ class SIDwinderPRGExporter {
                         this.compressorManager = new CompressorManager();
                     }
 
+                    await this.compressorManager.waitForInit();
                     if (!this.compressorManager.isAvailable(compressionType)) {
                         console.warn(`${compressionType} compressor not available, returning uncompressed`);
                         return prgData;
