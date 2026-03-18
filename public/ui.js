@@ -1345,9 +1345,8 @@ class UIController {
                     // Create the drop zone
                     TextDropZone.create(optionConfig.id);
 
-                    // Initialize sanitizer (lazy-loaded)
-                    if (!window.petsciiSanitizer) {
-                        await window.loadScript('petscii-sanitizer.js');
+                    // Initialize sanitizer (already loaded by ensurePRGExporter)
+                    if (!window.petsciiSanitizer && typeof PETSCIISanitizer !== 'undefined') {
                         window.petsciiSanitizer = new PETSCIISanitizer();
                     }
 
