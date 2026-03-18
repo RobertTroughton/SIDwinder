@@ -14,6 +14,9 @@ class SIDPlayer {
         this.loaded = false;
         this._pendingData = null;
         this._pendingUrl = null;
+        this._lastLoadedData = null;
+        this._lastLoadedFilename = null;
+        this._ownershipLost = false;
         this.buildUI();
     }
 
@@ -95,6 +98,7 @@ class SIDPlayer {
     onLostOwnership() {
         // Another player took over the shared playback instance
         this.isPlaying = false;
+        this._ownershipLost = true;
         this.els.playBtn.innerHTML = '<i class="fas fa-play"></i>';
         this.els.playBtn.title = 'Play';
         this.stopTimeUpdate();
@@ -103,6 +107,11 @@ class SIDPlayer {
     async loadFromBinary(data, filename) {
         this.stop();
         this.takeOwnership();
+        this._ownershipLost = false;
+
+        // Store a copy so we can reload if another player takes over
+        this._lastLoadedData = new Uint8Array(data.buffer || data).slice();
+        this._lastLoadedFilename = filename;
 
         const player = getSharedSIDPlayback();
 
@@ -168,10 +177,28 @@ class SIDPlayer {
         }
     }
 
-    play() {
+    async play() {
         if (!this.loaded) return;
         this.takeOwnership();
         const player = getSharedSIDPlayback();
+
+        // If another player loaded different data while we lost ownership,
+        // reload our SID data before playing
+        if (this._ownershipLost && this._lastLoadedData) {
+            this._ownershipLost = false;
+            player.setLoadCallback(() => {
+                this.onLoaded(this._lastLoadedFilename);
+                player.setSubtune(this.currentSubtune);
+                player.play();
+                this.isPlaying = true;
+                this.els.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                this.els.playBtn.title = 'Pause';
+                this.startTimeUpdate();
+            });
+            await player.loadFromArrayBuffer(this._lastLoadedData.buffer);
+            return;
+        }
+
         player.pause();
         player.setSubtune(this.currentSubtune);
         player.play();
