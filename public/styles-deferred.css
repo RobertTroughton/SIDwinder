@@ -2923,3 +2923,145 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================================================
+   Releases Tab
+   ========================================================================== */
+
+.releases-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.releases-hero {
+    text-align: center;
+    padding: var(--space-2xl) 0 var(--space-xl);
+    position: relative;
+}
+
+.releases-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.releases-subtitle {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+}
+
+.releases-subtitle a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.releases-subtitle a:hover {
+    color: var(--accent-light);
+    text-decoration: underline;
+}
+
+.releases-list {
+    padding-bottom: var(--space-2xl);
+}
+
+.releases-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.release-card {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    padding: 12px var(--space-lg);
+    background: var(--bg-elevated);
+    text-decoration: none;
+    transition: all var(--transition-base);
+    border-left: 3px solid transparent;
+}
+
+.release-card:hover {
+    background: var(--bg-hover);
+    border-left-color: var(--accent);
+}
+
+.release-title {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.release-card:hover .release-title {
+    color: var(--accent-light);
+}
+
+.release-artist {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.release-artist-name {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.releases-cta {
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    background: var(--accent-dim);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.releases-cta i {
+    color: var(--accent);
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.releases-cta p {
+    margin: 0;
+}
+
+.releases-credit {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: var(--space-lg);
+    text-align: center;
+}
+
+.releases-credit a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.releases-credit a:hover {
+    color: var(--accent-light);
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .release-card {
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px var(--space-md);
+    }
+
+    .releases-cta {
+        flex-direction: column;
+        text-align: center;
+    }
+}
