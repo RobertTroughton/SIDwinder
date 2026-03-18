@@ -1856,7 +1856,7 @@ details[open].panel > summary h2::after {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     width: 100%;
-    max-width: 1150px;
+    max-width: 1300px;
     height: 90vh;
     max-height: 650px;
     display: flex;
@@ -2055,8 +2055,8 @@ details[open].panel > summary h2::after {
 
 /* SID Info Panel */
 .sid-info-panel {
-    width: 420px;
-    min-width: 420px;
+    width: 546px;
+    min-width: 546px;
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border);
@@ -2065,7 +2065,7 @@ details[open].panel > summary h2::after {
 .sid-info-content {
     flex: 1;
     overflow-y: auto;
-    padding: 12px;
+    padding: 10px 14px;
     background: #181818;
     font-size: 12px;
 }
@@ -2080,9 +2080,11 @@ details[open].panel > summary h2::after {
 
 .sid-info-row {
     display: flex;
-    flex-direction: column;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--border);
 }
 
 .sid-info-row:last-child {
@@ -2091,21 +2093,24 @@ details[open].panel > summary h2::after {
 
 .sid-info-label {
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .sid-info-value {
     color: var(--text-primary);
     font-size: 13px;
+    text-align: right;
     word-break: break-word;
+    margin-left: 16px;
 }
 
 .sid-info-download {
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid var(--border);
 }
 
