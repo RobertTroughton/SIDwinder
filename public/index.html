@@ -102,17 +102,17 @@
                 </div>
             </div>
             <!-- Page Tabs -->
-            <nav class="page-tabs" aria-label="Main navigation">
-                <button class="page-tab active" data-tab="tool" aria-selected="true">
+            <nav class="page-tabs" role="tablist" aria-label="Main navigation">
+                <button class="page-tab active" data-tab="tool" role="tab" id="tab-tool" aria-selected="true" aria-controls="tabTool">
                     <i class="fas fa-tools"></i> <span>Tool</span>
                 </button>
-                <button class="page-tab" data-tab="about" aria-selected="false">
+                <button class="page-tab" data-tab="about" role="tab" id="tab-about" aria-selected="false" aria-controls="tabAbout">
                     <i class="fas fa-info-circle"></i> <span>About</span>
                 </button>
             </nav>
         </div>
 
-        <div class="main-content" id="tabTool">
+        <div class="main-content" id="tabTool" role="tabpanel" aria-labelledby="tab-tool">
             <!-- Simplified Upload Section -->
             <div class="upload-container">
                 <!-- Drag & Drop Area -->
@@ -283,7 +283,7 @@
         </div>
 
         <!-- About Page -->
-        <div class="about-content" id="tabAbout" style="display: none;">
+        <div class="about-content" id="tabAbout" role="tabpanel" aria-labelledby="tab-about" style="display: none;">
             <!-- Hero Section -->
             <section class="about-hero about-hero-simple">
                 <div class="about-hero-scanlines"></div>
@@ -332,16 +332,29 @@
                     <h2>The Legendary SID Chip</h2>
                 </div>
                 <div class="about-text-block">
-                    <div class="about-sid-chip">
-                        <div class="chip-visual">
-                            <div class="chip-body">
-                                <div class="chip-label">MOS</div>
-                                <div class="chip-model">6581</div>
-                                <div class="chip-sublabel">SID</div>
+                    <div class="about-sid-chips">
+                        <a href="https://en.wikipedia.org/wiki/MOS_Technology_6581" class="chip-link" target="_blank" rel="noopener" title="MOS 6581 on Wikipedia">
+                            <div class="chip-visual">
+                                <div class="chip-pins chip-pins-left"></div>
+                                <div class="chip-body">
+                                    <div class="chip-label">MOS</div>
+                                    <div class="chip-model">6581</div>
+                                    <div class="chip-sublabel">SID</div>
+                                </div>
+                                <div class="chip-pins chip-pins-right"></div>
                             </div>
-                            <div class="chip-pins chip-pins-left"></div>
-                            <div class="chip-pins chip-pins-right"></div>
-                        </div>
+                        </a>
+                        <a href="https://en.wikipedia.org/wiki/MOS_Technology_6581" class="chip-link chip-link-8580" target="_blank" rel="noopener" title="MOS 8580 on Wikipedia">
+                            <div class="chip-visual">
+                                <div class="chip-pins chip-pins-left"></div>
+                                <div class="chip-body chip-body-8580">
+                                    <div class="chip-label">MOS</div>
+                                    <div class="chip-model">8580</div>
+                                    <div class="chip-sublabel">SID</div>
+                                </div>
+                                <div class="chip-pins chip-pins-right"></div>
+                            </div>
+                        </a>
                     </div>
                     <div class="about-text-content">
                         <p>The <strong>MOS Technology 6581/8580 SID</strong> (Sound Interface Device) is the legendary sound chip at the heart of the Commodore 64. Designed by Bob Yannes in 1981, it was revolutionary for its time &mdash; a synthesizer-on-a-chip that gave the C64 its distinctive, unmistakable sound.</p>

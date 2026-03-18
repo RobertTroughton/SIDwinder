@@ -2400,10 +2400,46 @@
 }
 
 /* SID Chip Visual */
-.about-sid-chip {
+.about-sid-chips {
     display: flex;
     justify-content: center;
+    gap: var(--space-xl);
     margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.chip-link {
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--transition-base);
+}
+
+.chip-link:hover {
+    transform: translateY(-2px);
+}
+
+.chip-link:hover .chip-body {
+    box-shadow: 0 0 30px rgba(212, 162, 76, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.chip-body-8580 {
+    border-color: var(--accent-secondary) !important;
+    box-shadow: 0 0 20px rgba(123, 104, 238, 0.1), inset 0 0 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.chip-body-8580 .chip-model {
+    color: var(--accent-secondary);
+}
+
+.chip-link:hover .chip-body-8580 {
+    box-shadow: 0 0 30px rgba(123, 104, 238, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.chip-link-8580 .chip-pins-left::before,
+.chip-link-8580 .chip-pins-left::after,
+.chip-link-8580 .chip-pins-right::before,
+.chip-link-8580 .chip-pins-right::after {
+    background: var(--accent-secondary);
 }
 
 .chip-visual {
