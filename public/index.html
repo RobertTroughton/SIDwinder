@@ -335,8 +335,28 @@
                         <span style="margin-left: auto; font-size: 11px;">Double-click to select a SID file</span>
                     </div>
 
-                    <!-- HVSC Playback Preview -->
-                    <div class="hvsc-player-container" id="hvscPlayerContainer"></div>
+                    <!-- HVSC Playback Preview (disabled until a SID is selected) -->
+                    <div class="hvsc-player-container" id="hvscPlayerContainer">
+                        <div class="sid-player">
+                            <button class="sid-player-btn sid-player-play" title="Play" disabled><i class="fas fa-play"></i></button>
+                            <button class="sid-player-btn sid-player-stop" title="Stop" disabled><i class="fas fa-stop"></i></button>
+                            <button class="sid-player-btn sid-player-restart" title="Restart" disabled><i class="fas fa-undo"></i></button>
+                            <div class="sid-player-subtune">
+                                <button class="sid-player-btn sid-player-prev" title="Previous subtune" disabled><i class="fas fa-step-backward"></i></button>
+                                <span class="sid-player-subtune-display">1/1</span>
+                                <button class="sid-player-btn sid-player-next" title="Next subtune" disabled><i class="fas fa-step-forward"></i></button>
+                            </div>
+                            <div class="sid-player-time">0:00</div>
+                            <div class="sid-player-quality">
+                                <select class="sid-player-quality-select" title="Sampling quality" disabled>
+                                    <option value="0">Fast</option>
+                                    <option value="1" selected>Interpolate</option>
+                                    <option value="2">Resample</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sid-player-credit">Playback by <a href="https://github.com/libsidplayfp/resid" target="_blank" rel="noopener">reSID</a></div>
+                    </div>
                 </div>
             </div>
         </div>
