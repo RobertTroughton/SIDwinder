@@ -30,7 +30,7 @@ window.hvscBrowser = (function () {
         const encodedPath = encodeURIComponent(path);
         const url = `${HVSC_BASE}?path=${encodedPath}`;
 
-        document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory</div>';
+        document.getElementById('fileList').innerHTML = '<div class="file-list-loading"><div class="file-list-spinner"></div></div>';
 
         try {
             const response = await fetch(url);

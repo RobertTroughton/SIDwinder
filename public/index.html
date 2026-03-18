@@ -10,19 +10,14 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
-    <script>
-    // Load non-critical CSS after first paint: Google Fonts, Font Awesome, deferred styles
-    requestAnimationFrame(function(){setTimeout(function(){
-        ['https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap',
-         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-         'styles-deferred.css'
-        ].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
-    },0)});
-    </script>
+    <!-- Non-render-blocking CSS: media="print" trick downloads immediately but doesn't block paint -->
+    <link rel="stylesheet" href="styles-deferred.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript>
+        <link rel="stylesheet" href="styles-deferred.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link rel="stylesheet" href="styles-deferred.css">
     </noscript>
 </head>
 <body>
@@ -318,7 +313,7 @@
                         <div class="file-panel">
                             <div class="panel-header">Files & Directories</div>
                             <div class="file-list" id="fileList">
-                                <div class="loading">Loading directory</div>
+                                <div class="file-list-loading"><div class="file-list-spinner"></div></div>
                             </div>
                         </div>
                         <div class="sid-info-panel" id="sidInfoPanel">
