@@ -2043,30 +2043,25 @@ class UIController {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait a moment for all scripts to load
-    setTimeout(() => {
-        // Check if required classes are available
-        if (typeof SIDAnalyzer === 'undefined') {
-            console.error('SIDAnalyzer not loaded');
-            // Use unified error modal instead of alert()
-            if (window.showError) {
-                window.showError('Core components not loaded', {
-                    details: 'The SIDAnalyzer module failed to load. Please refresh the page to try again.',
-                    duration: 0
-                });
-            } else {
-                // Fallback if error modal isn't loaded either
-                const errorDiv = document.createElement('div');
-                errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff6b6b;color:white;padding:20px;border-radius:8px;z-index:9999;text-align:center;';
-                errorDiv.innerHTML = '<strong>Error:</strong> Core components not loaded.<br>Please refresh the page.';
-                document.body.appendChild(errorDiv);
-            }
-            return;
+// Initialize UI - called directly since scripts are loaded dynamically after DOM is ready
+(function initUI() {
+    // Check if required classes are available
+    if (typeof SIDAnalyzer === 'undefined') {
+        console.error('SIDAnalyzer not loaded');
+        if (window.showError) {
+            window.showError('Core components not loaded', {
+                details: 'The SIDAnalyzer module failed to load. Please refresh the page to try again.',
+                duration: 0
+            });
+        } else {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff6b6b;color:white;padding:20px;border-radius:8px;z-index:9999;text-align:center;';
+            errorDiv.innerHTML = '<strong>Error:</strong> Core components not loaded.<br>Please refresh the page.';
+            document.body.appendChild(errorDiv);
         }
+        return;
+    }
 
-        // Initialize the UI controller (PRG exporter loads lazily on demand)
-        window.uiController = new UIController();
-    }, 100);
-});
+    // Initialize the UI controller (PRG exporter loads lazily on demand)
+    window.uiController = new UIController();
+})();

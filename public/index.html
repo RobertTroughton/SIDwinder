@@ -353,19 +353,7 @@
         </div>
     </div>
 
-    <!-- Core scripts needed at startup -->
-    <script src="error-modal.js" defer></script>
-    <script src="sidwinder.js" defer></script>
-    <script src="sidwinder-core.js" defer></script>
-    <script src="sid-playback.js" defer></script>
-    <script src="sid-player.js" defer></script>
-    <script src="ui.js" defer></script>
-    <script src="visualizer-registry.js" defer></script>
-    <script src="visualizer-configs.js" defer></script>
-    <script src="floating-notes.js" defer></script>
-    <script src="text-drop-zone.js" defer></script>
-
-    <!-- Lazy script loader for non-critical scripts loaded on demand -->
+    <!-- Lazy script loader + core script bootstrapper -->
     <script>
         window.lazyScripts = {};
         window.loadScript = function(src) {
@@ -380,16 +368,41 @@
             }
             return window.lazyScripts[src];
         };
-        // Preload scripts that will be needed soon (fetch but don't execute)
-        ['prg-builder.js','image-preview-manager.js','hvsc-browser.js','hvsc-random.js',
-         'png-converter.js','compressor-manager.js','bar-styles-data.js',
-         'color-palettes-data.js','font-data.js',
-         'petscii-sanitizer.js','petscii-converter.js'].forEach(src => {
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.href = src;
-            document.head.appendChild(link);
-        });
+
+        // Load core scripts sequentially, yielding between each to reduce TBT.
+        // Each setTimeout(0) lets the browser run other tasks (paint, input, etc.)
+        // instead of blocking the main thread in one giant 2+ second task.
+        (function() {
+            var scripts = [
+                'error-modal.js', 'sidwinder.js', 'sidwinder-core.js',
+                'sid-playback.js', 'sid-player.js', 'ui.js',
+                'visualizer-registry.js', 'visualizer-configs.js',
+                'floating-notes.js', 'text-drop-zone.js'
+            ];
+            var i = 0;
+            function loadNext() {
+                if (i >= scripts.length) {
+                    // All loaded - prefetch on-demand scripts
+                    ['prg-builder.js','image-preview-manager.js','hvsc-browser.js','hvsc-random.js',
+                     'png-converter.js','compressor-manager.js','bar-styles-data.js',
+                     'color-palettes-data.js','font-data.js',
+                     'petscii-sanitizer.js','petscii-converter.js'].forEach(function(src) {
+                        var link = document.createElement('link');
+                        link.rel = 'prefetch';
+                        link.href = src;
+                        document.head.appendChild(link);
+                    });
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = scripts[i++];
+                s.onload = function() { setTimeout(loadNext, 0); };
+                s.onerror = function() { setTimeout(loadNext, 0); };
+                document.head.appendChild(s);
+            }
+            // Start after first paint
+            requestAnimationFrame(function() { setTimeout(loadNext, 0); });
+        })();
     </script>
 
 </body>

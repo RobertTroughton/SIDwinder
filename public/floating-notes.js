@@ -95,15 +95,13 @@ class FreshFloatingNotes {
     }
 }
 
-// Initialize after page is fully loaded and idle
-window.addEventListener('load', () => {
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => {
-            window.freshFloatingNotes = new FreshFloatingNotes();
-        });
-    } else {
-        setTimeout(() => {
-            window.freshFloatingNotes = new FreshFloatingNotes();
-        }, 3000);
-    }
-});
+// Initialize when idle - script is loaded dynamically after DOM is ready
+if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+        window.freshFloatingNotes = new FreshFloatingNotes();
+    });
+} else {
+    setTimeout(() => {
+        window.freshFloatingNotes = new FreshFloatingNotes();
+    }, 3000);
+}
