@@ -375,25 +375,11 @@
         (function() {
             var scripts = [
                 'error-modal.js', 'sidwinder.js', 'sidwinder-core.js',
-                'sid-playback.js', 'sid-player.js', 'ui.js',
-                'visualizer-registry.js', 'visualizer-configs.js',
-                'floating-notes.js', 'text-drop-zone.js'
+                'visualizer-registry.js', 'ui.js'
             ];
             var i = 0;
             function loadNext() {
-                if (i >= scripts.length) {
-                    // All loaded - prefetch on-demand scripts
-                    ['prg-builder.js','image-preview-manager.js','hvsc-browser.js','hvsc-random.js',
-                     'png-converter.js','compressor-manager.js','bar-styles-data.js',
-                     'color-palettes-data.js','font-data.js',
-                     'petscii-sanitizer.js','petscii-converter.js'].forEach(function(src) {
-                        var link = document.createElement('link');
-                        link.rel = 'prefetch';
-                        link.href = src;
-                        document.head.appendChild(link);
-                    });
-                    return;
-                }
+                if (i >= scripts.length) return;
                 var s = document.createElement('script');
                 s.src = scripts[i++];
                 s.onload = function() { setTimeout(loadNext, 0); };

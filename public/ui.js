@@ -35,7 +35,6 @@ class UIController {
         this.mainPlayer = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
-        this.initMainPlayer();
     }
 
     // Lazy-load PRG export dependencies (prg-builder + png-converter + compressor + data files)
@@ -184,11 +183,16 @@ class UIController {
         this.initializeAttractMode();
     }
 
-    initMainPlayer() {
+    async ensureMainPlayer() {
+        if (this.mainPlayer) return this.mainPlayer;
         const container = document.getElementById('mainPlayerContainer');
-        if (container) {
-            this.mainPlayer = new SIDPlayer(container);
-        }
+        if (!container) return null;
+        await Promise.all([
+            window.loadScript('sid-playback.js'),
+            window.loadScript('sid-player.js')
+        ]);
+        this.mainPlayer = new SIDPlayer(container);
+        return this.mainPlayer;
     }
 
     async openHVSCBrowser() {
@@ -558,9 +562,10 @@ class UIController {
             // Read file
             const buffer = await file.arrayBuffer();
 
-            // Load into playback player
-            if (this.mainPlayer) {
-                this.mainPlayer.loadFromBinary(new Uint8Array(buffer), file.name);
+            // Load into playback player (lazy-loaded)
+            const player = await this.ensureMainPlayer();
+            if (player) {
+                player.loadFromBinary(new Uint8Array(buffer), file.name);
             }
 
             // Update busy message
@@ -683,6 +688,7 @@ class UIController {
 
     async initVisualizerSelection() {
         this.selectedVisualizer = null;
+        await window.loadScript('visualizer-configs.js');
         this.visualizerConfig = new VisualizerConfig();
         await Promise.all([
             this.loadAllVisualizerConfigs(),
@@ -1342,8 +1348,12 @@ class UIController {
                     const textarea = document.getElementById(optionConfig.id);
                     if (!textarea) return;
 
-                    // Create the drop zone
-                    TextDropZone.create(optionConfig.id);
+                    // Create the drop zone (lazy-loaded)
+                    if (typeof TextDropZone !== 'undefined') {
+                        TextDropZone.create(optionConfig.id);
+                    } else {
+                        window.loadScript('text-drop-zone.js').then(() => TextDropZone.create(optionConfig.id));
+                    }
 
                     // Initialize sanitizer (already loaded by ensurePRGExporter)
                     if (!window.petsciiSanitizer && typeof PETSCIISanitizer !== 'undefined') {
@@ -2064,4 +2074,8 @@ class UIController {
 
     // Initialize the UI controller (PRG exporter loads lazily on demand)
     window.uiController = new UIController();
+
+    // Load non-critical cosmetic scripts when idle
+    var loadWhenIdle = window.requestIdleCallback || function(cb) { setTimeout(cb, 2000); };
+    loadWhenIdle(function() { window.loadScript('floating-notes.js'); });
 })();
