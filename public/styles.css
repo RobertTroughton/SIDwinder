@@ -920,3 +920,51 @@ details[open].panel > summary h2::after {
         flex-direction: row;
         justify-content: center;
     }
+}
+
+/* ==========================================================================
+   Page Tabs Navigation
+   ========================================================================== */
+
+.page-tabs {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg-primary);
+}
+
+.page-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 12px var(--space-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+.page-tab:hover {
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+}
+
+.page-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.page-tab i {
+    font-size: 0.9em;
+}

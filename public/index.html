@@ -3,8 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SIDquake - Analyze, browse, and export C64 SID music files. Features HVSC browser, SID analysis, and PRG export with visualizer effects.">
+    <meta name="description" content="SIDquake - Analyze, browse, and export C64 SID music files. Features HVSC browser, SID analysis, and PRG export with visualizer effects. The easiest way for artists to bundle and ship their C64 SID music.">
     <title>SIDquake - C64 SID Music Linker</title>
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://sidquake.c64demo.com/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sidquake.c64demo.com/">
+    <meta property="og:title" content="SIDquake - C64 SID Music Analyzer, Linker & Tool Suite">
+    <meta property="og:description" content="The easiest way for C64 artists to bundle and ship their SID music. Analyze SID files, browse the HVSC collection, and export executable PRG files with stunning visualizer effects.">
+    <meta property="og:image" content="https://sidquake.c64demo.com/SIDquake.png">
+    <meta property="og:site_name" content="SIDquake">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SIDquake - C64 SID Music Analyzer, Linker & Tool Suite">
+    <meta name="twitter:description" content="The easiest way for C64 artists to bundle and ship their SID music. Analyze, browse HVSC, and export PRG files with visualizer effects.">
+    <meta name="twitter:image" content="https://sidquake.c64demo.com/SIDquake.png">
+
+    <!-- Additional SEO -->
+    <meta name="keywords" content="C64, SID, Commodore 64, SID music, chiptune, demoscene, HVSC, PRG export, SID analyzer, visualizer, retro computing, 6510, MOS 6581, MOS 8580, Genesis Project">
+    <meta name="author" content="Genesis Project">
+    <meta name="theme-color" content="#d4a24c">
+    <link rel="icon" type="image/png" href="SIDquake.png">
+    <link rel="apple-touch-icon" href="SIDquake.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SIDquake",
+        "url": "https://sidquake.c64demo.com/",
+        "description": "C64 SID Music Analyzer, Linker & Tool Suite. The easiest way for artists to bundle and ship their Commodore 64 SID music with stunning visualizer effects.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "Genesis Project",
+            "url": "https://c64demo.com"
+        },
+        "featureList": [
+            "SID file analysis and metadata editing",
+            "HVSC (High Voltage SID Collection) browser",
+            "PRG export with visualizer effects",
+            "In-browser SID playback via reSID emulation",
+            "Multiple C64 visualizer styles",
+            "TSCrunch compression for exports"
+        ],
+        "screenshot": "https://sidquake.c64demo.com/SIDquake.png"
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -38,16 +94,25 @@
     <div class="container">
         <div class="header">
             <div class="logo-container">
-                <img src="SIDquake.png" alt="SIDquake" class="logo" width="288" height="72" />
+                <img src="SIDquake.png" alt="SIDquake - C64 SID Music Analyzer, Linker and Tool Suite" class="logo" width="288" height="72" />
                 <div class="header-info">
                     <h1>SIDquake</h1>
                     <p class="tagline">C64 SID Analyzer, Linker & Tool Suite</p>
                     <div class="version-badge">PREVIEW</div>
                 </div>
             </div>
+            <!-- Page Tabs -->
+            <nav class="page-tabs" aria-label="Main navigation">
+                <button class="page-tab active" data-tab="tool" aria-selected="true">
+                    <i class="fas fa-tools"></i> <span>Tool</span>
+                </button>
+                <button class="page-tab" data-tab="about" aria-selected="false">
+                    <i class="fas fa-info-circle"></i> <span>About</span>
+                </button>
+            </nav>
         </div>
 
-        <div class="main-content">
+        <div class="main-content" id="tabTool">
             <!-- Simplified Upload Section -->
             <div class="upload-container">
                 <!-- Drag & Drop Area -->
@@ -215,6 +280,250 @@
 
                 <div class="export-status" id="exportStatus"></div>
             </div>
+        </div>
+
+        <!-- About Page -->
+        <div class="about-content" id="tabAbout" style="display: none;">
+            <!-- Hero Section -->
+            <section class="about-hero">
+                <div class="about-hero-scanlines"></div>
+                <div class="about-hero-inner">
+                    <div class="about-hero-badge">GENESIS PROJECT PRESENTS</div>
+                    <h2 class="about-hero-title">SID<span class="accent">quake</span></h2>
+                    <p class="about-hero-subtitle">The Easiest Way for Artists to Bundle &amp; Ship Their C64 SID Music</p>
+                    <div class="about-hero-divider">
+                        <span class="divider-chip"><i class="fas fa-microchip"></i></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- What is SIDquake -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">01</span>
+                    <h2>What is SIDquake?</h2>
+                </div>
+                <div class="about-card-grid">
+                    <article class="about-card about-card-featured">
+                        <div class="about-card-icon"><i class="fas fa-rocket"></i></div>
+                        <h3>Ship Your Music</h3>
+                        <p>SIDquake makes it <strong>super easy</strong> for Commodore 64 musicians and artists to take their SID compositions and package them into ready-to-run executable PRG files. No assembly knowledge required. No complex toolchains. Just upload your SID, pick a visualizer, and export.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-search-plus"></i></div>
+                        <h3>Analyze</h3>
+                        <p>Deep-dive into any SID file's internals. View load addresses, init routines, play calls, memory ranges, SID chip models, clock speeds, and CPU cycle usage &mdash; all parsed in real-time via WebAssembly.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-database"></i></div>
+                        <h3>Browse HVSC</h3>
+                        <p>Access the entire <strong>High Voltage SID Collection</strong> directly from your browser. Navigate thousands of SID tunes, preview them with in-browser playback powered by reSID, and select tracks for export.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-download"></i></div>
+                        <h3>Export PRG</h3>
+                        <p>Generate executable C64 PRG files bundled with beautiful visualizer effects. Choose from multiple visualizer styles, customize colors, add logos, and compress with TSCrunch &mdash; all in the browser.</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- The SID Chip -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">02</span>
+                    <h2>The Legendary SID Chip</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-sid-chip">
+                        <div class="chip-visual">
+                            <div class="chip-body">
+                                <div class="chip-label">MOS</div>
+                                <div class="chip-model">6581</div>
+                                <div class="chip-sublabel">SID</div>
+                            </div>
+                            <div class="chip-pins chip-pins-left"></div>
+                            <div class="chip-pins chip-pins-right"></div>
+                        </div>
+                    </div>
+                    <div class="about-text-content">
+                        <p>The <strong>MOS Technology 6581/8580 SID</strong> (Sound Interface Device) is the legendary sound chip at the heart of the Commodore 64. Designed by Bob Yannes in 1981, it was revolutionary for its time &mdash; a synthesizer-on-a-chip that gave the C64 its distinctive, unmistakable sound.</p>
+                        <p>With <strong>three independent oscillators</strong>, each capable of sawtooth, triangle, pulse, and noise waveforms, plus a multi-mode resonant filter and ring modulation, the SID was years ahead of its competition. It turned a home computer into a genuine musical instrument.</p>
+                        <p>The original <strong>6581</strong> (found in earlier C64 models) and the revised <strong>8580</strong> (in the C64C) each have their own character. The 6581 is known for its raw, gritty filter and louder volume, while the 8580 offers cleaner output and better-defined waveforms. Both are beloved by musicians and collectors worldwide.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- The Demoscene -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">03</span>
+                    <h2>The Demoscene &amp; C64 Culture</h2>
+                </div>
+                <div class="about-columns">
+                    <div class="about-column">
+                        <div class="about-quote">
+                            <blockquote>&ldquo;The demoscene is digital art as a competitive sport.&rdquo;</blockquote>
+                        </div>
+                        <p>The <strong>demoscene</strong> is a vibrant international computer art subculture that emerged in the 1980s. Groups of programmers, musicians, and graphic artists collaborate to create <strong>demos</strong> &mdash; non-interactive audiovisual presentations that push hardware to its absolute limits.</p>
+                        <p>In 2020, the demoscene was officially inscribed on <strong>UNESCO's Representative List of Intangible Cultural Heritage</strong> in Finland, Germany, and Poland &mdash; a recognition of its unique artistic and cultural significance.</p>
+                    </div>
+                    <div class="about-column">
+                        <p>The <strong>Commodore 64</strong> remains one of the most active demoscene platforms decades after its release. New demos, music disks, and intros are still being created today, with musicians composing fresh SID tunes and coders finding new tricks on the venerable 6510 CPU.</p>
+                        <p>Major C64 demoscene events include <strong>X Party</strong>, <strong>Revision</strong>, <strong>Transmission64</strong>, and <strong>BIT Party</strong> among many others, where sceners gather to compete, collaborate, and celebrate this unique art form.</p>
+                        <div class="about-tags">
+                            <span class="about-tag">Demos</span>
+                            <span class="about-tag">Intros</span>
+                            <span class="about-tag">Music Disks</span>
+                            <span class="about-tag">Cracktros</span>
+                            <span class="about-tag">Trackmos</span>
+                            <span class="about-tag">Digi-tunes</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SID Music & HVSC -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">04</span>
+                    <h2>SID Music &amp; HVSC</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-text-content about-text-full">
+                        <p>SID music is a thriving art form with an incredible heritage. Legendary composers like <strong>Rob Hubbard</strong>, <strong>Martin Galway</strong>, <strong>Jeroen Tel</strong>, <strong>Ben Daglish</strong>, <strong>Chris H&uuml;lsbeck</strong>, and <strong>Tim Follin</strong> defined the golden age of C64 game music. Today, a new generation of musicians &mdash; including <strong>LMan</strong>, <strong>Goto80</strong>, <strong>Jammer</strong>, <strong>DRAX</strong>, <strong>Stinsen</strong>, and many more &mdash; continue to push the SID chip to new creative heights.</p>
+                        <p>The <strong>High Voltage SID Collection (HVSC)</strong> is the definitive archive of C64 SID music, containing over <strong>57,000 tunes</strong> by thousands of composers. Maintained by a dedicated team of volunteers, HVSC preserves the complete history of SID music from 1982 to the present day. SIDquake provides direct browsing access to the entire HVSC collection.</p>
+                    </div>
+                </div>
+                <div class="about-stats">
+                    <div class="about-stat">
+                        <div class="about-stat-value">57,000+</div>
+                        <div class="about-stat-label">SID tunes in HVSC</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">40+</div>
+                        <div class="about-stat-label">Years of SID music</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">3</div>
+                        <div class="about-stat-label">Oscillators per SID</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">$D400</div>
+                        <div class="about-stat-label">SID base address</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">05</span>
+                    <h2>How SIDquake Works</h2>
+                </div>
+                <div class="about-pipeline">
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-file-upload"></i></div>
+                        <div class="pipeline-content">
+                            <h4>1. Load</h4>
+                            <p>Upload a SID file or browse HVSC to select a tune</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="pipeline-content">
+                            <h4>2. Analyze</h4>
+                            <p>WASM-powered 6510 CPU emulation parses every detail</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-palette"></i></div>
+                        <div class="pipeline-content">
+                            <h4>3. Customize</h4>
+                            <p>Choose a visualizer, set colors, and add your logo</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-download"></i></div>
+                        <div class="pipeline-content">
+                            <h4>4. Export</h4>
+                            <p>Download a ready-to-run C64 PRG with visualizer</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Technical Details -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">06</span>
+                    <h2>Under the Hood</h2>
+                </div>
+                <div class="about-card-grid about-card-grid-2">
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-microchip"></i> WebAssembly Emulation</h3>
+                        <p>SIDquake runs a full <strong>MOS 6510 CPU emulator</strong> compiled to WebAssembly. This allows real-time analysis of SID files directly in your browser &mdash; no plugins, no downloads, no server-side processing.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-volume-up"></i> reSID Playback</h3>
+                        <p>In-browser SID playback is powered by <strong>reSID</strong>, the industry-standard cycle-accurate SID chip emulator. Hear your tunes exactly as they'd sound on real hardware.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-compress-arrows-alt"></i> TSCrunch Compression</h3>
+                        <p>Exported PRG files can be compressed using <strong>TSCrunch</strong>, an efficient C64 packer. This creates self-extracting executables that fit more into the C64's 64KB of RAM.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-code"></i> KickAssembler Players</h3>
+                        <p>Visualizer routines are written in <strong>6502/6510 assembly</strong> and compiled with KickAssembler. Multiple load addresses ensure compatibility with any SID file's memory layout.</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Genesis Project -->
+            <section class="about-section about-section-genesis">
+                <div class="about-section-header">
+                    <span class="about-section-number">07</span>
+                    <h2>Genesis Project</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-text-content about-text-full">
+                        <p>SIDquake is part of the <strong>Genesis Project</strong> family of C64 tools and resources. Genesis Project is an active demoscene group dedicated to preserving and advancing Commodore 64 culture through modern tools and new productions.</p>
+                    </div>
+                </div>
+                <div class="about-links-grid">
+                    <a href="https://c64gfx.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-paint-brush"></i></div>
+                        <h4>C64GFX</h4>
+                        <p>C64 graphics gallery &amp; archive</p>
+                    </a>
+                    <a href="https://c64demo.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-film"></i></div>
+                        <h4>C64Demo</h4>
+                        <p>C64 demo database &amp; resources</p>
+                    </a>
+                    <a href="https://sidquake.c64demo.com" class="about-link-card about-link-card-active">
+                        <div class="about-link-icon"><i class="fas fa-music"></i></div>
+                        <h4>SIDquake</h4>
+                        <p>SID music analyzer &amp; linker</p>
+                    </a>
+                    <a href="https://dirquake.c64demo.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-folder-open"></i></div>
+                        <h4>DIRquake</h4>
+                        <p>C64 disk image tool</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="about-footer">
+                <div class="about-footer-inner">
+                    <div class="about-footer-logo">SIDquake</div>
+                    <p>Made with <span class="heart">&hearts;</span> for the C64 community</p>
+                    <p class="about-footer-tech">Powered by WebAssembly &middot; reSID &middot; KickAssembler &middot; TSCrunch</p>
+                </div>
+            </footer>
         </div>
     </div>
     <!-- Modal Overlay - Unified error/success/warning modal -->
@@ -415,6 +724,34 @@
             // Start after first paint
             requestAnimationFrame(function() { setTimeout(loadNext, 0); });
         })();
+
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            var tabs = document.querySelectorAll('.page-tab');
+            var tabTool = document.getElementById('tabTool');
+            var tabAbout = document.getElementById('tabAbout');
+
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    var target = this.getAttribute('data-tab');
+
+                    tabs.forEach(function(t) {
+                        t.classList.remove('active');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+
+                    if (target === 'about') {
+                        tabTool.style.display = 'none';
+                        tabAbout.style.display = 'block';
+                    } else {
+                        tabTool.style.display = 'block';
+                        tabAbout.style.display = 'none';
+                    }
+                });
+            });
+        });
     </script>
 
 </body>
