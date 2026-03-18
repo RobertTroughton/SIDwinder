@@ -10,12 +10,11 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
-    <!-- Non-render-blocking CSS: media="print" trick downloads immediately but doesn't block paint -->
-    <link rel="stylesheet" href="styles-deferred.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="styles-deferred.css">
+    <!-- Defer only external CDN stylesheets (the real network bottleneck) -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="styles-deferred.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </noscript>
