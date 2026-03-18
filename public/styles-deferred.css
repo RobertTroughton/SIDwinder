@@ -2732,6 +2732,16 @@
     opacity: 0.6;
 }
 
+/* About Hero - Simple variant */
+.about-hero-simple {
+    padding: var(--space-xl) var(--space-xl);
+}
+
+.about-hero-simple .about-hero-title {
+    font-size: 1.8rem;
+    letter-spacing: 4px;
+}
+
 /* About Section - Genesis */
 .about-section-genesis {
     background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(123, 104, 238, 0.03) 100%);
