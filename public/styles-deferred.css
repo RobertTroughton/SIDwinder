@@ -3063,16 +3063,17 @@
 }
 
 .releases-cta {
-    margin-top: var(--space-xl);
-    padding: var(--space-lg);
-    background: var(--accent-dim);
-    border: 1px solid var(--border-accent);
-    border-radius: var(--radius-sm);
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-sm) var(--space-lg);
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: var(--space-md);
     color: var(--text-secondary);
-    font-size: 0.9em;
+    font-size: 0.95em;
     line-height: 1.5;
 }
 
