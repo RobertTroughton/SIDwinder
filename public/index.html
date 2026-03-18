@@ -102,17 +102,17 @@
                 </div>
             </div>
             <!-- Page Tabs -->
-            <nav class="page-tabs" aria-label="Main navigation">
-                <button class="page-tab active" data-tab="tool" aria-selected="true">
+            <nav class="page-tabs" role="tablist" aria-label="Main navigation">
+                <button class="page-tab active" data-tab="tool" role="tab" id="tab-tool" aria-selected="true" aria-controls="tabTool">
                     <i class="fas fa-tools"></i> <span>Tool</span>
                 </button>
-                <button class="page-tab" data-tab="about" aria-selected="false">
+                <button class="page-tab" data-tab="about" role="tab" id="tab-about" aria-selected="false" aria-controls="tabAbout">
                     <i class="fas fa-info-circle"></i> <span>About</span>
                 </button>
             </nav>
         </div>
 
-        <div class="main-content" id="tabTool">
+        <div class="main-content" id="tabTool" role="tabpanel" aria-labelledby="tab-tool">
             <!-- Simplified Upload Section -->
             <div class="upload-container">
                 <!-- Drag & Drop Area -->
@@ -283,7 +283,7 @@
         </div>
 
         <!-- About Page -->
-        <div class="about-content" id="tabAbout" style="display: none;">
+        <div class="about-content" id="tabAbout" role="tabpanel" aria-labelledby="tab-about" style="display: none;">
             <!-- Hero Section -->
             <section class="about-hero about-hero-simple">
                 <div class="about-hero-scanlines"></div>
