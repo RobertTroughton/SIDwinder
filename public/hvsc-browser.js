@@ -24,16 +24,21 @@ window.hvscBrowser = (function () {
 
     async function ensurePlayerCreated() {
         if (hvscPlayer) return;
+        // Only need sid-player.js for the UI (buttons etc) — no WASM needed
         if (typeof SIDPlayer === 'undefined' && window.loadScript) {
-            await window.loadScript('sidwinder.js');
-            await Promise.all([
-                window.loadScript('sid-playback.js'),
-                window.loadScript('sid-player.js')
-            ]);
+            await window.loadScript('sid-player.js');
         }
         const container = document.getElementById('hvscPlayerContainer');
         if (container && typeof SIDPlayer !== 'undefined') {
             hvscPlayer = new SIDPlayer(container);
+        }
+    }
+
+    async function ensurePlaybackReady() {
+        if (typeof getSharedSIDPlayback !== 'undefined') return;
+        if (window.loadScript) {
+            await window.loadScript('sidwinder.js');
+            await window.loadScript('sid-playback.js');
         }
     }
 
@@ -315,6 +320,7 @@ window.hvscBrowser = (function () {
 
     async function previewSID(entry) {
         await ensurePlayerCreated();
+        await ensurePlaybackReady();
         if (hvscPlayer) {
             const wasPlaying = hvscPlayer.isPlaying;
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
