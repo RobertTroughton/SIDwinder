@@ -772,7 +772,11 @@ void Filter::clock(int voice1, int voice2, int voice3)
     Vbp = solve_integrate_8580(1, Vhp, Vbp_x, Vbp_vc, f);
   }
 
-  assert((Vbp >= 0) && (Vbp < (1 << 16)));
+  // Clamp Vbp to valid range to prevent numerical instability in the filter
+  // from causing out-of-bounds access into the resonance lookup table.
+  if (Vbp < 0) Vbp = 0;
+  else if (Vbp >= (1 << 16)) Vbp = (1 << 16) - 1;
+
   const int idx = offset + f.resonance[res][Vbp] + Vlp + Vi;
   assert((idx >= 0) && (idx < summer_offset<5>::value));
   Vhp = f.summer[idx];
@@ -883,7 +887,8 @@ void Filter::clock(cycle_count delta_t, int voice1, int voice2, int voice3)
       // Calculate filter outputs.
       Vlp = solve_integrate_6581(delta_t_flt, Vbp, Vlp_x, Vlp_vc, f);
       Vbp = solve_integrate_6581(delta_t_flt, Vhp, Vbp_x, Vbp_vc, f);
-      assert((Vbp >= 0) && (Vbp < (1 << 16)));
+      if (Vbp < 0) Vbp = 0;
+      else if (Vbp >= (1 << 16)) Vbp = (1 << 16) - 1;
       const int idx = offset + f.resonance[res][Vbp] + Vlp + Vi;
       assert((idx >= 0) && (idx < summer_offset<5>::value));
       Vhp = f.summer[idx];
@@ -901,7 +906,8 @@ void Filter::clock(cycle_count delta_t, int voice1, int voice2, int voice3)
       // Calculate filter outputs.
       Vlp = solve_integrate_8580(delta_t_flt, Vbp, Vlp_x, Vlp_vc, f);
       Vbp = solve_integrate_8580(delta_t_flt, Vhp, Vbp_x, Vbp_vc, f);
-      assert((Vbp >= 0) && (Vbp < (1 << 16)));
+      if (Vbp < 0) Vbp = 0;
+      else if (Vbp >= (1 << 16)) Vbp = (1 << 16) - 1;
       const int idx = offset + f.resonance[res][Vbp] + Vlp + Vi;
       assert((idx >= 0) && (idx < summer_offset<5>::value));
       Vhp = f.summer[idx];
@@ -1855,19 +1861,10 @@ int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc, model_filter_
   // Change in capacitor charge.
   vc -= (n_I_snake + n_I_vcr)*dt;
 
-/*
-  // FIXME: Determine whether this check is necessary.
-  if (vc < mf.vc_min) {
-    vc = mf.vc_min;
-  }
-  else if (vc > mf.vc_max) {
-    vc = mf.vc_max;
-  }
-*/
-
   // vx = g(vc)
-  const int idx = (vc >> 15) + (1 << 15);
-  assert((idx >= 0) && (idx < (1 << 16)));
+  int idx = (vc >> 15) + (1 << 15);
+  if (idx < 0) idx = 0;
+  else if (idx >= (1 << 16)) idx = (1 << 16) - 1;
   vx = mf.opamp_rev[idx];
 
   // Return vo.
@@ -1912,8 +1909,9 @@ int Filter::solve_integrate_8580(int dt, int vi, int& vx, int& vc, model_filter_
   vc -= n_I_rfc*dt;
 
   // vx = g(vc)
-  const int idx = (vc >> 15) + (1 << 15);
-  assert((idx >= 0) && (idx < (1 << 16)));
+  int idx = (vc >> 15) + (1 << 15);
+  if (idx < 0) idx = 0;
+  else if (idx >= (1 << 16)) idx = (1 << 16) - 1;
   vx = mf.opamp_rev[idx];
 
   // Return vo.
