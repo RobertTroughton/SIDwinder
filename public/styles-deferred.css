@@ -2732,6 +2732,75 @@
     opacity: 0.6;
 }
 
+/* Musicians Grid */
+.about-musicians {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border);
+}
+
+.about-musicians-title {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.about-musicians-title i {
+    opacity: 0.6;
+}
+
+.about-musicians-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.about-musician-link {
+    display: inline-block;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    transition: all var(--transition-base);
+}
+
+.about-musician-link:hover {
+    color: var(--accent-light);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(212, 162, 76, 0.15);
+}
+
+.about-musicians-credit {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: var(--space-sm);
+}
+
+.about-musicians-credit a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.about-musicians-credit a:hover {
+    color: var(--accent-light);
+    text-decoration: underline;
+}
+
 /* About Hero - Simple variant */
 .about-hero-simple {
     padding: var(--space-xl) var(--space-xl);
