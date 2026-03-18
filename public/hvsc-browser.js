@@ -297,8 +297,9 @@ window.hvscBrowser = (function () {
     }
 
     async function previewSID(entry) {
-        // Lazy-load player scripts on first preview
+        // Lazy-load WASM + player scripts on first preview
         if (typeof SIDPlayer === 'undefined' && window.loadScript) {
+            await window.loadScript('sidwinder.js');
             await Promise.all([
                 window.loadScript('sid-playback.js'),
                 window.loadScript('sid-player.js')
