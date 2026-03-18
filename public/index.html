@@ -353,28 +353,44 @@
         </div>
     </div>
 
-    <!-- Regular scripts (deferred to reduce main-thread blocking) -->
+    <!-- Core scripts needed at startup -->
     <script src="error-modal.js" defer></script>
     <script src="sidwinder.js" defer></script>
     <script src="sidwinder-core.js" defer></script>
-    <script src="png-converter.js" defer></script>
-    <script src="image-preview-manager.js" defer></script>
-    <script src="compressor-manager.js" defer></script>
-    <script src="bar-styles-data.js" defer></script>
-    <script src="color-palettes-data.js" defer></script>
-    <script src="font-data.js" defer></script>
-    <script src="prg-builder.js" defer></script>
     <script src="sid-playback.js" defer></script>
     <script src="sid-player.js" defer></script>
-    <script src="hvsc-browser.js" defer></script>
-    <script src="hvsc-random.js" defer></script>
     <script src="ui.js" defer></script>
     <script src="visualizer-registry.js" defer></script>
     <script src="visualizer-configs.js" defer></script>
     <script src="floating-notes.js" defer></script>
     <script src="text-drop-zone.js" defer></script>
-    <script src="petscii-sanitizer.js" defer></script>
-    <script src="petscii-converter.js" defer></script>
+
+    <!-- Lazy script loader for non-critical scripts loaded on demand -->
+    <script>
+        window.lazyScripts = {};
+        window.loadScript = function(src) {
+            if (!window.lazyScripts[src]) {
+                window.lazyScripts[src] = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+            return window.lazyScripts[src];
+        };
+        // Preload scripts that will be needed soon (fetch but don't execute)
+        ['prg-builder.js','image-preview-manager.js','hvsc-browser.js','hvsc-random.js',
+         'png-converter.js','compressor-manager.js','bar-styles-data.js',
+         'color-palettes-data.js','font-data.js',
+         'petscii-sanitizer.js','petscii-converter.js'].forEach(src => {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = src;
+            document.head.appendChild(link);
+        });
+    </script>
 
 </body>
 </html>

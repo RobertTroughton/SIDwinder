@@ -38,6 +38,24 @@ class UIController {
         this.initMainPlayer();
     }
 
+    // Lazy-load PRG export dependencies (prg-builder + png-converter + compressor + data files)
+    async ensurePRGExporter() {
+        if (this.prgExporter) return this.prgExporter;
+        await Promise.all([
+            window.loadScript('png-converter.js'),
+            window.loadScript('compressor-manager.js'),
+            window.loadScript('bar-styles-data.js'),
+            window.loadScript('color-palettes-data.js'),
+            window.loadScript('font-data.js'),
+            window.loadScript('petscii-converter.js'),
+            window.loadScript('petscii-sanitizer.js'),
+        ]);
+        await window.loadScript('prg-builder.js');
+        this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
+        window.currentAnalyzer = this.analyzer;
+        return this.prgExporter;
+    }
+
     cacheElements() {
         return {
             // Upload elements
@@ -173,9 +191,12 @@ class UIController {
         }
     }
 
-    openHVSCBrowser() {
+    async openHVSCBrowser() {
         const modal = document.getElementById('hvscModal');
         modal.classList.add('visible');
+
+        // Lazy-load HVSC browser script
+        await window.loadScript('hvsc-browser.js');
 
         // Initialize HVSC browser on first open
         if (typeof hvscBrowser.initializeHVSC === 'function') {
@@ -191,6 +212,9 @@ class UIController {
         this.showBusy('Finding Random SID', 'Exploring HVSC collection...');
 
         try {
+            // Lazy-load HVSC random script
+            await window.loadScript('hvsc-random.js');
+
             // Use the hvscRandom module to select a random SID
             const result = await window.hvscRandom.selectRandomSID(5, (message) => {
                 this.updateBusy('Finding Random SID', message);
@@ -622,23 +646,10 @@ class UIController {
             // Initialize visualizer selection
             this.initVisualizerSelection();
 
-            // Initialize PRG exporter now that we have analyzer ready
-            if (!this.prgExporter && this.analyzer) {
-                // Check if SIDwinderPRGExporter is available
-                if (typeof SIDwinderPRGExporter !== 'undefined') {
-                    this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-                    window.currentAnalyzer = this.analyzer;
-                } else {
-                    console.error('SIDwinderPRGExporter not loaded yet');
-                    // Try again after a short delay
-                    setTimeout(() => {
-                        if (typeof SIDwinderPRGExporter !== 'undefined' && !this.prgExporter) {
-                            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-                            window.currentAnalyzer = this.analyzer;
-                        }
-                    }, 500);
-                }
-            }
+            // Lazy-load PRG exporter in background (don't block SID display)
+            this.ensurePRGExporter().catch(err => {
+                console.warn('PRG exporter background load failed, will retry on use:', err);
+            });
         }
     }
 
@@ -673,7 +684,10 @@ class UIController {
     async initVisualizerSelection() {
         this.selectedVisualizer = null;
         this.visualizerConfig = new VisualizerConfig();
-        await this.loadAllVisualizerConfigs();
+        await Promise.all([
+            this.loadAllVisualizerConfigs(),
+            this.ensurePRGExporter()
+        ]);
         this.buildVisualizerGrid();
     }
 
@@ -810,7 +824,7 @@ class UIController {
         return card;
     }
 
-    selectVisualizer(visualizer) {
+    async selectVisualizer(visualizer) {
         // Update visual selection
         const cards = document.querySelectorAll('.visualizer-card');
         cards.forEach(card => {
@@ -871,7 +885,7 @@ class UIController {
 
         // Memory Layout Section (if applicable)
         if (hasLayouts) {
-            const layoutHTML = this.createLayoutSelectorHTML(visualizer, config);
+            const layoutHTML = await this.createLayoutSelectorHTML(visualizer, config);
             if (layoutHTML) {
                 html += `
                 <div class="option-group">
@@ -908,7 +922,7 @@ class UIController {
         optionsContainer.innerHTML = html;
 
         // Attach event listeners after HTML is inserted
-        this.attachOptionEventListeners(config);
+        await this.attachOptionEventListeners(config);
     }
 
     createCompressionOptionsHTML() {
@@ -940,7 +954,7 @@ class UIController {
     `;
     }
 
-    createLayoutSelectorHTML(visualizer, config) {
+    async createLayoutSelectorHTML(visualizer, config) {
         const sidLoadAddress = this.sidHeader?.loadAddress || 0x1000;
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
         const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
@@ -952,9 +966,7 @@ class UIController {
         // Cap at $FFFF to prevent overflow display issues for high-memory SIDs
         if (sidEnd > 0xFFFF) sidEnd = 0xFFFF;
 
-        if (!this.prgExporter) {
-            this.prgExporter = new SIDwinderPRGExporter(this.analyzer);
-        }
+        await this.ensurePRGExporter();
 
         const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize, modifiedAddresses);
 
@@ -1302,9 +1314,10 @@ class UIController {
         `;
     }
 
-    attachOptionEventListeners(config) {
-        // Initialize image preview manager if not already created
+    async attachOptionEventListeners(config) {
+        // Lazy-load and initialize image preview manager if not already created
         if (!window.imagePreviewManager) {
+            await window.loadScript('image-preview-manager.js');
             window.imagePreviewManager = new ImagePreviewManager();
         }
 
@@ -1332,8 +1345,9 @@ class UIController {
                     // Create the drop zone
                     TextDropZone.create(optionConfig.id);
 
-                    // Initialize sanitizer
+                    // Initialize sanitizer (lazy-loaded)
                     if (!window.petsciiSanitizer) {
+                        await window.loadScript('petscii-sanitizer.js');
                         window.petsciiSanitizer = new PETSCIISanitizer();
                     }
 
@@ -1807,6 +1821,10 @@ class UIController {
                 layoutKey: selectedLayoutKey
             };
 
+            // Ensure PRG exporter is loaded
+            this.updateBusy('Building PRG', 'Loading export components...');
+            await this.ensurePRGExporter();
+
             // Update progress
             this.updateBusy('Building PRG', 'Assembling components...');
 
@@ -2049,23 +2067,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (typeof SIDwinderPRGExporter === 'undefined') {
-            console.error('WARNING: SIDwinderPRGExporter not loaded yet');
-            // Try to wait a bit longer
-            setTimeout(() => {
-                if (typeof SIDwinderPRGExporter === 'undefined') {
-                    console.error('ERROR: SIDwinderPRGExporter still not available after waiting');
-                    if (window.showWarning) {
-                        window.showWarning('PRG Exporter module loading delayed', {
-                            details: 'Some export features may not be available immediately.',
-                            duration: 4000
-                        });
-                    }
-                }
-            }, 1000);
-        }
-
-        // Initialize the UI controller anyway
+        // Initialize the UI controller (PRG exporter loads lazily on demand)
         window.uiController = new UIController();
     }, 100);
 });
