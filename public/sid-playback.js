@@ -25,6 +25,11 @@ class SIDPlayback {
         this._sidCount = 1;
         this._isNTSC = false;
 
+        this._loadAddress = 0;
+        this._initAddress = 0;
+        this._playAddress = 0;
+        this._dataSize = 0;
+
         this._loadCallback = null;
     }
 
@@ -118,6 +123,18 @@ class SIDPlayback {
     async loadFromArrayBuffer(arrayBuffer) {
         await this.init();
 
+        // Stop playback and flush worklet queue before loading new SID
+        this.playing = false;
+        if (this.workletNode) {
+            this.workletNode.port.postMessage({ type: 'stop' });
+        }
+
+        // Reset WASM SID state if a tune was already loaded
+        if (this.loaded) {
+            this.api.audio_cleanup();
+            this.loaded = false;
+        }
+
         const data = new Uint8Array(arrayBuffer);
 
         // Allocate WASM memory and copy SID file data
@@ -131,6 +148,9 @@ class SIDPlayback {
         if (result !== 0) {
             throw new Error(`Failed to load SID file (error ${result})`);
         }
+
+        // Parse addresses from SID header (big-endian)
+        this._parseSIDHeader(data);
 
         // Cache metadata
         this._title = this.api.audio_get_title();
@@ -235,6 +255,24 @@ class SIDPlayback {
         this._loadCallback = fn;
     }
 
+    _parseSIDHeader(data) {
+        if (data.length < 0x76) return;
+        const be16 = (hi, lo) => (data[hi] << 8) | data[lo];
+        const dataOffset = be16(0x06, 0x07);
+        let loadAddr = be16(0x08, 0x09);
+        this._initAddress = be16(0x0A, 0x0B);
+        this._playAddress = be16(0x0C, 0x0D);
+        const musicData = data.subarray(dataOffset);
+        let musicLen = data.length - dataOffset;
+        if (loadAddr === 0 && musicLen >= 2) {
+            loadAddr = musicData[0] | (musicData[1] << 8);
+            musicLen -= 2;
+        }
+        this._loadAddress = loadAddr;
+        if (this._initAddress === 0) this._initAddress = loadAddr;
+        this._dataSize = musicLen;
+    }
+
     // ---- Metadata getters ----
     getTitle()        { return this._title; }
     getAuthor()       { return this._author; }
@@ -244,6 +282,10 @@ class SIDPlayback {
     getSIDModel()     { return this._sidModel; }
     getSIDCount()     { return this._sidCount; }
     isNTSC()          { return this._isNTSC; }
+    getLoadAddress()  { return this._loadAddress; }
+    getInitAddress()  { return this._initAddress; }
+    getPlayAddress()  { return this._playAddress; }
+    getDataSize()     { return this._dataSize; }
 
     getPlayTime() {
         if (!this.api || !this.loaded) return 0;

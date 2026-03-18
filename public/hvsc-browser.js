@@ -243,11 +243,16 @@ window.hvscBrowser = (function () {
         const sidModel = player.getSIDModel();
         const isNTSC = player.isNTSC();
 
+        const loadAddr = player.getLoadAddress();
+        const initAddr = player.getInitAddress();
+        const playAddr = player.getPlayAddress();
+        const dataSize = player.getDataSize();
+
         const modelNames = { 0: 'Unknown', 1: 'MOS 6581', 2: 'MOS 8580', 3: '6581 + 8580' };
         const modelStr = modelNames[sidModel] || 'Unknown';
         const clockStr = isNTSC ? 'NTSC' : 'PAL';
-
-        const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
+        const hex = (v) => '$' + v.toString(16).toUpperCase().padStart(4, '0');
+        const endAddr = loadAddr + dataSize;
 
         let html = '';
         if (title) html += `<div class="sid-info-row"><span class="sid-info-label">Title</span><span class="sid-info-value">${escapeHtml(title)}</span></div>`;
@@ -257,6 +262,10 @@ window.hvscBrowser = (function () {
         html += `<div class="sid-info-row"><span class="sid-info-label">SID Chip</span><span class="sid-info-value">${modelStr}</span></div>`;
         if (sidCount > 1) html += `<div class="sid-info-row"><span class="sid-info-label">SID Count</span><span class="sid-info-value">${sidCount}</span></div>`;
         html += `<div class="sid-info-row"><span class="sid-info-label">Clock</span><span class="sid-info-value">${clockStr}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Load Address</span><span class="sid-info-value">${hex(loadAddr)}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Init Address</span><span class="sid-info-value">${hex(initAddr)}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Play Address</span><span class="sid-info-value">${playAddr ? hex(playAddr) : 'IRQ'}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Memory Used</span><span class="sid-info-value">${hex(loadAddr)} - ${hex(endAddr)} (${dataSize} bytes)</span></div>`;
         html += `<div class="sid-info-row"><span class="sid-info-label">File</span><span class="sid-info-value">${escapeHtml(entry.name)}</span></div>`;
         html += `<div class="sid-info-download"><button class="btn" onclick="hvscBrowser.downloadSID()"><i class="fas fa-download"></i> Download SID</button></div>`;
 
@@ -295,11 +304,15 @@ window.hvscBrowser = (function () {
             }
         }
         if (hvscPlayer) {
+            const wasPlaying = hvscPlayer.isPlaying;
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
             const player = getSharedSIDPlayback();
             player.setLoadCallback(() => {
                 hvscPlayer.onLoaded(entry.name);
                 updateInfoPanel(entry);
+                if (wasPlaying) {
+                    hvscPlayer.play();
+                }
             });
             hvscPlayer.stop();
             hvscPlayer.takeOwnership();

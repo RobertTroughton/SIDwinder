@@ -2055,8 +2055,8 @@ details[open].panel > summary h2::after {
 
 /* SID Info Panel */
 .sid-info-panel {
-    width: 280px;
-    min-width: 280px;
+    width: 420px;
+    min-width: 420px;
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border);
@@ -2066,7 +2066,7 @@ details[open].panel > summary h2::after {
     flex: 1;
     overflow-y: auto;
     padding: 12px;
-    background: var(--bg-primary);
+    background: #181818;
     font-size: 12px;
 }
 
