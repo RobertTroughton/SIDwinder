@@ -44,6 +44,7 @@ window.hvscBrowser = (function () {
             parseDirectory(html, path);
             currentPath = path;
             updatePathBar();
+            clearInfoPanel();
         } catch (error) {
             console.error('Fetch error:', error);
             // Show error in the file list area
@@ -229,6 +230,63 @@ window.hvscBrowser = (function () {
         }
     }
 
+    function updateInfoPanel(entry) {
+        const content = document.getElementById('sidInfoContent');
+        if (!content) return;
+
+        const player = getSharedSIDPlayback();
+        const title = player.getTitle() || '';
+        const author = player.getAuthor() || '';
+        const copyright = player.getCopyright() || '';
+        const subtunes = player.getSubtuneCount() || 1;
+        const sidCount = player.getSIDCount() || 1;
+        const sidModel = player.getSIDModel();
+        const isNTSC = player.isNTSC();
+
+        const modelNames = { 0: 'Unknown', 1: 'MOS 6581', 2: 'MOS 8580', 3: '6581 + 8580' };
+        const modelStr = modelNames[sidModel] || 'Unknown';
+        const clockStr = isNTSC ? 'NTSC' : 'PAL';
+
+        const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
+
+        let html = '';
+        if (title) html += `<div class="sid-info-row"><span class="sid-info-label">Title</span><span class="sid-info-value">${escapeHtml(title)}</span></div>`;
+        if (author) html += `<div class="sid-info-row"><span class="sid-info-label">Author</span><span class="sid-info-value">${escapeHtml(author)}</span></div>`;
+        if (copyright) html += `<div class="sid-info-row"><span class="sid-info-label">Copyright</span><span class="sid-info-value">${escapeHtml(copyright)}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Subtunes</span><span class="sid-info-value">${subtunes}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">SID Chip</span><span class="sid-info-value">${modelStr}</span></div>`;
+        if (sidCount > 1) html += `<div class="sid-info-row"><span class="sid-info-label">SID Count</span><span class="sid-info-value">${sidCount}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">Clock</span><span class="sid-info-value">${clockStr}</span></div>`;
+        html += `<div class="sid-info-row"><span class="sid-info-label">File</span><span class="sid-info-value">${escapeHtml(entry.name)}</span></div>`;
+        html += `<div class="sid-info-download"><button class="btn" onclick="hvscBrowser.downloadSID()"><i class="fas fa-download"></i> Download SID</button></div>`;
+
+        content.innerHTML = html;
+    }
+
+    function clearInfoPanel() {
+        const content = document.getElementById('sidInfoContent');
+        if (content) {
+            content.innerHTML = '<div class="sid-info-placeholder">Select a SID file to view details</div>';
+        }
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function downloadSID() {
+        if (!currentSelection || currentSelection.isDirectory) return;
+        const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
+        const a = document.createElement('a');
+        a.href = sidUrl;
+        a.download = currentSelection.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
     function previewSID(entry) {
         if (!hvscPlayer) {
             const container = document.getElementById('hvscPlayerContainer');
@@ -238,7 +296,14 @@ window.hvscBrowser = (function () {
         }
         if (hvscPlayer) {
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
-            hvscPlayer.loadFromUrl(sidUrl, entry.name);
+            const player = getSharedSIDPlayback();
+            player.setLoadCallback(() => {
+                hvscPlayer.onLoaded(entry.name);
+                updateInfoPanel(entry);
+            });
+            hvscPlayer.stop();
+            hvscPlayer.takeOwnership();
+            player.loadFromUrl(sidUrl);
         }
     }
 
@@ -326,6 +391,7 @@ window.hvscBrowser = (function () {
         navigateUp: navigateUp,
         navigateHome: navigateHome,
         fetchDirectory: fetchDirectory,
-        stopPreview: stopPreview
+        stopPreview: stopPreview,
+        downloadSID: downloadSID
     };
 })();

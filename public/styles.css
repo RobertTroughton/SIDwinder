@@ -1856,7 +1856,7 @@ details[open].panel > summary h2::after {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     width: 100%;
-    max-width: 950px;
+    max-width: 1150px;
     height: 90vh;
     max-height: 650px;
     display: flex;
@@ -2053,24 +2053,101 @@ details[open].panel > summary h2::after {
     justify-content: space-between;
 }
 
+/* SID Info Panel */
+.sid-info-panel {
+    width: 280px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+}
+
+.sid-info-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    background: var(--bg-primary);
+    font-size: 12px;
+}
+
+.sid-info-placeholder {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 12px;
+    font-style: italic;
+    font-size: 12px;
+}
+
+.sid-info-row {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.sid-info-row:last-child {
+    border-bottom: none;
+}
+
+.sid-info-label {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.sid-info-value {
+    color: var(--text-primary);
+    font-size: 13px;
+    word-break: break-word;
+}
+
+.sid-info-download {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.sid-info-download .btn {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    color: var(--accent-light);
+    border-color: var(--accent);
+}
+
+.sid-info-download .btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
 /* Scrollbar styling */
 .file-list::-webkit-scrollbar,
+.sid-info-content::-webkit-scrollbar,
 .gallery-content::-webkit-scrollbar {
     width: 6px;
 }
 
 .file-list::-webkit-scrollbar-track,
+.sid-info-content::-webkit-scrollbar-track,
 .gallery-content::-webkit-scrollbar-track {
     background: var(--bg-primary);
 }
 
 .file-list::-webkit-scrollbar-thumb,
+.sid-info-content::-webkit-scrollbar-thumb,
 .gallery-content::-webkit-scrollbar-thumb {
     background: var(--border-light);
     border-radius: 3px;
 }
 
 .file-list::-webkit-scrollbar-thumb:hover,
+.sid-info-content::-webkit-scrollbar-thumb:hover,
 .gallery-content::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
 }
