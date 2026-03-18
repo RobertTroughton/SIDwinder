@@ -17,6 +17,23 @@ window.hvscBrowser = (function () {
         if (!hvscInitialized) {
             fetchDirectory('C64Music');
             hvscInitialized = true;
+            // Eagerly create the player (disabled state) so it's always visible
+            ensurePlayerCreated();
+        }
+    }
+
+    async function ensurePlayerCreated() {
+        if (hvscPlayer) return;
+        if (typeof SIDPlayer === 'undefined' && window.loadScript) {
+            await window.loadScript('sidwinder.js');
+            await Promise.all([
+                window.loadScript('sid-playback.js'),
+                window.loadScript('sid-player.js')
+            ]);
+        }
+        const container = document.getElementById('hvscPlayerContainer');
+        if (container && typeof SIDPlayer !== 'undefined') {
+            hvscPlayer = new SIDPlayer(container);
         }
     }
 
@@ -297,20 +314,7 @@ window.hvscBrowser = (function () {
     }
 
     async function previewSID(entry) {
-        // Lazy-load WASM + player scripts on first preview
-        if (typeof SIDPlayer === 'undefined' && window.loadScript) {
-            await window.loadScript('sidwinder.js');
-            await Promise.all([
-                window.loadScript('sid-playback.js'),
-                window.loadScript('sid-player.js')
-            ]);
-        }
-        if (!hvscPlayer) {
-            const container = document.getElementById('hvscPlayerContainer');
-            if (container) {
-                hvscPlayer = new SIDPlayer(container);
-            }
-        }
+        await ensurePlayerCreated();
         if (hvscPlayer) {
             const wasPlaying = hvscPlayer.isPlaying;
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
