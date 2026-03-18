@@ -613,7 +613,7 @@ class UIController {
             const header = this.elements.exportSection.querySelector('h2');
             if (header && this.analysisResults) {
                 const calls = this.analysisResults.numCallsPerFrame || 1;
-                header.innerHTML = `🎮 Choose Your Visualizer <span style="font-size: 0.8em; color: #666;"></span>`;
+                header.innerHTML = `<i class="fas fa-tv"></i> Choose Your Visualizer <span style="font-size: 0.8em; color: var(--text-muted);"></span>`;
             }
 
             // Add song selector if multiple songs
@@ -757,7 +757,7 @@ class UIController {
             grid-column: 1 / -1;
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--text-muted);
             font-style: italic;
             border-top: 1px dashed #333;
             margin: 10px 0;
@@ -798,7 +798,7 @@ class UIController {
             <h3>${visualizer.name}</h3>
             <p>${visualizer.description}</p>
         </div>
-        <div class="visualizer-selected-badge">✓ Selected</div>
+        <div class="visualizer-selected-badge"><i class="fas fa-check"></i> Selected</div>
     `;
 
         if (!isDisabled) {
@@ -849,7 +849,7 @@ class UIController {
             optionsContainer.className = 'visualizer-options-panel';
             optionsContainer.innerHTML = `
             <div class="options-header">
-                <h3>📎 Export Configuration</h3>
+                <h3><i class="fas fa-sliders-h"></i> Export Configuration</h3>
             </div>
             <div class="options-content">
                 ${this.createCompressionOptionsHTML()}
@@ -864,7 +864,7 @@ class UIController {
         // Create the structured HTML
         let html = `
         <div class="options-header">
-            <h3>📎 ${visualizer.name} Configuration</h3>
+            <h3><i class="fas fa-sliders-h"></i> ${visualizer.name} Configuration</h3>
         </div>
         <div class="options-content">
     `;
@@ -964,7 +964,7 @@ class UIController {
         const validLayouts = layouts.filter(l => l.valid);
 
         if (validLayouts.length === 0) {
-            return '<div class="option-warning">⚠️ No compatible memory layouts available</div>';
+            return '<div class="option-warning"><i class="fas fa-exclamation-triangle"></i> No compatible memory layouts available</div>';
         }
 
         let html = '<div class="layout-options">';
@@ -1223,7 +1223,7 @@ class UIController {
                      title="${v.label}">
                     <img class="font-thumbnail-img"
                          alt="${v.label}">
-                    <span class="selected-check">✓</span>
+                    <span class="selected-check"><i class="fas fa-check"></i></span>
                     <span class="style-name">${v.shortLabel}</span>
                 </div>
             `;
@@ -1285,7 +1285,7 @@ class UIController {
                     <img src="${imagePath}"
                          alt="Style ${v.value}"
                          onerror="this.onerror=null;this.parentElement.classList.add('placeholder'); this.style.display='none'; this.parentElement.querySelector('.style-name').insertAdjacentHTML('beforebegin', '<span>${v.value}</span>');">
-                    <span class="selected-check">✓</span>
+                    <span class="selected-check"><i class="fas fa-check"></i></span>
                     <span class="style-name">${displayLabel}</span>
                 </div>
             `;
@@ -1398,7 +1398,7 @@ class UIController {
 
                         // Show warnings
                         if (result.hasWarnings && warningDiv) {
-                            let warningHTML = '<strong>⚠️ Character compatibility issues:</strong><br>';
+                            let warningHTML = '<strong><i class="fas fa-exclamation-triangle"></i> Character compatibility issues:</strong><br>';
 
                             result.warnings.forEach(warning => {
                                 if (warning.type === 'unknown_characters') {

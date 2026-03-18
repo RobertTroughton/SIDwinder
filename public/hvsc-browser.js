@@ -185,7 +185,7 @@ window.hvscBrowser = (function () {
             const item = document.createElement('div');
             item.className = 'file-item' + (entry.isDirectory ? ' directory' : '');
 
-            const icon = entry.isDirectory ? '📁' : '🎵';
+            const icon = entry.isDirectory ? '<i class="fas fa-folder"></i>' : '<i class="fas fa-music"></i>';
 
             item.innerHTML = `
             <span class="file-icon">${icon}</span>

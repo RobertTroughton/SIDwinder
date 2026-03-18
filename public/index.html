@@ -41,7 +41,7 @@
             <div class="upload-container">
                 <!-- Drag & Drop Area -->
                 <div class="upload-section" id="uploadSection">
-                    <div class="upload-icon">📂</div>
+                    <div class="upload-icon"><i class="fas fa-file-upload"></i></div>
                     <div class="upload-text">Drop your SID file here</div>
                     <div class="upload-subtext">or use the buttons below</div>
                 </div>
@@ -49,15 +49,15 @@
                 <!-- Upload Buttons -->
                 <div class="upload-buttons">
                     <button class="upload-btn" id="uploadBtn">
-                        <span class="upload-btn-icon">📁</span>
+                        <i class="fas fa-folder-open"></i>
                         <span>Upload SID</span>
                     </button>
                     <button class="upload-btn" id="hvscBtn">
-                        <span class="upload-btn-icon">🎵</span>
+                        <i class="fas fa-music"></i>
                         <span>Browse HVSC</span>
                     </button>
                     <button class="upload-btn random-btn" id="randomBtn">
-                        <span class="upload-btn-icon">🎲</span>
+                        <i class="fas fa-random"></i>
                         <span>Random SID</span>
                     </button>
                 </div>
@@ -86,26 +86,26 @@
                 <div class="info-panels" id="infoPanels">
                     <!-- File Information Panel -->
                     <div class="panel">
-                        <h2>📄 File Information</h2>
+                        <h2><i class="fas fa-file-alt"></i> File Information</h2>
                         <div class="info-row">
                             <span class="info-label">Title:</span>
                             <span class="info-value editable" id="sidTitle" data-field="title" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Author:</span>
                             <span class="info-value editable" id="sidAuthor" data-field="author" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Copyright:</span>
                             <span class="info-value editable" id="sidCopyright" data-field="copyright" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
@@ -123,8 +123,8 @@
                     </div>
 
                     <!-- Technical Details Panel -->
-                    <div class="panel">
-                        <h2>⚙️ Technical Details</h2>
+                    <details class="panel" open>
+                        <summary><h2><i class="fas fa-microchip"></i> Technical Details</h2></summary>
                         <div class="info-row">
                             <span class="info-label">Load Address:</span>
                             <span class="info-value" id="loadAddress">-</span>
@@ -169,13 +169,13 @@
                             <span class="info-label">Max CPU Cycles:</span>
                             <span class="info-value" id="maxCycles">-</span>
                         </div>
-                    </div>
+                    </details>
                 </div>
 
                 <!-- Export Modified SID Button (moved here) -->
                 <div class="export-modified-container">
                     <button class="export-button" id="exportModifiedSIDButton" disabled>
-                        💾 Save SID
+                        <i class="fas fa-save"></i> Save SID
                     </button>
                     <div class="export-hint" id="exportHint">Edit the metadata above to enable export</div>
                 </div>
@@ -183,7 +183,7 @@
 
             <!-- Export Section -->
             <div class="section-group export-section disabled" id="exportSection">
-                <h2>🎮 Choose Your Visualizer</h2>
+                <h2><i class="fas fa-tv"></i> Choose Your Visualizer</h2>
 
                 <!-- Visualizer Grid -->
                 <div class="visualizer-grid" id="visualizerGrid">
@@ -198,7 +198,7 @@
                 <!-- Export Button -->
                 <div class="export-buttons">
                     <button class="export-button" id="exportPRGButton" disabled>
-                        🎮 Export PRG
+                        <i class="fas fa-download"></i> Export PRG
                     </button>
                 </div>
 
@@ -346,7 +346,7 @@
             <div class="gallery-modal-body">
                 <div class="gallery-container">
                     <div class="gallery-header">
-                        <div class="gallery-title">🎨 Image Gallery</div>
+                        <div class="gallery-title"><i class="fas fa-images"></i> Image Gallery</div>
                         <div class="gallery-subtitle" id="gallerySubtitle">Select an image</div>
                     </div>
 
