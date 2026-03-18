@@ -10,16 +10,9 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
-    <script>
-    // Non-render-blocking CSS: inject <link> elements after DOM is ready.
-    // Browsers download them immediately but don't block first paint.
-    requestAnimationFrame(function(){
-        ['styles-deferred.css',
-         'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap',
-         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
-        ].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
-    });
-    </script>
+    <link rel="stylesheet" href="styles-deferred.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="styles-deferred.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
