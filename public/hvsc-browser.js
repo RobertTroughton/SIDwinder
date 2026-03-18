@@ -296,7 +296,14 @@ window.hvscBrowser = (function () {
         document.body.removeChild(a);
     }
 
-    function previewSID(entry) {
+    async function previewSID(entry) {
+        // Lazy-load player scripts on first preview
+        if (typeof SIDPlayer === 'undefined' && window.loadScript) {
+            await Promise.all([
+                window.loadScript('sid-playback.js'),
+                window.loadScript('sid-player.js')
+            ]);
+        }
         if (!hvscPlayer) {
             const container = document.getElementById('hvscPlayerContainer');
             if (container) {
