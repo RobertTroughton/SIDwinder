@@ -7,22 +7,16 @@ class CompressorManager {
         };
 
         this.initialized = false;
-        this.initPromise = this.initializeCompressors();
     }
 
     async initializeCompressors() {
-        // Wait for TSCrunch to be ready
-        if (!window.TSCrunch) {
-            await new Promise(resolve => {
-                if (window.TSCrunch) {
-                    resolve();
-                } else {
-                    window.addEventListener('tscrunch-ready', resolve, { once: true });
-                }
-            });
+        if (this.initialized) return;
+
+        // Lazy-load TSCrunch only when first needed
+        if (window.loadTSCrunch) {
+            await window.loadTSCrunch();
         }
 
-        // TSCrunch Compressor
         if (window.TSCrunch) {
             try {
                 this.compressors.tscrunch = new TSCrunchCompressor();
@@ -36,7 +30,7 @@ class CompressorManager {
 
     async waitForInit() {
         if (!this.initialized) {
-            await this.initPromise;
+            await this.initializeCompressors();
         }
     }
 
