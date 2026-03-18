@@ -3087,6 +3087,11 @@
     margin: 0;
 }
 
+.releases-cta a {
+    color: inherit;
+    text-decoration: underline;
+}
+
 .releases-credit {
     font-size: 0.8em;
     color: var(--text-muted);
