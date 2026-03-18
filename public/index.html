@@ -5,12 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="SIDquake - Analyze, browse, and export C64 SID music files. Features HVSC browser, SID analysis, and PRG export with visualizer effects.">
     <title>SIDquake - C64 SID Music Linker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
-    <script>requestAnimationFrame(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';document.head.appendChild(l)});</script>
+    <script>
+    // Load non-critical CSS after first paint: Google Fonts, Font Awesome, deferred styles
+    requestAnimationFrame(function(){setTimeout(function(){
+        ['https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap',
+         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+         'styles-deferred.css'
+        ].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
+    },0)});
+    </script>
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="styles-deferred.css">
+    </noscript>
 </head>
 <body>
     <!-- Genesis Project Common Header -->
@@ -374,8 +387,7 @@
         // instead of blocking the main thread in one giant 2+ second task.
         (function() {
             var scripts = [
-                'error-modal.js', 'sidwinder.js', 'sidwinder-core.js',
-                'visualizer-registry.js', 'ui.js'
+                'error-modal.js', 'visualizer-registry.js', 'ui.js'
             ];
             var i = 0;
             function loadNext() {

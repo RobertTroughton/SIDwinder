@@ -22,7 +22,7 @@ const C64_COLORS = [
 
 class UIController {
     constructor() {
-        this.analyzer = new SIDAnalyzer();
+        this.analyzer = null;
         this.currentFileName = null;
         this.hasModifications = false;
         this.analysisResults = null;
@@ -35,6 +35,15 @@ class UIController {
         this.mainPlayer = null;
         this.elements = this.cacheElements();
         this.initEventListeners();
+    }
+
+    // Lazy-load WASM + SID analyzer (only needed when processing a SID file)
+    async ensureAnalyzer() {
+        if (this.analyzer) return this.analyzer;
+        await window.loadScript('sidwinder.js');
+        await window.loadScript('sidwinder-core.js');
+        this.analyzer = new SIDAnalyzer();
+        return this.analyzer;
     }
 
     // Lazy-load PRG export dependencies (prg-builder + png-converter + compressor + data files)
@@ -555,8 +564,12 @@ class UIController {
         this.elements.exportModifiedSIDButton.disabled = true;
 
         // Show busy overlay
-        this.showBusy('Loading SID File', 'Reading and analyzing file...');
+        this.showBusy('Loading SID File', 'Initializing...');
         this.hideMessages();
+
+        // Ensure WASM analyzer is loaded (lazy on first use)
+        await this.ensureAnalyzer();
+        this.updateBusy('Loading SID File', 'Reading and analyzing file...');
 
         try {
             // Read file
@@ -2055,24 +2068,7 @@ class UIController {
 
 // Initialize UI - called directly since scripts are loaded dynamically after DOM is ready
 (function initUI() {
-    // Check if required classes are available
-    if (typeof SIDAnalyzer === 'undefined') {
-        console.error('SIDAnalyzer not loaded');
-        if (window.showError) {
-            window.showError('Core components not loaded', {
-                details: 'The SIDAnalyzer module failed to load. Please refresh the page to try again.',
-                duration: 0
-            });
-        } else {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff6b6b;color:white;padding:20px;border-radius:8px;z-index:9999;text-align:center;';
-            errorDiv.innerHTML = '<strong>Error:</strong> Core components not loaded.<br>Please refresh the page.';
-            document.body.appendChild(errorDiv);
-        }
-        return;
-    }
-
-    // Initialize the UI controller (PRG exporter loads lazily on demand)
+    // Initialize the UI controller (WASM + PRG exporter load lazily on demand)
     window.uiController = new UIController();
 
     // Load non-critical cosmetic scripts when idle
