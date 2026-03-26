@@ -61,6 +61,7 @@ const FONT_DIMENSIONS = {
 const KNOWN_FONTS = {
     '1x2': [
         { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED, hasBinaryFallback: true },
+        { id: 'syndrom', name: 'Syndrom', caseType: FONT_CASE_MIXED },
         { id: 'cupid', name: 'Cupid', caseType: FONT_CASE_MIXED },
         { id: 'mermaid', name: 'Mermaid', caseType: FONT_CASE_UPPER_ONLY },
         { id: 'yazoo', name: 'Yazoo', caseType: FONT_CASE_UPPER_ONLY },
