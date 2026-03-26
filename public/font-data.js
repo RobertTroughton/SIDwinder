@@ -73,6 +73,9 @@ const KNOWN_FONTS = {
     ]
 };
 
+// Cache-busting version - increment when font assets change
+const FONT_ASSET_VERSION = 1;
+
 // Constants (prefixed to avoid collision with bar-styles-data.js)
 const FONT_BYTES_PER_CHAR = 8;
 
@@ -91,7 +94,7 @@ const fontListCache = new Map();
 function getFontPath(fontType, fontId) {
     const dim = FONT_DIMENSIONS[fontType];
     if (!dim) return null;
-    return `${dim.folder}/font-${fontType}-${fontId}.png`;
+    return `${dim.folder}/font-${fontType}-${fontId}.png?v=${FONT_ASSET_VERSION}`;
 }
 
 /**

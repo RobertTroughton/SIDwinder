@@ -1,0 +1,26 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Short cache for font and bar-style assets so new additions appear quickly
+[[headers]]
+  for = "/PNG/Fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+  for = "/PNG/BarStyles/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Short cache for JS files to pick up code changes quickly
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# JSON configs also need short cache
+[[headers]]
+  for = "/prg/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
