@@ -3,7 +3,17 @@
  * Builds public/hvsc-index.json — a flat index of every SID in HVSC with
  * title, author, and released fields parsed from the PSID/RSID header.
  *
- * Usage:  node tools/build-hvsc-index.js [--root C64Music] [--concurrency 8]
+ * Usage:
+ *   node tools/build-hvsc-index.js                  # full crawl
+ *   node tools/build-hvsc-index.js --root <path>    # crawl a subtree
+ *   node tools/build-hvsc-index.js --concurrency N  # header-fetch parallelism
+ *   node tools/build-hvsc-index.js --patch          # backfill paths listed in
+ *                                                     hvsc-index.failed.json
+ *   node tools/build-hvsc-index.js --patch PATH...  # backfill the given paths
+ *
+ * In --patch mode, the existing hvsc-index.json is loaded and any newly
+ * crawled entries are merged in (replacing duplicates by path). Useful after
+ * a full run where a few directories timed out.
  *
  * The crawler walks directory listings on hvsc.etv.cx and fetches the first
  * 128 bytes of each .sid via an HTTP Range request so it only pulls the
@@ -23,36 +33,60 @@ const https = require('https');
 
 const HVSC_ORIGIN = 'https://hvsc.etv.cx';
 const OUTPUT = path.join(__dirname, '..', 'public', 'hvsc-index.json');
+const FAILED_OUTPUT = path.join(__dirname, '..', 'public', 'hvsc-index.failed.json');
 
-const args = parseArgs(process.argv.slice(2));
-const ROOT = args.root || 'C64Music';
-const CONCURRENCY = parseInt(args.concurrency || '8', 10);
+const { flags, positional } = parseArgs(process.argv.slice(2));
+const ROOT = flags.root || 'C64Music';
+const CONCURRENCY = parseInt(flags.concurrency || '8', 10);
+const RETRY_ATTEMPTS = 4;
+const RETRY_DELAY_BASE_MS = 1000;
+const PATCH_MODE = !!flags.patch;
 
 function parseArgs(argv) {
-    const out = {};
+    const flags = {};
+    const positional = [];
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a.startsWith('--')) {
             const key = a.slice(2);
             const next = argv[i + 1];
-            if (next && !next.startsWith('--')) { out[key] = next; i++; }
-            else { out[key] = true; }
+            // Boolean flags: --patch, --patch path1 path2 — treat next non-flag
+            // as a value only for known value flags.
+            if ((key === 'root' || key === 'concurrency') && next && !next.startsWith('--')) {
+                flags[key] = next; i++;
+            } else {
+                flags[key] = true;
+            }
+        } else {
+            positional.push(a);
         }
     }
-    return out;
+    return { flags, positional };
 }
 
-function fetchBuffer(url, { headers = {} } = {}) {
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+function isRetryable(err) {
+    const msg = err && err.message ? err.message : '';
+    if (err && (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' ||
+                err.code === 'ECONNREFUSED' || err.code === 'EAI_AGAIN')) return true;
+    if (/socket hang up|Timeout|ECONN|network|EAI_AGAIN|503|502|504|429/i.test(msg)) return true;
+    return false;
+}
+
+function fetchBufferOnce(url, { headers = {} } = {}) {
     return new Promise((resolve, reject) => {
         const req = https.get(url, { headers }, (res) => {
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                 res.resume();
-                resolve(fetchBuffer(new URL(res.headers.location, url).toString(), { headers }));
+                resolve(fetchBufferOnce(new URL(res.headers.location, url).toString(), { headers }));
                 return;
             }
             if (res.statusCode !== 200 && res.statusCode !== 206) {
                 res.resume();
-                reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+                const err = new Error(`HTTP ${res.statusCode} for ${url}`);
+                err.statusCode = res.statusCode;
+                reject(err);
                 return;
             }
             const chunks = [];
@@ -63,6 +97,21 @@ function fetchBuffer(url, { headers = {} } = {}) {
         req.on('error', reject);
         req.setTimeout(30000, () => { req.destroy(new Error('Timeout')); });
     });
+}
+
+async function fetchBuffer(url, opts) {
+    let lastErr;
+    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+        try {
+            return await fetchBufferOnce(url, opts);
+        } catch (err) {
+            lastErr = err;
+            if (!isRetryable(err) || attempt === RETRY_ATTEMPTS - 1) break;
+            const delay = RETRY_DELAY_BASE_MS * Math.pow(3, attempt);
+            await sleep(delay);
+        }
+    }
+    throw lastErr;
 }
 
 async function fetchText(url) {
@@ -130,10 +179,12 @@ async function fetchSidHeader(sidPath) {
     return parseSidHeader(buf);
 }
 
-async function crawl() {
-    const queue = [ROOT];
+// Crawl one or more directory roots. Returns { sidPaths, failedDirs }.
+async function crawl(roots) {
+    const queue = roots.slice();
     const visited = new Set();
     const sidPaths = [];
+    const failedDirs = [];
     let dirCount = 0;
 
     while (queue.length) {
@@ -145,7 +196,9 @@ async function crawl() {
             const html = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(dir)}`);
             const { dirs, files } = parseListing(html);
             for (const d of dirs) {
-                if (!visited.has(d) && d.startsWith(ROOT)) queue.push(d);
+                if (!visited.has(d) && (d === dir || d.startsWith(dir + '/') || roots.some((r) => d.startsWith(r)))) {
+                    queue.push(d);
+                }
             }
             for (const f of files) sidPaths.push(f);
             if (dirCount % 50 === 0) {
@@ -153,15 +206,52 @@ async function crawl() {
             }
         } catch (err) {
             process.stderr.write(`  ! dir failed: ${dir} (${err.message})\n`);
+            failedDirs.push(dir);
         }
     }
 
-    return unique(sidPaths);
+    // One more pass for any dirs that failed despite in-request retries.
+    if (failedDirs.length) {
+        process.stderr.write(`Retrying ${failedDirs.length} failed directories...\n`);
+        const stillFailed = [];
+        for (const dir of failedDirs) {
+            try {
+                const html = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(dir)}`);
+                const { dirs, files } = parseListing(html);
+                for (const d of dirs) {
+                    if (!visited.has(d)) queue.push(d);
+                }
+                for (const f of files) sidPaths.push(f);
+                // Drain any newly queued subdirs from this recovered root
+                while (queue.length) {
+                    const sub = queue.shift();
+                    if (visited.has(sub)) continue;
+                    visited.add(sub);
+                    try {
+                        const subHtml = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(sub)}`);
+                        const subParsed = parseListing(subHtml);
+                        for (const d of subParsed.dirs) if (!visited.has(d)) queue.push(d);
+                        for (const f of subParsed.files) sidPaths.push(f);
+                    } catch (subErr) {
+                        process.stderr.write(`  ! still failing: ${sub} (${subErr.message})\n`);
+                        stillFailed.push(sub);
+                    }
+                }
+            } catch (err) {
+                process.stderr.write(`  ! still failing: ${dir} (${err.message})\n`);
+                stillFailed.push(dir);
+            }
+        }
+        return { sidPaths: unique(sidPaths), failedDirs: stillFailed };
+    }
+
+    return { sidPaths: unique(sidPaths), failedDirs: [] };
 }
 
 async function buildIndex(sidPaths) {
     const entries = [];
-    let done = 0, failed = 0;
+    const failedPaths = [];
+    let done = 0;
     const total = sidPaths.length;
 
     async function worker(slice) {
@@ -169,13 +259,13 @@ async function buildIndex(sidPaths) {
             try {
                 const meta = await fetchSidHeader(p);
                 if (meta) entries.push({ p, ...meta });
-                else failed++;
+                else failedPaths.push(p);
             } catch (err) {
-                failed++;
+                failedPaths.push(p);
             }
             done++;
             if (done % 500 === 0) {
-                process.stderr.write(`  headers: ${done}/${total} (failed: ${failed})\n`);
+                process.stderr.write(`  headers: ${done}/${total} (failed so far: ${failedPaths.length})\n`);
             }
         }
     }
@@ -185,29 +275,115 @@ async function buildIndex(sidPaths) {
     await Promise.all(slices.map(worker));
 
     entries.sort((a, b) => a.p.localeCompare(b.p));
-    return { entries, failed };
+    return { entries, failedPaths };
 }
 
-(async function main() {
-    console.error(`Crawling ${HVSC_ORIGIN} starting at ${ROOT} (concurrency=${CONCURRENCY})`);
-    const t0 = Date.now();
-    const sidPaths = await crawl();
-    console.error(`Found ${sidPaths.length} SID files in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+function loadExistingIndex() {
+    if (!fs.existsSync(OUTPUT)) return null;
+    try {
+        return JSON.parse(fs.readFileSync(OUTPUT, 'utf8'));
+    } catch (err) {
+        console.error(`Could not parse existing ${OUTPUT}: ${err.message}`);
+        return null;
+    }
+}
 
-    console.error('Fetching SID headers...');
-    const { entries, failed } = await buildIndex(sidPaths);
-    console.error(`Parsed ${entries.length} headers (${failed} failed)`);
+function writeOutputs(entries, stillFailed, { mergeWith } = {}) {
+    let finalEntries = entries;
+    if (mergeWith && Array.isArray(mergeWith.entries)) {
+        const byPath = new Map();
+        for (const e of mergeWith.entries) byPath.set(e.p, e);
+        for (const e of entries) byPath.set(e.p, e);
+        finalEntries = Array.from(byPath.values()).sort((a, b) => a.p.localeCompare(b.p));
+    }
 
     const out = {
         v: 1,
         generated: new Date().toISOString(),
         root: ROOT,
-        count: entries.length,
-        entries,
+        count: finalEntries.length,
+        entries: finalEntries,
     };
     fs.writeFileSync(OUTPUT, JSON.stringify(out));
     const mb = (fs.statSync(OUTPUT).size / 1024 / 1024).toFixed(2);
-    console.error(`Wrote ${OUTPUT} (${mb} MB, ${entries.length} entries)`);
+    console.error(`Wrote ${OUTPUT} (${mb} MB, ${finalEntries.length} entries)`);
+
+    if (stillFailed && stillFailed.length) {
+        fs.writeFileSync(FAILED_OUTPUT, JSON.stringify({
+            generated: new Date().toISOString(),
+            paths: stillFailed,
+        }, null, 2));
+        console.error(`Wrote ${FAILED_OUTPUT} (${stillFailed.length} paths). `
+            + `Re-run with --patch to retry them.`);
+    } else if (fs.existsSync(FAILED_OUTPUT)) {
+        fs.unlinkSync(FAILED_OUTPUT);
+        console.error(`Removed stale ${FAILED_OUTPUT} (nothing left to patch).`);
+    }
+}
+
+async function runFullCrawl() {
+    console.error(`Crawling ${HVSC_ORIGIN} starting at ${ROOT} (concurrency=${CONCURRENCY})`);
+    const t0 = Date.now();
+    const { sidPaths, failedDirs } = await crawl([ROOT]);
+    console.error(`Found ${sidPaths.length} SID files in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+    console.error('Fetching SID headers...');
+    const { entries, failedPaths } = await buildIndex(sidPaths);
+    console.error(`Parsed ${entries.length} headers (${failedPaths.length} failed)`);
+
+    const stillFailed = unique([...failedDirs, ...failedPaths]);
+    writeOutputs(entries, stillFailed);
+}
+
+async function runPatch() {
+    const existing = loadExistingIndex();
+    if (!existing) {
+        console.error(`No existing ${OUTPUT} found. Run a full crawl first.`);
+        process.exit(1);
+    }
+
+    let patchPaths = positional.slice();
+    if (patchPaths.length === 0) {
+        if (!fs.existsSync(FAILED_OUTPUT)) {
+            console.error(`No paths given and no ${FAILED_OUTPUT} found. Nothing to patch.`);
+            process.exit(1);
+        }
+        const failed = JSON.parse(fs.readFileSync(FAILED_OUTPUT, 'utf8'));
+        patchPaths = failed.paths || [];
+    }
+
+    if (patchPaths.length === 0) {
+        console.error('No paths to patch.');
+        return;
+    }
+
+    // Normalize: drop trailing slash; strip leading slash
+    patchPaths = patchPaths.map((p) => p.replace(/^\/+|\/+$/g, ''));
+
+    const dirPaths = patchPaths.filter((p) => !p.endsWith('.sid'));
+    const filePaths = patchPaths.filter((p) => p.endsWith('.sid'));
+
+    console.error(`Patch mode: ${dirPaths.length} dirs + ${filePaths.length} files to backfill`);
+
+    let sidPaths = filePaths.slice();
+    let failedDirs = [];
+    if (dirPaths.length) {
+        const res = await crawl(dirPaths);
+        sidPaths = unique([...sidPaths, ...res.sidPaths]);
+        failedDirs = res.failedDirs;
+    }
+
+    console.error(`Fetching ${sidPaths.length} SID headers...`);
+    const { entries, failedPaths } = await buildIndex(sidPaths);
+    console.error(`Parsed ${entries.length} headers (${failedPaths.length} failed)`);
+
+    const stillFailed = unique([...failedDirs, ...failedPaths]);
+    writeOutputs(entries, stillFailed, { mergeWith: existing });
+}
+
+(async function main() {
+    if (PATCH_MODE) await runPatch();
+    else await runFullCrawl();
 })().catch((err) => {
     console.error('Fatal:', err);
     process.exit(1);
