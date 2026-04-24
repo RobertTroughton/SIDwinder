@@ -948,11 +948,16 @@
                             </button>
                             <input type="text" class="path-bar" id="pathBar" readonly>
                         </div>
+                        <div class="browser-search">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-bar" id="hvscSearchBar" placeholder="Search the whole collection by title, author, or filename..." autocomplete="off" spellcheck="false">
+                            <button class="search-clear" id="hvscSearchClear" title="Clear search" style="display: none;">✕</button>
+                        </div>
                     </div>
 
                     <div class="browser-content">
                         <div class="file-panel">
-                            <div class="panel-header">Files & Directories</div>
+                            <div class="panel-header" id="filePanelHeader">Files & Directories</div>
                             <div class="file-list" id="fileList">
                                 <div class="file-list-loading"><div class="file-list-spinner"></div></div>
                             </div>

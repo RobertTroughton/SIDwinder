@@ -12,10 +12,18 @@ window.hvscBrowser = (function () {
     // Add an initialization flag
     let hvscInitialized = false;
 
+    // Search state
+    let searchIndex = null;          // { entries: [{p,t,a,r}], ... } once loaded
+    let searchIndexPromise = null;   // in-flight load promise
+    let searchMode = false;          // true while showing search results
+    let searchDebounce = null;
+    const SEARCH_RESULT_LIMIT = 500;
+
     // Add an init function
     function initializeHVSC() {
         if (!hvscInitialized) {
             fetchDirectory('C64Music');
+            wireSearch();
             hvscInitialized = true;
         }
     }
@@ -39,6 +47,17 @@ window.hvscBrowser = (function () {
     }
 
     async function fetchDirectory(path) {
+        // Navigating into a directory clears any active search
+        if (searchMode) {
+            const input = document.getElementById('hvscSearchBar');
+            const clearBtn = document.getElementById('hvscSearchClear');
+            if (input) input.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
+            searchMode = false;
+            const header = document.getElementById('filePanelHeader');
+            if (header) header.textContent = 'Files & Directories';
+        }
+
         // Clean the path
         if (path.endsWith('/')) {
             path = path.slice(0, -1);
@@ -415,12 +434,183 @@ window.hvscBrowser = (function () {
         }
     });
 
+    function wireSearch() {
+        const input = document.getElementById('hvscSearchBar');
+        const clearBtn = document.getElementById('hvscSearchClear');
+        if (!input || input.dataset.wired === '1') return;
+        input.dataset.wired = '1';
+
+        input.addEventListener('input', () => {
+            const q = input.value.trim();
+            clearBtn.style.display = q ? 'inline-flex' : 'none';
+            if (searchDebounce) clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => runSearch(q), 150);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            if (searchDebounce) clearTimeout(searchDebounce);
+            exitSearchMode();
+        });
+    }
+
+    function loadSearchIndex() {
+        if (searchIndex) return Promise.resolve(searchIndex);
+        if (searchIndexPromise) return searchIndexPromise;
+        searchIndexPromise = fetch('hvsc-index.json')
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((data) => {
+                searchIndex = data;
+                return data;
+            })
+            .catch((err) => {
+                searchIndexPromise = null;
+                throw err;
+            });
+        return searchIndexPromise;
+    }
+
+    function exitSearchMode() {
+        if (!searchMode) return;
+        searchMode = false;
+        const header = document.getElementById('filePanelHeader');
+        if (header) header.textContent = 'Files & Directories';
+        // Repaint the current directory so selection/state is consistent
+        renderEntries();
+        updateItemCount();
+    }
+
+    function renderEntries() {
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+        entries.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'file-item' + (entry.isDirectory ? ' directory' : '');
+            const icon = entry.isDirectory
+                ? '<i class="fas fa-folder"></i>'
+                : '<i class="fas fa-music"></i>';
+            item.innerHTML = `
+            <span class="file-icon">${icon}</span>
+            <span class="file-name">${escapeHtml(entry.name)}</span>
+        `;
+            item.onclick = () => handleItemClick(entry);
+            item.ondblclick = () => handleItemDoubleClick(entry);
+            fileList.appendChild(item);
+        });
+    }
+
+    function updateItemCount() {
+        const sidCount = entries.filter(e => !e.isDirectory).length;
+        const dirCount = entries.filter(e => e.isDirectory).length;
+        let countText;
+        if (sidCount > 0 && dirCount > 0) countText = `${sidCount} SID files, ${dirCount} folders`;
+        else if (sidCount > 0) countText = `${sidCount} SID file${sidCount !== 1 ? 's' : ''}`;
+        else if (dirCount > 0) countText = `${dirCount} folder${dirCount !== 1 ? 's' : ''}`;
+        else countText = 'Empty folder';
+        document.getElementById('itemCount').textContent = countText;
+    }
+
+    async function runSearch(query) {
+        if (!query) {
+            exitSearchMode();
+            return;
+        }
+
+        searchMode = true;
+        currentSelection = null;
+        const fileList = document.getElementById('fileList');
+        const header = document.getElementById('filePanelHeader');
+        if (header) header.textContent = 'Search Results';
+
+        fileList.innerHTML = '<div class="file-list-loading"><div class="file-list-spinner"></div></div>';
+
+        let index;
+        try {
+            index = await loadSearchIndex();
+        } catch (err) {
+            fileList.innerHTML =
+                '<div class="error-message">Search index not available yet. '
+                + 'Browse by folder, or ask the site maintainer to run '
+                + '<code>node tools/build-hvsc-index.js</code>.</div>';
+            document.getElementById('itemCount').textContent = 'Search unavailable';
+            return;
+        }
+
+        // Only render the latest query's results (guards against out-of-order fetches)
+        const currentInput = document.getElementById('hvscSearchBar').value.trim();
+        if (currentInput !== query) return;
+
+        const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+        const matches = [];
+        const all = index.entries;
+        const limit = SEARCH_RESULT_LIMIT;
+
+        for (let i = 0; i < all.length; i++) {
+            const e = all[i];
+            const hay = ((e.t || '') + '\x00' + (e.a || '') + '\x00' + (e.p || '')).toLowerCase();
+            let ok = true;
+            for (let j = 0; j < terms.length; j++) {
+                if (hay.indexOf(terms[j]) === -1) { ok = false; break; }
+            }
+            if (ok) {
+                matches.push(e);
+                if (matches.length >= limit) break;
+            }
+        }
+
+        renderSearchResults(matches, limit);
+        const shownPlural = matches.length === 1 ? 'match' : 'matches';
+        let countText = `${matches.length} ${shownPlural}`;
+        if (matches.length >= limit) countText += ` (first ${limit} shown)`;
+        document.getElementById('itemCount').textContent = countText;
+    }
+
+    function renderSearchResults(results, limit) {
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+
+        if (results.length === 0) {
+            fileList.innerHTML = '<div class="search-empty">No matching SIDs found.</div>';
+            return;
+        }
+
+        const frag = document.createDocumentFragment();
+        results.forEach(r => {
+            const fileName = r.p.split('/').pop();
+            const folder = r.p.substring(0, r.p.length - fileName.length - 1);
+            const titleLine = r.t || fileName;
+            const authorLine = r.a || '';
+
+            const item = document.createElement('div');
+            item.className = 'file-item search-result';
+            item.innerHTML = `
+            <span class="file-icon"><i class="fas fa-music"></i></span>
+            <span class="search-result-text">
+                <span class="search-result-title">${escapeHtml(titleLine)}</span>
+                ${authorLine ? `<span class="search-result-author">${escapeHtml(authorLine)}</span>` : ''}
+                <span class="search-result-path">${escapeHtml(folder)}</span>
+            </span>
+        `;
+
+            const entry = { name: fileName, path: r.p, isDirectory: false, _searchMeta: r };
+            item.onclick = () => handleItemClick(entry);
+            item.ondblclick = () => handleItemDoubleClick(entry);
+            frag.appendChild(item);
+        });
+        fileList.appendChild(frag);
+    }
+
     // Public API
     return {
         navigateUp: navigateUp,
         navigateHome: navigateHome,
         fetchDirectory: fetchDirectory,
         stopPreview: stopPreview,
-        downloadSID: downloadSID
+        downloadSID: downloadSID,
+        initializeHVSC: initializeHVSC
     };
 })();
