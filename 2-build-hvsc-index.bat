@@ -13,6 +13,7 @@ echo.
 where node >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Node.js is not on PATH. Install from https://nodejs.org/ and retry.
+    pause
     exit /b 1
 )
 
@@ -20,9 +21,11 @@ node tools\build-hvsc-index.js %*
 if errorlevel 1 (
     echo.
     echo Build failed.
+    pause
     exit /b 1
 )
 
 echo.
 echo Done. Commit public\hvsc-index.json to ship the updated search index.
+pause
 endlocal
