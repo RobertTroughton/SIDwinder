@@ -14,8 +14,8 @@ struct C64Palette {
     uint32_t colors[16]; // RGB values as 0xRRGGBB
 };
 
-// Available C64 Palettes - Easy to copy/paste new ones here
-// Put your preferred palette first as it will be the default
+// Available C64 palettes. Index 0 is the default for distance matching.
+// New palettes can be appended without code changes elsewhere.
 static const C64Palette AVAILABLE_PALETTES[] = {
     {"PEPTOette_a",                     0x000000,0xffffff,0x753d3d,0x7bb4b4,0x7d4488,0x5c985c,0x343383,0xcbcc7c,0x7c552f,0x523e00,0xa76f6f,0x4e4e4e,0x767676,0x9fdb9f,0x6d6cbc,0xa3a3a3},
     {"VICE3_6_Pepto_PAL",               0x000000,0xffffff,0x68372b,0x70a4b2,0x6f3d86,0x588d43,0x352879,0xb8c76f,0x6f4f25,0x433900,0x9a6759,0x444444,0x6c6c6c,0x9ad284,0x6c5eb5,0x959595},
@@ -135,7 +135,7 @@ static const C64Palette AVAILABLE_PALETTES[] = {
 };
 
 static const size_t NUM_PALETTES = sizeof(AVAILABLE_PALETTES) / sizeof(AVAILABLE_PALETTES[0]);
-static const C64Palette* CURRENT_PALETTE = &AVAILABLE_PALETTES[0]; // Default to first palette
+static const C64Palette* CURRENT_PALETTE = &AVAILABLE_PALETTES[0];
 
 // Helper function to extract RGB components
 inline void getRGB(uint32_t color, uint8_t& r, uint8_t& g, uint8_t& b) {
@@ -167,9 +167,11 @@ private:
         return sqrt(dr * dr + dg * dg + db * db);
     }
 
-    // Find closest C64 color to RGB value using current palette
+    // Find the closest C64 color index for an RGB value.
+    // First try an exact match against any known palette (lets imports from
+    // many tools resolve cleanly); otherwise fall back to nearest-color search
+    // within the currently selected palette.
     uint8_t findClosestC64Color(uint8_t r, uint8_t g, uint8_t b) {
-        // Try exact match first across all available palettes
         for (size_t paletteIdx = 0; paletteIdx < NUM_PALETTES; paletteIdx++) {
             const C64Palette& palette = AVAILABLE_PALETTES[paletteIdx];
             for (int colorIdx = 0; colorIdx < 16; colorIdx++) {
@@ -177,12 +179,11 @@ private:
                 getRGB(palette.colors[colorIdx], pr, pg, pb);
                 if (pr == r && pg == g && pb == b) {
                     exactMatches++;
-                    return colorIdx; // Early exit on exact match
+                    return colorIdx;
                 }
             }
         }
 
-        // No exact match found, use distance matching with current palette
         uint8_t closest = 0;
         uint8_t cr, cg, cb;
         getRGB(CURRENT_PALETTE->colors[0], cr, cg, cb);
@@ -205,7 +206,7 @@ private:
     uint8_t getPixelColor(int x, int y) {
         if (x >= width || y >= height) return 0;
 
-        int index = (y * width + x) * 4; // Assuming RGBA
+        int index = (y * width + x) * 4;  // RGBA bytes
         uint8_t r = imageData[index];
         uint8_t g = imageData[index + 1];
         uint8_t b = imageData[index + 2];
@@ -237,16 +238,16 @@ private:
         return colors.size() <= 4;
     }
 
-    // Find best background color by testing each possibility
+    // Pick the most-used color that can serve as the global background while
+    // still keeping every cell within the multicolor 4-colors-per-cell limit.
     uint8_t findBestBackgroundColor() {
         std::map<uint8_t, int> colorUsage;
 
-        // Count usage of each color across all character cells
         for (int charY = 0; charY < 25; charY++) {
             for (int charX = 0; charX < 40; charX++) {
                 std::set<uint8_t> cellColors;
                 if (!analyzeCharCell(charX, charY, cellColors)) {
-                    continue; // Skip invalid cells for now
+                    continue;
                 }
 
                 for (uint8_t color : cellColors) {
@@ -255,16 +256,13 @@ private:
             }
         }
 
-        // Create a list of valid background colors with their scores
         std::vector<std::pair<uint8_t, int>> validBackgrounds;
 
-        // Try each color as background and see if it works for all cells
         for (const auto& candidate : colorUsage) {
             uint8_t bgColor = candidate.first;
             bool canUseAsBg = true;
-            int score = candidate.second; // Higher usage = higher score
+            int score = candidate.second;
 
-            // Test if this background color works for all cells
             for (int charY = 0; charY < 25 && canUseAsBg; charY++) {
                 for (int charX = 0; charX < 40 && canUseAsBg; charX++) {
                     std::set<uint8_t> cellColors;
@@ -273,8 +271,8 @@ private:
                         break;
                     }
 
-                    // If this cell doesn't use the background color, 
-                    // it can only have 3 other colors
+                    // Cells without the background color get only 3 free slots;
+                    // cells that do use it get the full 4-colors-per-cell budget.
                     if (cellColors.find(bgColor) == cellColors.end()) {
                         if (cellColors.size() > 3) {
                             canUseAsBg = false;
@@ -282,7 +280,6 @@ private:
                         }
                     }
                     else {
-                        // Cell uses background color, can have 3 others
                         if (cellColors.size() > 4) {
                             canUseAsBg = false;
                             break;
@@ -297,44 +294,37 @@ private:
         }
 
         if (validBackgrounds.empty()) {
-            return 0; // Fallback to black
+            return 0;  // fallback to black
         }
 
-        // Sort by score (usage count) - highest first
         std::sort(validBackgrounds.begin(), validBackgrounds.end(),
             [](const auto& a, const auto& b) { return a.second > b.second; });
 
-        // Return the most used valid background color
         return validBackgrounds[0].first;
     }
 
-    // Convert 8x8 character cell to bitmap data
+    // Encode an 8x8 cell into multicolor bitmap + screen + color RAM.
+    // Layout per pixel pair: %00=bg, %01=screen-hi, %10=screen-lo, %11=color RAM.
     void convertCharCell(int charX, int charY, uint8_t bgColor) {
         std::set<uint8_t> cellColors;
         analyzeCharCell(charX, charY, cellColors);
 
-        // Remove background color from set to get remaining colors
         cellColors.erase(bgColor);
 
-        // Convert set to vector for indexing
         std::vector<uint8_t> colors(cellColors.begin(), cellColors.end());
 
-        // Ensure we have at most 3 non-background colors
         if (colors.size() > 3) {
             colors.resize(3);
         }
 
-        // Pad with background color if needed
         while (colors.size() < 3) {
             colors.push_back(bgColor);
         }
 
-        // Set screen memory (colors for this character)
         int screenIndex = charY * 40 + charX;
-        scrData[screenIndex] = (colors[0] << 4) | colors[1]; // Upper nibble: color1, lower: color2
-        colData[screenIndex] = colors[2]; // Color memory holds the third color
+        scrData[screenIndex] = (colors[0] << 4) | colors[1];
+        colData[screenIndex] = colors[2];
 
-        // Convert pixel data to bitmap
         for (int y = 0; y < 8; y++) {
             uint8_t bitmapByte = 0;
 
@@ -345,13 +335,11 @@ private:
                 uint8_t pixelColor = getPixelColor(pixelX, pixelY);
                 uint8_t colorIndex;
 
-                // Map pixel color to 2-bit value
                 if (pixelColor == bgColor) {
-                    colorIndex = 0; // Background
+                    colorIndex = 0;
                 }
                 else {
-                    // Find in our color list
-                    colorIndex = 1; // Default
+                    colorIndex = 1;
                     for (size_t i = 0; i < colors.size(); i++) {
                         if (colors[i] == pixelColor) {
                             colorIndex = i + 1;
@@ -360,11 +348,9 @@ private:
                     }
                 }
 
-                // Each pixel pair uses 2 bits
                 bitmapByte |= (colorIndex << (6 - x));
             }
 
-            // Store in map data (bitmap memory)
             int bitmapIndex = (charY * 40 + charX) * 8 + y;
             mapData[bitmapIndex] = bitmapByte;
         }
@@ -412,19 +398,16 @@ private:
         // Convert set to vector for indexing
         std::vector<uint8_t> colors(cellColors.begin(), cellColors.end());
 
-        // Pad to 2 colors if cell has only 1 (or 0) unique colors
         while (colors.size() < 2) {
             colors.push_back(0);
         }
 
-        // In hires bitmap mode, screen RAM byte = (foreground << 4) | background
-        // foreground = color for bit=1, background = color for bit=0
-        // Use colors[1] as foreground (bit=1), colors[0] as background (bit=0)
+        // Hires screen RAM byte: (foreground << 4) | background — bit=1 selects
+        // foreground, bit=0 selects background. Color RAM is unused in hires.
         int screenIndex = charY * 40 + charX;
         scrData[screenIndex] = (colors[1] << 4) | colors[0];
-        colData[screenIndex] = 0x00; // Color RAM not used in hires mode
+        colData[screenIndex] = 0x00;
 
-        // Convert pixel data to bitmap - 1 bit per pixel
         for (int y = 0; y < 8; y++) {
             uint8_t bitmapByte = 0;
 
@@ -434,11 +417,9 @@ private:
 
                 uint8_t pixelColor = getPixelColor(pixelX, pixelY);
 
-                // bit=1 for foreground (colors[1]), bit=0 for background (colors[0])
                 if (pixelColor == colors[1]) {
                     bitmapByte |= (1 << (7 - x));
                 }
-                // else bit stays 0 (background)
             }
 
             int bitmapIndex = (charY * 40 + charX) * 8 + y;
@@ -446,24 +427,19 @@ private:
         }
     }
 
-    // Convert PNG to C64 hires format
     bool convertHires() {
         if (!imageData) return false;
 
-        // Reset statistics
         exactMatches = 0;
         distanceMatches = 0;
 
-        // Verify all character cells are valid for hires
         if (!testConversionHires()) {
             return false;
         }
 
-        // Background color: not really used in hires bitmap mode,
-        // but set it to 0 (black) for the $D021 register
+        // $D021 is unused by hires bitmap mode but kept for sane init.
         backgroundColor = 0;
 
-        // Convert all character cells
         for (int charY = 0; charY < 25; charY++) {
             for (int charX = 0; charX < 40; charX++) {
                 convertCharCellHires(charX, charY);
@@ -476,9 +452,9 @@ private:
 
 public:
     PNGToC64Converter() : imageData(nullptr), width(0), height(0), backgroundColor(0), isHiresBitmap(false), exactMatches(0), distanceMatches(0) {
-        mapData.resize(8000);  // 40x25 chars * 8 bytes each
-        scrData.resize(1000);  // 40x25 screen memory
-        colData.resize(1000);  // 40x25 color memory
+        mapData.resize(8000);  // 40x25 chars x 8 bytes = bitmap RAM
+        scrData.resize(1000);  // 40x25 screen RAM
+        colData.resize(1000);  // 40x25 color RAM
     }
 
     ~PNGToC64Converter() {
@@ -545,7 +521,7 @@ public:
 
         width = 320;
         height = 200;
-        int dataSize = width * height * 4; // RGBA
+        int dataSize = width * height * 4;  // RGBA
         imageData = new uint8_t[dataSize];
 
         if (w == 320 && h == 200) {
@@ -570,20 +546,17 @@ public:
         }
     }
 
-    // Convert PNG to C64 format (auto-detects multicolor vs hires)
+    // Auto-detect: try multicolor first, fall back to hires.
     bool convert() {
         if (!imageData) return false;
 
         isHiresBitmap = false;
 
-        // Try multicolor first
         exactMatches = 0;
         distanceMatches = 0;
 
-        // First pass: find optimal background color
         backgroundColor = findBestBackgroundColor();
 
-        // Second pass: verify all character cells are valid for MC
         bool mcValid = true;
         for (int charY = 0; charY < 25 && mcValid; charY++) {
             for (int charX = 0; charX < 40 && mcValid; charX++) {
@@ -593,7 +566,6 @@ public:
                     break;
                 }
 
-                // Check if colors work with selected background
                 if (cellColors.find(backgroundColor) == cellColors.end()) {
                     if (cellColors.size() > 3) {
                         mcValid = false;
@@ -608,7 +580,6 @@ public:
         }
 
         if (mcValid) {
-            // Third pass: convert all character cells as multicolor
             for (int charY = 0; charY < 25; charY++) {
                 for (int charX = 0; charX < 40; charX++) {
                     convertCharCell(charX, charY, backgroundColor);
@@ -617,33 +588,28 @@ public:
             return true;
         }
 
-        // MC failed - try hires conversion
         return convertHires();
     }
 
-    // Create C64-compatible file data
+    // Build the C64 bitmap container:
+    //   $0000  load address $6000 (little-endian)
+    //   $0002  bitmap RAM (8000 bytes)
+    //   $1F42  screen RAM (1000 bytes)
+    //   $232A  color RAM (1000 bytes)
+    //   $2712  background color (1 byte)
+    //   $2713  mode byte: 0 = multicolor, 1 = hires
     std::vector<uint8_t> createC64BitmapFile() {
         std::vector<uint8_t> bitmapData;
-        bitmapData.reserve(10004); // C64 bitmap file size (10003 + 1 mode byte)
+        bitmapData.reserve(10004);
 
-        // Load address (0x6000) - little endian
         bitmapData.push_back(0x00);
         bitmapData.push_back(0x60);
 
-        // Bitmap data (8000 bytes) - starts at offset 2
         bitmapData.insert(bitmapData.end(), mapData.begin(), mapData.end());
-
-        // Screen memory (1000 bytes) - starts at offset 8002
         bitmapData.insert(bitmapData.end(), scrData.begin(), scrData.end());
-
-        // Color memory (1000 bytes) - starts at offset 9002
         bitmapData.insert(bitmapData.end(), colData.begin(), colData.end());
 
-        // Background color (1 byte) - at offset 10002
         bitmapData.push_back(backgroundColor);
-
-        // Bitmap mode (1 byte) - at offset 10003
-        // 0 = multicolor, 1 = hires
         bitmapData.push_back(isHiresBitmap ? 1 : 0);
 
         return bitmapData;

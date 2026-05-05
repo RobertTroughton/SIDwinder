@@ -21,12 +21,11 @@ class TextDropZone {
         dropHint.innerHTML = '<i class="fas fa-upload"></i> Drag & drop .txt file or type below';
         wrapper.insertBefore(dropHint, textarea);
 
-        // Make scrolltext boxes taller
+        // Scrolltext boxes get extra rows since they hold longer content
         if (textareaId.toLowerCase().includes('scroll')) {
-            textarea.rows = 6; // Double the default height
+            textarea.rows = 6;
         }
 
-        // Drag and drop handlers
         this.attachDragDrop(wrapper, textarea);
     }
 

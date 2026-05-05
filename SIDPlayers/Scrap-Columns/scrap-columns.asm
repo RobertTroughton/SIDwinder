@@ -1,5 +1,5 @@
 
-// NOTE: Update this path to point to a local SID file for standalone testing
+// Standalone testing: change this filename to play a different local SID.
 .var music = LoadSid ("Human_Race.sid")
 * = music.location "Music"
 .fill music.size, music.getData (i)
@@ -19,7 +19,9 @@ BasicUpstart2(start)
 .label sinecount2 = $18
 .label sinecount3 = $19
 
-///////////////////////////////////// setup
+// =============================================================================
+// SETUP
+// =============================================================================
 start:   
 sei   
 lda #$35
@@ -50,7 +52,9 @@ lda #%00000011
 sta $3fff
 
 
-///////////////////////////////////// setup sprites
+// =============================================================================
+// SETUP SPRITES
+// =============================================================================
 lda #%01111111 
 sta $d015
 sta $d01d
@@ -72,7 +76,9 @@ lda #sprite/64
 sta $07f8 ; sta $07f9 ; sta $07fa ; sta $07fb ; sta $07fc ; sta $07fd ; sta $07fe
 
 
-///////////////////////////////////// set charcolors
+// =============================================================================
+// SET CHAR COLORS
+// =============================================================================
 ldy #0
 colorfill:
 lda #$0B
@@ -96,7 +102,9 @@ lda #%00011000          // charset $2000, videoram $0400
 sta $d018
 
 
-///////////////////////////////////// display row 25
+// =============================================================================
+// DISPLAY ROW 25
+// =============================================================================
 ldy #00
 lastrow:
 lda #$0e
@@ -110,7 +118,9 @@ bne lastrow
 
 
 .label irq01 = $f8
-///////////////////////////////////// irq setup
+// =============================================================================
+// IRQ SETUP
+// =============================================================================
 lda #$7f
 sta $dc0d  
 sta $dd0d 
@@ -143,7 +153,9 @@ idleloop:
 jmp idleloop
 
 
-///////////////////////////////////// irq
+// =============================================================================
+// IRQ HANDLER
+// =============================================================================
 irq:
 sta areg ; sty yreg ; stx xreg
 
@@ -171,7 +183,9 @@ lda areg ; ldy yreg ; ldx xreg
 rti
 
 
-///////////////////////////////////// copy new sinedata to columnbuffer
+// =============================================================================
+// COPY NEW SINE DATA TO COLUMN BUFFER
+// =============================================================================
 sinecopy:
 ldy sinecount
 ldx #19
@@ -206,11 +220,14 @@ inc sinecount3
 rts
 
 
-///////////////////////////////////// columns effect
+// =============================================================================
+// COLUMNS EFFECT
+// Each // ----- block below renders one screen column from sine data.
+// =============================================================================
 
 columnseffect:
 
-////////////// every section = 1 column
+// ----- column 0 -----
 ldy sinebuffer
 ldx convtable,Y
 clc
@@ -254,7 +271,7 @@ sta screen +00 +280
 adc #1
 sta screen +01 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+1
 ldx convtable,Y
 clc
@@ -298,7 +315,7 @@ sta screen +02 +280
 adc #1
 sta screen +03 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+2
 ldx convtable,Y
 clc
@@ -342,7 +359,7 @@ sta screen +04 +280
 adc #1
 sta screen +05 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+3
 ldx convtable,Y
 clc
@@ -386,7 +403,7 @@ sta screen +06 +280
 adc #1
 sta screen +07 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+4
 ldx convtable,Y
 clc
@@ -430,7 +447,7 @@ sta screen +08 +280
 adc #1
 sta screen +09 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+5
 ldx convtable,Y
 clc
@@ -474,7 +491,7 @@ sta screen +10 +280
 adc #1
 sta screen +11 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+6
 ldx convtable,Y
 clc
@@ -518,7 +535,7 @@ sta screen +12 +280
 adc #1
 sta screen +13 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+7
 ldx convtable,Y
 clc
@@ -562,7 +579,7 @@ sta screen +14 +280
 adc #1
 sta screen +15 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+8
 ldx convtable,Y
 clc
@@ -606,7 +623,7 @@ sta screen +16 +280
 adc #1
 sta screen +17 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+9
 ldx convtable,Y
 clc
@@ -650,7 +667,7 @@ sta screen +18 +280
 adc #1
 sta screen +19 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+10
 ldx convtable,Y
 clc
@@ -694,7 +711,7 @@ sta screen +20 +280
 adc #1
 sta screen +21 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+11
 ldx convtable,Y
 clc
@@ -738,7 +755,7 @@ sta screen +22 +280
 adc #1
 sta screen +23 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+12
 ldx convtable,Y
 clc
@@ -782,7 +799,7 @@ sta screen +24 +280
 adc #1
 sta screen +25 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+13
 ldx convtable,Y
 clc
@@ -826,7 +843,7 @@ sta screen +26 +280
 adc #1
 sta screen +27 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+14
 ldx convtable,Y
 clc
@@ -870,7 +887,7 @@ sta screen +28 +280
 adc #1
 sta screen +29 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+15
 ldx convtable,Y
 clc
@@ -919,7 +936,7 @@ sta screen +30 +280
 adc #1
 sta screen +31 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+16
 ldx convtable,Y
 clc
@@ -963,7 +980,7 @@ sta screen +32 +280
 adc #1
 sta screen +33 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+17
 ldx convtable,Y
 clc
@@ -1007,7 +1024,7 @@ sta screen +34 +280
 adc #1
 sta screen +35 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+18
 ldx convtable,Y
 clc
@@ -1052,7 +1069,7 @@ adc #1
 sta screen +37 +280
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+19
 ldx convtable,Y
 clc
@@ -1097,9 +1114,11 @@ adc #1
 sta screen +39 +280
 
 
-//////////////////////////////////
+// =============================================================================
+// COLUMNS EFFECT - middle band (sinebuffer2)
+// =============================================================================
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2
 ldx convtable,Y
 clc
@@ -1143,7 +1162,7 @@ sta screen +00 +600
 adc #1
 sta screen +01 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+1
 ldx convtable,Y
 clc
@@ -1187,7 +1206,7 @@ sta screen +02 +600
 adc #1
 sta screen +03 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+2
 ldx convtable,Y
 clc
@@ -1231,7 +1250,7 @@ sta screen +04 +600
 adc #1
 sta screen +05 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+3
 ldx convtable,Y
 clc
@@ -1275,7 +1294,7 @@ sta screen +06 +600
 adc #1
 sta screen +07 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+4
 ldx convtable,Y
 clc
@@ -1319,7 +1338,7 @@ sta screen +08 +600
 adc #1
 sta screen +09 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+5
 ldx convtable,Y
 clc
@@ -1364,7 +1383,7 @@ adc #1
 sta screen +11 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+6
 ldx convtable,Y
 clc
@@ -1409,7 +1428,7 @@ adc #1
 sta screen +13 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+7
 ldx convtable,Y
 clc
@@ -1454,7 +1473,7 @@ adc #1
 sta screen +15 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+8
 ldx convtable,Y
 clc
@@ -1498,7 +1517,7 @@ sta screen +16 +600
 adc #1
 sta screen +17 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+9
 ldx convtable,Y
 clc
@@ -1543,7 +1562,7 @@ adc #1
 sta screen +19 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+10
 ldx convtable,Y
 clc
@@ -1587,7 +1606,7 @@ sta screen +20 +600
 adc #1
 sta screen +21 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+11
 ldx convtable,Y
 clc
@@ -1632,7 +1651,7 @@ adc #1
 sta screen +23 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+12
 ldx convtable,Y
 clc
@@ -1676,7 +1695,7 @@ sta screen +24 +600
 adc #1
 sta screen +25 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+13
 ldx convtable,Y
 clc
@@ -1720,7 +1739,7 @@ sta screen +26 +600
 adc #1
 sta screen +27 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+14
 ldx convtable,Y
 clc
@@ -1764,7 +1783,7 @@ sta screen +28 +600
 adc #1
 sta screen +29 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+15
 ldx convtable,Y
 clc
@@ -1808,7 +1827,7 @@ sta screen +30 +600
 adc #1
 sta screen +31 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+16
 ldx convtable,Y
 clc
@@ -1853,7 +1872,7 @@ adc #1
 sta screen +33 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+17
 ldx convtable,Y
 clc
@@ -1897,7 +1916,7 @@ sta screen +34 +600
 adc #1
 sta screen +35 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+18
 ldx convtable,Y
 clc
@@ -1941,7 +1960,7 @@ sta screen +36 +600
 adc #1
 sta screen +37 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+19
 ldx convtable,Y
 clc
@@ -1985,9 +2004,11 @@ sta screen +38 +600
 adc #1
 sta screen +39 +600
 
-//////////////////////////////////
+// =============================================================================
+// COLUMNS EFFECT - lowest band (sinebuffer3)
+// =============================================================================
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3
 ldx convtable,Y
 clc
@@ -2031,7 +2052,7 @@ sta screen +00 +920
 adc #1
 sta screen +01 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+1
 ldx convtable,Y
 clc
@@ -2075,7 +2096,7 @@ sta screen +02 +920
 adc #1
 sta screen +03 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+2
 ldx convtable,Y
 clc
@@ -2119,7 +2140,7 @@ sta screen +04 +920
 adc #1
 sta screen +05 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+3
 ldx convtable,Y
 clc
@@ -2163,7 +2184,7 @@ sta screen +06 +920
 adc #1
 sta screen +07 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+4
 ldx convtable,Y
 clc
@@ -2207,7 +2228,7 @@ sta screen +08 +920
 adc #1
 sta screen +09 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+5
 ldx convtable,Y
 clc
@@ -2251,7 +2272,7 @@ sta screen +10 +920
 adc #1
 sta screen +11 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+6
 ldx convtable,Y
 clc
@@ -2295,7 +2316,7 @@ sta screen +12 +920
 adc #1
 sta screen +13 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+7
 ldx convtable,Y
 clc
@@ -2339,7 +2360,7 @@ sta screen +14 +920
 adc #1
 sta screen +15 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+8
 ldx convtable,Y
 clc
@@ -2383,7 +2404,7 @@ sta screen +16 +920
 adc #1
 sta screen +17 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+9
 ldx convtable,Y
 clc
@@ -2428,7 +2449,7 @@ adc #1
 sta screen +19 +920
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+10
 ldx convtable,Y
 clc
@@ -2472,7 +2493,7 @@ sta screen +20 +920
 adc #1
 sta screen +21 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+11
 ldx convtable,Y
 clc
@@ -2516,7 +2537,7 @@ sta screen +22 +920
 adc #1
 sta screen +23 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+12
 ldx convtable,Y
 clc
@@ -2560,7 +2581,7 @@ sta screen +24 +920
 adc #1
 sta screen +25 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+13
 ldx convtable,Y
 clc
@@ -2604,7 +2625,7 @@ sta screen +26 +920
 adc #1
 sta screen +27 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+14
 ldx convtable,Y
 clc
@@ -2649,7 +2670,7 @@ adc #1
 sta screen +29 +920
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+15
 ldx convtable,Y
 clc
@@ -2693,7 +2714,7 @@ sta screen +30 +920
 adc #1
 sta screen +31 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+16
 ldx convtable,Y
 clc
@@ -2737,7 +2758,7 @@ sta screen +32 +920
 adc #1
 sta screen +33 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+17
 ldx convtable,Y
 clc
@@ -2781,7 +2802,7 @@ sta screen +34 +920
 adc #1
 sta screen +35 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+18
 ldx convtable,Y
 clc
@@ -2825,7 +2846,7 @@ sta screen +36 +920
 adc #1
 sta screen +37 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+19
 ldx convtable,Y
 clc
@@ -2873,7 +2894,9 @@ rts
 
 
 
-///////////////////////////////////// chartable for upper columns
+// =============================================================================
+// CHARTABLE - upper columns
+// =============================================================================
 * = $6000 "upper"
 upper:
 c07:
@@ -3068,7 +3091,9 @@ c38:
 .byte $76
 .byte $76
 
-///////////////////////////////////// chartable for middle columns
+// =============================================================================
+// CHARTABLE - middle columns
+// =============================================================================
 * = $6080 "lower"
 lower:
 d07:
@@ -3263,7 +3288,9 @@ d38:
 .byte $f6
 .byte $f6
 
-///////////////////////////////////// chartable for lower columns
+// =============================================================================
+// CHARTABLE - lower columns
+// =============================================================================
 * = $6100 "lowest"
 lowest:
 e07:
@@ -3459,7 +3486,9 @@ e38:
 .byte $7e
 
 
-///////////////////////////////////// offset table for char lookup
+// =============================================================================
+// OFFSET TABLE FOR CHAR LOOKUP
+// =============================================================================
 * = $6180 "conv1"
 convtable:
 .byte <c00,<c01,<c02,<c03,<c04,<c05,<c06,<c07,<c08,<c09,<c0a,<c0b,<c0c,<c0d,<c0e,<c0f
@@ -3468,8 +3497,9 @@ convtable:
 .byte <c30,<c31,<c32,<c33,<c34,<c35,<c36,<c37,<c38,<c39,<c3a,<c3b,<c3c,<c3d,<c3e,<c3f
 
 
-///////////////////////////////////// 3 buffers for column date
-///////////////////////////////////// values can go from 16 to 63 
+// =============================================================================
+// 3 column-data buffers (values range 16..63)
+// =============================================================================
 * = $61c0 "sinebuffer"
 sinebuffer:
 .byte 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
@@ -3479,7 +3509,9 @@ sinebuffer3:
 .byte 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 
 
-///////////////////////////////////// sinewave for testing
+// =============================================================================
+// SINEWAVE TABLE
+// =============================================================================
 * = $6200 "sine"
 sine:
 .byte 58,59,60,61,62,63
@@ -3527,7 +3559,9 @@ sine:
 .byte 50,52,54,56
 
 
-///////////////////////////////////// pre shifted char data
+// =============================================================================
+// PRE-SHIFTED CHAR DATA (font)
+// =============================================================================
 * = $2000 "font"
 .byte $01,$07,$1F,$7F,$FF,$FF,$7F,$5F
 .byte $00,$40,$D0,$F4,$FC,$F4,$D8,$64

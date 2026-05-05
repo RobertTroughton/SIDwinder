@@ -120,7 +120,6 @@ class ImageSelectorModal {
                     window.imagePreviewManager.handleFileChange({ target: { files: [file] } }, this.currentConfig);
                     this.close();
                 } else {
-                    // Use unified error modal instead of alert()
                     if (window.showWarning) {
                         window.showWarning('Please drop a valid image file (PNG format required)');
                     } else {
@@ -405,7 +404,6 @@ class ImagePreviewManager {
 
     showError(container, message) {
         console.error(message);
-        // Use unified error modal for user visibility
         if (window.showError) {
             window.showError(message, { duration: 4000 });
         }

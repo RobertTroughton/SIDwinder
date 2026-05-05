@@ -1,5 +1,5 @@
-// cpu6510_wasm.cpp - Fixed version with proper zero page tracking
-// Compile with: emcc cpu6510_wasm.cpp -O3 -s WASM=1 -s EXPORTED_FUNCTIONS='["_malloc","_free"]' -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","getValue","setValue"]' -s MODULARIZE=1 -s EXPORT_NAME='CPU6510Module' -o cpu6510.js
+// cpu6510_wasm.cpp - 6510 emulator core with memory-access tracking.
+// Build: emcc cpu6510_wasm.cpp -O3 -s WASM=1 -s EXPORTED_FUNCTIONS='["_malloc","_free"]' -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","getValue","setValue"]' -s MODULARIZE=1 -s EXPORT_NAME='CPU6510Module' -o cpu6510.js
 
 #include <emscripten/emscripten.h>
 #include <cstdint>
@@ -118,12 +118,11 @@ extern "C" {
         cpu.trackingEnabled = enabled;
     }
 
-    // Load data into memory WITHOUT tracking
+    // Load data into memory without recording it as a tracked write.
     EMSCRIPTEN_KEEPALIVE
         void cpu_load_memory(uint16_t address, uint8_t* data, uint16_t size) {
         if (address + size <= 65536) {
             memcpy(&cpu.memory[address], data, size);
-            // Note: No tracking here - this is just loading the initial data
         }
     }
 
@@ -136,14 +135,13 @@ extern "C" {
         return cpu.memory[address];
     }
 
-    // Write memory - only used for initial loading, not tracked
+    // External-write entry point: bypasses tracking (used for initial setup only).
     EMSCRIPTEN_KEEPALIVE
         void cpu_write_memory(uint16_t address, uint8_t value) {
         cpu.memory[address] = value;
-        // Don't track this - it's only for initial setup
     }
 
-    // Internal memory write (used by instructions) - THIS is what we track
+    // Instruction-driven write: this is the path that records access info.
     void write_memory_internal(uint16_t address, uint8_t value) {
         cpu.memory[address] = value;
 
@@ -241,14 +239,14 @@ extern "C" {
         set_flag(FLAG_CARRY, reg >= v);
         set_zn_flags(r);
     }
-    inline void do_adc(uint8_t v) { // binary mode (matches your current core)
+    inline void do_adc(uint8_t v) {  // binary mode only (decimal flag ignored)
         uint16_t r = uint16_t(cpu.a) + v + (test_flag(FLAG_CARRY) ? 1 : 0);
         set_flag(FLAG_CARRY, r > 0xFF);
         set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (v ^ r) & 0x80) != 0);
         cpu.a = uint8_t(r);
         set_zn_flags(cpu.a);
     }
-    inline void do_sbc(uint8_t v) { // binary mode (matches your current core)
+    inline void do_sbc(uint8_t v) {  // binary mode only (decimal flag ignored)
         uint16_t r = uint16_t(cpu.a) - v - (test_flag(FLAG_CARRY) ? 0 : 1);
         set_flag(FLAG_CARRY, r < 0x100);
         set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (~v ^ r) & 0x80) != 0);
@@ -285,9 +283,7 @@ extern "C" {
             cpu.memoryAccess[cpu.pc] |= MEM_EXECUTE | MEM_OPCODE;
         }
 
-        // Simplified instruction execution - implement core instructions
         switch (opcode) {
-            // LDA
         case 0xA9: // LDA immediate
             cpu.a = cpu.memory[pc++];
             set_zn_flags(cpu.a);
@@ -700,7 +696,8 @@ extern "C" {
         case 0x6C: // JMP indirect
         {
             uint16_t ptr = read_word(pc);
-            // Handle 6502 page boundary bug
+            // 6502 JMP indirect bug: when low byte is $FF the high byte is fetched
+            // from the same page ($xx00) instead of crossing into the next page.
             uint16_t addr;
             if ((ptr & 0xFF) == 0xFF) {
                 addr = cpu.memory[ptr] | (cpu.memory[ptr & 0xFF00] << 8);
@@ -1286,39 +1283,33 @@ extern "C" {
             // NOP implied (2 cycles)
             add(2); break;
 
-            // Replace the current default case with this:
         default:
         {
-            // Report the unimplemented opcode
             printf("ERROR: Unimplemented opcode $%02X at PC=$%04X\n", opcode, cpu.pc - 1);
 
-            // Log some context to help debug
             printf("  A=$%02X X=$%02X Y=$%02X SP=$%02X\n", cpu.a, cpu.x, cpu.y, cpu.sp);
             printf("  Next bytes: $%02X $%02X $%02X\n",
                 cpu.memory[pc],
                 cpu.memory[(pc + 1) & 0xFFFF],
                 cpu.memory[(pc + 2) & 0xFFFF]);
 
-            // You could also maintain a list of unimplemented opcodes encountered
+            // Track first occurrences so the log isn't flooded by repeats.
             static std::set<uint8_t> unimplementedOpcodes;
             if (unimplementedOpcodes.find(opcode) == unimplementedOpcodes.end()) {
                 unimplementedOpcodes.insert(opcode);
                 printf("  (First occurrence of this opcode)\n");
             }
 
-            // Try to continue with the opcode table if available
+            // Best-effort continue using the opcode size table to skip past the
+            // instruction; otherwise advance by a guess and risk corruption.
             if (opcodeTable[opcode].size > 0) {
                 pc += opcodeTable[opcode].size - 1;
                 cpu.cycles += opcodeTable[opcode].cycles;
                 printf("  Attempting to skip instruction (size=%d)\n", opcodeTable[opcode].size);
             }
             else {
-                // Complete unknown - this is bad
                 printf("  FATAL: Unknown instruction size - emulation may be corrupted\n");
-                // You might want to halt emulation here or return an error
                 cpu.cycles += 2;
-                // Set an error flag that can be checked
-                // cpu.emulationError = true;
             }
         }
         break;
@@ -1327,36 +1318,34 @@ extern "C" {
         cpu.pc = pc;
     }
 
-    // Execute a function (until RTS)
+    // Execute a subroutine until its matching RTS, or maxCycles is exceeded.
     EMSCRIPTEN_KEEPALIVE
         int cpu_execute_function(uint16_t address, uint32_t maxCycles) {
-        // Save return address
         uint16_t returnAddr = cpu.pc - 1;
         push(returnAddr >> 8);
         push(returnAddr & 0xFF);
 
         cpu.pc = address;
         uint64_t startCycles = cpu.cycles;
-        uint8_t startSP = cpu.sp + 2;  // Account for return address we just pushed
+        uint8_t startSP = cpu.sp + 2;  // account for the two bytes just pushed
 
         while ((cpu.cycles - startCycles) < maxCycles) {
             uint8_t opcode = cpu.memory[cpu.pc];
 
             cpu_step();
 
-            // Check if we hit RTS and stack is back to expected level
+            // Done when the matching RTS pops us back to the original SP.
             if (opcode == 0x60 && cpu.sp == startSP) {
                 cpu.lastExecutionCycles = (uint32_t)(cpu.cycles - startCycles);
-                return 1;  // Success
+                return 1;
             }
 
-            // Safety check for infinite loops
             if (cpu.pc < 2) {
-                return 0;  // Error - jumped to invalid address
+                return 0;  // jumped to invalid address
             }
         }
 
-        return 0;  // Hit cycle limit
+        return 0;  // cycle limit hit
     }
 
     // Get CPU state
@@ -1515,7 +1504,6 @@ extern "C" {
         free(ptr);
     }
 
-    // Add this function to set the accumulator
     EMSCRIPTEN_KEEPALIVE
         void cpu_set_accumulator(uint8_t value) {
         cpu.a = value;
@@ -1541,9 +1529,9 @@ extern "C" {
         memcpy(cpu.memory, buffer, 65536);
     }
 
+    // Reset CPU registers and tracking state, leaving memory contents intact.
     EMSCRIPTEN_KEEPALIVE
         void cpu_reset_state_only() {
-        // Reset CPU state but NOT memory
         cpu.pc = 0;
         cpu.sp = 0xFD;
         cpu.a = 0;
@@ -1552,7 +1540,6 @@ extern "C" {
         cpu.status = FLAG_INTERRUPT | FLAG_UNUSED;
         cpu.cycles = 0;
 
-        // Reset tracking but don't clear memory
         cpu.ciaTimerLo = 0;
         cpu.ciaTimerHi = 0;
         cpu.ciaTimerWritten = false;
@@ -1560,7 +1547,6 @@ extern "C" {
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
 
-        // Clear access tracking
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
         memset(cpu.sidWrites, 0, sizeof(cpu.sidWrites));
         memset(cpu.sidChipsUsed, 0, sizeof(cpu.sidChipsUsed));
