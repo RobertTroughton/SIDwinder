@@ -1,4 +1,4 @@
-﻿// Fresh Floating Notes - 8x notes, no logging, faster movement
+﻿// Decorative animated music notes that drift across the background.
 class FreshFloatingNotes {
     constructor() {
         this.container = null;
@@ -28,7 +28,6 @@ class FreshFloatingNotes {
         const symbol = this.musicNotes[Math.floor(Math.random() * this.musicNotes.length)];
         note.textContent = symbol;
 
-        // Apply random color directly in JavaScript
         const colors = [
             'rgba(0, 212, 255, 0.4)',   // Cyan
             'rgba(118, 75, 162, 0.35)', // Purple
@@ -45,31 +44,30 @@ class FreshFloatingNotes {
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
         note.style.color = randomColor;
 
-        // Random position
         const x = Math.random() * (window.innerWidth - 200);
         const y = Math.random() * (window.innerHeight - 200);
         note.style.left = x + 'px';
         note.style.top = y + 'px';
 
-        // Pick animation - balanced movement in all directions
+        // Pick one of eight directions so motion is balanced over time.
         const animations = [
-            'float-up', 'float-down',                    // Vertical balance
-            'diagonal-up-right', 'diagonal-down-left',   // Diagonal balance
-            'diagonal-up-left', 'diagonal-down-right',   // Diagonal balance
-            'float-left', 'float-right'                  // Horizontal balance
+            'float-up', 'float-down',
+            'diagonal-up-right', 'diagonal-down-left',
+            'diagonal-up-left', 'diagonal-down-right',
+            'float-left', 'float-right'
         ];
         const anim = animations[Math.floor(Math.random() * animations.length)];
 
-        // Apply animation directly - 7s instead of 10s (30% faster)
         note.style.animation = anim + ' 7s ease-in-out forwards';
 
         this.container.appendChild(note);
 
+        // Remove a little after the 7s animation completes to avoid DOM buildup.
         setTimeout(() => {
             if (note.parentNode) {
                 note.parentNode.removeChild(note);
             }
-        }, 8000); // Reduced cleanup time too
+        }, 8000);
 
         return note;
     }
@@ -77,16 +75,15 @@ class FreshFloatingNotes {
     startFloating() {
         this.isActive = true;
 
-        // Create 24 notes immediately (3x the current 8)
+        // Spawn an initial burst, staggered so they don't all start in lockstep.
         for (let i = 0; i < 24; i++) {
             setTimeout(() => {
                 if (this.isActive) {
                     this.createNote();
                 }
-            }, i * 100); // Stagger them slightly with faster timing
+            }, i * 100);
         }
 
-        // Then create new notes more frequently - every 167ms instead of 500ms (3x faster)
         setInterval(() => {
             if (this.isActive) {
                 this.createNote();
@@ -95,7 +92,8 @@ class FreshFloatingNotes {
     }
 }
 
-// Initialize when idle - script is loaded dynamically after DOM is ready
+// Initialise when the browser is idle so the decorative effect never delays
+// first paint or audio bring-up. This script is loaded dynamically after DOMContentLoaded.
 if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
         window.freshFloatingNotes = new FreshFloatingNotes();

@@ -251,7 +251,7 @@
                     </details>
                 </div>
 
-                <!-- Export Modified SID Button (moved here) -->
+                <!-- Export Modified SID Button -->
                 <div class="export-modified-container">
                     <button class="export-button" id="exportModifiedSIDButton" disabled>
                         <i class="fas fa-save"></i> Save SID
@@ -264,14 +264,12 @@
             <div class="section-group export-section disabled" id="exportSection">
                 <h2><i class="fas fa-tv"></i> Choose Your Visualizer</h2>
 
-                <!-- Visualizer Grid -->
+                <!-- Visualizer Grid (cards populated by visualizer-registry.js) -->
                 <div class="visualizer-grid" id="visualizerGrid">
-                    <!-- Cards will be dynamically added here -->
                 </div>
 
-                <!-- Dynamic Options Container -->
+                <!-- Dynamic Options Container (populated based on selected visualizer) -->
                 <div class="visualizer-options" id="visualizerOptions" style="display: none;">
-                    <!-- Options will be dynamically added based on selected visualizer -->
                 </div>
 
                 <!-- Export Button -->
@@ -859,7 +857,7 @@
             </section>
         </div>
     </div>
-    <!-- Modal Overlay - Unified error/success/warning modal -->
+    <!-- Unified modal: error / success / warning / confirm -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
             <div class="modal-icon" id="modalIcon"></div>

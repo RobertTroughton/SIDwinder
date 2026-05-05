@@ -85,7 +85,7 @@ spectrometerBgColor:
 .const SCREEN1_BANK						= 13	//; $7400-$77FF
 .const CHARSET_BANK						= 7		//; $7800-$7EFF and $7F00-7FFF
 .const BITMAP_BANK						= 1		//; $6000-$6DBF
-.const SPRITE_BASE_INDEX				= $B9	//; $6E40-$6FFF (7 sprites) - moved up to create 128-byte gap for color table
+.const SPRITE_BASE_INDEX				= $B9	//; $6E40-$6FFF (7 sprites); 128-byte gap above is reused for the color table
 
 //; Calculated addresses
 .const BITMAP_ADDRESS					= VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
@@ -112,7 +112,7 @@ spectrometerBgColor:
 //; Color table configuration - placed in gap between bitmap and sprites ($2DC0-$2E3F)
 //; With SPRITE_BASE_INDEX at $B9, sprites start at $2E40, giving 128-byte gap for 72-byte color table
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2DC0 //; Within 16k bank (was $4000 outside bank)
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2DC0 //; Within 16k VIC bank
 
 //; =============================================================================
 //; INCLUDES
@@ -169,7 +169,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
-	//; Bar style character data is now injected at build time by the web app
+	//; Bar style character data is injected at build time by the web app
 	jsr DrawScreens
 	jsr InitializeColors
 
@@ -463,10 +463,6 @@ RenderToScreen1:
 	jmp !loop-
 
 //; =============================================================================
-//; NOTE: Color table (heightToColor) is now injected at build time by the web app
-//; =============================================================================
-
-//; =============================================================================
 //; SPRITE ANIMATION
 //; =============================================================================
 
@@ -648,7 +644,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 
 //; =============================================================================
 //; COLOR TABLE DATA
-//; This area is filled at build time by the web app based on colorEffect selection
+//; Filled at build time by the web app based on colorEffect selection
 //; =============================================================================
 
 * = COLOR_TABLE_ADDRESS "Color Table"
@@ -669,7 +665,7 @@ heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; This area is filled at build time by the web app based on BarStyle selection
+//; Filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_WATER, $00
 
 * = SCREEN0_ADDRESS "Screen 0"

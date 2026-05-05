@@ -93,10 +93,10 @@ spectrometerBgColor:
 .const MAX_BAR_HEIGHT					= TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET					= MAX_BAR_HEIGHT - 7
 
-//; Color table configuration - placed in unused sprite area ($2E00-$2FFF)
-//; Since this visualizer doesn't use sprites, we can use that memory for the color table
+//; Color table placed in unused sprite area ($2E00-$2FFF) since this
+//; visualizer doesn't use sprites.
 .const COLOR_TABLE_SIZE					= MAX_BAR_HEIGHT + 9
-.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00 //; Within 16k bank (was $4000 outside bank)
+.const COLOR_TABLE_ADDRESS				= VIC_BANK_ADDRESS + $2E00 //; Within 16k VIC bank
 
 //; =============================================================================
 //; INCLUDES
@@ -153,7 +153,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
-	//; Bar style character data is now injected at build time by the web app
+	//; Bar style character data is injected at build time by the web app
 	jsr DrawScreens
 	jsr InitializeColors
 
@@ -534,10 +534,6 @@ currentScreenBuffer:		.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 //; =============================================================================
-//; Note: Height color table is now at COLOR_TABLE_ADDRESS and injected at build time
-//; =============================================================================
-
-//; =============================================================================
 //; DATA SECTION - Display Mapping
 //; =============================================================================
 
@@ -554,12 +550,12 @@ barCharacterMap:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; This area is filled at build time by the web app based on BarStyle selection
+//; Filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_MIRROR, $00
 
 //; =============================================================================
 //; COLOR TABLE DATA
-//; This area is filled at build time by the web app based on colorEffect selection
+//; Filled at build time by the web app based on colorEffect selection
 //; =============================================================================
 
 * = COLOR_TABLE_ADDRESS "Color Table"

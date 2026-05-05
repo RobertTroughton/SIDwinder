@@ -1,4 +1,3 @@
-// keyboard.asm - Unified keyboard handling for SIDwinder visualizers
 // =============================================================================
 //                          KEYBOARD HANDLER MODULE
 //                     Unified keyboard handling for all visualizers
@@ -6,13 +5,13 @@
 
 #importonce
 
-// CIA#1 Port registers
-.const CIA1_PRA = $dc00  
-.const CIA1_PRB = $dc01  
-.const CIA1_DDRA = $dc02 
-.const CIA1_DDRB = $dc03 
+// CIA#1 Port registers (keyboard matrix scan)
+.const CIA1_PRA = $dc00
+.const CIA1_PRB = $dc01
+.const CIA1_DDRA = $dc02
+.const CIA1_DDRB = $dc03
 
-// Special key codes (non-ASCII) - ALL needed for the matrix table
+// Special key codes (non-ASCII), placed in the key-matrix table
 .const KEY_F1 = $85
 .const KEY_F3 = $86
 .const KEY_F5 = $87
@@ -28,14 +27,14 @@
 .const KEY_COMMODORE = $00
 
 // Variables for keyboard handling
-CurrentKeyMatrix:   .byte 0     
-CurrentKey:         .byte 0     
-LastKey:            .byte 0     
-KeyReleased:        .byte 1     
-DebounceCounter:    .byte 0     
-.const DEBOUNCE_DELAY = 5       
+CurrentKeyMatrix:   .byte 0
+CurrentKey:         .byte 0
+LastKey:            .byte 0
+KeyReleased:        .byte 1
+DebounceCounter:    .byte 0
+.const DEBOUNCE_DELAY = 5
 
-// Common variables (always allocated but conditionally used)
+// Always allocated; consumed conditionally depending on enabled key features
 CurrentSong:        .byte $00
 ShowRasterBars:     .byte $00
 
@@ -304,10 +303,9 @@ PrevSong:
 // Returns: A = key code (0 if no key or still debouncing)
 // =============================================================================
 ScanKeyboard:
-    // First, detect if any key is pressed
     jsr DetectKeyPress
-    
-    // A now contains the matrix position or 0 if no key
+
+    // A = matrix position, or 0 if no key
     cmp #0
     bne !keyPressed+
     
@@ -353,9 +351,8 @@ ScanKeyboard:
     
     // Debounce complete - process the key
     lda #0
-    sta KeyReleased  // Mark key as processed
-    
-    // Convert matrix position to ASCII/special code
+    sta KeyReleased
+
     lda CurrentKeyMatrix
     jsr ConvertMatrixToASCII
     sta CurrentKey
@@ -370,14 +367,13 @@ ScanKeyboard:
 // Returns: A = matrix position (row*8 + column), or 0 if no key
 // =============================================================================
 DetectKeyPress:
-    // Scan the keyboard matrix
-    ldy #0           // Row counter
-    
+    ldy #0           // row counter
+
 !scanRow:
     lda RowSelectTable,y
-    sta CIA1_PRA     // Write to Port A to select row
-    lda CIA1_PRB     // Read columns from Port B
-    cmp #$ff         // Check if any key pressed (active low)
+    sta CIA1_PRA     // drive selected row low on Port A
+    lda CIA1_PRB     // read columns from Port B (pressed = 0)
+    cmp #$ff
     bne !foundKey+
     
     // No key in this row, try next
@@ -390,31 +386,29 @@ DetectKeyPress:
     rts
     
 !foundKey:
-    // Found a key - determine which column
-    eor #$ff         // Invert to make pressed keys = 1
+    eor #$ff         // invert so pressed columns become 1 bits
     ldx #0
-    
+
 !findColumn:
     lsr
-    bcs !gotColumn+  // Carry set = this column pressed
+    bcs !gotColumn+
     inx
     cpx #8
     bne !findColumn-
-    
-    // Shouldn't get here, but return 0 if we do
+
     lda #0
     rts
     
 !gotColumn:
     // Calculate matrix position: row * 8 + column
-    tya              // Row in Y
+    tya
     asl
     asl
-    asl              // Row * 8
+    asl
     sta TempCalc
-    txa              // Column in X
+    txa
     clc
-    adc TempCalc     // Add column
+    adc TempCalc
     rts
 
 TempCalc: .byte 0
@@ -431,9 +425,9 @@ RowSelectTable:
     .byte %01111111  // Row 7
 
 // =============================================================================
-// C64 Keyboard Matrix Table (CORRECTED)
-// Based on the actual C64 matrix: rows (Port A output) x columns (Port B input)
-// Each entry is row*8 + column
+// C64 Keyboard Matrix Table
+// Rows are driven low via CIA1 Port A, columns are read from Port B.
+// Each entry is row*8 + column.
 // =============================================================================
 KeyMatrixTable:
     // Row 0 (PA0 = 0)
@@ -555,36 +549,32 @@ CheckKey: .byte 0
 // Call after ScanKeyboard returns a key
 // =============================================================================
 GetKeyWithShift:
-    // Save the key
     sta TempKey
-    
-    // Check if shift is pressed
-    lda #%11111101    // Column 1 (left shift)
+
+    // Probe left-shift (matrix 1,7) and right-shift (matrix 6,4)
+    lda #%11111101
     sta CIA1_PRA
     lda CIA1_PRB
-    and #%10000000    // Row 7
+    and #%10000000
     beq !shiftPressed+
-    
-    lda #%10111111    // Column 6 (right shift)
+
+    lda #%10111111
     sta CIA1_PRA
     lda CIA1_PRB
-    and #%00010000    // Row 4
+    and #%00010000
     beq !shiftPressed+
-    
-    // No shift - return original key
+
     lda TempKey
     rts
-    
+
 !shiftPressed:
-    // Shift pressed - convert if it's a letter
     lda TempKey
     cmp #'a'
     bcc !notLowercase+
     cmp #'z'+1
     bcs !notLowercase+
-    
-    // Convert to uppercase
-    and #$df
+
+    and #$df            // PETSCII a..z to A..Z (clear bit 5)
     rts
     
 !notLowercase:
@@ -639,8 +629,7 @@ GetKeyWithShift:
     lda #')'
     rts
 !not0:
-    
-    // Return original key
+
     lda TempKey
     rts
 

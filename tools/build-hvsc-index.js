@@ -50,8 +50,9 @@ function parseArgs(argv) {
         if (a.startsWith('--')) {
             const key = a.slice(2);
             const next = argv[i + 1];
-            // Boolean flags: --patch, --patch path1 path2 — treat next non-flag
-            // as a value only for known value flags.
+            // Only --root and --concurrency consume the following token as a
+            // value; everything else is a boolean flag (so --patch path1 path2
+            // leaves the paths as positional args).
             if ((key === 'root' || key === 'concurrency') && next && !next.startsWith('--')) {
                 flags[key] = next; i++;
             } else {
@@ -142,7 +143,7 @@ function parseListing(html) {
             const pm = href.match(/path=([^&]+)/);
             if (pm) files.push(decodeURIComponent(pm[1]));
         } else if (href.endsWith('.sid')) {
-            // Direct relative .sid link (rare on this mirror, but handle it)
+            // Direct relative .sid link (rare on this mirror, but handle it).
             files.push(href.replace(/^\//, ''));
         }
     }
@@ -179,7 +180,11 @@ async function fetchSidHeader(sidPath) {
     return parseSidHeader(buf);
 }
 
-// Crawl one or more directory roots. Returns { sidPaths, failedDirs }.
+/**
+ * Crawl one or more HVSC directory roots, collecting .sid paths.
+ * @param {string[]} roots Directory paths to start from.
+ * @returns {Promise<{sidPaths: string[], failedDirs: string[]}>}
+ */
 async function crawl(roots) {
     const queue = roots.slice();
     const visited = new Set();
@@ -210,7 +215,7 @@ async function crawl(roots) {
         }
     }
 
-    // One more pass for any dirs that failed despite in-request retries.
+    // Second pass for directories that failed despite in-request retries.
     if (failedDirs.length) {
         process.stderr.write(`Retrying ${failedDirs.length} failed directories...\n`);
         const stillFailed = [];
@@ -222,7 +227,7 @@ async function crawl(roots) {
                     if (!visited.has(d)) queue.push(d);
                 }
                 for (const f of files) sidPaths.push(f);
-                // Drain any newly queued subdirs from this recovered root
+                // Drain any subdirs newly queued by this recovered root.
                 while (queue.length) {
                     const sub = queue.shift();
                     if (visited.has(sub)) continue;
@@ -357,7 +362,7 @@ async function runPatch() {
         return;
     }
 
-    // Normalize: drop trailing slash; strip leading slash
+    // Normalize: strip leading and trailing slashes.
     patchPaths = patchPaths.map((p) => p.replace(/^\/+|\/+$/g, ''));
 
     const dirPaths = patchPaths.filter((p) => !p.endsWith('.sid'));

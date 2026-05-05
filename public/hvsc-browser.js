@@ -6,10 +6,8 @@ window.hvscBrowser = (function () {
     let currentSelection = null;
     let entries = [];
 
-    // HVSC preview player instance
     let hvscPlayer = null;
 
-    // Add an initialization flag
     let hvscInitialized = false;
 
     // Search state
@@ -19,7 +17,6 @@ window.hvscBrowser = (function () {
     let searchDebounce = null;
     const SEARCH_RESULT_LIMIT = 500;
 
-    // Add an init function
     function initializeHVSC() {
         if (!hvscInitialized) {
             fetchDirectory('C64Music');
@@ -58,12 +55,10 @@ window.hvscBrowser = (function () {
             if (header) header.textContent = 'Files & Directories';
         }
 
-        // Clean the path
         if (path.endsWith('/')) {
             path = path.slice(0, -1);
         }
 
-        // Try URL encoding the path parameter
         const encodedPath = encodeURIComponent(path);
         const url = `${HVSC_BASE}?path=${encodedPath}`;
 
@@ -84,14 +79,12 @@ window.hvscBrowser = (function () {
             clearInfoPanel();
         } catch (error) {
             console.error('Fetch error:', error);
-            // Show error in the file list area
             document.getElementById('fileList').innerHTML =
                 '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
-            // Also show unified error modal for visibility
             if (window.showError) {
                 window.showError('Failed to load HVSC directory', {
                     details: error.message,
-                    duration: 0 // Require manual dismiss
+                    duration: 0
                 });
             }
         }
@@ -102,14 +95,12 @@ window.hvscBrowser = (function () {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        // Look for ANY table, not just width="99%"
         const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
 
         if (tableMatch) {
             const tableContent = tableMatch[1];
 
-            // Parse each row for links
             const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
             let rowMatch;
 
@@ -121,7 +112,6 @@ window.hvscBrowser = (function () {
                     const href = linkMatch[1];
                     let name = linkMatch[2].trim();
 
-                    // Process directory links
                     if (href.startsWith('?path=') && !href.includes('info=')) {
                         let pathValue = decodeURIComponent(href.substring(6));
                         if (pathValue.endsWith('/')) {
@@ -135,7 +125,6 @@ window.hvscBrowser = (function () {
                             isDirectory: true
                         });
                     }
-                    // Process SID file links
                     else if (href.includes('.sid') && !href.includes('info=')) {
                         let fileName = href.split('/').pop();
                         entries.push({
@@ -162,7 +151,7 @@ window.hvscBrowser = (function () {
                 }
             }
         } else {
-            // Alternative: Look for ALL links with ?path= or .sid
+            // Fallback: scan every <a href="..."> when no <table> wrapper is present.
             const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
             let match;
 
@@ -170,7 +159,6 @@ window.hvscBrowser = (function () {
                 const href = match[1];
                 const linkText = match[2].trim();
 
-                // Skip navigation and external links
                 if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
                     linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
                     linkText === 'Parent Directory' || href.startsWith('http://') ||
@@ -178,7 +166,6 @@ window.hvscBrowser = (function () {
                     continue;
                 }
 
-                // Directory links
                 if (href.includes('?path=') && !href.includes('info=')) {
                     const pathMatch = href.match(/\?path=([^&]*)/);
                     if (pathMatch) {
@@ -193,7 +180,6 @@ window.hvscBrowser = (function () {
                         });
                     }
                 }
-                // SID files
                 else if (href.includes('info=please') || linkText.endsWith('.sid')) {
                     if (href.includes('path=')) {
                         const pathMatch = href.match(/path=([^&]+)/);
@@ -211,7 +197,7 @@ window.hvscBrowser = (function () {
             }
         }
 
-        // Sort and render entries
+        // Directories first, then alphabetical within each group
         entries.sort((a, b) => {
             if (a.isDirectory !== b.isDirectory) {
                 return b.isDirectory - a.isDirectory;
@@ -261,7 +247,6 @@ window.hvscBrowser = (function () {
         event.currentTarget.classList.add('selected');
         currentSelection = entry;
 
-        // Preview SID file on single click
         if (!entry.isDirectory) {
             previewSID(entry);
         }
@@ -363,7 +348,6 @@ window.hvscBrowser = (function () {
 
     function handleItemDoubleClick(entry) {
         if (entry.isDirectory) {
-            // Remove any trailing slashes from the path before fetching
             let cleanPath = entry.path;
             if (cleanPath.endsWith('/')) {
                 cleanPath = cleanPath.slice(0, -1);
@@ -403,10 +387,8 @@ window.hvscBrowser = (function () {
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
-            // Stop preview playback when selecting
             stopPreview();
 
-            // Use the Netlify function for downloading
             const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
 
             window.postMessage({
@@ -423,7 +405,6 @@ window.hvscBrowser = (function () {
         }
     }
 
-    // Handle Enter key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && currentSelection) {
             if (currentSelection.isDirectory) {
@@ -604,7 +585,6 @@ window.hvscBrowser = (function () {
         fileList.appendChild(frag);
     }
 
-    // Public API
     return {
         navigateUp: navigateUp,
         navigateHome: navigateHome,

@@ -1,32 +1,17 @@
-// font-data.js - Font Data and PNG Conversion for SIDwinder Web
-// This module handles font selection, PNG font loading, and conversion to C64 charset format.
+// font-data.js - Font selection, PNG loading, and conversion to C64 charset.
 //
-// Font Organization:
-// - Fonts are organized by dimension: 1x2 (doubled-height), 1x1 (single-height), etc.
-// - "1x2" means 1 char wide × 2 chars tall (8x16 pixels for doubled-height text)
-// - "1x1" means 1 char wide × 1 char tall (8x8 pixels for single-height text)
+// PNG layout (32 glyphs × 3 rows = 96 printable ASCII 32-127):
+//   1x2 (doubled-height): 256×48 px, 8×16 per glyph
+//   1x1 (single-height):  256×24 px, 8×8 per glyph
 //
-// PNG Font Format (1x2 / doubled-height):
-// - 256x48 pixels (32 glyphs across × 3 rows = 96 printable characters)
-// - Each glyph is 8x16 pixels (8 wide × 16 tall for doubled-height C64 text)
-// - Covers ASCII 32-127 (printable ASCII range)
-//
-// PNG Font Format (1x1 / single-height):
-// - 256x24 pixels (32 glyphs across × 3 rows = 96 printable characters)
-// - Each glyph is 8x8 pixels
-//
-// C64 Charset Format (1x2):
-// - 8 bytes per character (8x8 pixels, 1 bit per pixel)
-// - Characters 0-95: Top halves of doubled-height glyphs (bytes $000-$2FF)
-// - Characters 128-223: Bottom halves of doubled-height glyphs (bytes $400-$6FF)
-// - Total: 224 characters × 8 bytes = 1792 bytes
+// C64 charset format is 8 bytes per char, 1 bit per pixel. For 1x2 fonts the
+// 96 glyphs are split: top halves into chars 0-95 ($000-$2FF), bottom halves
+// into chars 128-223 ($400-$6FF), totalling 1792 bytes.
 
-// Case type constants
-const FONT_CASE_MIXED = 0;      // Has both upper and lowercase
-const FONT_CASE_UPPER_ONLY = 1; // Only uppercase letters
-const FONT_CASE_LOWER_ONLY = 2; // Only lowercase letters (rare)
+const FONT_CASE_MIXED = 0;
+const FONT_CASE_UPPER_ONLY = 1;
+const FONT_CASE_LOWER_ONLY = 2;
 
-// Font dimension configurations
 const FONT_DIMENSIONS = {
     '1x2': {
         name: '1×2 (Doubled Height)',
@@ -38,8 +23,8 @@ const FONT_DIMENSIONS = {
         glyphsPerRow: 32,
         glyphRows: 3,
         totalGlyphs: 96,
-        charsetSize: 1792,  // 224 chars × 8 bytes
-        folder: 'PNG/Fonts/1x2'  // Fonts are in PNG/Fonts/1x2/ with font-1x2-*.png naming
+        charsetSize: 1792,
+        folder: 'PNG/Fonts/1x2'
     },
     '1x1': {
         name: '1×1 (Single Height)',
@@ -51,13 +36,12 @@ const FONT_DIMENSIONS = {
         glyphsPerRow: 32,
         glyphRows: 3,
         totalGlyphs: 96,
-        charsetSize: 768,  // 96 chars × 8 bytes
+        charsetSize: 768,
         folder: 'PNG/Fonts/1x1'
     }
 };
 
-// Font registry - defines available fonts for each dimension
-// Fonts use naming convention: font-{dimension}-{id}.png (e.g., font-1x2-classic.png)
+// PNG files follow the naming convention font-{dimension}-{id}.png.
 const KNOWN_FONTS = {
     '1x2': [
         { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED, hasBinaryFallback: true },
@@ -73,16 +57,13 @@ const KNOWN_FONTS = {
     ]
 };
 
-// Cache-busting version - increment when font assets change
+// Increment when font assets change to bust the browser cache.
 const FONT_ASSET_VERSION = 1;
 
-// Constants (prefixed to avoid collision with bar-styles-data.js)
+// Prefixed to avoid collision with bar-styles-data.js's BYTES_PER_CHAR.
 const FONT_BYTES_PER_CHAR = 8;
 
-// Cache for loaded font data
 const fontDataCache = new Map();
-
-// Cache for discovered fonts per dimension
 const fontListCache = new Map();
 
 /**
@@ -103,7 +84,6 @@ function getFontPath(fontType, fontId) {
  * @returns {Promise<Array>} - Array of font info objects
  */
 async function discoverFonts(fontType) {
-    // Check cache first
     if (fontListCache.has(fontType)) {
         return fontListCache.get(fontType);
     }
@@ -114,8 +94,6 @@ async function discoverFonts(fontType) {
         return [];
     }
 
-    // Use known fonts for this dimension
-    // (Future: could optionally load from fonts-{type}.json if it exists)
     const knownFonts = KNOWN_FONTS[fontType] || [];
     const fonts = knownFonts.map((font, index) => {
         const imagePath = getFontPath(fontType, font.id);
@@ -161,7 +139,6 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
     const charset = new Uint8Array(dim.charsetSize);
     charset.fill(0);
 
-    // Process each glyph in the PNG
     for (let glyphIndex = 0; glyphIndex < dim.totalGlyphs; glyphIndex++) {
         const glyphRow = Math.floor(glyphIndex / dim.glyphsPerRow);
         const glyphCol = glyphIndex % dim.glyphsPerRow;
@@ -169,13 +146,10 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
         const startX = glyphCol * dim.glyphWidth;
         const startY = glyphRow * dim.glyphHeight;
 
-        // C64 character indices
-        // Top halves go to chars 0-95 (bytes $000-$2FF)
-        // Bottom halves go to chars 128-223 (bytes $400-$6FF)
-        const charIndexTop = glyphIndex;           // Characters 0-95
-        const charIndexBottom = 128 + glyphIndex;  // Characters 128-223
+        // Top half goes to chars 0-95, bottom half to chars 128-223.
+        const charIndexTop = glyphIndex;
+        const charIndexBottom = 128 + glyphIndex;
 
-        // Process top half (rows 0-7 of the glyph)
         if (charIndexTop < 96) {
             for (let row = 0; row < 8; row++) {
                 let byte = 0;

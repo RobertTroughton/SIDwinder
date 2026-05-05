@@ -1,4 +1,7 @@
-// compressor-manager.js - Unified compression manager for SIDwinder
+// compressor-manager.js - Unified compression manager for SIDwinder.
+// Wraps optional compressors (currently TSCrunch) behind a single async API
+// and lazy-loads them on first use to keep startup cost low.
+
 class CompressorManager {
     constructor() {
         this.compressors = {
@@ -40,7 +43,6 @@ class CompressorManager {
     }
 
     async compress(data, type, uncompressedStart, executeAddress) {
-        // Ensure compressors are initialized
         await this.waitForInit();
 
         if (type === 'none') {
@@ -58,7 +60,8 @@ class CompressorManager {
             throw new Error(`Compressor '${type}' not available`);
         }
 
-        // Remove load address for compression
+        // Strip the 2-byte PRG load address before handing data to the compressor;
+        // it will be re-added by the SFX wrapper.
         const hasLoadAddress = data.length >= 2 &&
             (data[0] | (data[1] << 8)) === uncompressedStart;
 
@@ -79,7 +82,10 @@ class CompressorManager {
     }
 }
 
-// TSCrunch wrapper
+/**
+ * TSCrunch wrapper. TSCrunch expects PRG-format input (load address as first
+ * two bytes) and produces a self-extracting executable.
+ */
 class TSCrunchCompressor {
     constructor() {
         this.originalSize = 0;
@@ -90,33 +96,26 @@ class TSCrunchCompressor {
         try {
             this.originalSize = data.length;
 
-            // TSCrunch expects PRG format, so we need to add the load address
-            // BUT - check if data already has a load address
+            // Ensure prgData has the expected load address as its first two bytes.
             let prgData;
-
-            // Check if the data already starts with the expected load address
             if (data.length >= 2 && (data[0] | (data[1] << 8)) === uncompressedStart) {
-                // Data already has load address, use as-is
                 prgData = data;
             } else {
-                // Need to add load address
                 prgData = new Uint8Array(data.length + 2);
                 prgData[0] = uncompressedStart & 0xFF;
                 prgData[1] = (uncompressedStart >> 8) & 0xFF;
                 prgData.set(data, 2);
             }
 
-            // TSCrunch options
             const options = {
-                prg: true,           // Input is PRG format
-                sfx: true,           // Create self-extracting
-                sfxMode: 0,          // Normal SFX mode
+                prg: true,
+                sfx: true,
+                sfxMode: 0,
                 jumpAddress: executeAddress,
-                blank: false,        // Don't blank screen
-                inplace: false       // Not in-place compression
+                blank: false,
+                inplace: false
             };
 
-            // Compress with TSCrunch
             const compressed = TSCrunch.compress(prgData, options);
 
             this.compressedSize = compressed.length;
@@ -135,5 +134,4 @@ class TSCrunchCompressor {
     }
 }
 
-// Export globally
 window.CompressorManager = CompressorManager;

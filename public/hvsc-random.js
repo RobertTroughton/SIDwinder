@@ -1,4 +1,6 @@
-// hvsc-random.js - Random SID selector for HVSC collection
+// hvsc-random.js - Random SID selector for the HVSC collection.
+// Loads a curated list of starting directories and walks into them randomly
+// until at least one .sid file is found.
 
 window.hvscRandom = (function () {
     const HVSC_BASE = '/.netlify/functions/hvsc';
@@ -7,11 +9,9 @@ window.hvscRandom = (function () {
     let isLoaded = false;
     let isLoading = false;
 
-    // Load the curated paths from JSON
     async function loadPaths() {
         if (isLoaded) return true;
         if (isLoading) {
-            // Wait for loading to complete
             while (isLoading) {
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
@@ -38,11 +38,10 @@ window.hvscRandom = (function () {
         }
     }
 
-    // Parse directory HTML to extract entries (simplified version of hvsc-browser logic)
+    // Parse directory HTML to extract entries (mirrors hvsc-browser logic).
     function parseDirectoryHTML(html) {
         const entries = [];
 
-        // Look for table content
         const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/i;
         const tableMatch = html.match(tableRegex);
 
@@ -59,7 +58,6 @@ window.hvscRandom = (function () {
                     const href = linkMatch[1];
                     let name = linkMatch[2].trim();
 
-                    // Process directory links
                     if (href.startsWith('?path=') && !href.includes('info=')) {
                         let pathValue = decodeURIComponent(href.substring(6));
                         if (pathValue.endsWith('/')) {
@@ -73,7 +71,6 @@ window.hvscRandom = (function () {
                             isDirectory: true
                         });
                     }
-                    // Process SID file links
                     else if (href.includes('.sid') && !href.includes('info=')) {
                         let fileName = href.split('/').pop();
                         entries.push({
@@ -100,7 +97,7 @@ window.hvscRandom = (function () {
                 }
             }
         } else {
-            // Fallback: scan all links
+            // Fallback: scan every <a> when no <table> wrapper is present.
             const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
             let match;
 
@@ -108,7 +105,6 @@ window.hvscRandom = (function () {
                 const href = match[1];
                 const linkText = match[2].trim();
 
-                // Skip navigation and external links
                 if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
                     linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
                     linkText === 'Parent Directory' || href.startsWith('http://') ||
@@ -116,7 +112,6 @@ window.hvscRandom = (function () {
                     continue;
                 }
 
-                // Directory links
                 if (href.includes('?path=') && !href.includes('info=')) {
                     const pathMatch = href.match(/\?path=([^&]*)/);
                     if (pathMatch) {
@@ -131,7 +126,6 @@ window.hvscRandom = (function () {
                         });
                     }
                 }
-                // SID files
                 else if (href.includes('info=please') || linkText.endsWith('.sid')) {
                     if (href.includes('path=')) {
                         const pathMatch = href.match(/path=([^&]+)/);
@@ -152,7 +146,6 @@ window.hvscRandom = (function () {
         return entries;
     }
 
-    // Fetch a directory and return its entries
     async function fetchDirectory(path) {
         if (path.endsWith('/')) {
             path = path.slice(0, -1);
@@ -170,9 +163,8 @@ window.hvscRandom = (function () {
         return parseDirectoryHTML(html);
     }
 
-    // Select a random SID from the collection
+    /** Pick a random SID by walking down a randomly-chosen curated start path. */
     async function selectRandomSID(maxDepth = 5, onProgress = null) {
-        // Ensure paths are loaded
         if (!await loadPaths()) {
             throw new Error('Could not load HVSC paths');
         }
@@ -187,7 +179,6 @@ window.hvscRandom = (function () {
         while (attempts < maxAttempts) {
             attempts++;
 
-            // Pick a random starting path
             const randomIndex = Math.floor(Math.random() * curatedPaths.length);
             let currentPath = curatedPaths[randomIndex];
 
@@ -196,20 +187,16 @@ window.hvscRandom = (function () {
             }
 
             try {
-                // Navigate into directories until we find SIDs
                 let depth = 0;
                 while (depth < maxDepth) {
                     const entries = await fetchDirectory(currentPath);
 
-                    // Get SID files and directories
                     const sids = entries.filter(e => !e.isDirectory && e.name.toLowerCase().endsWith('.sid'));
                     const dirs = entries.filter(e => e.isDirectory);
 
                     if (sids.length > 0) {
-                        // Found SIDs! Pick one randomly
                         const randomSid = sids[Math.floor(Math.random() * sids.length)];
 
-                        // Build the full URL for downloading
                         const sidUrl = `${HVSC_BASE}?path=${encodeURIComponent(randomSid.path)}`;
 
                         return {
@@ -219,7 +206,6 @@ window.hvscRandom = (function () {
                             browsePath: currentPath
                         };
                     } else if (dirs.length > 0) {
-                        // No SIDs here, pick a random subdirectory
                         const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
                         currentPath = randomDir.path;
                         depth++;
@@ -229,20 +215,18 @@ window.hvscRandom = (function () {
                             onProgress(`Exploring ${dirName}...`);
                         }
                     } else {
-                        // No SIDs and no subdirectories, try another path
+                        // Dead-end branch; restart from a different curated root.
                         break;
                     }
                 }
             } catch (error) {
                 console.warn(`Failed to explore ${currentPath}:`, error);
-                // Try another path
             }
         }
 
         throw new Error('Could not find a random SID after multiple attempts');
     }
 
-    // Public API
     return {
         loadPaths: loadPaths,
         selectRandomSID: selectRandomSID

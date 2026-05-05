@@ -1,5 +1,5 @@
-// sid_processor.cpp - Extended WASM module with SID file processing
-// Works with cpu6510_wasm.cpp to provide complete SID analysis
+// sid_processor.cpp - WASM module for SID file analysis.
+// Works with cpu6510_wasm.cpp to load, parse, and emulate PSID files.
 
 #include <emscripten/emscripten.h>
 #include <cstdint>
@@ -8,24 +8,22 @@
 #include <algorithm>
 #include <set>
 #include <string>
-#include "opcodes.h"  // Use the existing opcodes.h
+#include "opcodes.h"
 
-// Helper function to clean a string from the SID header (C++ function, not exported)
+// Strip non-printable ASCII and trailing spaces from a fixed-length SID header field.
 static std::string cleanSIDString(const char* str, size_t maxLen) {
     std::string result;
     result.reserve(maxLen);
 
     for (size_t i = 0; i < maxLen; i++) {
         if (str[i] == '\0') {
-            break; // Stop at null terminator
+            break;
         }
-        // Only include printable ASCII characters
         if (str[i] >= 32 && str[i] <= 126) {
             result.push_back(str[i]);
         }
     }
 
-    // Remove trailing spaces
     while (!result.empty() && result.back() == ' ') {
         result.pop_back();
     }
@@ -35,56 +33,50 @@ static std::string cleanSIDString(const char* str, size_t maxLen) {
 
 extern "C" {
 
-    // SID Header structure matching the original format
-    // CRITICAL: Must be packed to match file format exactly
+    // PSID/RSID file header. Must be packed to match the on-disk file format
+    // exactly; note that `speed` is unaligned (offset 0x12).
+    // Fields are stored big-endian on disk and byte-swapped after load.
 #pragma pack(push, 1)
     struct SIDHeader {
-        char magicID[4];     // 'PSID' or 'RSID'  // Offset 0x00
-        uint16_t version;                          // Offset 0x04
-        uint16_t dataOffset;                       // Offset 0x06
-        uint16_t loadAddress;                      // Offset 0x08
-        uint16_t initAddress;                      // Offset 0x0A
-        uint16_t playAddress;                      // Offset 0x0C
-        uint16_t songs;                            // Offset 0x0E
-        uint16_t startSong;                        // Offset 0x10
-        uint32_t speed;                            // Offset 0x12 (NOT aligned!)
-        char name[32];                             // Offset 0x16
-        char author[32];                           // Offset 0x36
-        char copyright[32];                        // Offset 0x56
-        uint16_t flags;      // Version 2+ only    // Offset 0x76
-        uint8_t startPage;   // Version 2+ only    // Offset 0x78
-        uint8_t pageLength;  // Version 2+ only    // Offset 0x79
-        uint8_t secondSIDAddress; // Version 3+    // Offset 0x7A
-        uint8_t thirdSIDAddress;  // Version 4+    // Offset 0x7B
+        char magicID[4];     // 'PSID' or 'RSID'    Offset 0x00
+        uint16_t version;                         // Offset 0x04
+        uint16_t dataOffset;                      // Offset 0x06
+        uint16_t loadAddress;                     // Offset 0x08
+        uint16_t initAddress;                     // Offset 0x0A
+        uint16_t playAddress;                     // Offset 0x0C
+        uint16_t songs;                           // Offset 0x0E
+        uint16_t startSong;                       // Offset 0x10
+        uint32_t speed;                           // Offset 0x12 (unaligned)
+        char name[32];                            // Offset 0x16
+        char author[32];                          // Offset 0x36
+        char copyright[32];                       // Offset 0x56
+        uint16_t flags;            // v2+         // Offset 0x76
+        uint8_t startPage;         // v2+         // Offset 0x78
+        uint8_t pageLength;        // v2+         // Offset 0x79
+        uint8_t secondSIDAddress;  // v3+         // Offset 0x7A
+        uint8_t thirdSIDAddress;   // v4+         // Offset 0x7B
     };
 #pragma pack(pop)
 
-    // Analysis results structure
     struct AnalysisResults {
-        // Memory usage
         std::set<uint16_t> modifiedAddresses;
         std::set<uint8_t> zeroPageUsed;
 
-        // SID register usage
         uint32_t sidRegisterWrites[32];
 
-        // Code vs data analysis
         uint32_t codeBytes;
         uint32_t dataBytes;
 
-        // Pattern detection
         bool hasPattern;
         uint32_t patternPeriod;
         uint32_t initFrames;
 
-		// Timing analysis
         uint8_t numCallsPerFrame;
         uint16_t ciaTimerValue;
         bool ciaTimerDetected;
         uint32_t maxCycles;
     };
 
-    // Global state
     struct {
         SIDHeader header;
         uint8_t* fileBuffer;
@@ -93,14 +85,13 @@ extern "C" {
         AnalysisResults analysis;
         bool isLoaded;
 
-        // Store cleaned strings separately
         std::string cleanName;
         std::string cleanAuthor;
         std::string cleanCopyright;
         std::string cleanMagicID;
     } sidState;
 
-    // External CPU functions (from cpu6510_wasm.cpp)
+    // CPU functions imported from cpu6510_wasm.cpp.
     extern void cpu_init();
     extern void cpu_set_tracking(bool enabled);
     extern void cpu_write_memory(uint16_t address, uint8_t value);
@@ -116,7 +107,8 @@ extern "C" {
     extern void cpu_reset_state_only();
     extern uint32_t cpu_get_last_execution_cycles();
 
-    // Helper function to swap endianness
+    // SID header values are stored big-endian on disk; the WASM host is
+    // little-endian, so byte-swap after loading.
     uint16_t swap16(uint16_t value) {
         return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF);
     }
@@ -128,25 +120,20 @@ extern "C" {
             ((value & 0xFF000000) >> 24);
     }
 
-    // Initialize SID processor
     EMSCRIPTEN_KEEPALIVE
         void sid_init() {
-        // Clear header (POD type, safe to memset)
         memset(&sidState.header, 0, sizeof(sidState.header));
 
-        // Clear other POD members
         sidState.fileBuffer = nullptr;
         sidState.fileSize = 0;
         sidState.dataStart = 0;
         sidState.isLoaded = false;
 
-        // Clear strings
         sidState.cleanName.clear();
         sidState.cleanAuthor.clear();
         sidState.cleanCopyright.clear();
         sidState.cleanMagicID.clear();
 
-        // Clear analysis results (C++ objects will be properly initialized)
         sidState.analysis.modifiedAddresses.clear();
         sidState.analysis.zeroPageUsed.clear();
         memset(sidState.analysis.sidRegisterWrites, 0, sizeof(sidState.analysis.sidRegisterWrites));
@@ -160,31 +147,27 @@ extern "C" {
         cpu_init();
     }
 
-    // Load and parse SID file
+    // Load and parse a PSID file. v1 header is 120 bytes; v2+ is 124 bytes.
+    // Returns 0 on success or a negative error code.
     EMSCRIPTEN_KEEPALIVE
         int sid_load(uint8_t* data, uint32_t size) {
-        // Verify the header size is what we expect (124 bytes for v2+, 120 for v1)
         if (size < 120) {
-            return -1; // File too small for even v1 header
+            return -1;
         }
 
-        // Copy header
         memcpy(&sidState.header, data, sizeof(SIDHeader));
 
-        // Clean and store the magic ID (4 characters, no null terminator in file)
+        // magicID has no null terminator in the file format.
         sidState.cleanMagicID = std::string(sidState.header.magicID, 4);
 
-        // Check magic ID
         if (sidState.cleanMagicID != "PSID" && sidState.cleanMagicID != "RSID") {
-            return -2; // Invalid magic ID
+            return -2;
         }
 
-        // RSID not supported
         if (sidState.cleanMagicID == "RSID") {
-            return -3; // RSID not supported
+            return -3;
         }
 
-        // Fix endianness
         sidState.header.version = swap16(sidState.header.version);
         sidState.header.dataOffset = swap16(sidState.header.dataOffset);
         sidState.header.loadAddress = swap16(sidState.header.loadAddress);
@@ -198,28 +181,20 @@ extern "C" {
             sidState.header.flags = swap16(sidState.header.flags);
         }
 
-        // Check version
         if (sidState.header.version < 1 || sidState.header.version > 4) {
-            return -4; // Unsupported version
+            return -4;
         }
 
-        // Verify expected data offset
-        uint16_t expectedOffset = (sidState.header.version == 1) ? 0x76 : 0x7C;
-        if (sidState.header.dataOffset != expectedOffset) {
-            // Log warning but continue
-        }
-
-        // Clean and store the strings
         sidState.cleanName = cleanSIDString(sidState.header.name, 32);
         sidState.cleanAuthor = cleanSIDString(sidState.header.author, 32);
         sidState.cleanCopyright = cleanSIDString(sidState.header.copyright, 32);
 
-        // Handle load address
+        // If loadAddress is 0, the actual load address is encoded as the first
+        // two bytes of the data section (little-endian, like a PRG file).
         sidState.dataStart = sidState.header.dataOffset;
         if (sidState.header.loadAddress == 0) {
-            // Load address is in first two bytes of data
             if (size < sidState.dataStart + 2) {
-                return -5; // Missing load address
+                return -5;
             }
             uint8_t lo = data[sidState.dataStart];
             uint8_t hi = data[sidState.dataStart + 1];
@@ -227,7 +202,6 @@ extern "C" {
             sidState.dataStart += 2;
         }
 
-        // Store file data
         sidState.fileSize = size;
         if (sidState.fileBuffer) {
             free(sidState.fileBuffer);
@@ -235,29 +209,28 @@ extern "C" {
         sidState.fileBuffer = (uint8_t*)malloc(size);
         memcpy(sidState.fileBuffer, data, size);
 
-        // Load music data into CPU memory
         uint32_t musicSize = size - sidState.dataStart;
         uint8_t* musicData = data + sidState.dataStart;
 
-        cpu_init(); // Reset CPU
-        cpu_set_tracking(false); // Disable tracking for loading
+        cpu_init();
+        cpu_set_tracking(false);
 
         for (uint32_t i = 0; i < musicSize; i++) {
             cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
         }
 
         sidState.isLoaded = true;
-        return 0; // Success
+        return 0;
     }
 
-    // Run analysis (emulation)
+    // Emulate init + `frameCount` play calls per song, accumulating memory,
+    // SID register, and timing statistics. progressCallback may be null.
     EMSCRIPTEN_KEEPALIVE
         int sid_analyze(uint32_t frameCount, void (*progressCallback)(uint32_t, uint32_t)) {
         if (!sidState.isLoaded) {
             return -1;
         }
 
-        // Clear previous analysis
         sidState.analysis.modifiedAddresses.clear();
         sidState.analysis.zeroPageUsed.clear();
         memset(sidState.analysis.sidRegisterWrites, 0, sizeof(sidState.analysis.sidRegisterWrites));
@@ -271,35 +244,28 @@ extern "C" {
         sidState.analysis.ciaTimerDetected = false;
         sidState.analysis.maxCycles = 0;
 
-        // Create a clean memory snapshot after initial load
+        // Snapshot memory after initial load so each song can start from
+        // an identical baseline.
         uint8_t* cleanMemorySnapshot = (uint8_t*)malloc(65536);
 
-        // First, init with clean memory
         cpu_init();
         cpu_set_tracking(false);
 
-        // Load music data
         uint32_t musicSize = sidState.fileSize - sidState.dataStart;
         uint8_t* musicData = sidState.fileBuffer + sidState.dataStart;
         for (uint32_t i = 0; i < musicSize; i++) {
             cpu_write_memory(sidState.header.loadAddress + i, musicData[i]);
         }
 
-        // Save this clean state
         cpu_save_memory(cleanMemorySnapshot);
 
-        // Determine how many songs to analyze
         uint16_t songsToAnalyze = sidState.header.songs;
 
-        // Iterate through songs
         for (uint16_t songNum = 1; songNum <= songsToAnalyze; songNum++) {
-            // RESTORE COMPLETE MEMORY STATE
             cpu_restore_memory(cleanMemorySnapshot);
-
-            // Reset CPU state but keep the restored memory
             cpu_reset_state_only();
 
-            // Set the song number in accumulator, X and Y registers
+            // PSID convention: subtune index (0-based) is passed in A, X and Y.
             extern void cpu_set_accumulator(uint8_t value);
             extern void cpu_set_xreg(uint8_t value);
             extern void cpu_set_yreg(uint8_t value);
@@ -307,29 +273,24 @@ extern "C" {
             cpu_set_xreg(songNum - 1);
             cpu_set_yreg(songNum - 1);
 
-            // Enable tracking
             cpu_set_tracking(true);
 
-            // Execute init
             if (!cpu_execute_function(sidState.header.initAddress, 100000)) {
-                continue; // Skip this song if init fails
+                continue;
             }
 
-            // Enable write recording for pattern detection (optional)
             cpu_set_record_writes(true);
 
-            // Execute play routine for this song
             for (uint32_t frame = 0; frame < frameCount; frame++) {
                 if (!cpu_execute_function(sidState.header.playAddress, 20000)) {
                     break;
                 }
-                
+
                 uint32_t cycles = cpu_get_last_execution_cycles();
                 if (cycles > sidState.analysis.maxCycles) {
                     sidState.analysis.maxCycles = cycles;
                 }
 
-                // Progress callback
                 if (progressCallback && (frame % 100 == 0)) {
                     uint32_t totalProgress = (songNum - 1) * frameCount + frame;
                     uint32_t totalFrames = songsToAnalyze * frameCount;
@@ -337,12 +298,11 @@ extern "C" {
                 }
             }
 
-            // ACCUMULATE analysis results for THIS song before resetting
+            // Accumulate per-song results before the next iteration overwrites them.
             for (uint32_t addr = 0; addr < 65536; addr++) {
                 uint8_t access = cpu_get_memory_access(addr);
 
-                // Track modified addresses
-                if (access & 0x04) { // Write flag
+                if (access & 0x04) { // MEM_WRITE
                     sidState.analysis.modifiedAddresses.insert(addr);
 
                     if (addr < 256) {
@@ -350,10 +310,10 @@ extern "C" {
                     }
                 }
 
-                // Track code vs data (only for the SID's loaded range)
+                // Code-vs-data only matters for the SID's own loaded range.
                 if (addr >= sidState.header.loadAddress &&
                     addr < sidState.header.loadAddress + musicSize) {
-                    if (access & 0x01) { // Execute flag
+                    if (access & 0x01) { // MEM_EXECUTE
                         sidState.analysis.codeBytes++;
                     }
                     else {
@@ -362,12 +322,11 @@ extern "C" {
                 }
             }
 
-            // Accumulate SID register usage
             for (int reg = 0; reg < 32; reg++) {
                 sidState.analysis.sidRegisterWrites[reg] += cpu_get_sid_writes(reg);
             }
 
-            // Check for CIA timer (only need to detect once)
+            // CIA timer only needs to be detected once across all songs.
             if (!sidState.analysis.ciaTimerDetected) {
                 extern uint8_t cpu_get_cia_timer_lo();
                 extern uint8_t cpu_get_cia_timer_hi();
@@ -379,14 +338,13 @@ extern "C" {
 
                     if (ciaTimerLo != 0 || ciaTimerHi != 0) {
                         uint16_t timerValue = ciaTimerLo | (ciaTimerHi << 8);
-                        // PAL: 312 lines * 63 cycles = 19656 cycles per frame
-                        // NTSC: 263 lines * 65 cycles = 17095 cycles per frame
-                        double cyclesPerFrame = 19656.0; // Default PAL
+                        // PAL: 312 lines * 63 cycles = 19656 cycles/frame.
+                        // NTSC: 263 lines * 65 cycles = 17095 cycles/frame.
+                        double cyclesPerFrame = 19656.0;
 
-                        // Check if NTSC
                         if (sidState.header.version >= 2) {
                             uint16_t flags = sidState.header.flags;
-                            if ((flags & 0x0C) == 0x08) { // NTSC flag
+                            if ((flags & 0x0C) == 0x08) { // NTSC
                                 cyclesPerFrame = 17095.0;
                             }
                         }
@@ -400,13 +358,11 @@ extern "C" {
             }
         }
 
-        // Clean up
         free(cleanMemorySnapshot);
 
-        return 0; // Success
+        return 0;
     }
 
-    // Get header field
     EMSCRIPTEN_KEEPALIVE
         const char* sid_get_header_string(int field) {
         if (!sidState.isLoaded) return "";
@@ -437,7 +393,6 @@ extern "C" {
         }
     }
 
-    // Update header strings
     EMSCRIPTEN_KEEPALIVE
         void sid_set_header_string(int field, const char* value) {
         if (!sidState.isLoaded) return;
@@ -463,18 +418,16 @@ extern "C" {
         }
 
         if (target && cleanTarget) {
-            // Clear the buffer
             memset(target, 0, 32);
-
-            // Copy the new value (up to 31 chars to leave room for null terminator)
+            // Leave room for the trailing null even though the on-disk field
+            // is fixed-width and not null-terminated by the spec.
             strncpy(target, value, 31);
-
-            // Update the clean version
             *cleanTarget = cleanSIDString(target, 32);
         }
     }
 
-    // Create modified SID file
+    // Build a copy of the loaded SID file with current header fields, ready
+    // for download. Caller must free() the returned buffer.
     EMSCRIPTEN_KEEPALIVE
         uint8_t* sid_create_modified(uint32_t* outSize) {
         if (!sidState.isLoaded || !sidState.fileBuffer) {
@@ -487,6 +440,9 @@ extern "C" {
 
         SIDHeader tempHeader = sidState.header;
 
+        // Preserve the "load address embedded in data" form: when the original
+        // header had loadAddress=0, keep it 0 so the data-embedded little-endian
+        // load address is honoured on reload.
         uint16_t originalLoadAddress = swap16(*(uint16_t*)&sidState.fileBuffer[0x08]);
 
         tempHeader.version = swap16(tempHeader.version);
@@ -514,7 +470,6 @@ extern "C" {
         return newBuffer;
     }
 
-    // Get analysis results
     EMSCRIPTEN_KEEPALIVE
         uint32_t sid_get_modified_count() {
         return sidState.analysis.modifiedAddresses.size();
@@ -565,19 +520,18 @@ extern "C" {
         return 0;
     }
 
-    // Get the number of SID chips used
     EMSCRIPTEN_KEEPALIVE
         uint32_t sid_get_sid_chip_count() {
         return cpu_get_sid_chip_count();
     }
 
-    // Get the base address of the Nth SID chip used (0-indexed)
+    // Base address of the Nth SID chip detected during analysis (0-indexed).
     EMSCRIPTEN_KEEPALIVE
         uint16_t sid_get_sid_chip_address(uint32_t index) {
         return cpu_get_sid_chip_address(index);
     }
 
-    // Get clock type from flags
+    // PSID v2+ flags bits 2-3 encode video standard.
     EMSCRIPTEN_KEEPALIVE
         const char* sid_get_clock_type() {
         if (!sidState.isLoaded || sidState.header.version < 2) {
@@ -591,7 +545,7 @@ extern "C" {
         return "Unknown";
     }
 
-    // Get SID model from flags
+    // PSID v2+ flags bits 4-5 encode SID chip model.
     EMSCRIPTEN_KEEPALIVE
         const char* sid_get_sid_model() {
         if (!sidState.isLoaded || sidState.header.version < 2) {
@@ -625,7 +579,6 @@ extern "C" {
         return sidState.analysis.maxCycles;
     }
 
-    // Clean up
     EMSCRIPTEN_KEEPALIVE
         void sid_cleanup() {
         if (sidState.fileBuffer) {

@@ -1,6 +1,6 @@
-﻿// ui.js - UI Controller for SIDwinder Web with Visual Visualizer Selection and Image Previews
+﻿// UI controller for SIDwinder web app.
 
-// Global C64 color palette
+// C64 hardware palette (16 colors). Index matches the C64 color number.
 const C64_COLORS = [
     { value: 0, name: 'Black', hex: '#000000' },
     { value: 1, name: 'White', hex: '#FFFFFF' },
@@ -28,7 +28,7 @@ class UIController {
         this.analysisResults = null;
         this.prgExporter = null;
         this.sidHeader = null;
-        this.originalMetadata = {}; // Store original metadata for comparison
+        this.originalMetadata = {};  // baseline for detecting metadata edits
         this.selectedVisualizer = null;
         this.visualizerConfig = null;
         this.hvscBrowserWindow = null;
@@ -37,7 +37,7 @@ class UIController {
         this.initEventListeners();
     }
 
-    // Lazy-load WASM + SID analyzer (only needed when processing a SID file)
+    /** Lazy-load WASM + SID analyzer (only needed when processing a SID file). */
     async ensureAnalyzer() {
         if (this.analyzer) return this.analyzer;
         await window.loadScript('sidwinder.js');
@@ -46,7 +46,7 @@ class UIController {
         return this.analyzer;
     }
 
-    // Lazy-load PRG export dependencies (prg-builder + png-converter + compressor + data files)
+    /** Lazy-load PRG export dependencies (builder + png-converter + compressor + data files). */
     async ensurePRGExporter() {
         if (this.prgExporter) return this.prgExporter;
         await Promise.all([
@@ -66,7 +66,6 @@ class UIController {
 
     cacheElements() {
         return {
-            // Upload elements
             uploadSection: document.getElementById('uploadSection'),
             uploadBtn: document.getElementById('uploadBtn'),
             hvscBtn: document.getElementById('hvscBtn'),
@@ -88,15 +87,12 @@ class UIController {
             modalOverlay: document.getElementById('modalOverlay'),
             modalIcon: document.getElementById('modalIcon'),
             modalMessage: document.getElementById('modalMessage'),
-            // Busy overlay elements
             busyOverlay: document.getElementById('busyOverlay'),
             busyMessage: document.getElementById('busyMessage'),
             busySubmessage: document.getElementById('busySubmessage'),
-            // Editable fields
             sidTitle: document.getElementById('sidTitle'),
             sidAuthor: document.getElementById('sidAuthor'),
             sidCopyright: document.getElementById('sidCopyright'),
-            // Info fields
             sidFormat: document.getElementById('sidFormat'),
             sidVersion: document.getElementById('sidVersion'),
             sidSongs: document.getElementById('sidSongs'),
@@ -110,7 +106,6 @@ class UIController {
             sidModel: document.getElementById('sidModel'),
             sidChipCount: document.getElementById('sidChipCount'),
             maxCycles: document.getElementById('maxCycles'),
-            // Export section elements
             exportSection: document.getElementById('exportSection'),
             visualizerGrid: document.getElementById('visualizerGrid'),
             visualizerOptions: document.getElementById('visualizerOptions'),
@@ -123,22 +118,18 @@ class UIController {
     }
 
     initEventListeners() {
-        // Upload button
         this.elements.uploadBtn.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
 
-        // HVSC button
         this.elements.hvscBtn.addEventListener('click', () => {
             this.openHVSCBrowser();
         });
 
-        // Random SID button
         this.elements.randomBtn.addEventListener('click', () => {
             this.selectRandomSID();
         });
 
-        // Drag & drop section click
         this.elements.uploadSection.addEventListener('click', () => {
             this.elements.fileInput.click();
         });
@@ -147,23 +138,18 @@ class UIController {
             this.handleFileSelect(e);
         });
 
-        // Export modified SID button
         this.elements.exportModifiedSIDButton.addEventListener('click', () => {
             this.exportModifiedSID();
         });
 
-        // Export PRG button
         this.elements.exportPRGButton.addEventListener('click', () => {
             this.exportPRGWithVisualizer();
         });
 
-        // Drag and drop
         this.setupDragAndDrop();
-
-        // Editable fields
         this.setupEditableFields();
 
-        // Listen for messages from HVSC browser window
+        // Receive selection events from the HVSC browser child window/iframe.
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'sid-selected') {
                 this.handleHVSCSelection(e.data);
@@ -182,7 +168,7 @@ class UIController {
             closeBtn.addEventListener('click', closeHVSCModal);
         }
 
-        // Click outside modal content to close
+        // Click on backdrop (not modal content) closes the modal.
         const hvscModal = document.getElementById('hvscModal');
         if (hvscModal) {
             hvscModal.addEventListener('click', (e) => {
@@ -194,7 +180,7 @@ class UIController {
             if (e.key === 'Escape') closeHVSCModal();
         });
 
-        // Initialize the UI in "attract mode"
+        // Show placeholder content until a SID is loaded.
         this.initializeAttractMode();
     }
 
@@ -214,10 +200,8 @@ class UIController {
         const modal = document.getElementById('hvscModal');
         modal.classList.add('visible');
 
-        // Lazy-load HVSC browser script
         await window.loadScript('hvsc-browser.js');
 
-        // Initialize HVSC browser on first open
         if (typeof hvscBrowser.initializeHVSC === 'function') {
             hvscBrowser.initializeHVSC();
         } else if (!window.hvscBrowserInitialized) {
@@ -227,29 +211,22 @@ class UIController {
     }
 
     async selectRandomSID() {
-        // Show busy overlay
         this.showBusy('Finding Random SID', 'Exploring HVSC collection...');
 
         try {
-            // Lazy-load HVSC random script
             await window.loadScript('hvsc-random.js');
 
-            // Use the hvscRandom module to select a random SID
             const result = await window.hvscRandom.selectRandomSID(5, (message) => {
                 this.updateBusy('Finding Random SID', message);
             });
 
-            // Hide busy overlay before processing
             this.hideBusy();
 
-            // Show selection info
             this.elements.hvscSelected.style.display = 'block';
             this.elements.selectedFile.textContent = result.name;
 
-            // Show downloading message
             this.showModal('Downloading SID from HVSC...', true);
 
-            // Download and process the SID (same as handleHVSCSelection)
             const response = await fetch(result.url);
 
             if (!response.ok) {
@@ -279,7 +256,6 @@ class UIController {
         this.showModal('Downloading SID from HVSC...', true);
 
         try {
-            // The URL is already properly formatted from selectSID
             const response = await fetch(data.url);
 
             if (!response.ok) {
@@ -298,7 +274,6 @@ class UIController {
     }
 
     initializeAttractMode() {
-        // Set all info fields to placeholder values
         this.elements.sidTitle.querySelector('.text').textContent = 'Song Title';
         this.elements.sidAuthor.querySelector('.text').textContent = 'Artist Name';
         this.elements.sidCopyright.querySelector('.text').textContent = 'Copyright Info';
@@ -332,7 +307,6 @@ class UIController {
 
         const modifiedMemoryElement = document.getElementById('modifiedMemoryCount');
         if (!modifiedMemoryElement) {
-            // Create the row in attract mode too
             const infoPanels = document.getElementById('infoPanels');
             const technicalPanel = infoPanels.querySelector('.panel:nth-child(2)');
 
@@ -344,7 +318,7 @@ class UIController {
         <span class="info-value" id="modifiedMemoryCount">0 locations</span>
     `;
 
-            // Find the Clock Type row to insert before it
+            // Insert above the Clock Type row to keep panel ordering consistent.
             const clockTypeRow = technicalPanel.querySelector('.info-row:nth-last-child(3)');
             if (clockTypeRow) {
                 technicalPanel.insertBefore(modifiedRow, clockTypeRow);
@@ -355,7 +329,6 @@ class UIController {
             modifiedMemoryElement.textContent = '0 locations';
         }
 
-        // Initialize visualizer grid with disabled state
         this.buildAttractModeVisualizerGrid();
     }
 
@@ -365,14 +338,13 @@ class UIController {
 
         grid.innerHTML = '';
 
-        // Show all visualizers in disabled state
         for (let i = 0; i < VISUALIZERS.length; i++) {
             const viz = VISUALIZERS[i];
             const card = this.createVisualizerCard(viz);
             card.classList.add('disabled');
             card.style.pointerEvents = 'none';
 
-            // Show the first one as selected for visual consistency
+            // Highlight the first card so the grid doesn't look unselected.
             if (i === 0) {
                 card.classList.add('selected');
             }
@@ -425,10 +397,11 @@ class UIController {
                 }
             });
 
-            // Use blur on the text span instead of the field
+            // Blur on the inner text span fires when the user tabs/clicks away.
+            // The 200ms delay lets a click on another control fire first so we
+            // don't tear down editing state mid-interaction.
             textSpan.addEventListener('blur', () => {
                 if (field.classList.contains('editing')) {
-                    // Use setTimeout to allow click events on other elements to fire first
                     setTimeout(() => {
                         if (field.classList.contains('editing')) {
                             this.stopEditing(field);
@@ -437,11 +410,10 @@ class UIController {
                 }
             });
 
-            // Add paste handler to strip formatting
+            // Strip formatting from pasted content; SID metadata is plain text only.
             textSpan.addEventListener('paste', (e) => {
                 e.preventDefault();
 
-                // Get plain text from clipboard
                 let text = '';
                 if (e.clipboardData || e.originalEvent.clipboardData) {
                     text = (e.clipboardData || e.originalEvent.clipboardData).getData('text/plain');
@@ -449,19 +421,15 @@ class UIController {
                     text = window.clipboardData.getData('Text');
                 }
 
-                // Clean up the text
-                text = text.replace(/[\r\n\t]/g, ' '); // Replace newlines and tabs with spaces
-                text = text.replace(/\s+/g, ' '); // Replace multiple spaces with single space
+                text = text.replace(/[\r\n\t]/g, ' ');
+                text = text.replace(/\s+/g, ' ');
                 text = text.trim();
 
-                // Insert the plain text at cursor position
                 if (window.getSelection) {
                     const selection = window.getSelection();
                     if (!selection.rangeCount) return;
                     selection.deleteFromDocument();
                     selection.getRangeAt(0).insertNode(document.createTextNode(text));
-
-                    // Move cursor to end of inserted text
                     selection.collapseToEnd();
                 }
             });
@@ -475,10 +443,8 @@ class UIController {
         textSpan.contentEditable = 'true';
         textSpan.focus();
 
-        // Store original value
         field.dataset.originalValue = textSpan.textContent;
 
-        // Select all text
         const range = document.createRange();
         range.selectNodeContents(textSpan);
         const sel = window.getSelection();
@@ -492,32 +458,28 @@ class UIController {
         const textSpan = field.querySelector('.text');
         textSpan.contentEditable = 'false';
 
-        // Clean and limit text
         let text = textSpan.textContent || '';
 
-        // Remove any HTML that might have been pasted
         text = text.replace(/<[^>]*>/g, '');
 
-        // Clean whitespace
         text = text.replace(/[\r\n\t]/g, ' ');
         text = text.replace(/\s+/g, ' ');
         text = text.trim();
 
-        // Limit to 31 characters
+        // SID header fields are limited to 31 chars (32 bytes including null terminator).
         if (text.length > 31) {
             text = text.substring(0, 31);
         }
 
         textSpan.textContent = text;
 
-        // Update in WASM
+        // The DOM field uses 'title' but the WASM analyzer expects 'name'.
         const fieldName = field.dataset.field;
         let analyzerFieldName = fieldName;
         if (fieldName === 'title') analyzerFieldName = 'name';
 
         this.analyzer.updateMetadata(analyzerFieldName, text);
 
-        // Check if modifications were made
         this.checkForModifications();
     }
 
@@ -529,7 +491,6 @@ class UIController {
     }
 
     checkForModifications() {
-        // Compare current values with original
         const currentTitle = this.elements.sidTitle.querySelector('.text').textContent.trim();
         const currentAuthor = this.elements.sidAuthor.querySelector('.text').textContent.trim();
         const currentCopyright = this.elements.sidCopyright.querySelector('.text').textContent.trim();
@@ -541,10 +502,8 @@ class UIController {
 
         this.hasModifications = hasChanges;
 
-        // Enable button if metadata changed
         this.elements.exportModifiedSIDButton.disabled = !hasChanges;
 
-        // Show/hide hint
         if (this.elements.exportHint) {
             this.elements.exportHint.style.display = hasChanges ? 'none' : 'block';
         }
@@ -553,7 +512,6 @@ class UIController {
     async handleFileSelect(event) {
         const file = event.target.files[0];
         if (file) {
-            // Hide HVSC selection if it was shown
             this.elements.hvscSelected.style.display = 'none';
             await this.processFile(file);
         }
@@ -569,48 +527,38 @@ class UIController {
         this.hasModifications = false;
         this.elements.exportModifiedSIDButton.disabled = true;
 
-        // Show busy overlay
         this.showBusy('Loading SID File', 'Initializing...');
         this.hideMessages();
 
-        // Ensure WASM analyzer is loaded (lazy on first use)
         await this.ensureAnalyzer();
         this.updateBusy('Loading SID File', 'Reading and analyzing file...');
 
         try {
-            // Read file
             const buffer = await file.arrayBuffer();
 
-            // Load into playback player (lazy-loaded)
             const player = await this.ensureMainPlayer();
             if (player) {
                 player.loadFromBinary(new Uint8Array(buffer), file.name);
             }
 
-            // Update busy message
             this.updateBusy('Parsing SID Header', 'Extracting metadata...');
 
-            // Load SID file
             const header = await this.analyzer.loadSID(buffer);
             this.sidHeader = header;
             this.analyzer.sidHeader = header;
 
-            // Store original metadata
             this.originalMetadata = {
                 title: header.name || '',
                 author: header.author || '',
                 copyright: header.copyright || ''
             };
 
-            // Update UI with header info
             this.updateFileInfo(header);
             this.updateTechnicalInfo(header);
             this.updateSongTitle(header);
 
-            // Update busy message for analysis
             this.updateBusy('Analyzing SID Music', 'This may take a few moments...');
 
-            // Run analysis
             const frameCount = 30000;
             let lastProgress = 0;
 
@@ -624,23 +572,19 @@ class UIController {
 
             this.analyzer.analysisResults = this.analysisResults;
 
-            // Update UI with analysis results
             this.updateZeroPageInfo(this.analysisResults.zpAddresses);
             this.updateModifiedMemoryCount();
             this.updateNumCallsPerFrame(this.analysisResults.numCallsPerFrame);
             this.updateMaxCycles(this.analysisResults.maxCycles);
             this.updateSidChipCount(this.analysisResults.sidChipCount, this.analysisResults.sidChipAddresses);
 
-            // Show panels - remove disabled state and add visible
             this.elements.infoSection.classList.remove('disabled');
             this.elements.infoSection.classList.add('visible');
             this.elements.songTitleSection.classList.remove('disabled');
             this.elements.songTitleSection.classList.add('visible');
 
-            // Show export section
             this.showExportSection();
 
-            // Hide busy overlay
             this.hideBusy();
 
             this.showModal(`Successfully analyzed: ${file.name}`, true);
@@ -653,24 +597,20 @@ class UIController {
 
     showExportSection() {
         if (this.elements.exportSection) {
-            // Remove disabled state and add visible
             this.elements.exportSection.classList.remove('disabled');
             this.elements.exportSection.classList.add('visible');
 
-            // Update the header to show calls per frame info
             const header = this.elements.exportSection.querySelector('h2');
             if (header && this.analysisResults) {
                 const calls = this.analysisResults.numCallsPerFrame || 1;
                 header.innerHTML = `<i class="fas fa-tv"></i> Choose Your Visualizer <span style="font-size: 0.8em; color: var(--text-muted);"></span>`;
             }
 
-            // Add song selector if multiple songs
             this.addSongSelector();
 
-            // Initialize visualizer selection
             this.initVisualizerSelection();
 
-            // Lazy-load PRG exporter in background (don't block SID display)
+            // Kick off PRG exporter load eagerly so the user doesn't wait when they click Export.
             this.ensurePRGExporter().catch(err => {
                 console.warn('PRG exporter background load failed, will retry on use:', err);
             });
@@ -678,13 +618,11 @@ class UIController {
     }
 
     addSongSelector() {
-        // Remove any existing song selector
         const existingSelector = document.getElementById('songSelectorContainer');
         if (existingSelector) {
             existingSelector.remove();
         }
 
-        // Only add if there are multiple songs
         if (this.sidHeader && this.sidHeader.songs > 1) {
             const visualizerGrid = document.getElementById('visualizerGrid');
             const selectorContainer = document.createElement('div');
@@ -700,7 +638,6 @@ class UIController {
             </select>
         `;
 
-            // Insert before visualizer grid
             visualizerGrid.parentNode.insertBefore(selectorContainer, visualizerGrid);
         }
     }
@@ -717,7 +654,6 @@ class UIController {
     }
 
     async loadAllVisualizerConfigs() {
-        // Load configs for all visualizers to get their maxCallsPerFrame values
         for (const viz of VISUALIZERS) {
             if (viz.config) {
                 try {
@@ -725,8 +661,7 @@ class UIController {
                     if (config && config.maxCallsPerFrame !== undefined) {
                         viz.maxCallsPerFrame = config.maxCallsPerFrame;
                     }
-                    // Make sure we're not overwriting the config
-                    viz.configData = config; // Store the full config
+                    viz.configData = config;
                 } catch (error) {
                     console.warn(`Could not load config for ${viz.id}:`, error);
                 }
@@ -742,24 +677,20 @@ class UIController {
 
         const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
 
-        // Separate visualizers into compatible and incompatible
         const compatible = [];
         const incompatible = [];
 
-        // Get the actual modified addresses array
         const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
 
         for (const viz of VISUALIZERS) {
-            // Check if visualizer can handle this SID
             if (viz.configData) {
                 const validLayouts = this.prgExporter.selectValidLayouts(
                     viz.configData,
                     this.sidHeader.loadAddress,
                     this.analysisResults?.dataBytes || 0x2000,
-                    modifiedAddresses  // Pass actual addresses array, not count
+                    modifiedAddresses
                 );
 
-                // Mark visualizer as incompatible if no valid layouts
                 if (validLayouts.filter(l => l.valid).length === 0) {
                     incompatible.push(viz);
                 } else {
@@ -770,24 +701,21 @@ class UIController {
             }
         }
 
-        // Sort each group by name
         compatible.sort((a, b) => a.name.localeCompare(b.name));
         incompatible.sort((a, b) => a.name.localeCompare(b.name));
 
-        // Add compatible visualizers
         for (let i = 0; i < compatible.length; i++) {
             const viz = compatible[i];
             const card = this.createVisualizerCard(viz);
             grid.appendChild(card);
 
-            // Auto-select the first compatible visualizer
+            // Auto-select the first compatible visualizer so the export button is usable immediately.
             if (i === 0) {
                 this.selectVisualizer(viz);
                 card.classList.add('selected');
             }
         }
 
-        // Add separator if there are both compatible and incompatible visualizers
         if (compatible.length > 0 && incompatible.length > 0) {
             const separator = document.createElement('div');
             separator.className = 'visualizer-separator';
@@ -804,7 +732,6 @@ class UIController {
             grid.appendChild(separator);
         }
 
-        // Add incompatible visualizers
         for (const viz of incompatible) {
             const card = this.createVisualizerCard(viz);
             grid.appendChild(card);
@@ -816,7 +743,6 @@ class UIController {
         card.className = 'visualizer-card';
         card.dataset.id = visualizer.id;
 
-        // Check if this visualizer can handle the required calls per frame
         const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
         const maxCalls = visualizer.configData?.maxCallsPerFrame || Infinity;
         const isDisabled = requiredCalls > maxCalls;
@@ -850,7 +776,6 @@ class UIController {
     }
 
     async selectVisualizer(visualizer) {
-        // Update visual selection
         const cards = document.querySelectorAll('.visualizer-card');
         cards.forEach(card => {
             card.classList.toggle('selected', card.dataset.id === visualizer.id);
@@ -858,10 +783,8 @@ class UIController {
 
         this.selectedVisualizer = visualizer;
 
-        // Enable export button
         this.elements.exportPRGButton.disabled = false;
 
-        // Load and show options for this visualizer
         this.loadVisualizerOptions(visualizer);
     }
 
@@ -876,14 +799,12 @@ class UIController {
 
         const config = await this.visualizerConfig.loadConfig(visualizer.id);
 
-        // Check if we have any options to display
         const hasLayouts = config?.layouts && Object.keys(config.layouts).length > 1;
         const hasInputs = config?.inputs && config.inputs.length > 0;
         const hasOptions = config?.options && config.options.length > 0;
 
-        // Always show if we have any options or if we need compression
+        // Even with no per-visualizer options, the compression panel still needs to render.
         if (!hasLayouts && !hasInputs && !hasOptions) {
-            // Still show for compression option
             optionsContainer.style.display = 'block';
             optionsContainer.className = 'visualizer-options-panel';
             optionsContainer.innerHTML = `
@@ -900,7 +821,6 @@ class UIController {
         optionsContainer.style.display = 'block';
         optionsContainer.className = 'visualizer-options-panel';
 
-        // Create the structured HTML
         let html = `
         <div class="options-header">
             <h3><i class="fas fa-sliders-h"></i> ${visualizer.name} Configuration</h3>
@@ -908,7 +828,6 @@ class UIController {
         <div class="options-content">
     `;
 
-        // Memory Layout Section (if applicable)
         if (hasLayouts) {
             const layoutHTML = await this.createLayoutSelectorHTML(visualizer, config);
             if (layoutHTML) {
@@ -921,7 +840,6 @@ class UIController {
             }
         }
 
-        // File Inputs Section (if applicable)
         if (hasInputs) {
             html += '<div class="option-group"><div class="option-group-title">Resources</div>';
             for (const input of config.inputs) {
@@ -930,7 +848,6 @@ class UIController {
             html += '</div>';
         }
 
-        // Other Options Section (if applicable)
         if (hasOptions) {
             html += '<div class="option-group"><div class="option-group-title">Settings</div>';
             for (const option of config.options) {
@@ -939,14 +856,12 @@ class UIController {
             html += '</div>';
         }
 
-        // Always add Compression Section
         html += this.createCompressionOptionsHTML();
 
-        html += '</div>'; // close options-content
+        html += '</div>';
 
         optionsContainer.innerHTML = html;
 
-        // Attach event listeners after HTML is inserted
         await this.attachOptionEventListeners(config);
     }
 
@@ -984,18 +899,16 @@ class UIController {
         const sidSize = this.analysisResults?.dataBytes || 0x2000;
         const modifiedAddresses = this.analysisResults?.modifiedAddresses || [];
 
-        // Calculate SID memory range
         let sidStart = sidLoadAddress;
         let sidEnd = sidLoadAddress + sidSize - 1;
 
-        // Cap at $FFFF to prevent overflow display issues for high-memory SIDs
+        // Cap at $FFFF to prevent overflow display issues for high-memory SIDs.
         if (sidEnd > 0xFFFF) sidEnd = 0xFFFF;
 
         await this.ensurePRGExporter();
 
         const layouts = this.prgExporter.selectValidLayouts(config, sidLoadAddress, sidSize, modifiedAddresses);
 
-        // Sort all layouts by address
         layouts.sort((a, b) => a.vizStart - b.vizStart);
 
         const validLayouts = layouts.filter(l => l.valid);
@@ -1005,8 +918,7 @@ class UIController {
         }
 
         let html = '<div class="layout-options">';
-        
-        // Show SID memory range at the top
+
         html += `
         <div class="sid-memory-info">
             <span class="sid-memory-label">SID Memory:</span>
@@ -1014,23 +926,20 @@ class UIController {
         </div>
         `;
 
-        // All layouts in one list
         let firstValidIndex = -1;
         layouts.forEach((layoutInfo, index) => {
             const layout = layoutInfo.layout;
 
-            // Show only the visualizer's memory range (no save/restore)
             const rangeStart = this.formatHex(layoutInfo.vizStart, 4);
             const rangeEnd = this.formatHex(layoutInfo.vizEnd - 1, 4);
 
             const isValid = layoutInfo.valid;
 
-            // Track first valid layout for auto-selection
             if (isValid && firstValidIndex === -1) {
                 firstValidIndex = index;
             }
 
-            // Generate a more descriptive name based on the address
+            // Fallback name derived from the high nibble of the start address (e.g. bank4000).
             const bankName = `bank${(layoutInfo.vizStart >> 12).toString(16).toUpperCase()}000`;
 
             html += `
@@ -1054,26 +963,23 @@ class UIController {
     }
 
     createFileInputHTML(config) {
-        // Check if this is an image input that should use preview - PNG only now
+        // Image inputs use the rich preview UI; everything else uses a plain file picker.
         const isImageInput = config.accept && (
             config.accept.includes('image/') ||
             config.accept.includes('.png')
         );
 
         if (isImageInput) {
-            // Create a container for the image preview
             return `
         <div class="option-row option-row-full">
             <label class="option-label">${config.label}</label>
             <div class="option-control">
                 <div id="${config.id}-preview-container" class="image-input-container">
-                    <!-- Preview will be inserted here -->
                 </div>
             </div>
         </div>
     `;
         } else {
-            // Use traditional file input for non-image files
             return `
         <div class="option-row">
             <label class="option-label">${config.label}</label>
@@ -1097,7 +1003,7 @@ class UIController {
     }
 
     createOptionHTML(config) {
-        // Build data attributes for conditional visibility
+        // showWhen serialized into a data attribute so updateConditionalVisibility can re-evaluate after option changes.
         let dataAttrs = '';
         if (config.showWhen) {
             const showWhenJson = JSON.stringify(config.showWhen).replace(/"/g, '&quot;');
@@ -1106,13 +1012,11 @@ class UIController {
         let html = `<div class="option-row"${dataAttrs}>`;
 
         if (config.type === 'number') {
-            // Check if this is a color option (0-15 range)
+            // Number options whose id mentions "color" and span 0-15 are C64 palette indices; render as a color slider.
             if (config.id && config.id.toLowerCase().includes('color') &&
                 config.min === 0 && config.max === 15) {
-                // Color slider option
                 html += this.createColorSliderHTML(config);
             } else {
-                // Regular number input
                 html += `
                 <label class="option-label">${config.label}</label>
                 <div class="option-control">

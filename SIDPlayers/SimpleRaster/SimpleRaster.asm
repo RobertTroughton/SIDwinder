@@ -2,27 +2,10 @@
 //;                              SIMPLE RASTER PLAYER
 //;                        Basic SID Music Player for C64
 //; =============================================================================
-//; Part of the SIDwinder player collection
-//; A straightforward raster-interrupt based music player with visual feedback
-//; =============================================================================
 //;
-//; DESCRIPTION:
-//; ------------
-//; SimpleRaster provides a minimal but functional SID music player that uses
-//; raster interrupts to ensure accurate playback timing. It includes a simple
-//; visual indicator that changes the background color on each frame.
-//;
-//; KEY FEATURES:
-//; - Raster interrupt driven playback
-//; - Support for multi-speed tunes (configurable calls per frame)
-//; - Visual frame counter via background color changes
-//; - NMI interrupt protection
-//; - Minimal memory footprint
-//;
-//; TECHNICAL DETAILS:
-//; - Uses stable raster interrupts for jitter-free playback
-//; - Automatically distributes multiple play calls across the frame
-//; - Shows CPU usage by flashing border during SID play routine
+//; Minimal raster-IRQ-driven SID player. Distributes multi-speed play calls
+//; across the frame and flashes the border during SIDPlay so CPU usage is
+//; visible. Background color updates once per frame as a beat indicator.
 //;
 //; =============================================================================
 

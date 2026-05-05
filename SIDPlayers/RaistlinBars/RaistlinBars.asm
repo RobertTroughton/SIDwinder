@@ -156,7 +156,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
-	//; Bar style character data is now injected at build time by the web app
+	//; Bar style character data is injected at build time by the web app
 	jsr ClearScreens
 	jsr InitializeColors
 	jsr DisplaySongInfo
@@ -213,7 +213,6 @@ MainLoop:
 	jmp MainLoop
 
 //; =============================================================================
-//; CODE SEGMENT
 //; VIC INITIALIZATION
 //; =============================================================================
 
@@ -484,10 +483,6 @@ RenderToScreen1:
 	jmp !loop-
 
 //; =============================================================================
-//; NOTE: Color table (heightToColor) is now injected at build time by the web app
-//; =============================================================================
-
-//; =============================================================================
 //; SPRITE ANIMATION
 //; =============================================================================
 
@@ -688,7 +683,7 @@ spriteSineTable:			.fill 128, 11.5 + 11.5*sin(toRadians(i*360/128))
 
 //; =============================================================================
 //; COLOR TABLE DATA
-//; This area is filled at build time by the web app based on colorEffect selection
+//; Filled at build time by the web app based on colorEffect selection
 //; =============================================================================
 
 * = COLOR_TABLE_ADDRESS "Color Table"
@@ -709,7 +704,7 @@ heightToColor:				.fill COLOR_TABLE_SIZE, $0b
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; This area is filled at build time by the web app based on BarStyle selection
+//; Filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_WATER, $00
 
 * = SCREEN0_ADDRESS "Screen 0"

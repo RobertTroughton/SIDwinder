@@ -1,6 +1,12 @@
-﻿// prg-builder.js - PRG file builder for SIDwinder Web
-// This module creates C64 PRG files combining SID music, data, and visualizer
+﻿// prg-builder.js - Assembles C64 PRG files from SID music, a data block,
+// optional save/restore routines, and a visualizer binary with its inputs.
 
+/**
+ * PRGBuilder collects independently-loaded components (each with its own
+ * load address) and emits a single contiguous .prg image. Gaps between
+ * components are zero-filled. The output begins with the standard 2-byte
+ * little-endian load address header that C64 LOAD expects.
+ */
 class PRGBuilder {
     constructor() {
         this.components = [];
@@ -29,13 +35,13 @@ class PRGBuilder {
             throw new Error('No components added to PRG');
         }
 
-        // Sort by loadAddress, with larger components first at the same address
-        // This ensures smaller patches (like option values) override larger binaries
+        // Sort by load address ascending, but at the same address emit larger
+        // components first so smaller patches (e.g. single-byte option values)
+        // are written last and effectively override the underlying binary.
         this.components.sort((a, b) => {
             if (a.loadAddress !== b.loadAddress) {
                 return a.loadAddress - b.loadAddress;
             }
-            // Same load address: larger components first (so smaller ones can override)
             return b.size - a.size;
         });
 
@@ -80,6 +86,13 @@ class PRGBuilder {
     }
 }
 
+/**
+ * SIDwinderPRGExporter orchestrates the full export: it pulls the modified
+ * SID out of the analyzer, generates self-modifying save/restore routines for
+ * any memory the SID touches, places them in free memory, layers in the
+ * selected visualizer with its option/input components, and produces a
+ * (optionally compressed) C64 .prg.
+ */
 class SIDwinderPRGExporter {
     constructor(analyzer) {
         this.analyzer = analyzer;
@@ -94,15 +107,13 @@ class SIDwinderPRGExporter {
     }
 
     /**
-     * Find safe memory location for save/restore routines
-     * Searches for gaps between existing components that can fit the routines
-     * @param {number} routineSize - Total size of save+restore routines
-     * @param {number} sidLoadAddress - SID load address
-     * @param {number} sidDataLength - SID data length
-     * @returns {number} Safe address for routines
+     * Find a page-aligned location with at least routineSize free bytes that
+     * doesn't collide with any component already added to the builder, and
+     * doesn't fall inside the I/O area at $D000-$DFFF.
+     * @param {number} routineSize - Combined size of save+restore routines
+     * @returns {number} Page-aligned address suitable for the routines
      */
     findSafeMemoryForRoutines(routineSize, sidLoadAddress, sidDataLength) {
-        // Build list of used memory ranges from components
         const usedRanges = [];
 
         for (const comp of this.builder.components) {
@@ -112,42 +123,38 @@ class SIDwinderPRGExporter {
             });
         }
 
-        // Add I/O area as always used ($D000-$DFFF)
+        // I/O area is always considered used so we don't try to place code there
         usedRanges.push({ start: 0xD000, end: 0xE000 });
 
-        // Sort by start address
         usedRanges.sort((a, b) => a.start - b.start);
 
-        // Look for gaps that can fit the routines
-        // Start searching from $0900 (after zero page, stack, system areas, and screen)
+        // Start searching at $0900 to skip zero page, stack, system vectors,
+        // and the default screen RAM at $0400-$07FF.
         let prevEnd = 0x0900;
 
         for (const range of usedRanges) {
-            // Skip if this range starts before our search point
             if (range.end <= prevEnd) continue;
 
             const gapStart = prevEnd;
             const gapEnd = range.start;
 
-            // Skip gaps in I/O area
             if (gapStart >= 0xD000 && gapStart < 0xE000) {
                 prevEnd = Math.max(prevEnd, range.end);
                 continue;
             }
 
-            // Check if gap is before I/O area
+            // Clamp the gap so it never crosses into the I/O hole
             const effectiveGapEnd = Math.min(gapEnd, 0xD000);
             const gapSize = effectiveGapEnd - gapStart;
 
             if (gapSize >= routineSize) {
-                // Found a suitable gap
                 return this.alignToPage(gapStart);
             }
 
             prevEnd = Math.max(prevEnd, range.end);
         }
 
-        // Check gap after all components but before I/O
+        // Try the gap above the highest used range but still below I/O
         if (prevEnd < 0xD000) {
             const gapSize = 0xD000 - prevEnd;
             if (gapSize >= routineSize) {
@@ -155,13 +162,12 @@ class SIDwinderPRGExporter {
             }
         }
 
-        // Check after I/O area ($E000+) but only if it won't overflow
+        // Try the area above the I/O hole
         const afterIO = Math.max(prevEnd, 0xE000);
         if (afterIO + routineSize <= 0xFFFF) {
             return this.alignToPage(afterIO);
         }
 
-        // Last resort: use $0900 and hope for the best
         console.warn(`Could not find ${routineSize} bytes for save/restore routines, using $0900`);
         return 0x0900;
     }
@@ -214,7 +220,6 @@ class SIDwinderPRGExporter {
             // Check for overlaps - visualizer vs SID data range (without save/restore)
             const hasOverlap = !(vizEnd <= effectiveSidStart || vizStart >= effectiveSidEnd);
 
-            // Format hex inline
             const sidStartHex = '$' + effectiveSidStart.toString(16).toUpperCase().padStart(4, '0');
             const sidEndHex = '$' + effectiveSidEnd.toString(16).toUpperCase().padStart(4, '0');
 
@@ -701,9 +706,8 @@ class SIDwinderPRGExporter {
                         const result = await converter.convertPNGToC64(file);
                         fileData = result.data;
 
-                        // Verify standard C64 bitmap structure
+                        // Verify standard C64 bitmap structure (10003/10004 bytes, load address $6000)
                         if ((fileData.length === 10003 || fileData.length === 10004) && fileData[0] === 0x00 && fileData[1] === 0x60) {
-                            // Valid format detected
                         } else {
                             console.warn('Unexpected C64 image format - this may cause issues');
                         }
@@ -821,14 +825,14 @@ class SIDwinderPRGExporter {
         return additionalComponents;
     }
 
-    // Helper method to detect PNG files by magic number
+    /**
+     * Detect PNG files by their 8-byte magic number signature.
+     */
     isPNGFile(data) {
         if (data.length < 8) return false;
         return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47 &&
             data[4] === 0x0D && data[5] === 0x0A && data[6] === 0x1A && data[7] === 0x0A;
     }
-
-    // Add this to your prg-builder.js file, updating the existing processVisualizerOptions method
 
     async processVisualizerOptions(visualizerType, layoutKey = 'bank4000') {
         const config = new VisualizerConfig();
@@ -903,7 +907,7 @@ class SIDwinderPRGExporter {
                         // Continue without custom font - binary will have default
                     }
                 }
-                continue; // Skip normal processing for this option
+                continue;
             }
 
             // Special handling for barStyle when character data should be injected
@@ -923,7 +927,7 @@ class SIDwinderPRGExporter {
                         });
                     }
                 }
-                continue; // Skip normal processing for this option
+                continue;
             }
 
             // Special handling for colorPalette when color table data should be injected
@@ -985,7 +989,7 @@ class SIDwinderPRGExporter {
                         }
                     }
                 }
-                continue; // Skip normal processing for this option
+                continue;
             }
 
             // Special handling for colorEffect when colorEffectMode and lineGradientColors should be injected
@@ -1051,7 +1055,7 @@ class SIDwinderPRGExporter {
                         }
                     }
                 }
-                continue; // Skip normal processing for this option
+                continue;
             }
 
             // Handle color picker options (songNameColor, artistNameColor, bgColor)
@@ -1107,7 +1111,7 @@ class SIDwinderPRGExporter {
                         });
                     }
                 }
-                continue; // Skip normal processing for this option
+                continue;
             }
 
             if (optionConfig.dataField && layout[optionConfig.dataField]) {
@@ -1177,10 +1181,10 @@ class SIDwinderPRGExporter {
                     // Convert to PETSCII bytes - use system font mapping if no custom font
                     const petsciiData = this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
 
-                    // Add null terminator
+                    // Append null terminator so the C64-side scrolltext routine can detect end of string
                     const data = new Uint8Array(petsciiData.length + 1);
                     data.set(petsciiData);
-                    data[data.length - 1] = 0x00; // Null terminator
+                    data[data.length - 1] = 0x00;
 
                     optionComponents.push({
                         data: data,
@@ -1194,7 +1198,6 @@ class SIDwinderPRGExporter {
         return optionComponents;
     }
 
-    // Update the existing stringToPETSCII function to use the sanitizer
     stringToPETSCII(str, length) {
         // Initialize sanitizer if not already done
         if (!this.sanitizer) {
@@ -1213,7 +1216,6 @@ class SIDwinderPRGExporter {
         return this.sanitizer.toPETSCIIBytes(sanitized.text, this.useSystemFontMapping);
     }
 
-    // Update the centerString method to use sanitizer
     centerString(str, length) {
         if (!this.sanitizer) {
             this.sanitizer = new PETSCIISanitizer();
@@ -1441,6 +1443,5 @@ class SIDwinderPRGExporter {
     }
 }
 
-// Export globally
 window.PRGBuilder = PRGBuilder;
 window.SIDwinderPRGExporter = SIDwinderPRGExporter;

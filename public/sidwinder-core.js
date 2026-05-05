@@ -1,11 +1,17 @@
 // sidwinder-core.js - Core SID analysis functionality using WASM
 
+/**
+ * SIDAnalyzer wraps the SIDwinder WASM module and exposes a JS-friendly API
+ * for loading SID files, running emulation-based analysis, and producing a
+ * modified SID for export. WASM heap allocations are managed here; callers
+ * never touch raw pointers.
+ */
 class SIDAnalyzer {
     constructor() {
         this.wasmModule = null;
         this.wasmReady = false;
         this.api = null;
-        this.Module = null; // Store the module instance
+        this.Module = null;
         this.initPromise = this.initWASM();
     }
 
@@ -13,17 +19,16 @@ class SIDAnalyzer {
         try {
             this.Module = await SIDwinderModule();
             this.wasmModule = this.Module;
-            window.SIDwinderModule = this.Module; // Make available globally
+            // Expose globally so PNGConverter and other consumers can share the same instance
+            window.SIDwinderModule = this.Module;
 
-            // Check if memory arrays are available
             if (!this.Module.HEAPU8) {
                 console.error('HEAPU8 not found in module');
                 throw new Error('WASM memory arrays not available');
             }
 
-            // Create API wrapper using the Module instance
+            // cwrap bindings to the C exports in wasm/sid_processor.cpp
             this.api = {
-                // SID functions
                 sid_init: this.Module.cwrap('sid_init', null, []),
                 sid_load: this.Module.cwrap('sid_load', 'number', ['number', 'number']),
                 sid_analyze: this.Module.cwrap('sid_analyze', 'number', ['number', 'number']),
@@ -48,12 +53,10 @@ class SIDAnalyzer {
                 sid_get_max_cycles: this.Module.cwrap('sid_get_max_cycles', 'number', []),
                 sid_cleanup: this.Module.cwrap('sid_cleanup', null, []),
 
-                // Memory management - use direct module references
                 malloc: (size) => this.Module._malloc(size),
                 free: (ptr) => this.Module._free(ptr)
             };
 
-            // Initialize SID processor
             this.api.sid_init();
             this.wasmReady = true;
 
@@ -67,7 +70,6 @@ class SIDAnalyzer {
     }
 
     async waitForWASM() {
-        // Wait for the initialization promise
         try {
             await this.initPromise;
             return this.wasmReady;
@@ -77,12 +79,16 @@ class SIDAnalyzer {
         }
     }
 
+    /**
+     * Load a SID file from an ArrayBuffer and return its parsed header.
+     * @param {ArrayBuffer} arrayBuffer - Raw SID file bytes
+     * @returns {Promise<Object>} Header info (name, author, addresses, flags, etc.)
+     */
     async loadSID(arrayBuffer) {
         if (!await this.waitForWASM()) {
             throw new Error('WASM module not ready');
         }
 
-        // Double-check that Module and its memory are available
         if (!this.Module) {
             throw new Error('WASM Module not available');
         }
@@ -92,22 +98,19 @@ class SIDAnalyzer {
             throw new Error('WASM memory (HEAPU8) not available - module may not be properly initialized');
         }
 
-        // Allocate memory in WASM heap
         const data = new Uint8Array(arrayBuffer);
         let ptr = null;
 
         try {
-            // Use the Module's malloc directly
             ptr = this.api.malloc(data.length);
 
             if (!ptr) {
                 throw new Error('Failed to allocate memory in WASM heap');
             }
 
-            // Copy data to WASM heap using the Module's HEAPU8
+            // Copy file contents into the WASM heap before invoking the loader
             this.Module.HEAPU8.set(data, ptr);
 
-            // Load SID file
             const result = this.api.sid_load(ptr, data.length);
 
             if (result < 0) {
@@ -121,7 +124,6 @@ class SIDAnalyzer {
                 throw new Error(errors[result] || `Unknown error: ${result}`);
             }
 
-            // Get header information
             return {
                 name: this.api.sid_get_header_string(0),
                 author: this.api.sid_get_header_string(1),
@@ -143,26 +145,32 @@ class SIDAnalyzer {
             console.error('Error in loadSID:', error);
             throw error;
         } finally {
-            // Free allocated memory
             if (ptr !== null) {
                 this.api.free(ptr);
             }
         }
     }
 
+    /**
+     * Run the SID through the 6510 emulator for the given number of frames and
+     * collect the addresses written to, the zero-page locations used, and per-
+     * register SID write counts.
+     * @param {number} frameCount - Number of frames to emulate
+     * @param {Function|null} progressCallback - Called as (current, total)
+     */
     async analyze(frameCount = 30000, progressCallback = null) {
         if (!await this.waitForWASM()) {
             throw new Error('WASM module not ready');
         }
 
-        // Create progress callback wrapper if provided
         let callbackPtr = 0;
         let progressInterval = null;
 
         if (progressCallback) {
-            // Simple progress simulation since direct WASM->JS callbacks are complex
+            // Direct WASM->JS callbacks are awkward to wire through cwrap, so we
+            // simulate progress on a timer while the synchronous analyze() runs.
             let currentProgress = 0;
-            const progressIncrement = 100 / (frameCount / 1000); // Update every 1000 frames
+            const progressIncrement = 100 / (frameCount / 1000);
 
             progressInterval = setInterval(() => {
                 currentProgress = Math.min(currentProgress + progressIncrement, 99);
@@ -171,19 +179,17 @@ class SIDAnalyzer {
         }
 
         try {
-            // Run analysis
             const result = this.api.sid_analyze(frameCount, callbackPtr);
 
             if (result < 0) {
                 throw new Error(`Analysis failed: ${result}`);
             }
 
-            // Gather results
             const modifiedAddresses = [];
             const modifiedCount = this.api.sid_get_modified_count();
             for (let i = 0; i < modifiedCount; i++) {
                 const addr = this.api.sid_get_modified_address(i);
-                if (addr !== 0xFFFF) { // Skip invalid addresses
+                if (addr !== 0xFFFF) {  // 0xFFFF is the sentinel for an empty slot
                     modifiedAddresses.push(addr);
                 }
             }
@@ -192,7 +198,7 @@ class SIDAnalyzer {
             const zpCount = this.api.sid_get_zp_count();
             for (let i = 0; i < zpCount; i++) {
                 const addr = this.api.sid_get_zp_address(i);
-                if (addr !== 0xFF) { // Skip invalid addresses
+                if (addr !== 0xFF) {  // 0xFF is the sentinel for an empty slot
                     zpAddresses.push(addr);
                 }
             }
@@ -205,7 +211,6 @@ class SIDAnalyzer {
                 }
             }
 
-            // Complete progress
             if (progressCallback) {
                 progressCallback(frameCount, frameCount);
             }
@@ -216,7 +221,6 @@ class SIDAnalyzer {
             const maxCycles = this.api.sid_get_max_cycles();
             const sidChipCount = this.api.sid_get_sid_chip_count();
 
-            // Get SID chip addresses
             const sidChipAddresses = [];
             for (let i = 0; i < sidChipCount; i++) {
                 const addr = this.api.sid_get_sid_chip_address(i);
@@ -237,7 +241,7 @@ class SIDAnalyzer {
                 maxCycles,
                 sidChipCount,
                 sidChipAddresses
-            };
+            };
         } finally {
             if (progressInterval) {
                 clearInterval(progressInterval);
@@ -245,6 +249,10 @@ class SIDAnalyzer {
         }
     }
 
+    /**
+     * Update an editable header string (name/author/copyright).
+     * SID header strings are limited to 31 characters plus a null terminator.
+     */
     updateMetadata(field, value) {
         if (!this.wasmReady) {
             console.warn('WASM not ready, cannot update metadata');
@@ -265,17 +273,20 @@ class SIDAnalyzer {
         return false;
     }
 
+    /**
+     * Build a SID file reflecting any header edits and return its bytes.
+     * The WASM side allocates the result; this method copies it out and frees it.
+     */
     createModifiedSID() {
         if (!this.wasmReady || !this.Module) {
             console.error('WASM not ready, cannot create modified SID');
             return null;
         }
 
-        // Allocate space for size output
+        // 4-byte slot for the WASM side to write the result length into
         const sizePtr = this.api.malloc(4);
 
         try {
-            // Create modified SID
             const dataPtr = this.api.sid_create_modified(sizePtr);
 
             if (!dataPtr) {
@@ -283,7 +294,6 @@ class SIDAnalyzer {
                 return null;
             }
 
-            // Get size using Module's HEAP32
             const size = this.Module.HEAP32[sizePtr >> 2];
 
             if (size <= 0 || size > 65536) {
@@ -291,11 +301,10 @@ class SIDAnalyzer {
                 return null;
             }
 
-            // Copy data from WASM heap using Module's HEAPU8
             const data = new Uint8Array(size);
             data.set(this.Module.HEAPU8.subarray(dataPtr, dataPtr + size));
 
-            // Free the data pointer (allocated in WASM)
+            // Free the buffer the WASM side malloc'd for us
             this.api.free(dataPtr);
 
             return data;
@@ -304,7 +313,6 @@ class SIDAnalyzer {
             console.error('Error creating modified SID:', error);
             return null;
         } finally {
-            // Free size pointer
             this.api.free(sizePtr);
         }
     }
@@ -316,5 +324,4 @@ class SIDAnalyzer {
     }
 }
 
-// Export for use in other modules
 window.SIDAnalyzer = SIDAnalyzer;
