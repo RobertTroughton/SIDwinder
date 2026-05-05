@@ -145,15 +145,14 @@ class PETSCIIConverter {
             }
         }
 
-        let bestChar = 32; // space
+        let bestChar = 32;  // space
         let bestColor = 0;
         let bestError = Infinity;
 
-        // Try all 256 characters
         for (let ch = 0; ch < 256; ch++) {
             const charOffset = (ch & 0xFF) * 8;
 
-            // Count set and clear pixels for early optimization
+            // Count set bits to short-circuit blank/full chars
             let setBits = 0;
             for (let b = 0; b < 8; b++) {
                 let byte = charset[charOffset + b];
@@ -161,7 +160,7 @@ class PETSCIIConverter {
             }
 
             if (setBits === 0) {
-                // All pixels are background - only one option, check it
+                // All pixels are background - foreground colour is irrelevant
                 let error = 0;
                 for (let i = 0; i < 64; i++) {
                     error += this.colorDistanceSq(cellR[i], cellG[i], cellB[i], bgColor[0], bgColor[1], bgColor[2]);
@@ -174,9 +173,9 @@ class PETSCIIConverter {
                 continue;
             }
 
-            // For non-empty characters, try all 16 foreground colors
+            // Try all 16 foreground colors
             for (let fg = 0; fg < 16; fg++) {
-                // Skip if fg == bg for non-empty chars (result identical to space)
+                // fg == bg is degenerate (visually identical to space) - skip
                 if (fg === bgColorIndex && setBits > 0 && setBits < 64) continue;
 
                 const fgColor = this.C64_PALETTE[fg];
@@ -259,8 +258,8 @@ class PETSCIIConverter {
             console.log(`PETSCII match with ${charset.name} charset: total error = ${totalError}`);
         }
 
-        // Pack result: screen codes + color data + charset type
-        const totalSize = (this.LOGO_COLS * this.LOGO_ROWS * 2) + 1; // 721 bytes
+        // Pack result: screen codes + color data + charset type byte (721 bytes total)
+        const totalSize = (this.LOGO_COLS * this.LOGO_ROWS * 2) + 1;
         const result = new Uint8Array(totalSize);
         result.set(bestResult.screenCodes, 0);
         result.set(bestResult.colorData, this.LOGO_COLS * this.LOGO_ROWS);
@@ -328,5 +327,4 @@ class PETSCIIConverter {
     }
 }
 
-// Export for use in other modules
 window.PETSCIIConverter = PETSCIIConverter;

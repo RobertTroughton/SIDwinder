@@ -85,56 +85,53 @@ class PETSCIISanitizer {
             const char = text[i];
             const code = char.charCodeAt(0);
 
-            // Special case: ellipsis becomes three periods
+            // Ellipsis expands to three periods
             if (code === 0x2026) {
-                result.push(46, 46, 46); // Three periods
+                result.push(46, 46, 46);
             }
-            // Check character map for other replacements
             else if (this.charMap[code] !== undefined) {
                 result.push(this.charMap[code]);
             }
-            // Newlines and carriage returns become spaces
+            // Newlines and carriage returns collapse to space
             else if (code === 10 || code === 13) {
-                result.push(32); // Space
+                result.push(32);
             }
-            // Tab becomes space
+            // Tab collapses to space
             else if (code === 9) {
-                result.push(32); // Space
+                result.push(32);
             }
-            // Standard printable ASCII range (32-126)
+            // Standard printable ASCII passes through unchanged
             else if (code >= 32 && code <= 126) {
                 result.push(code);
             }
-            // Accented lowercase letters - strip to base ASCII
+            // Latin-1 lowercase: strip diacritics to base ASCII letter
             else if (code >= 0x00E0 && code <= 0x00FF) {
-                // Latin-1 supplement lowercase - convert to base letter
-                if ((code >= 0x00E0 && code <= 0x00E6) || code === 0x00E0) result.push(97); // a
-                else if (code >= 0x00E8 && code <= 0x00EB) result.push(101); // e
-                else if (code >= 0x00EC && code <= 0x00EF) result.push(105); // i
+                if ((code >= 0x00E0 && code <= 0x00E6) || code === 0x00E0) result.push(97);   // a
+                else if (code >= 0x00E8 && code <= 0x00EB) result.push(101);                  // e
+                else if (code >= 0x00EC && code <= 0x00EF) result.push(105);                  // i
                 else if ((code >= 0x00F2 && code <= 0x00F6) || code === 0x00F8) result.push(111); // o
-                else if (code >= 0x00F9 && code <= 0x00FC) result.push(117); // u
-                else if (code === 0x00F1) result.push(110); // ñ -> n
-                else if (code === 0x00E7) result.push(99); // ç -> c
-                else if (code === 0x00FD || code === 0x00FF) result.push(121); // y
-                else result.push(32); // Space for anything else
+                else if (code >= 0x00F9 && code <= 0x00FC) result.push(117);                  // u
+                else if (code === 0x00F1) result.push(110);                                   // n-tilde -> n
+                else if (code === 0x00E7) result.push(99);                                    // c-cedilla -> c
+                else if (code === 0x00FD || code === 0x00FF) result.push(121);                // y
+                else result.push(32);
             }
-            // Accented uppercase letters - strip to base ASCII
+            // Latin-1 uppercase: strip diacritics to base ASCII letter
             else if (code >= 0x00C0 && code <= 0x00DF) {
-                // Latin-1 supplement uppercase - convert to base letter
-                if (code >= 0x00C0 && code <= 0x00C6) result.push(65); // A
-                else if (code >= 0x00C8 && code <= 0x00CB) result.push(69); // E
-                else if (code >= 0x00CC && code <= 0x00CF) result.push(73); // I
+                if (code >= 0x00C0 && code <= 0x00C6) result.push(65);                        // A
+                else if (code >= 0x00C8 && code <= 0x00CB) result.push(69);                   // E
+                else if (code >= 0x00CC && code <= 0x00CF) result.push(73);                   // I
                 else if ((code >= 0x00D2 && code <= 0x00D6) || code === 0x00D8) result.push(79); // O
-                else if (code >= 0x00D9 && code <= 0x00DC) result.push(85); // U
-                else if (code === 0x00D1) result.push(78); // Ñ -> N
-                else if (code === 0x00C7) result.push(67); // Ç -> C
-                else if (code === 0x00DD) result.push(89); // Y
-                else result.push(32); // Space for anything else
+                else if (code >= 0x00D9 && code <= 0x00DC) result.push(85);                   // U
+                else if (code === 0x00D1) result.push(78);                                    // N
+                else if (code === 0x00C7) result.push(67);                                    // C
+                else if (code === 0x00DD) result.push(89);                                    // Y
+                else result.push(32);
             }
-            // Everything else becomes a space
+            // Anything else: replace with space and report
             else {
                 unknownChars.add(char);
-                result.push(32); // Space
+                result.push(32);
             }
         }
 
@@ -205,46 +202,33 @@ class PETSCIISanitizer {
             let screenCode;
 
             if (useSystemFont) {
-                // C64 system font in lowercase mode:
-                // Screen codes 1-26 = lowercase a-z
-                // Screen codes 65-90 = uppercase A-Z (shown as graphics in uppercase mode)
+                // C64 system font, lowercase mode: a-z at codes 1-26, A-Z at 65-90
                 if (code >= 65 && code <= 90) {
-                    // A-Z uppercase -> screen codes 65-90
                     screenCode = code;
                 } else if (code >= 97 && code <= 122) {
-                    // a-z lowercase -> screen codes 1-26
                     screenCode = code - 96;
                 } else if (code >= 32 && code <= 63) {
-                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
                     screenCode = code;
                 } else if (code === 64) {
-                    // @ -> screen code 0
-                    screenCode = 0;
+                    screenCode = 0;  // @ -> 0
                 } else {
-                    // Default to space
                     screenCode = 32;
                 }
             } else {
-                // Custom font layout: 1-26 = A-Z (uppercase), 65-90 = a-z (lowercase)
+                // Custom font layout: A-Z at codes 1-26, a-z at 65-90
                 if (code >= 65 && code <= 90) {
-                    // A-Z uppercase -> screen codes 1-26
                     screenCode = code - 64;
                 } else if (code >= 97 && code <= 122) {
-                    // a-z lowercase -> screen codes 65-90
                     screenCode = code - 32;
                 } else if (code >= 32 && code <= 63) {
-                    // Space, symbols, digits (ASCII 32-63) -> same screen codes
                     screenCode = code;
                 } else if (code === 64) {
-                    // @ -> screen code 0
-                    screenCode = 0;
+                    screenCode = 0;  // @ -> 0
                 } else {
-                    // Default to space
                     screenCode = 32;
                 }
             }
 
-            // Ensure screen code is in valid range
             bytes.push(screenCode & 0xFF);
         }
 
@@ -263,5 +247,4 @@ class PETSCIISanitizer {
     }
 }
 
-// Export for use in other modules
 window.PETSCIISanitizer = PETSCIISanitizer;

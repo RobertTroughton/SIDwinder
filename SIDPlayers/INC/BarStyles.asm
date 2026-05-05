@@ -281,7 +281,7 @@ BarStyleWater4:
     .byte $44, $44, $22, $22, $44, $44, $22, $22
     .byte $22, $22, $44, $44, $22, $22, $44, $44
 
-//; =========== STYLE 5: SMOOTH (RaistlinMirrorBars style - no highlight) ===========
+//; =========== STYLE 5: SMOOTH (rounded, no highlight) ===========
 BarStyleWater5:
 //; Main bar chars (10 chars) - smooth $7C/$BE without $14 highlight
     .byte $00, $00, $00, $00, $00, $00, $00, $00     //; Empty
@@ -522,7 +522,7 @@ BarStyleMirror4:
     .byte $66, $66, $66, $66, $66, $66, $66, $66     //; 8/8
     .byte $66, $66, $66, $66, $66, $66, $66, $66     //; Full
 
-//; =========== STYLE 5: SMOOTH (original RaistlinMirrorBars - no highlight) ===========
+//; =========== STYLE 5: SMOOTH (rounded, no highlight) ===========
 BarStyleMirror5:
 //; Main bar chars (10 chars) - smooth rounded without highlight
     .byte $00, $00, $00, $00, $00, $00, $00, $00     //; Empty
@@ -597,6 +597,3 @@ BarStyleMirror7:
     .byte $00, $7E, $00, $7E, $00, $7E, $00, $7E     //; 8/8
     .byte $7E, $00, $7E, $00, $7E, $00, $7E, $00     //; Full
 
-//; =============================================================================
-//; END OF BAR STYLES MODULE
-//; =============================================================================

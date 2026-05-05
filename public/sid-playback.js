@@ -305,7 +305,7 @@ class SIDPlayback {
     }
 }
 
-// Shared singleton instance (matches jsSID's pattern)
+// Shared singleton: only one AudioContext / SID engine in the page.
 var _sharedSIDPlayback = null;
 
 function getSharedSIDPlayback() {
