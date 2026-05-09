@@ -798,6 +798,10 @@ class UIController {
         }
 
         const config = await this.visualizerConfig.loadConfig(visualizer.id);
+        // Stash so createOptionHTML / createFontSelectorHTML can read fields
+        // off the parsed visualizer config (e.g. fontType) without us having
+        // to thread it through every call site.
+        this.currentVisualizerConfig = config;
 
         const hasLayouts = config?.layouts && Object.keys(config.layouts).length > 1;
         const hasInputs = config?.inputs && config.inputs.length > 0;
@@ -1032,7 +1036,7 @@ class UIController {
             }
         } else if (config.type === 'fontSelector') {
             // Font selector - dynamically populated from FONT_DATA based on fontType
-            html += this.createFontSelectorHTML(config, this.visualizerConfig?.fontType || '1x2');
+            html += this.createFontSelectorHTML(config, this.currentVisualizerConfig?.fontType || '1x2');
         } else if (config.type === 'imageGrid' || (config.type === 'select' && config.id === 'barStyle')) {
             // Image grid for bar styles - render as clickable thumbnails
             html += this.createBarStyleGridHTML(config);
