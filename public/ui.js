@@ -1138,7 +1138,8 @@ class UIController {
                 label: font.name,
                 shortLabel: font.id,
                 id: font.id,
-                imagePath: `${dim.folder}/font-${fontType}-${font.id}.png`
+                isROM: !!font.isROM,
+                imagePath: font.isROM ? '' : `${dim.folder}/font-${fontType}-${font.id}.png`
             }));
         }
 
@@ -1153,9 +1154,22 @@ class UIController {
             `;
         }
 
-        // Create thumbnails with placeholders - they'll be loaded async
+        // Create thumbnails with placeholders - they'll be loaded async.
+        // ROM fonts have no PNG so render a labelled placeholder tile.
         const thumbnailsHTML = fonts.map(v => {
             const isSelected = v.value === defaultValue;
+            if (v.isROM) {
+                return `
+                <div class="bar-style-thumbnail placeholder ${isSelected ? 'selected' : ''}"
+                     data-value="${v.value}"
+                     data-font-id="${v.id}"
+                     title="${v.label}">
+                    <span>ROM</span>
+                    <span class="selected-check"><i class="fas fa-check"></i></span>
+                    <span class="style-name">${v.label}</span>
+                </div>
+            `;
+            }
             return `
                 <div class="bar-style-thumbnail ${isSelected ? 'selected' : ''}"
                      data-value="${v.value}"

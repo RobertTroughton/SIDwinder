@@ -838,9 +838,14 @@ class SIDwinderPRGExporter {
         const config = new VisualizerConfig();
         const vizConfig = await config.loadConfig(visualizerType);
 
-        // Always set useSystemFontMapping based on whether visualizer has a custom fontType
-        // This must be done BEFORE any early returns so it's available for text rendering
-        this.useSystemFontMapping = !vizConfig?.fontType;
+        // Set useSystemFontMapping based on the visualizer's fontType.
+        // 1x2 fonts follow the "custom" convention (A-Z at codes 1-26).
+        // 1x1 fonts follow the C64 lowercase-ROM convention (a-z at codes 1-26,
+        // A-Z at codes 65-90), the same as toPETSCIIBytes()'s system path —
+        // both because the C64 ROM option uses lowercase ROM directly and
+        // because the user's mixed-case PNG layout matches that mapping.
+        const _vizFontType = vizConfig?.fontType;
+        this.useSystemFontMapping = !_vizFontType || _vizFontType === '1x1';
 
         if (!vizConfig || !vizConfig.options) {
             return [];
@@ -881,6 +886,15 @@ class SIDwinderPRGExporter {
                         };
 
                         const fontData = await FONT_DATA.getFontData(vizConfig.fontType, validIndex, fallbackConfig);
+
+                        // ROM sentinel: getFontData returns null. Skip charset
+                        // injection and, if the layout exposes a fontModeAddress
+                        // byte, leave it at its baked-in 0 value (ROM mode).
+                        if (fontData === null) {
+                            this.currentFontCaseType = await FONT_DATA.getFontCaseType(vizConfig.fontType, validIndex);
+                            continue;
+                        }
+
                         if (fontData) {
                             const targetAddress = parseInt(layout.charsetAddress);
                             // Respect charsetSize limit if specified in layout config
@@ -898,6 +912,17 @@ class SIDwinderPRGExporter {
                                 loadAddress: targetAddress,
                                 name: `font_charset`
                             });
+
+                            // For visualizers that switch between ROM and RAM
+                            // charset at runtime, flip the fontMode byte to 1
+                            // so the asm uses the injected RAM charset.
+                            if (layout.fontModeAddress) {
+                                optionComponents.push({
+                                    data: new Uint8Array([1]),
+                                    loadAddress: parseInt(layout.fontModeAddress),
+                                    name: `font_mode`
+                                });
+                            }
 
                             // Store the font case type for text conversion
                             this.currentFontCaseType = await FONT_DATA.getFontCaseType(vizConfig.fontType, validIndex);

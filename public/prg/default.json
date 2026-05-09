@@ -3,6 +3,7 @@
   "description": "Text-based information display",
   "maxCallsPerFrame": 8,
   "needsSaveRestore": false,
+  "fontType": "1x1",
   "layouts": {
     "bank4000": {
       "binary": "prg/default-4000.bin",
@@ -11,7 +12,10 @@
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
-      "binaryDataEnd": "0x4FFF"
+      "binaryDataEnd": "0x4FFF",
+      "charsetAddress": "0x4D00",
+      "charsetSize": "0x300",
+      "fontModeAddress": "0x4071"
     },
     "bank8000": {
       "binary": "prg/default-8000.bin",
@@ -20,7 +24,10 @@
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
-      "binaryDataEnd": "0x8FFF"
+      "binaryDataEnd": "0x8FFF",
+      "charsetAddress": "0x8D00",
+      "charsetSize": "0x300",
+      "fontModeAddress": "0x8071"
     },
     "bankC000": {
       "binary": "prg/default-C000.bin",
@@ -29,7 +36,18 @@
       "dataAddress": "0xC000",
       "sysAddress": "0xC100",
       "binaryDataStart": "0xC000",
-      "binaryDataEnd": "0xCFFF"
+      "binaryDataEnd": "0xCFFF",
+      "charsetAddress": "0xCD00",
+      "charsetSize": "0x300",
+      "fontModeAddress": "0xC071"
     }
-  }
+  },
+  "options": [
+    {
+      "id": "font",
+      "label": "Font",
+      "type": "fontSelector",
+      "default": 0
+    }
+  ]
 }

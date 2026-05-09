@@ -8,11 +8,19 @@
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $71, $00
+fontMode:
+    .byte $00                   // 0 = C64 ROM charset, 1 = injected RAM charset
+    .fill $100 - $72, $00
 
 * = CODE_ADDRESS "Main Code"
 
     jmp Initialize
+
+// VIC-accessible RAM target for the optional RAM charset (VIC bank 0).
+.const RAM_CHARSET_ADDRESS  = $2000
+.const D018_VALUE_ROM       = $16   // screen $0400 + charset $1800 (lowercase ROM)
+.const D018_VALUE_RAM       = $18   // screen $0400 + charset $2000
 
 .var Display_Title_Colour           = $01
 .var Display_Artist_Colour          = $0c
@@ -133,8 +141,7 @@ Initialize:
     sta $d020
     sta $d021
 
-    lda #$16
-    sta $d018
+    jsr SetupCharset
 
     jsr PopulateMetadata
 
@@ -832,3 +839,40 @@ F1Text:             .text " F1 = Toggle Timing Bar(s)"
 
 SpaceText:          .text "SPACE = Fast Forward (Hold)"
                     .byte 0
+
+// =============================================================================
+// CHARSET SETUP
+//
+// In ROM mode (fontMode == 0) point $d018 at the C64 lowercase ROM charset.
+// In RAM mode (fontMode != 0) copy the 768 injected bytes from EmbeddedCharset
+// into VIC bank 0 RAM at $2000 and point $d018 there.
+// =============================================================================
+
+SetupCharset:
+    lda fontMode
+    beq !rom+
+
+    ldx #0
+!loop:
+    .for (var i = 0; i < 3; i++) {
+        lda EmbeddedCharset + (i * 256), x
+        sta RAM_CHARSET_ADDRESS + (i * 256), x
+    }
+    inx
+    bne !loop-
+
+    lda #D018_VALUE_RAM
+    bne !set+
+!rom:
+    lda #D018_VALUE_ROM
+!set:
+    sta $d018
+    rts
+
+// =============================================================================
+// EMBEDDED CHARSET DATA (768 bytes; populated by prg-builder when not ROM mode)
+// =============================================================================
+
+* = LOAD_ADDRESS + $0D00 "Embedded Charset"
+EmbeddedCharset:
+    .fill $300, $00
