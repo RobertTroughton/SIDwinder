@@ -1052,6 +1052,10 @@ class SIDwinderPRGExporter {
                                 lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 9);
                             } else if (effectType === 'mirrorlogo') {
                                 lineColors = COLOR_PALETTES_DATA.generateLineGradientMirror(validPaletteIndex, 5);
+                            } else if (effectType === 'triple') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientTriple(validPaletteIndex, 6, 3);
+                            } else if (effectType === 'triplemirror') {
+                                lineColors = COLOR_PALETTES_DATA.generateLineGradientTripleMirror(validPaletteIndex, 3, 3);
                             }
                         } else if (validEffectIndex === 2) {
                             // Solid mode - use barColor instead of palette
@@ -1060,6 +1064,8 @@ class SIDwinderPRGExporter {
                             else if (effectType === 'waterlogo') lineCount = 11;
                             else if (effectType === 'mirror') lineCount = 18;
                             else if (effectType === 'mirrorlogo') lineCount = 10;
+                            else if (effectType === 'triple') lineCount = 18;
+                            else if (effectType === 'triplemirror') lineCount = 18;
                             else lineCount = 17;
 
                             // Get barColor from the UI element
