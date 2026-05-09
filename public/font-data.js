@@ -84,7 +84,7 @@ const KNOWN_FONTS = {
 };
 
 // Increment when font assets change to bust the browser cache.
-const FONT_ASSET_VERSION = 1;
+const FONT_ASSET_VERSION = 2;
 
 // Prefixed to avoid collision with bar-styles-data.js's BYTES_PER_CHAR.
 const FONT_BYTES_PER_CHAR = 8;
@@ -548,10 +548,14 @@ async function getFontData(fontType, fontIndex, fallbackConfig = null) {
         }
     }
 
-    // If this is font 0 and we have a fallback, use it
-    if (fontIndex === 0 && fallbackConfig && fallbackConfig.binarySource) {
+    // Binary fallback only applies to fonts that explicitly opt in by setting
+    // hasBinaryFallback on their KNOWN_FONTS entry — for those, the player's
+    // .bin has a baked-in default charset at the configured offset. Most
+    // visualizers don't, so attempting to slice 768/1792 bytes out of a bin
+    // that lacks a charset slot would just throw a confusing error.
+    if (font.hasBinaryFallback && fallbackConfig && fallbackConfig.binarySource) {
         try {
-            console.log('Using binary fallback for default font');
+            console.log(`Using binary fallback for font "${font.label}"`);
             const dim = FONT_DIMENSIONS[fontType];
             return await loadFontFromBinary(
                 fallbackConfig.binarySource,
