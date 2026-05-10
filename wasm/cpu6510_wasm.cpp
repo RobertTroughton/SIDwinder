@@ -69,7 +69,10 @@ extern "C" {
 
         // Flag to enable/disable tracking (so we can load without tracking)
         bool trackingEnabled;
-        
+
+        // Set by KIL/JAM opcodes; cpu_execute_function exits immediately when true
+        bool halted;
+
         // Track cycles from last function execution
         uint32_t lastExecutionCycles;
     } cpu;
@@ -100,6 +103,7 @@ extern "C" {
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
         cpu.trackingEnabled = false;
+        cpu.halted = false;
         cpu.lastExecutionCycles = 0;
 
         memset(cpu.memory, 0, sizeof(cpu.memory));
@@ -1084,7 +1088,7 @@ extern "C" {
             break;
 
         case 0x28: // PLP
-            cpu.status = pop();
+            cpu.status = pop() | FLAG_UNUSED;
             cpu.cycles += 4;
             break;
 
@@ -1106,7 +1110,7 @@ extern "C" {
 
             // RTI
         case 0x40: // RTI
-            cpu.status = pop();
+            cpu.status = pop() | FLAG_UNUSED;
             pc = pop() | (pop() << 8);
             cpu.cycles += 6;
             break;
@@ -1261,10 +1265,10 @@ extern "C" {
         // AXS/SBX (X=(A&X)-imm)
         case 0xCB: { uint8_t i = cpu.memory[pc++]; uint8_t t = (cpu.a & cpu.x); uint16_t r = uint16_t(t) - i; set_flag(FLAG_CARRY, r < 0x100); cpu.x = uint8_t(r); set_zn_flags(cpu.x); add(2); } break;
 
-        // KIL/JAM (halt): keep CPU on this opcode
+        // KIL/JAM (halt): CPU is permanently halted
         case 0x02: case 0x12: case 0x22: case 0x32: case 0x42: case 0x52:
         case 0x62: case 0x72: case 0x92: case 0xB2: case 0xD2: case 0xF2:
-        { pc--; add(2); } break;
+        { cpu.halted = true; pc--; add(2); } break;
 
         case 0x04: case 0x14: case 0x34: case 0x44: case 0x54: case 0x64: case 0x74:
         case 0x80: case 0x82: case 0x89: case 0xC2: case 0xD4: case 0xE2: case 0xF4:
@@ -1333,6 +1337,8 @@ extern "C" {
             uint8_t opcode = cpu.memory[cpu.pc];
 
             cpu_step();
+
+            if (cpu.halted) return 0;  // KIL/JAM instruction executed
 
             // Done when the matching RTS pops us back to the original SP.
             if (opcode == 0x60 && cpu.sp == startSP) {
@@ -1546,6 +1552,7 @@ extern "C" {
         cpu.totalSidWrites = 0;
         cpu.totalZpWrites = 0;
         cpu.recordWrites = false;
+        cpu.halted = false;
 
         memset(cpu.memoryAccess, 0, sizeof(cpu.memoryAccess));
         memset(cpu.sidWrites, 0, sizeof(cpu.sidWrites));
