@@ -145,8 +145,9 @@ previousHeightsScreen1Ch2:  .fill NUM_FREQUENCY_BARS, 255
 channelRowColors:
     //; Channel 0 (V1) - cool cyan/blue, peak at centre seam.
     .byte $06, $0e, $03, $03, $0e, $06     //; blue, lt-blue, cyan, cyan, lt-blue, blue
-    //; Channel 1 (V2) - green/yellow, peak at centre seam.
-    .byte $05, $0d, $07, $07, $0d, $05     //; green, lt-green, yellow, yellow, lt-green, green
+    //; Channel 1 (V2) - green family (no yellow, so it doesn't read like V3),
+    //; peak at centre seam.
+    .byte $09, $05, $0d, $0d, $05, $09     //; brown, green, lt-green, lt-green, green, brown
     //; Channel 2 (V3) - red/orange, peak at centre seam.
     .byte $02, $0a, $07, $07, $0a, $02     //; red, lt-red, yellow, yellow, lt-red, red
 
