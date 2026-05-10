@@ -390,90 +390,91 @@ NextIRQLdx:
 
 //; Update color RAM for one channel (Dynamic Pulse mode only).
 .macro UpdateColorsForChannel(smoothedH, prevC, channelTopLine) {
-    ldy #NUM_FREQUENCY_BARS
-!colorLoop:
-    dey
-    bmi !done+
 
+    ldy #NUM_FREQUENCY_BARS - 1
+!loop:
     ldx smoothedH, y
     lda heightToColor, x
     cmp prevC, y
-    beq !colorLoop-
+    beq !next+
     sta prevC, y
-
     .for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
         sta $d800 + ((channelTopLine + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
     }
-    jmp !colorLoop-
-!done:
+!next:
+    dey
+    bpl !loop-
 }
 
 //; Render bars to a screen for one channel.
 .macro RenderChannelToScreen(SCREEN_ADDR, smoothedH, prevH, channelTopLine) {
-    ldy #NUM_FREQUENCY_BARS
-!loop:
-    dey
-    bpl !continue+
-    rts
-!continue:
 
+    lda #$02
+    sta $d020
+
+    ldy #NUM_FREQUENCY_BARS - 1
+!loop:
     lda smoothedH, y
     cmp prevH, y
-    beq !loop-
+    beq !next+
     sta prevH, y
     tax
-
     .for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
         lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
         sta SCREEN_ADDR + ((channelTopLine + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
     }
-    jmp !loop-
+!next:
+    dey
+    bpl !loop-
+
+    lda #$00
+    sta $d020
 }
 
 RenderBars:
-    //; Dynamic-pulse colours: only run when colorEffectMode == 0
-    lda colorEffectMode
-    bne !colorsDone+
-    jsr UpdateColorsCh0
-    jsr UpdateColorsCh1
-    jsr UpdateColorsCh2
-!colorsDone:
+
+//;    lda #$02
+//;    sta $d020
 
     lda currentScreenBuffer
     bne !screen1+
 
-    jsr RenderToScreen0Ch0
-    jsr RenderToScreen0Ch1
-    jmp RenderToScreen0Ch2
+    jsr RenderToScreen0
+    jmp !doColours+
 
 !screen1:
-    jsr RenderToScreen1Ch0
-    jsr RenderToScreen1Ch1
-    jmp RenderToScreen1Ch2
+    jsr RenderToScreen1
 
-UpdateColorsCh0:
+!doColours:
+    lda colorEffectMode
+    bne !colorsDone+
+
+//;    lda #$04
+//;    sta $d020
+    jsr UpdateColors
+//;    lda #$00
+//;    sta $d020
+
+!colorsDone:
+    rts
+
+UpdateColors:
     UpdateColorsForChannel(smoothedHeightsCh0, previousColorsCh0, CH0_TOP_LINE)
-    rts
-UpdateColorsCh1:
     UpdateColorsForChannel(smoothedHeightsCh1, previousColorsCh1, CH1_TOP_LINE)
-    rts
-UpdateColorsCh2:
     UpdateColorsForChannel(smoothedHeightsCh2, previousColorsCh2, CH2_TOP_LINE)
     rts
 
-RenderToScreen0Ch0:
+RenderToScreen0:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh0, previousHeightsScreen0Ch0, CH0_TOP_LINE)
-RenderToScreen0Ch1:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh1, previousHeightsScreen0Ch1, CH1_TOP_LINE)
-RenderToScreen0Ch2:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh2, previousHeightsScreen0Ch2, CH2_TOP_LINE)
+    rts
 
-RenderToScreen1Ch0:
+RenderToScreen1:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh0, previousHeightsScreen1Ch0, CH0_TOP_LINE)
-RenderToScreen1Ch1:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh1, previousHeightsScreen1Ch1, CH1_TOP_LINE)
-RenderToScreen1Ch2:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh2, previousHeightsScreen1Ch2, CH2_TOP_LINE)
+    rts
 
 //; =============================================================================
 //; UTILITY FUNCTIONS
@@ -503,7 +504,6 @@ DisplaySongInfo:
     ldy #31
 
 !loop:
-
     lda SongName, y
     sta SCREEN0_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
     sta SCREEN1_ADDRESS + (SONG_TITLE_LINE * 40) + 4, y
@@ -536,13 +536,13 @@ InitializeColors:
 
     //; Static modes: write per-line colours covering all 3 channel stacks.
     ldx #NUM_FREQUENCY_BARS - 1
-!barLoop:
+!loop:
     .for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
         lda lineGradientColors + line
         sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
     }
     dex
-    bpl !barLoop-
+    bpl !loop-
 
 !done:
     rts
