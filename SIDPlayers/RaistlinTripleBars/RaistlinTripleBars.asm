@@ -105,7 +105,7 @@
 #define INCLUDE_MUSIC_ANALYSIS
 
 #define INCLUDE_RASTER_TIMING_CODE
-.var DEFAULT_RASTERTIMING_Y = 232
+.var DEFAULT_RASTERTIMING_Y = 250
 
 .import source "../INC/Common.asm"
 .import source "../INC/Keyboard.asm"
