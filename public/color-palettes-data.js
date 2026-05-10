@@ -25,8 +25,6 @@ const COLOR_TABLE_SIZE_WATER = 120;        // For RaistlinBars (TOP=14, MAX_BAR_
 const COLOR_TABLE_SIZE_MIRROR = 80;        // For RaistlinMirrorBars (TOP=9, MAX_BAR_HEIGHT=71)
 const COLOR_TABLE_SIZE_WATER_LOGO = 72;    // For RaistlinBarsWithLogo (TOP=8, MAX_BAR_HEIGHT=63)
 const COLOR_TABLE_SIZE_MIRROR_LOGO = 48;   // For RaistlinMirrorBarsWithLogo (TOP=5, MAX_BAR_HEIGHT=39)
-const COLOR_TABLE_SIZE_TRIPLE = 56;        // For RaistlinTripleBars (TOP=6, MAX_BAR_HEIGHT=47)
-const COLOR_TABLE_SIZE_TRIPLE_MIRROR = 32; // For RaistlinTripleMirrorBars (TOP=3, MAX_BAR_HEIGHT=23)
 
 // Color palette definitions - each defines colors from bottom to top
 // Format: array of {color, percentage} where percentage is 0-100 for position in gradient
@@ -239,8 +237,6 @@ const LINE_COUNT_WATER = 17;        // TOP_SPECTRUM_HEIGHT (14) + BOTTOM_SPECTRU
 const LINE_COUNT_WATER_LOGO = 11;   // TOP_SPECTRUM_HEIGHT (8) + BOTTOM_SPECTRUM_HEIGHT (3)
 const LINE_COUNT_MIRROR = 18;       // TOTAL_SPECTRUM_HEIGHT (9 * 2)
 const LINE_COUNT_MIRROR_LOGO = 10;  // TOTAL_SPECTRUM_HEIGHT (5 * 2)
-const LINE_COUNT_TRIPLE = 18;       // 3 channels x 6 lines
-const LINE_COUNT_TRIPLE_MIRROR = 18; // 3 channels x (3 + 3 mirror) lines
 
 // Generate line gradient colors for water-style visualizers
 // Returns colors from top to bottom (brightest at top, darker at bottom)
@@ -341,93 +337,6 @@ function generateLineGradientMirror(paletteIndex, halfHeight) {
     return result;
 }
 
-// Generate line gradient colors for triple-stack visualizers (3 channels, no per-channel mirror)
-// Each channel runs the same per-channel gradient (top of channel = brightest).
-function generateLineGradientTriple(paletteIndex, channelHeight, numChannels) {
-    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
-        paletteIndex = 0;
-    }
-
-    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
-    const gradient = palette.gradient;
-    const result = new Uint8Array(channelHeight * numChannels);
-
-    for (let line = 0; line < channelHeight; line++) {
-        let pct;
-        if (line === channelHeight - 1) {
-            pct = 0;
-        } else {
-            pct = 100 - (line / (channelHeight - 2)) * 80;
-        }
-
-        let color = gradient[0].color;
-        for (let g = 0; g < gradient.length - 1; g++) {
-            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
-                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
-                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
-                break;
-            }
-            if (pct > gradient[g + 1].pct) {
-                color = gradient[g + 1].color;
-            }
-        }
-
-        for (let ch = 0; ch < numChannels; ch++) {
-            result[ch * channelHeight + line] = color;
-        }
-    }
-
-    return result;
-}
-
-// Generate line gradient colors for triple mirror visualizers (3 channels, each mirrored).
-// Each channel has halfHeight*2 rows: bright at the centre seam, darker at the edges.
-function generateLineGradientTripleMirror(paletteIndex, halfHeight, numChannels) {
-    if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
-        paletteIndex = 0;
-    }
-
-    const palette = COLOR_PALETTE_GRADIENTS[paletteIndex];
-    const gradient = palette.gradient;
-    const channelHeight = halfHeight * 2;
-    const result = new Uint8Array(channelHeight * numChannels);
-
-    const halfColors = new Uint8Array(halfHeight);
-    for (let line = 0; line < halfHeight; line++) {
-        let pct;
-        if (line === 0) {
-            pct = 0;
-        } else if (halfHeight === 2) {
-            pct = 100;
-        } else {
-            pct = 20 + ((line - 1) / (halfHeight - 2)) * 80;
-        }
-
-        let color = gradient[0].color;
-        for (let g = 0; g < gradient.length - 1; g++) {
-            if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
-                const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
-                color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
-                break;
-            }
-            if (pct > gradient[g + 1].pct) {
-                color = gradient[g + 1].color;
-            }
-        }
-        halfColors[line] = color;
-    }
-
-    for (let ch = 0; ch < numChannels; ch++) {
-        const base = ch * channelHeight;
-        for (let line = 0; line < halfHeight; line++) {
-            result[base + line] = halfColors[line];
-            result[base + channelHeight - 1 - line] = halfColors[line];
-        }
-    }
-
-    return result;
-}
-
 // Generate solid color (single color for all lines)
 function generateSolidColors(paletteIndex, lineCount) {
     if (paletteIndex < 0 || paletteIndex >= NUM_COLOR_PALETTES) {
@@ -468,8 +377,6 @@ const waterColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 const mirrorColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 const waterLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 const mirrorLogoColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
-const tripleColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
-const tripleMirrorColorCache = new Array(NUM_COLOR_PALETTES).fill(null);
 
 // Get color palette data for a specific visualizer type
 function getColorPaletteData(paletteType, paletteIndex) {
@@ -497,16 +404,6 @@ function getColorPaletteData(paletteType, paletteIndex) {
             mirrorLogoColorCache[paletteIndex] = generateMirrorLogoColorData(paletteIndex);
         }
         return mirrorLogoColorCache[paletteIndex];
-    } else if (paletteType === 'triple') {
-        if (!tripleColorCache[paletteIndex]) {
-            tripleColorCache[paletteIndex] = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_TRIPLE);
-        }
-        return tripleColorCache[paletteIndex];
-    } else if (paletteType === 'triplemirror') {
-        if (!tripleMirrorColorCache[paletteIndex]) {
-            tripleMirrorColorCache[paletteIndex] = generateColorTable(paletteIndex, COLOR_TABLE_SIZE_TRIPLE_MIRROR);
-        }
-        return tripleMirrorColorCache[paletteIndex];
     }
 
     return null;
@@ -547,8 +444,6 @@ window.COLOR_PALETTES_DATA = {
     COLOR_TABLE_SIZE_MIRROR: COLOR_TABLE_SIZE_MIRROR,
     COLOR_TABLE_SIZE_WATER_LOGO: COLOR_TABLE_SIZE_WATER_LOGO,
     COLOR_TABLE_SIZE_MIRROR_LOGO: COLOR_TABLE_SIZE_MIRROR_LOGO,
-    COLOR_TABLE_SIZE_TRIPLE: COLOR_TABLE_SIZE_TRIPLE,
-    COLOR_TABLE_SIZE_TRIPLE_MIRROR: COLOR_TABLE_SIZE_TRIPLE_MIRROR,
     NUM_COLOR_PALETTES: NUM_COLOR_PALETTES,
     // Color effect functions and constants
     COLOR_EFFECT_HEIGHT: COLOR_EFFECT_HEIGHT,
@@ -556,13 +451,9 @@ window.COLOR_PALETTES_DATA = {
     COLOR_EFFECT_SOLID: COLOR_EFFECT_SOLID,
     generateLineGradientWater: generateLineGradientWater,
     generateLineGradientMirror: generateLineGradientMirror,
-    generateLineGradientTriple: generateLineGradientTriple,
-    generateLineGradientTripleMirror: generateLineGradientTripleMirror,
     generateSolidColors: generateSolidColors,
     LINE_COUNT_WATER: LINE_COUNT_WATER,
     LINE_COUNT_WATER_LOGO: LINE_COUNT_WATER_LOGO,
     LINE_COUNT_MIRROR: LINE_COUNT_MIRROR,
-    LINE_COUNT_MIRROR_LOGO: LINE_COUNT_MIRROR_LOGO,
-    LINE_COUNT_TRIPLE: LINE_COUNT_TRIPLE,
-    LINE_COUNT_TRIPLE_MIRROR: LINE_COUNT_TRIPLE_MIRROR
+    LINE_COUNT_MIRROR_LOGO: LINE_COUNT_MIRROR_LOGO
 };

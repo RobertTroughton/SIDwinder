@@ -745,14 +745,22 @@ class UIController {
 
         const requiredCalls = this.analysisResults?.numCallsPerFrame || 1;
         const maxCalls = visualizer.configData?.maxCallsPerFrame || Infinity;
-        const isDisabled = requiredCalls > maxCalls;
+        const requiredSidChips = this.analysisResults?.sidChipCount || 1;
+        const maxSidChips = visualizer.configData?.maxSIDChips || Infinity;
+        const tooManyCalls = requiredCalls > maxCalls;
+        const tooManySidChips = requiredSidChips > maxSidChips;
+        const isDisabled = tooManyCalls || tooManySidChips;
 
         if (isDisabled) {
             card.classList.add('disabled');
         }
 
-        const disabledMessage = isDisabled ?
-            `Requires max ${maxCalls} call${maxCalls > 1 ? 's' : ''}/frame` : '';
+        let disabledMessage = '';
+        if (tooManyCalls) {
+            disabledMessage = `Requires max ${maxCalls} call${maxCalls > 1 ? 's' : ''}/frame`;
+        } else if (tooManySidChips) {
+            disabledMessage = `Requires single-SID tunes only`;
+        }
 
         card.innerHTML = `
         <div class="visualizer-preview">

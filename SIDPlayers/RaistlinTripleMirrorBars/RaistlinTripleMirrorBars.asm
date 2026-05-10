@@ -5,6 +5,11 @@
 //   Three independent mirrored spectrum strips, one per SID channel, stacked
 //   vertically. Each strip is 3 chars tall reflected to 6 chars total.
 //   Voice index modulo 3 selects the channel.
+//
+//   Colours are completely fixed: a per-row gradient is written to colour RAM
+//   once at startup and never touched again, so the IRQ only updates screen
+//   chars. The visualizer is intended for 1x-call, single-SID tunes only - the
+//   web export pipeline gates on that via the JSON config.
 // =============================================================================
 
 //; Memory Map
@@ -31,26 +36,21 @@
 .const CHANNEL_HEIGHT                   = TOP_SPECTRUM_HEIGHT * 2               //; per-channel full mirrored height
 .const TOTAL_SPECTRUM_HEIGHT            = CHANNEL_HEIGHT * NUM_CHANNELS
 
+//; Fixed text colours - not user-customisable.
+.const SONG_NAME_COLOR                  = $01           // White
+.const ARTIST_NAME_COLOR                = $0f           // Light grey
+.const BORDER_COLOR                     = $00           // Black
+.const BACKGROUND_COLOR                 = $00           // Black
+
 //; =============================================================================
 //; DATA BLOCK
+//; The first $100 bytes of DATA_ADDRESS are the contract with prg-builder.js.
+//; This visualizer no longer exposes any colour-related option bytes; the
+//; build pipeline will leave the option range zeroed.
 //; =============================================================================
 
 * = DATA_ADDRESS "Data Block"
-    .fill $0D, $00                      // Reserved bytes 0-12
-borderColor:
-    .byte $00                           // Byte 13 ($0D)
-backgroundColor:
-    .byte $00                           // Byte 14 ($0E)
-    .fill $60 - $0F, $00                // Reserved bytes 15-95
-colorEffectMode:
-    .byte $00                           // Byte 96 ($60): 0=Height, 1=LineGradient, 2=Solid
-lineGradientColors:
-    .fill TOTAL_SPECTRUM_HEIGHT, $0b    // 18 bytes: $61-$72
-songNameColor:
-    .byte $01                           // $73
-artistNameColor:
-    .byte $0f                           // $74
-    .fill $100 - $75, $00               // Fill rest of reserved space
+    .fill $100, $00
 
 * = CODE_ADDRESS "Main Code"
 
@@ -89,15 +89,12 @@ artistNameColor:
 .const SCREEN0_ADDRESS                  = VIC_BANK_ADDRESS + (SCREEN0_BANK * $400)
 .const SCREEN1_ADDRESS                  = VIC_BANK_ADDRESS + (SCREEN1_BANK * $400)
 .const CHARSET_ADDRESS                  = VIC_BANK_ADDRESS + (CHARSET_BANK * $800)
-.const COLOR_TABLE_ADDRESS              = VIC_BANK_ADDRESS + $2E00
 
 .const D018_VALUE_0                     = (SCREEN0_BANK * 16) + (CHARSET_BANK * 2)
 .const D018_VALUE_1                     = (SCREEN1_BANK * 16) + (CHARSET_BANK * 2)
 
 .const MAX_BAR_HEIGHT                   = TOP_SPECTRUM_HEIGHT * 8 - 1
 .const MAIN_BAR_OFFSET                  = MAX_BAR_HEIGHT - 7
-
-.const COLOR_TABLE_SIZE                 = MAX_BAR_HEIGHT + 9
 
 //; =============================================================================
 //; INCLUDES
@@ -139,12 +136,19 @@ previousHeightsScreen1Ch1:  .fill NUM_FREQUENCY_BARS, 255
 .align NUM_FREQUENCY_BARS
 previousHeightsScreen1Ch2:  .fill NUM_FREQUENCY_BARS, 255
 
-.align NUM_FREQUENCY_BARS
-previousColorsCh0:          .fill NUM_FREQUENCY_BARS, 255
-.align NUM_FREQUENCY_BARS
-previousColorsCh1:          .fill NUM_FREQUENCY_BARS, 255
-.align NUM_FREQUENCY_BARS
-previousColorsCh2:          .fill NUM_FREQUENCY_BARS, 255
+//; =============================================================================
+//; FIXED PER-ROW COLOUR GRADIENT
+//; 18 entries (3 channels x (3 + 3 mirror) rows). Bright at the centre seam,
+//; dimmer at the channel edges. Channels: V1 cyan/blue, V2 green/yellow, V3 red.
+//; =============================================================================
+
+channelRowColors:
+    //; Channel 0 (V1) - cool cyan/blue, peak at centre seam.
+    .byte $06, $0e, $03, $03, $0e, $06     //; blue, lt-blue, cyan, cyan, lt-blue, blue
+    //; Channel 1 (V2) - green/yellow, peak at centre seam.
+    .byte $05, $0d, $07, $07, $0d, $05     //; green, lt-green, yellow, yellow, lt-green, green
+    //; Channel 2 (V3) - red/orange, peak at centre seam.
+    .byte $02, $0a, $07, $07, $0a, $02     //; red, lt-red, yellow, yellow, lt-red, red
 
 //; =============================================================================
 //; INITIALIZATION
@@ -248,9 +252,9 @@ InitializeVIC:
     dex
     bpl !loop-
 
-    lda borderColor
+    lda #BORDER_COLOR
     sta $d020
-    lda backgroundColor
+    lda #BACKGROUND_COLOR
     sta $d021
 
     rts
@@ -387,43 +391,18 @@ NextIRQLdx:
 
 //; =============================================================================
 //; RENDERING
+//; Render to the *off-screen* buffer (the one not currently being displayed)
+//; so the user only ever sees a complete frame.
 //; =============================================================================
 
-//; Update color RAM for one mirrored channel (Dynamic Pulse mode only).
-.macro UpdateColorsForChannel(smoothedH, prevC, channelBaseLine) {
-    ldy #NUM_FREQUENCY_BARS
-!colorLoop:
-    dey
-    bmi !done+
-
-    ldx smoothedH, y
-    lda heightToColor, x
-    cmp prevC, y
-    beq !colorLoop-
-    sta prevC, y
-
-    .for (var line = 0; line < CHANNEL_HEIGHT; line++) {
-        sta $d800 + ((channelBaseLine + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
-    }
-    jmp !colorLoop-
-!done:
-}
-
-//; Render bars to a screen for one mirrored channel.
 .macro RenderChannelToScreen(SCREEN_ADDR, smoothedH, prevH, channelBaseLine) {
-    ldy #NUM_FREQUENCY_BARS
+    ldy #NUM_FREQUENCY_BARS - 1
 !loop:
-    dey
-    bpl !continue+
-    rts
-!continue:
-
     lda smoothedH, y
     cmp prevH, y
-    beq !loop-
+    beq !next+
     sta prevH, y
     tax
-
     clc
     .for (var line = 0; line < TOP_SPECTRUM_HEIGHT; line++) {
         lda barCharacterMap - MAIN_BAR_OFFSET + (line * 8), x
@@ -431,52 +410,29 @@ NextIRQLdx:
         adc #10
         sta SCREEN_ADDR + ((channelBaseLine + (CHANNEL_HEIGHT - 1) - line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), y
     }
-    jmp !loop-
+!next:
+    dey
+    bpl !loop-
 }
 
 RenderBars:
-    lda colorEffectMode
-    bne !colorsDone+
-    jsr UpdateColorsCh0
-    jsr UpdateColorsCh1
-    jsr UpdateColorsCh2
-!colorsDone:
-
     lda currentScreenBuffer
-    bne !screen1+
+    bne !renderToScreen0+
+    jmp RenderToScreen1     //; cSB == 0 -> display 0, render to 1
+!renderToScreen0:
+    jmp RenderToScreen0     //; cSB == 1 -> display 1, render to 0
 
-    jsr RenderToScreen0Ch0
-    jsr RenderToScreen0Ch1
-    jmp RenderToScreen0Ch2
-
-!screen1:
-    jsr RenderToScreen1Ch0
-    jsr RenderToScreen1Ch1
-    jmp RenderToScreen1Ch2
-
-UpdateColorsCh0:
-    UpdateColorsForChannel(smoothedHeightsCh0, previousColorsCh0, CH0_BASE_LINE)
-    rts
-UpdateColorsCh1:
-    UpdateColorsForChannel(smoothedHeightsCh1, previousColorsCh1, CH1_BASE_LINE)
-    rts
-UpdateColorsCh2:
-    UpdateColorsForChannel(smoothedHeightsCh2, previousColorsCh2, CH2_BASE_LINE)
-    rts
-
-RenderToScreen0Ch0:
+RenderToScreen0:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh0, previousHeightsScreen0Ch0, CH0_BASE_LINE)
-RenderToScreen0Ch1:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh1, previousHeightsScreen0Ch1, CH1_BASE_LINE)
-RenderToScreen0Ch2:
     RenderChannelToScreen(SCREEN0_ADDRESS, smoothedHeightsCh2, previousHeightsScreen0Ch2, CH2_BASE_LINE)
+    rts
 
-RenderToScreen1Ch0:
+RenderToScreen1:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh0, previousHeightsScreen1Ch0, CH0_BASE_LINE)
-RenderToScreen1Ch1:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh1, previousHeightsScreen1Ch1, CH1_BASE_LINE)
-RenderToScreen1Ch2:
     RenderChannelToScreen(SCREEN1_ADDRESS, smoothedHeightsCh2, previousHeightsScreen1Ch2, CH2_BASE_LINE)
+    rts
 
 //; =============================================================================
 //; UTILITY FUNCTIONS
@@ -507,7 +463,7 @@ DisplaySongInfo:
     ora #$80
     sta SCREEN0_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
     sta SCREEN1_ADDRESS + ((SONG_TITLE_LINE + 1) * 40) + 4, y
-    lda songNameColor
+    lda #SONG_NAME_COLOR
     sta $d800 + ((SONG_TITLE_LINE + 0) * 40) + 4, y
     sta $d800 + ((SONG_TITLE_LINE + 1) * 40) + 4, y
 
@@ -517,7 +473,7 @@ DisplaySongInfo:
     ora #$80
     sta SCREEN0_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
     sta SCREEN1_ADDRESS + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
-    lda artistNameColor
+    lda #ARTIST_NAME_COLOR
     sta $d800 + ((ARTIST_NAME_LINE + 0) * 40) + 4, y
     sta $d800 + ((ARTIST_NAME_LINE + 1) * 40) + 4, y
 
@@ -526,22 +482,17 @@ DisplaySongInfo:
 
     rts
 
-//; InitializeColors - Set up color RAM for static color effect modes
+//; Write the fixed per-row gradient into colour RAM, once. Each of the 18
+//; spectrum rows gets its own fixed colour across all 40 columns.
 InitializeColors:
-    lda colorEffectMode
-    beq !done+                  //; Mode 0 (Height) = dynamic, nothing to init
-
-    //; Static modes: write per-line colours covering all 3 channel stacks.
     ldx #NUM_FREQUENCY_BARS - 1
 !barLoop:
     .for (var line = 0; line < TOTAL_SPECTRUM_HEIGHT; line++) {
-        lda lineGradientColors + line
+        lda channelRowColors + line
         sta $d800 + ((SPECTRUM_START_LINE + line) * 40) + ((40 - NUM_FREQUENCY_BARS) / 2), x
     }
     dex
     bpl !barLoop-
-
-!done:
     rts
 
 SetupMusic:
@@ -587,8 +538,8 @@ VICConfigStart:
     .byte $00                           //; Sprite X expand
     .byte $00                           //; Sprite-sprite collision
     .byte $00                           //; Sprite-background collision
-    .byte SKIP_REGISTER                 //; Border color - loaded from data block
-    .byte SKIP_REGISTER                 //; Background color - loaded from data block
+    .byte SKIP_REGISTER                 //; Border color - set by InitializeVIC
+    .byte SKIP_REGISTER                 //; Background color - set by InitializeVIC
     .byte $00, $00                      //; Extra colors
     .byte $00, $00, $00                 //; Sprite extra colors
     .byte $00, $00, $00, $00            //; Sprite colors 0-3
@@ -626,14 +577,6 @@ barCharacterMap:
 //; Filled at build time by the web app based on BarStyle selection.
 //; Mirror layout: 10 main chars + 10 mirror chars (160 bytes).
     .fill BAR_STYLE_SIZE_MIRROR, $00
-
-//; =============================================================================
-//; COLOR TABLE DATA
-//; Filled at build time by the web app based on colorEffect selection
-//; =============================================================================
-
-* = COLOR_TABLE_ADDRESS "Color Table"
-heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 
 * = SCREEN0_ADDRESS "Screen 0"
     .fill $400, $00
