@@ -26,6 +26,7 @@ java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=20736 :dataAddress=20480 .\SIDPlayers\SimpleBitmapWithScroller\SimpleBitmapWithScroller.asm -showmem -binfile -o public\prg\SimpleBitmapWithScroller-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-4000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\ScrapColumns\ScrapColumns.asm -showmem -binfile -o public\prg\ScrapColumns-4000.bin || goto :error
 
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\DefaultWithLogo\DefaultWithLogo.asm -showmem -binfile -o public\prg\DefaultWithLogo-8000.bin || goto :error
@@ -38,6 +39,7 @@ java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\SimpleBitmap\SimpleBitmap.asm -showmem -binfile -o public\prg\SimpleBitmap-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=37120 :dataAddress=36864 .\SIDPlayers\SimpleBitmapWithScroller\SimpleBitmapWithScroller.asm -showmem -binfile -o public\prg\SimpleBitmapWithScroller-8000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-8000.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=32768 :sysAddress=33024 :dataAddress=32768 .\SIDPlayers\ScrapColumns\ScrapColumns.asm -showmem -binfile -o public\prg\ScrapColumns-8000.bin || goto :error
 
 java -jar .\KickAss.jar :loadAddress=49152 :sysAddress=49408 :dataAddress=49152 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-C000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=49152 :sysAddress=49408 :dataAddress=49152 .\SIDPlayers\SimpleRaster\SimpleRaster.asm -showmem -binfile -o public\prg\SimpleRaster-C000.bin || goto :error
