@@ -86,13 +86,29 @@ artistNameColor:
 .const CONV_TABLE_ADDRESS           = VIC_BANK_ADDRESS + $2D80
 .const COLUMN_BUFFERS_ADDRESS       = VIC_BANK_ADDRESS + $2DC0
 
-// Sprite data - 64-byte aligned within VIC bank (placed before screen)
-.const SPRITE_DATA_ADDRESS          = VIC_BANK_ADDRESS + $2FC0
-.const SPRITE_POINTER               = ($2FC0 / $40)
+// Solid bottom-border sprite - 64-byte aligned, moved to the gap below CharSet
+// (its old $2FC0 slot is now part of the free RAM used by the logo tables/scratch)
+.const SPRITE_DATA_ADDRESS          = VIC_BANK_ADDRESS + $37C0
+.const SPRITE_POINTER               = ($37C0 / $40)
 
 // Color table (for compatibility with prg-builder, though not actively used for dynamic colors)
 .const COLOR_TABLE_ADDRESS          = VIC_BANK_ADDRESS + $2E00
 .const COLOR_TABLE_SIZE             = MAX_BAR_HEIGHT + 9
+
+// Logo sprites - 7 sprites (sprite_0..sprite_6) rendered by RenderLogo and
+// multiplexed with the solid bottom-border filler sprites each frame.
+// 64-byte aligned in free VIC space between Screen (+$3000) and CharSet (+$3800).
+.const LOGO_SPRITE_ADDRESS          = VIC_BANK_ADDRESS + $3400
+.const LOGO_SPRITE_POINTER          = ($3400 / $40)
+.const LOGO_SPRITE_Y                = 30      // raster Y of the logo (top border, above the bars)
+.const LOGO_SPRITE_COLOR            = $01
+.const LOGO_RESTORE_RASTER          = 60      // raster to swap sprites back to the bottom-border filler
+
+// Zero-page pointer used by RenderLogo ($fb/$fc are zpRegPtr in SpectrometerPerVoice)
+// Logo render scratch (160 bytes) - free VIC RAM in the color-table/sprite gap
+.label logoScratch                 = VIC_BANK_ADDRESS + $2F30
+
+.label spritebuffer                 = $fd
 
 // =============================================================================
 // INCLUDES
@@ -146,6 +162,8 @@ Initialize:
     jsr InitializeColors
     jsr DisplaySongInfo
     jsr DisplayRow25
+
+    jsr RenderLogo                      // build the logo into sprite_0..sprite_6
 
     jsr InitializeBarArrays
 
@@ -374,6 +392,73 @@ TopBorderIRQ:
     lda #$1b
     sta $d011
 
+    // ---- Switch the 7 sprites to LOGO state (shown at the top, above the bars) ----
+    lda #LOGO_SPRITE_Y
+    sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
+
+    lda #LOGO_SPRITE_COLOR
+    sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
+
+    lda #$ff
+    sta $d01d                           // X-expand on
+    sta $d01b                           // priority (mirrors Scrap's upper-sprite setup)
+    lda #$00
+    sta $d017                           // Y-expand off
+    sta $d01c                           // hires (multicolor off) for the logo
+
+    lda #LOGO_SPRITE_POINTER + 0 ; sta SCREEN_ADDRESS + $3F8
+    lda #LOGO_SPRITE_POINTER + 1 ; sta SCREEN_ADDRESS + $3F9
+    lda #LOGO_SPRITE_POINTER + 2 ; sta SCREEN_ADDRESS + $3FA
+    lda #LOGO_SPRITE_POINTER + 3 ; sta SCREEN_ADDRESS + $3FB
+    lda #LOGO_SPRITE_POINTER + 4 ; sta SCREEN_ADDRESS + $3FC
+    lda #LOGO_SPRITE_POINTER + 5 ; sta SCREEN_ADDRESS + $3FD
+    lda #LOGO_SPRITE_POINTER + 6 ; sta SCREEN_ADDRESS + $3FE
+
+    // Next: restore the bottom-border filler sprites mid-screen
+    lda #LOGO_RESTORE_RASTER
+    sta $d012
+    lda #<RestoreSpriteIRQ
+    sta $fffe
+    lda #>RestoreSpriteIRQ
+    sta $ffff
+    dec $d019
+
+    pla
+    sta $01
+    pla
+    rti
+
+// =============================================================================
+// RESTORE SPRITE IRQ (mid-screen)
+// Swaps the 7 sprites back to the solid bottom-border filler state so the
+// open-border trick at the bottom of the frame still works.
+// =============================================================================
+
+RestoreSpriteIRQ:
+    pha
+
+    lda $01
+    pha
+    lda #$35
+    sta $01
+
+    lda #$fa
+    sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
+
+    lda borderColor
+    sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
+
+    lda #$ff
+    sta $d01d                           // X-expand on
+    sta $d017                           // Y-expand on
+    sta $d01c                           // multicolor on
+    lda #$00
+    sta $d01b                           // sprites in front
+
+    lda #SPRITE_POINTER ; sta SCREEN_ADDRESS + $3F8
+    sta SCREEN_ADDRESS + $3F9 ; sta SCREEN_ADDRESS + $3FA ; sta SCREEN_ADDRESS + $3FB
+    sta SCREEN_ADDRESS + $3FC ; sta SCREEN_ADDRESS + $3FD ; sta SCREEN_ADDRESS + $3FE
+
     lda #250
     sta $d012
     lda #<MainIRQ
@@ -536,6 +621,143 @@ columnseffect:
 }
 
     rts
+
+// =============================================================================
+// LOGO RENDER (by Scrap) - builds three lines of text into sprite_0..sprite_6
+// using a 4x6 font. Called once at init; sprites are then multiplexed each
+// frame (logo at top via TopBorderIRQ, bottom-border filler via RestoreSpriteIRQ).
+// =============================================================================
+
+RenderLogo:
+    lda #$00
+    sta rlLine
+rlLineLoop:
+    ldx rlLine
+    lda rlFillStartTab, x ; sta rlFillStart + 1
+    lda rlFillEndTab, x   ; sta rlFillEnd + 1
+    lda rlCopyStartTab, x ; sta rlCopyStart + 1
+    lda rlCopyCntTab, x   ; sta rlCopyCnt + 1
+
+    lda #<logoScratch
+    sta spritebuffer
+    lda #>logoScratch
+    sta spritebuffer+1
+
+rlFillStart:
+    ldx #$00                    // (patched) line char-base 0 / 40 / 80
+fill_buffer:
+ldy texta,x             // get char (left nibble)
+lda font_lo,y           // get charpos from table
+sta modupper
+lda font_hi,y
+sta modupper+1 
+ldy texta+1,x           // get char (right nibble)
+lda font_lo,y           // get charpos from table
+sta modupper2
+lda font_hi,y
+sta modupper2+1         
+
+ldy #7                      // copy one half of char (8 bytes) to logoScratch
+copytobuffer:
+lda modupper: logoFont,y     // left nibble
+sta (spritebuffer),y
+lda modupper2: logoFont,y    // right nibble
+lsr ; lsr ; lsr ; lsr 
+ora (spritebuffer),y
+sta (spritebuffer),y
+dey
+bpl copytobuffer
+
+clc
+lda spritebuffer
+adc #8
+sta spritebuffer
+bcc nohi2
+inc spritebuffer+1
+nohi2:
+
+inx ; inx                   // next char
+rlFillEnd:
+    cpx #$28                    // (patched) line char-end 40 / 80 / 120
+    bne fill_buffer
+
+    lda #<logoScratch
+    sta spritebuffer
+    lda #>logoScratch
+    sta spritebuffer+1
+
+    ldy #$00
+rlCopyStart:
+    ldx #$00                    // (patched) sprite-row offset 0 / 21 / 42
+copybuffer:
+lda logoScratch+$00,Y           // sprite 0 / col 1
+sta sprite_0 +0+0,X
+lda logoScratch+$08,Y           // sprite 0 / col 2
+sta sprite_0 +0+1,X
+lda logoScratch+$10,Y           // sprite 0 / col 3
+sta sprite_0 +0+2,X
+
+lda logoScratch+$18,Y           // sprite 1 / col 1
+sta sprite_1 +0+0,X
+lda logoScratch+$20,Y           // sprite 1 / col 2
+sta sprite_1 +0+1,X
+lda logoScratch+$28,Y           // sprite 1 / col 3
+sta sprite_1 +0+2,X
+
+lda logoScratch+$30,Y           // sprite 2 / col 1
+sta sprite_2 +0+0,X
+lda logoScratch+$38,Y           // sprite 2 / col 2
+sta sprite_2 +0+1,X
+lda logoScratch+$40,Y           // sprite 2 / col 3
+sta sprite_2 +0+2,X
+
+lda logoScratch+$48,Y           // sprite 3 / col 1
+sta sprite_3 +0+0,X
+lda logoScratch+$50,Y           // sprite 3 / col 2
+sta sprite_3 +0+1,X
+lda logoScratch+$58,Y           // sprite 3 / col 3
+sta sprite_3 +0+2,X
+
+lda logoScratch+$60,Y           // sprite 4 / col 1
+sta sprite_4 +0+0,X
+lda logoScratch+$68,Y           // sprite 4 / col 2
+sta sprite_4 +0+1,X
+lda logoScratch+$70,Y           // sprite 4 / col 3
+sta sprite_4 +0+2,X
+
+lda logoScratch+$78,Y           // sprite 5 / col 1
+sta sprite_5 +0+0,X
+lda logoScratch+$80,Y           // sprite 5 / col 2
+sta sprite_5 +0+1,X
+lda logoScratch+$88,Y           // sprite 5 / col 3
+sta sprite_5 +0+2,X
+
+lda logoScratch+$90,Y           // sprite 6 / col 1
+sta sprite_6 +0+0,X
+lda logoScratch+$98,Y           // sprite 6 / col 2
+sta sprite_6 +0+1,X
+
+inx ; inx ; inx
+    iny
+rlCopyCnt:
+    cpy #$06                    // (patched) rows 6 / 6 / 7
+    beq rlCopyDone
+    jmp copybuffer
+rlCopyDone:
+
+    inc rlLine
+    lda rlLine
+    cmp #$03
+    beq rlAllDone
+    jmp rlLineLoop
+rlAllDone:
+    rts
+
+rlLine:         .byte $00
+rlFillStartTab: .byte 0,  40,  80
+rlFillEndTab:   .byte 40, 80,  120
+rlCopyStartTab: .byte 0,  21,  42
+rlCopyCntTab:   .byte 6,  6,   7
 
 
 // =============================================================================
@@ -1106,6 +1328,129 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte  80,  80,  80
 .byte  80,  80,  80
 .byte  80,  80,  80
+
+// =============================================================================
+// LOGO TABLES (font position lo/hi + the three text lines) - free VIC RAM
+// =============================================================================
+
+* = VIC_BANK_ADDRESS + $2E38 "Logo Tables"
+// ---- font position tables (CPU-read) ----
+font_lo:
+.byte <logoFont+$0000, <logoFont+$0008, <logoFont+$0010, <logoFont+$0018, <logoFont+$0020, <logoFont+$0028, <logoFont+$0030, <logoFont+$0038
+.byte <logoFont+$0040, <logoFont+$0048, <logoFont+$0050, <logoFont+$0058, <logoFont+$0060, <logoFont+$0068, <logoFont+$0070, <logoFont+$0078
+.byte <logoFont+$0080, <logoFont+$0088, <logoFont+$0090, <logoFont+$0098, <logoFont+$00a0, <logoFont+$00a8, <logoFont+$00b0, <logoFont+$00b8
+.byte <logoFont+$00c0, <logoFont+$00c8, <logoFont+$00d0, <logoFont+$00d8, <logoFont+$00e0, <logoFont+$00e8, <logoFont+$00f0, <logoFont+$00f8
+.byte <logoFont+$0100, <logoFont+$0108, <logoFont+$0110, <logoFont+$0118, <logoFont+$0120, <logoFont+$0128, <logoFont+$0130, <logoFont+$0138
+.byte <logoFont+$0140, <logoFont+$0148, <logoFont+$0150, <logoFont+$0158, <logoFont+$0160, <logoFont+$0168, <logoFont+$0170, <logoFont+$0178
+.byte <logoFont+$0180, <logoFont+$0188, <logoFont+$0190, <logoFont+$0198, <logoFont+$01a0, <logoFont+$01a8, <logoFont+$01b0, <logoFont+$01b8
+.byte <logoFont+$01c0, <logoFont+$01c8, <logoFont+$01d0, <logoFont+$01d8, <logoFont+$01e0, <logoFont+$01e8, <logoFont+$01f0, <logoFont+$01f8
+
+
+font_hi:
+.byte >logoFont+$0000, >logoFont+$0008, >logoFont+$0010, >logoFont+$0018, >logoFont+$0020, >logoFont+$0028, >logoFont+$0030, >logoFont+$0038
+.byte >logoFont+$0040, >logoFont+$0048, >logoFont+$0050, >logoFont+$0058, >logoFont+$0060, >logoFont+$0068, >logoFont+$0070, >logoFont+$0078
+.byte >logoFont+$0080, >logoFont+$0088, >logoFont+$0090, >logoFont+$0098, >logoFont+$00a0, >logoFont+$00a8, >logoFont+$00b0, >logoFont+$00b8
+.byte >logoFont+$00c0, >logoFont+$00c8, >logoFont+$00d0, >logoFont+$00d8, >logoFont+$00e0, >logoFont+$00e8, >logoFont+$00f0, >logoFont+$00f8
+.byte >logoFont+$0100, >logoFont+$0108, >logoFont+$0110, >logoFont+$0118, >logoFont+$0120, >logoFont+$0128, >logoFont+$0130, >logoFont+$0138
+.byte >logoFont+$0140, >logoFont+$0148, >logoFont+$0150, >logoFont+$0158, >logoFont+$0160, >logoFont+$0168, >logoFont+$0170, >logoFont+$0178
+.byte >logoFont+$0180, >logoFont+$0188, >logoFont+$0190, >logoFont+$0198, >logoFont+$01a0, >logoFont+$01a8, >logoFont+$01b0, >logoFont+$01b8
+.byte >logoFont+$01c0, >logoFont+$01c8, >logoFont+$01d0, >logoFont+$01d8, >logoFont+$01e0, >logoFont+$01e8, >logoFont+$01f0, >logoFont+$01f8
+
+
+// ---- logo text (3 lines, 40 chars each) ----
+texta:
+.text "genesis project sidquake tripple columns"
+textb:
+.text "the quick brown fox  jumps over the lazy"
+textc:
+.text "0123456789!$%&/()=,.;:-' abcdefghijklmno"
+
+
+// =============================================================================
+// LOGO FONT (4x6 glyphs, CPU-read; placed in free VIC space before CharSet)
+// =============================================================================
+
+* = VIC_BANK_ADDRESS + $35C0 "Logo Font"
+logoFont:
+.byte $60,$90,$B0,$A0,$80,$70,$00,$00
+.byte $60,$90,$F0,$90,$90,$90,$00,$00
+.byte $E0,$90,$E0,$90,$90,$E0,$00,$00
+.byte $60,$90,$80,$80,$90,$60,$00,$00
+.byte $E0,$90,$90,$90,$90,$E0,$00,$00
+.byte $F0,$80,$E0,$80,$80,$F0,$00,$00
+.byte $F0,$80,$E0,$80,$80,$80,$00,$00
+.byte $70,$80,$B0,$90,$90,$60,$00,$00
+.byte $90,$90,$F0,$90,$90,$90,$00,$00
+.byte $80,$00,$80,$80,$80,$60,$00,$00
+.byte $10,$10,$10,$10,$90,$60,$00,$00
+.byte $90,$90,$E0,$90,$90,$90,$00,$00
+.byte $80,$80,$80,$80,$90,$60,$00,$00
+.byte $90,$F0,$90,$90,$90,$90,$00,$00
+.byte $E0,$90,$90,$90,$90,$90,$00,$00
+.byte $60,$90,$90,$90,$90,$60,$00,$00
+.byte $E0,$90,$90,$E0,$80,$80,$00,$00
+.byte $60,$90,$90,$90,$A0,$50,$00,$00
+.byte $E0,$90,$E0,$90,$90,$90,$00,$00
+.byte $70,$80,$60,$10,$90,$60,$00,$00
+.byte $E0,$10,$10,$10,$10,$10,$00,$00
+.byte $90,$90,$90,$90,$90,$60,$00,$00
+.byte $90,$90,$90,$90,$50,$20,$00,$00
+.byte $90,$90,$90,$90,$F0,$90,$00,$00
+.byte $90,$90,$60,$90,$90,$90,$00,$00
+.byte $90,$90,$70,$10,$90,$60,$00,$00
+.byte $F0,$10,$20,$40,$80,$F0,$00,$00
+.byte $C0,$80,$80,$80,$80,$C0,$00,$00
+.byte $00,$60,$60,$60,$60,$00,$00,$00
+.byte $30,$10,$10,$10,$10,$30,$00,$00
+.byte $60,$F0,$F0,$F0,$F0,$60,$00,$00
+.byte $F0,$90,$90,$90,$90,$F0,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $80,$80,$80,$80,$00,$80,$00,$00
+.byte $90,$90,$90,$00,$00,$00,$00,$00
+.byte $90,$F0,$90,$90,$F0,$90,$00,$00
+.byte $20,$70,$80,$60,$10,$E0,$40,$00
+.byte $90,$10,$20,$40,$80,$90,$00,$00
+.byte $60,$90,$60,$90,$80,$70,$00,$00
+.byte $80,$80,$80,$00,$00,$00,$00,$00
+.byte $40,$80,$80,$80,$80,$40,$00,$00
+.byte $20,$10,$10,$10,$10,$20,$00,$00
+.byte $00,$90,$60,$F0,$60,$90,$00,$00
+.byte $00,$40,$40,$E0,$40,$40,$00,$00
+.byte $00,$00,$00,$80,$80,$80,$00,$00
+.byte $00,$00,$00,$F0,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$80,$00,$00
+.byte $10,$10,$20,$40,$80,$80,$00,$00
+.byte $60,$90,$90,$90,$90,$60,$00,$00
+.byte $10,$70,$10,$10,$10,$10,$00,$00
+.byte $E0,$10,$60,$80,$80,$F0,$00,$00
+.byte $E0,$10,$60,$10,$10,$E0,$00,$00
+.byte $80,$90,$90,$70,$10,$10,$00,$00
+.byte $F0,$80,$E0,$10,$90,$60,$00,$00
+.byte $70,$80,$E0,$90,$90,$60,$00,$00
+.byte $F0,$10,$20,$40,$80,$80,$00,$00
+.byte $60,$90,$60,$90,$90,$60,$00,$00
+.byte $60,$90,$90,$70,$10,$E0,$00,$00
+.byte $00,$00,$80,$00,$00,$80,$00,$00
+.byte $00,$00,$80,$00,$80,$80,$00,$00
+.byte $00,$30,$40,$80,$40,$30,$00,$00
+.byte $00,$f0,$00,$00,$f0,$00,$00,$00
+.byte $00,$C0,$20,$10,$20,$C0,$00,$00
+.byte $60,$90,$10,$60,$00,$40,$00,$00
+
+
+// =============================================================================
+// LOGO SPRITE BUFFERS (filled by RenderLogo, shown at the top of the screen)
+// =============================================================================
+
+* = LOGO_SPRITE_ADDRESS "Logo Sprites"
+sprite_0:   .fill 64, $00
+sprite_1:   .fill 64, $00
+sprite_2:   .fill 64, $00
+sprite_3:   .fill 64, $00
+sprite_4:   .fill 64, $00
+sprite_5:   .fill 64, $00
+sprite_6:   .fill 64, $00
+
 
 // =============================================================================
 // SCREEN
