@@ -66,6 +66,9 @@ artistNameColor:
 
 .var VIC_BANK                       = floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
+.var SPRITES_ADDRESS			    = VIC_BANK_ADDRESS + $3400
+
+.var SpritesBINFile = LoadBinary("sprites.bin")
 
 // =============================================================================
 // CONFIGURATION CONSTANTS (continued)
@@ -217,67 +220,13 @@ InitializeVIC:
     lda #$00
     sta $d023                           // MC color 2 (black - was dark grey, swapped with bg)
 
-    // Setup sprites (7 sprites for bottom border effect)
-    lda #%01111111
-    sta $d015                           // Enable sprites 0-6
-    sta $d01d                           // X-expand sprites 0-6
-    sta $d017                           // Y-expand sprites 0-6
-    sta $d01c                           // Multicolor sprites 0-6
-
     lda #$00
     sta $d01b                           // Sprites in front of background
     sta $d026                           // Sprite MC color 1 = black
-
     lda #$0c
     sta $d025                           // Sprite MC color 0 = medium grey
 
-    // Sprite colors = border color
-    lda borderColor
-    sta $d027
-    sta $d028
-    sta $d029
-    sta $d02a
-    sta $d02b
-    sta $d02c
-    sta $d02d
-
-    // Sprite positions - spread across screen width
-    lda #$fa
-    sta $d001
-    sta $d003
-    sta $d005
-    sta $d007
-    sta $d009
-    sta $d00b
-    sta $d00d
-
-    lda #$18
-    clc
-    sta $d000
-    adc #$30
-    sta $d002
-    adc #$30
-    sta $d004
-    adc #$30
-    sta $d006
-    adc #$30
-    sta $d008
-    adc #$30
-    sta $d00a
-    clc
-    adc #$30
-    sta $d00c
-
-    lda #%01100000
-    sta $d010                           // X MSB for sprites 5,6
-
-    // Sprite pointers
-    lda #SPRITE_POINTER
-    ldx #6
-!sprPtr:
-    sta SCREEN_ADDRESS + $3F8, x
-    dex
-    bpl !sprPtr-
+    jsr SetBottomSprites
 
     lda #$03
     sta VIC_BANK_ADDRESS + $3FFF
@@ -316,21 +265,6 @@ MainIRQ:
     dec $d019
     cli
 
-    lda FastForwardActive
-    beq !normalPlay+
-
-!ffFrameLoop:
-    jsr SIDPlay
-    inc $d020
-
-    jsr CheckSpaceKey
-    lda FastForwardActive
-    bne !ffFrameLoop-
-
-    lda #$00
-    sta $d020
-    jmp !done+
-
 !normalPlay:
     inc visualizationUpdateFlag
 
@@ -360,6 +294,10 @@ MainIRQ:
 
 TopBorderIRQ:
     pha
+    txa
+    pha
+    tya
+    pha
 
     lda $01
     pha
@@ -374,6 +312,39 @@ TopBorderIRQ:
     lda #$1b
     sta $d011
 
+    jsr SetTopSprites
+
+    lda #50
+    sta $d012
+    lda #<ScreenIRQ
+    sta $fffe
+    lda #>ScreenIRQ
+    sta $ffff
+    dec $d019
+
+    pla
+    sta $01
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
+
+ScreenIRQ:
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    lda $01
+    pha
+    lda #$35
+    sta $01
+
+    jsr SetBottomSprites
+
     lda #250
     sta $d012
     lda #<MainIRQ
@@ -385,7 +356,91 @@ TopBorderIRQ:
     pla
     sta $01
     pla
+    tay
+    pla
+    tax
+    pla
     rti
+
+SetTopSprites:
+
+    lda #$01
+    ldy #20
+    .for(var i = 0; i < 3; i++)
+    {
+        ldx #24 + (i * 24)
+        stx $d000 + (i * 2)
+        sty $d001 + (i * 2)
+        sta $d027 + i
+    }
+    .for(var i = 0; i < 4; i++)
+    {
+        ldx #248 + (i * 24)
+        stx $d006 + (i * 2)
+        sty $d007 + (i * 2)
+        sta $d02a + i
+    }
+    lda #$70
+    sta $d010
+
+    .for(var i = 0; i < 7; i++)
+    {
+        lda #(SPRITES_ADDRESS / 64) + i
+        sta SCREEN_ADDRESS + $3F8 + i
+    }
+
+    lda #$7f
+    sta $d015                           // Enable sprites
+    lda #$00
+    sta $d01d                           // X-expand
+    sta $d017                           // Y-expand
+    sta $d01c                           // MulticolorMode
+
+    rts
+
+
+SetBottomSprites:
+
+    lda #$7f
+    sta $d015                           // Enable sprites
+    sta $d01d                           // X-expand sprites
+    sta $d017                           // Y-expand sprites
+    sta $d01c                           // Multicolor sprites
+
+    // Sprite colors = border color
+    lda borderColor
+    sta $d027
+    sta $d028
+    sta $d029
+    sta $d02a
+    sta $d02b
+    sta $d02c
+    sta $d02d
+
+    // Sprite positions - spread across screen width
+    lda #$fa
+    sta $d001
+    sta $d003
+    sta $d005
+    sta $d007
+    sta $d009
+    sta $d00b
+    sta $d00d
+
+    lda #SPRITE_POINTER
+    .for (var i = 0; i < 7; i++)
+    {
+        ldx #24 + (i * 48)
+        stx $d000 + (i * 2)
+        sta SCREEN_ADDRESS + $3F8 + i
+    }
+
+    lda #$60
+    sta $d010                           // X MSB
+    rts
+
+
+
 
 // =============================================================================
 // CONVERT SMOOTHED HEIGHTS TO COLUMN BUFFERS
@@ -1113,6 +1168,9 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 
 * = SCREEN_ADDRESS "Screen"
     .fill $400, $00
+
+* = SPRITES_ADDRESS "Sprites"
+	.fill SpritesBINFile.getSize(), SpritesBINFile.get(i)
 
 // =============================================================================
 // END OF FILE
