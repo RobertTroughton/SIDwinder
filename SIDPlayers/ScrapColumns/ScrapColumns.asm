@@ -35,8 +35,9 @@
 // Each voice section has 48 height levels (0-47), mapped to $10-$3F
 .const MAX_BAR_HEIGHT               = 47
 
-// Rate of 3 gives sub-pixel smooth movement through Scrap's 8-position character cells
-.const BAR_INCREASE_RATE            = 3
+// Tracks note attacks tightly (matches RaistlinTripleBars' responsiveness);
+// higher than 3 trades some 3D-column glide for musical accuracy.
+.const BAR_INCREASE_RATE            = 7
 .const BAR_DECREASE_RATE            = ceil(MAX_BAR_HEIGHT / 24.0)
 
 // =============================================================================
