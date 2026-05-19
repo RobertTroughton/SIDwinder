@@ -1,9 +1,16 @@
+/**
+ * Netlify function that proxies requests to hvsc.etv.cx.
+ *
+ * The browser cannot fetch from hvsc.etv.cx directly due to CORS, so this
+ * function forwards three kinds of request:
+ *   - no path           -> the HVSC homepage HTML
+ *   - path ending .sid  -> the binary SID file (returned base64-encoded)
+ *   - any other path    -> the directory listing HTML for that path
+ */
 exports.handler = async (event, context) => {
-    // Get the path from query parameters
     const path = event.queryStringParameters?.path || '';
 
     if (!path) {
-        // Return the HVSC homepage
         const hvscUrl = 'https://hvsc.etv.cx/';
 
         try {
@@ -27,9 +34,8 @@ exports.handler = async (event, context) => {
         }
     }
 
-    // Check if this is a SID file request
     if (path.endsWith('.sid')) {
-        // For SID files, fetch directly (no query parameter)
+        // SID files are served at the bare path, not via the ?path= listing endpoint.
         const directUrl = `https://hvsc.etv.cx/${path}`;
 
         try {
@@ -42,16 +48,15 @@ exports.handler = async (event, context) => {
 
             const buffer = await response.arrayBuffer();
 
-            // Verify it's actually a SID file
+            // Reject anything that isn't a PSID/RSID payload (e.g. an HTML
+            // error page returned with a 200 status).
             const view = new Uint8Array(buffer);
             const magic = String.fromCharCode(view[0], view[1], view[2], view[3]);
 
             if (magic !== 'PSID' && magic !== 'RSID') {
                 console.error('Not a valid SID file!');
-                // Log first part of response to debug
                 const text = new TextDecoder().decode(view.slice(0, 500));
 
-                // Return error
                 return {
                     statusCode: 500,
                     body: JSON.stringify({
@@ -60,7 +65,6 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            // Return the SID file as base64
             return {
                 statusCode: 200,
                 headers: {
@@ -79,7 +83,6 @@ exports.handler = async (event, context) => {
             };
         }
     } else {
-        // For directories, use the query parameter format
         const hvscUrl = `https://hvsc.etv.cx/?path=${path}`;
 
         try {

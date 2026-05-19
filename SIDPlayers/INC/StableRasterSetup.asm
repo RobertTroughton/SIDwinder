@@ -1,23 +1,16 @@
 //; =============================================================================
-//; StableRasterSetup.asm - Stable Raster Interrupt Setup
-//; Part of the SIDwinder visualization framework
-//;
-//; This module provides cycle-exact raster stabilization for jitter-free
-//; interrupts. Essential for smooth visual effects and precise timing.
+//;                       STABLE RASTER INTERRUPT SETUP
+//; Cycle-exact raster stabilisation for jitter-free interrupts using CIA
+//; timer B to absorb the variable-length instruction at IRQ entry.
 //; =============================================================================
 
 #importonce
 
 //; =============================================================================
-//; SetupStableRaster - Initialize stable raster interrupts
-//; 
-//; This routine must be aligned to avoid page-crossing penalties during
-//; critical timing loops. It uses CIA timer B to compensate for interrupt
-//; jitter, ensuring pixel-perfect raster effects.
-//;
-//; Based on the technique from Spindle by lft (www.linusakesson.net/software/spindle/)
-//;
-//; Registers: Corrupts A, X, Y
+//; SetupStableRaster
+//; Page-aligned to avoid page-crossing penalties on the timing-critical loop.
+//; Technique from Spindle by lft (www.linusakesson.net/software/spindle/).
+//; Clobbers: A, X, Y
 //; =============================================================================
 
 .align 128

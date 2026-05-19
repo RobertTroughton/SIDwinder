@@ -1,32 +1,25 @@
-// font-data.js - Font Data and PNG Conversion for SIDwinder Web
-// This module handles font selection, PNG font loading, and conversion to C64 charset format.
+// font-data.js - Font selection, PNG loading, and conversion to C64 charset.
 //
-// Font Organization:
-// - Fonts are organized by dimension: 1x2 (doubled-height), 1x1 (single-height), etc.
-// - "1x2" means 1 char wide × 2 chars tall (8x16 pixels for doubled-height text)
-// - "1x1" means 1 char wide × 1 char tall (8x8 pixels for single-height text)
+// PNG layouts:
+//   1x2 (doubled-height): 256×48 px, 8×16 per glyph, 32 cols × 3 rows = 96 glyphs
+//                          mapped to screen codes 32-127
+//   1x1 single-case:      128×56 px, 8×8 per glyph, 16 cols × 4 rows = 64 glyphs
+//                          mapped to screen codes 0-63 (8px gap between glyph rows)
+//   1x1 mixed-case:       128×88 px, 8×8 per glyph, 16 cols × 6 rows = 96 glyphs
+//                          mapped to screen codes 0-95 (8px gap between glyph rows)
 //
-// PNG Font Format (1x2 / doubled-height):
-// - 256x48 pixels (32 glyphs across × 3 rows = 96 printable characters)
-// - Each glyph is 8x16 pixels (8 wide × 16 tall for doubled-height C64 text)
-// - Covers ASCII 32-127 (printable ASCII range)
-//
-// PNG Font Format (1x1 / single-height):
-// - 256x24 pixels (32 glyphs across × 3 rows = 96 printable characters)
-// - Each glyph is 8x8 pixels
-//
-// C64 Charset Format (1x2):
-// - 8 bytes per character (8x8 pixels, 1 bit per pixel)
-// - Characters 0-95: Top halves of doubled-height glyphs (bytes $000-$2FF)
-// - Characters 128-223: Bottom halves of doubled-height glyphs (bytes $400-$6FF)
-// - Total: 224 characters × 8 bytes = 1792 bytes
+// C64 charset format is 8 bytes per char, 1 bit per pixel. 1x2 charsets reserve
+// 1792 bytes (96 top halves at 0-95 + 96 bottom halves at 128-223). 1x1 charsets
+// reserve 768 bytes (96 chars × 8 bytes), enough for either case layout.
 
-// Case type constants
-const FONT_CASE_MIXED = 0;      // Has both upper and lowercase
-const FONT_CASE_UPPER_ONLY = 1; // Only uppercase letters
-const FONT_CASE_LOWER_ONLY = 2; // Only lowercase letters (rare)
+const FONT_CASE_MIXED = 0;
+const FONT_CASE_UPPER_ONLY = 1;
+const FONT_CASE_LOWER_ONLY = 2;
 
-// Font dimension configurations
+// Sentinel font ID — selecting this skips charset injection so the player keeps
+// using the C64 character ROM. Recognised by prg-builder and asm players.
+const FONT_ID_ROM = 'rom';
+
 const FONT_DIMENSIONS = {
     '1x2': {
         name: '1×2 (Doubled Height)',
@@ -38,29 +31,35 @@ const FONT_DIMENSIONS = {
         glyphsPerRow: 32,
         glyphRows: 3,
         totalGlyphs: 96,
-        charsetSize: 1792,  // 224 chars × 8 bytes
-        folder: 'PNG/Fonts/1x2'  // Fonts are in PNG/Fonts/1x2/ with font-1x2-*.png naming
+        charsetSize: 1792,
+        folder: 'PNG/Fonts/1x2'
     },
     '1x1': {
         name: '1×1 (Single Height)',
         description: 'Standard single-height font',
-        pngWidth: 256,
-        pngHeight: 24,
+        // Two valid PNG sizes are accepted: 128×56 (single-case, 4 glyph rows)
+        // and 128×88 (mixed-case, 6 glyph rows). The conversion function picks
+        // the layout based on actual image height.
+        pngWidth: 128,
+        pngHeight: 56,
         glyphWidth: 8,
         glyphHeight: 8,
-        glyphsPerRow: 32,
-        glyphRows: 3,
-        totalGlyphs: 96,
-        charsetSize: 768,  // 96 chars × 8 bytes
+        glyphsPerRow: 16,
+        glyphRows: 4,
+        glyphRowStride: 16, // 8px glyph + 8px gap between rows
+        totalGlyphs: 64,
+        charsetSize: 768, // sized for the larger 96-glyph mixed-case layout
         folder: 'PNG/Fonts/1x1'
     }
 };
 
-// Font registry - defines available fonts for each dimension
-// Fonts use naming convention: font-{dimension}-{id}.png (e.g., font-1x2-classic.png)
+// PNG files follow the naming convention font-{dimension}-{id}.png.
+// The 'rom' entry is a sentinel — no PNG is loaded; the asm player stays in
+// ROM-charset mode (prg-builder skips charset injection).
 const KNOWN_FONTS = {
     '1x2': [
         { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED, hasBinaryFallback: true },
+        { id: 'syndrom', name: 'Syndrom', caseType: FONT_CASE_MIXED },
         { id: 'cupid', name: 'Cupid', caseType: FONT_CASE_MIXED },
         { id: 'mermaid', name: 'Mermaid', caseType: FONT_CASE_UPPER_ONLY },
         { id: 'yazoo', name: 'Yazoo', caseType: FONT_CASE_UPPER_ONLY },
@@ -68,17 +67,29 @@ const KNOWN_FONTS = {
         { id: 'flex', name: 'Flex', caseType: FONT_CASE_UPPER_ONLY }
     ],
     '1x1': [
-        { id: 'classic', name: 'Classic', caseType: FONT_CASE_MIXED }
+        { id: FONT_ID_ROM, name: 'C64 ROM', caseType: FONT_CASE_MIXED, isROM: true },
+        { id: 'bizzmo-mixed', name: 'Bizzmo', caseType: FONT_CASE_MIXED },
+        { id: 'flex-mixed', name: 'Flex (Mixed)', caseType: FONT_CASE_MIXED },
+        { id: 'isildur-mixed', name: 'Isildur', caseType: FONT_CASE_MIXED },
+        { id: 'rowdy-mixed', name: 'Rowdy', caseType: FONT_CASE_MIXED },
+        { id: 'flex', name: 'Flex', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'grass', name: 'Grass', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'hammerfist', name: 'Hammerfist', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'hedning', name: 'Hedning', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'mikael', name: 'Mikael', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'mirage', name: 'Mirage', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'scooby', name: 'Scooby', caseType: FONT_CASE_UPPER_ONLY },
+        { id: 'zscs', name: 'zscs', caseType: FONT_CASE_UPPER_ONLY }
     ]
 };
 
-// Constants (prefixed to avoid collision with bar-styles-data.js)
+// Increment when font assets change to bust the browser cache.
+const FONT_ASSET_VERSION = 2;
+
+// Prefixed to avoid collision with bar-styles-data.js's BYTES_PER_CHAR.
 const FONT_BYTES_PER_CHAR = 8;
 
-// Cache for loaded font data
 const fontDataCache = new Map();
-
-// Cache for discovered fonts per dimension
 const fontListCache = new Map();
 
 /**
@@ -90,7 +101,7 @@ const fontListCache = new Map();
 function getFontPath(fontType, fontId) {
     const dim = FONT_DIMENSIONS[fontType];
     if (!dim) return null;
-    return `${dim.folder}/font-${fontType}-${fontId}.png`;
+    return `${dim.folder}/font-${fontType}-${fontId}.png?v=${FONT_ASSET_VERSION}`;
 }
 
 /**
@@ -99,7 +110,6 @@ function getFontPath(fontType, fontId) {
  * @returns {Promise<Array>} - Array of font info objects
  */
 async function discoverFonts(fontType) {
-    // Check cache first
     if (fontListCache.has(fontType)) {
         return fontListCache.get(fontType);
     }
@@ -110,11 +120,10 @@ async function discoverFonts(fontType) {
         return [];
     }
 
-    // Use known fonts for this dimension
-    // (Future: could optionally load from fonts-{type}.json if it exists)
     const knownFonts = KNOWN_FONTS[fontType] || [];
     const fonts = knownFonts.map((font, index) => {
-        const imagePath = getFontPath(fontType, font.id);
+        // ROM sentinel has no PNG to load.
+        const imagePath = font.isROM ? null : getFontPath(fontType, font.id);
         return {
             value: index,
             id: font.id,
@@ -122,6 +131,7 @@ async function discoverFonts(fontType) {
             shortLabel: font.id,
             caseType: font.caseType,
             hasBinaryFallback: font.hasBinaryFallback || false,
+            isROM: !!font.isROM,
             image: imagePath,
             source: imagePath
         };
@@ -157,7 +167,6 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
     const charset = new Uint8Array(dim.charsetSize);
     charset.fill(0);
 
-    // Process each glyph in the PNG
     for (let glyphIndex = 0; glyphIndex < dim.totalGlyphs; glyphIndex++) {
         const glyphRow = Math.floor(glyphIndex / dim.glyphsPerRow);
         const glyphCol = glyphIndex % dim.glyphsPerRow;
@@ -165,13 +174,10 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
         const startX = glyphCol * dim.glyphWidth;
         const startY = glyphRow * dim.glyphHeight;
 
-        // C64 character indices
-        // Top halves go to chars 0-95 (bytes $000-$2FF)
-        // Bottom halves go to chars 128-223 (bytes $400-$6FF)
-        const charIndexTop = glyphIndex;           // Characters 0-95
-        const charIndexBottom = 128 + glyphIndex;  // Characters 128-223
+        // Top half goes to chars 0-95, bottom half to chars 128-223.
+        const charIndexTop = glyphIndex;
+        const charIndexBottom = 128 + glyphIndex;
 
-        // Process top half (rows 0-7 of the glyph)
         if (charIndexTop < 96) {
             for (let row = 0; row < 8; row++) {
                 let byte = 0;
@@ -222,49 +228,68 @@ function convertPNG1x2ToCharset(imageData, threshold = 128) {
 }
 
 /**
- * Convert a PNG font image to C64 charset format (1x1 single-height)
- * @param {ImageData} imageData - The image data from a 256x24 PNG
- * @param {number} threshold - Brightness threshold for pixel detection (0-255)
- * @returns {Uint8Array} - 768 bytes of C64 charset data
+ * Convert a 1x1 PNG font image to C64 charset bytes.
+ *
+ * Two PNG sizes are accepted:
+ *   128×56 : 16 cols × 4 rows = 64 glyphs, mapped to screen codes 0-63
+ *            (single-case; the rendered glyph is replicated into the lowercase-ROM
+ *            uppercase positions 65-90 so KickAss-encoded mixed-case strings
+ *            still display).
+ *   128×88 : 16 cols × 6 rows = 96 glyphs, mapped to screen codes 0-95.
+ *
+ * In both layouts, glyph rows are separated by an 8px gap so the row stride is
+ * 16px (8px glyph + 8px gap). The output is always 768 bytes (96 chars × 8).
  */
 function convertPNG1x1ToCharset(imageData, threshold = 128) {
     const { data, width, height } = imageData;
-    const dim = FONT_DIMENSIONS['1x1'];
 
-    if (width !== dim.pngWidth || height !== dim.pngHeight) {
-        throw new Error(`Invalid 1x1 font PNG size: ${width}x${height}. Expected ${dim.pngWidth}x${dim.pngHeight}`);
+    if (width !== 128 || (height !== 56 && height !== 88)) {
+        throw new Error(`Invalid 1x1 font PNG size: ${width}x${height}. Expected 128x56 or 128x88`);
     }
 
-    const charset = new Uint8Array(dim.charsetSize);
+    const glyphsPerRow = 16;
+    const glyphRows = height === 56 ? 4 : 6;
+    const totalGlyphs = glyphsPerRow * glyphRows;
+    const isSingleCase = glyphRows === 4;
+
+    const charset = new Uint8Array(768);
     charset.fill(0);
 
-    for (let glyphIndex = 0; glyphIndex < dim.totalGlyphs; glyphIndex++) {
-        const glyphRow = Math.floor(glyphIndex / dim.glyphsPerRow);
-        const glyphCol = glyphIndex % dim.glyphsPerRow;
-
-        const startX = glyphCol * dim.glyphWidth;
-        const startY = glyphRow * dim.glyphHeight;
-
-        const charIndex = 32 + glyphIndex;
+    for (let glyphIndex = 0; glyphIndex < totalGlyphs; glyphIndex++) {
+        const gRow = Math.floor(glyphIndex / glyphsPerRow);
+        const gCol = glyphIndex % glyphsPerRow;
+        const startX = gCol * 8;
+        const startY = gRow * 16; // 8px glyph + 8px gap stride
 
         for (let row = 0; row < 8; row++) {
             let byte = 0;
             for (let col = 0; col < 8; col++) {
-                const px = startX + col;
-                const py = startY + row;
-                const pixelIndex = (py * width + px) * 4;
-
+                const pixelIndex = ((startY + row) * width + (startX + col)) * 4;
                 const r = data[pixelIndex];
                 const g = data[pixelIndex + 1];
                 const b = data[pixelIndex + 2];
                 const a = data[pixelIndex + 3];
                 const brightness = (r + g + b) / 3;
-
                 if (a > 128 && brightness >= threshold) {
                     byte |= (0x80 >> col);
                 }
             }
-            charset[charIndex * FONT_BYTES_PER_CHAR + row] = byte;
+            charset[glyphIndex * FONT_BYTES_PER_CHAR + row] = byte;
+        }
+    }
+
+    // Single-case fonts only define codes 0-63. Mirror the @+A-Z glyphs (codes
+    // 0-26) into the lowercase-ROM uppercase positions (codes 64-90) so static
+    // KickAss `.text` strings — which encode 'A'-'Z' as screen codes 65-90 in
+    // the lowercase-ROM convention — still render correctly.
+    if (isSingleCase) {
+        for (let src = 0; src <= 26; src++) {
+            const dst = 64 + src;
+            const srcOff = src * FONT_BYTES_PER_CHAR;
+            const dstOff = dst * FONT_BYTES_PER_CHAR;
+            for (let i = 0; i < FONT_BYTES_PER_CHAR; i++) {
+                charset[dstOff + i] = charset[srcOff + i];
+            }
         }
     }
 
@@ -494,6 +519,11 @@ async function getFontData(fontType, fontIndex, fallbackConfig = null) {
     }
 
     const font = fonts[fontIndex];
+    // ROM sentinel — caller should skip charset injection entirely so the
+    // player keeps its baked-in $d018 ROM-charset path.
+    if (font && font.id === FONT_ID_ROM) {
+        return null;
+    }
     if (!font) {
         // No fonts available at all
         if (fallbackConfig && fallbackConfig.binarySource) {
@@ -518,10 +548,14 @@ async function getFontData(fontType, fontIndex, fallbackConfig = null) {
         }
     }
 
-    // If this is font 0 and we have a fallback, use it
-    if (fontIndex === 0 && fallbackConfig && fallbackConfig.binarySource) {
+    // Binary fallback only applies to fonts that explicitly opt in by setting
+    // hasBinaryFallback on their KNOWN_FONTS entry — for those, the player's
+    // .bin has a baked-in default charset at the configured offset. Most
+    // visualizers don't, so attempting to slice 768/1792 bytes out of a bin
+    // that lacks a charset slot would just throw a confusing error.
+    if (font.hasBinaryFallback && fallbackConfig && fallbackConfig.binarySource) {
         try {
-            console.log('Using binary fallback for default font');
+            console.log(`Using binary fallback for font "${font.label}"`);
             const dim = FONT_DIMENSIONS[fontType];
             return await loadFontFromBinary(
                 fallbackConfig.binarySource,
@@ -613,6 +647,7 @@ window.FONT_DATA = {
     FONT_CASE_MIXED: FONT_CASE_MIXED,
     FONT_CASE_UPPER_ONLY: FONT_CASE_UPPER_ONLY,
     FONT_CASE_LOWER_ONLY: FONT_CASE_LOWER_ONLY,
+    FONT_ID_ROM: FONT_ID_ROM,
     FONT_DIMENSIONS: FONT_DIMENSIONS,
     KNOWN_FONTS: KNOWN_FONTS
 };

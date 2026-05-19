@@ -32,9 +32,12 @@
 // D018 values: screen at $0400 = bank 1
 // Uppercase ROM charset at $1000 = charset bank 2: (1 << 4) | (2 << 1) = $14
 // Lowercase ROM charset at $1800 = charset bank 3: (1 << 4) | (3 << 1) = $16
+// RAM charset at $2000 (VIC bank 0) = charset bank 4: (1 << 4) | (4 << 1) = $18
 .const D018_LOGO_UPPERCASE          = $14
 .const D018_LOGO_LOWERCASE          = $16
-.const D018_INFO                    = $16   // Info always uses lowercase/mixed ROM
+.const D018_INFO_ROM                = $16   // Info uses lowercase ROM
+.const D018_INFO_RAM                = $18   // Info uses injected RAM charset
+.const RAM_CHARSET_ADDRESS          = $2000
 
 // Raster line where the split occurs (first visible line + rows * 8 pixels)
 .const SPLIT_RASTERLINE             = 50 + (LOGO_ROWS * 8) - 1
@@ -52,7 +55,9 @@ backgroundColor:
     .fill $70 - $0F, $00               // Reserved bytes $0F-$6F
 logoCharsetType:
     .byte $01                           // Byte $70: Logo charset (0=uppercase, 1=lowercase)
-    .fill $100 - $71, $00              // Fill rest
+fontMode:
+    .byte $00                           // Byte $71: 0=info uses ROM charset, 1=info uses injected RAM charset
+    .fill $100 - $72, $00              // Fill rest
 
 * = CODE_ADDRESS "Main Code"
 
@@ -218,6 +223,11 @@ Initialize:
 
     // Copy logo color data to color RAM (rows 0-8)
     jsr CopyLogoColors
+
+    // If a custom 1x1 font has been injected, copy it into VIC-bank-0 RAM at
+    // $2000 and switch the info-area $d018 value over to it. Otherwise leave
+    // the SplitIRQ defaults pointing at the lowercase ROM charset.
+    jsr SetupCharset
 
     // Set initial D018 for logo area
     lda #D018_LOGO_LOWERCASE
@@ -898,8 +908,10 @@ SplitIRQ:
     dex
     bpl !delay-
 
-    // Switch to info charset
-    lda #D018_INFO
+    // Switch to info charset (immediate value self-modified by SetupCharset
+    // when a custom RAM charset has been injected).
+InfoD018Value:
+    lda #D018_INFO_ROM
     sta $d018
 
     // Set up the top IRQ again for next frame (rasterline 250)
@@ -964,6 +976,33 @@ ControlsLine2:      .text "+/-=Next/Prev 1-9,A-Z=Select"
                     .byte 0
 
 // =============================================================================
+// CHARSET SETUP
+//
+// In ROM mode (fontMode == 0) leave the SplitIRQ pointing at the lowercase
+// ROM charset (D018_INFO_ROM). In RAM mode (fontMode != 0) copy the 768
+// injected bytes into VIC bank 0 RAM at $2000 and patch the SplitIRQ's
+// immediate $d018 value to D018_INFO_RAM.
+// =============================================================================
+
+SetupCharset:
+    lda fontMode
+    beq !done+
+
+    ldx #0
+!loop:
+    .for (var i = 0; i < 3; i++) {
+        lda EmbeddedCharset + (i * 256), x
+        sta RAM_CHARSET_ADDRESS + (i * 256), x
+    }
+    inx
+    bne !loop-
+
+    lda #D018_INFO_RAM
+    sta InfoD018Value + 1
+!done:
+    rts
+
+// =============================================================================
 // LOGO DATA at fixed offsets (filled at build time by prg-builder.js)
 // =============================================================================
 
@@ -974,6 +1013,14 @@ LogoScreenData:
 * = LOAD_ADDRESS + $0E68 "Logo Color Data"
 LogoColorData:
     .fill LOGO_CELLS, $00              // 360 bytes of color data (default: black)
+
+// =============================================================================
+// EMBEDDED CHARSET DATA (768 bytes; populated by prg-builder when not ROM mode)
+// =============================================================================
+
+* = LOAD_ADDRESS + $1000 "Embedded Charset"
+EmbeddedCharset:
+    .fill $300, $00
 
 // =============================================================================
 // END OF FILE

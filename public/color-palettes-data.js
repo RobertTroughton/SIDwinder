@@ -174,25 +174,20 @@ function generateColorTable(paletteIndex, tableSize) {
     const gradient = palette.gradient;
     const result = new Uint8Array(tableSize);
 
-    // COLOR_TABLE_SIZE = MAX_BAR_HEIGHT + 9, so actual max height is tableSize - 9
-    // Use this as the reference for 100% so bars reach full brightness at max height
+    // tableSize = MAX_BAR_HEIGHT + 9 (safety margin); use the actual MAX_BAR_HEIGHT
+    // as the 100% reference so bars reach full brightness at peak.
     const maxHeight = tableSize - 9;
 
-    // First entry (height 0) uses the base color from gradient
     result[0] = gradient[0].color;
 
     for (let i = 1; i < tableSize; i++) {
-        // Map table position to percentage based on actual max bar height
-        // At i = maxHeight, we want pct = 100%
         const pct = Math.min((i / maxHeight) * 100, 100);
 
-        // Find the two gradient stops this percentage falls between
+        // Stepped (not interpolated): pick the nearer of the two surrounding stops
         let color = gradient[0].color;
 
         for (let g = 0; g < gradient.length - 1; g++) {
             if (pct >= gradient[g].pct && pct <= gradient[g + 1].pct) {
-                // Use the lower gradient stop's color (stepped, not interpolated)
-                // For a more gradual effect, we pick the nearer one
                 const midPoint = (gradient[g].pct + gradient[g + 1].pct) / 2;
                 color = pct < midPoint ? gradient[g].color : gradient[g + 1].color;
                 break;
@@ -440,7 +435,6 @@ function getColorPaletteDetails(paletteIndex) {
     };
 }
 
-// Export for use in other modules
 window.COLOR_PALETTES_DATA = {
     getColorPaletteData: getColorPaletteData,
     getColorPaletteInfo: getColorPaletteInfo,

@@ -3,10 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SIDquake - Analyze, browse, and export C64 SID music files. Features HVSC browser, SID analysis, and PRG export with visualizer effects. The easiest way for artists to bundle and ship their C64 SID music.">
     <title>SIDquake - C64 SID Music Linker</title>
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://sidquake.c64demo.com/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sidquake.c64demo.com/">
+    <meta property="og:title" content="SIDquake - C64 SID Music Analyzer, Linker & Tool Suite">
+    <meta property="og:description" content="The easiest way for C64 artists to bundle and ship their SID music. Analyze SID files, browse the HVSC collection, and export executable PRG files with stunning visualizer effects.">
+    <meta property="og:image" content="https://sidquake.c64demo.com/SIDquake.png">
+    <meta property="og:site_name" content="SIDquake">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SIDquake - C64 SID Music Analyzer, Linker & Tool Suite">
+    <meta name="twitter:description" content="The easiest way for C64 artists to bundle and ship their SID music. Analyze, browse HVSC, and export PRG files with visualizer effects.">
+    <meta name="twitter:image" content="https://sidquake.c64demo.com/SIDquake.png">
+
+    <!-- Additional SEO -->
+    <meta name="keywords" content="C64, SID, Commodore 64, SID music, chiptune, demoscene, HVSC, PRG export, SID analyzer, visualizer, retro computing, 6510, MOS 6581, MOS 8580, Genesis Project">
+    <meta name="author" content="Genesis Project">
+    <meta name="theme-color" content="#d4a24c">
+    <link rel="icon" type="image/png" href="SIDquake.png">
+    <link rel="apple-touch-icon" href="SIDquake.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SIDquake",
+        "url": "https://sidquake.c64demo.com/",
+        "description": "C64 SID Music Analyzer, Linker & Tool Suite. The easiest way for artists to bundle and ship their Commodore 64 SID music with stunning visualizer effects.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "Genesis Project",
+            "url": "https://c64demo.com"
+        },
+        "featureList": [
+            "SID file analysis and metadata editing",
+            "HVSC (High Voltage SID Collection) browser",
+            "PRG export with visualizer effects",
+            "In-browser SID playback via reSID emulation",
+            "Multiple C64 visualizer styles",
+            "TSCrunch compression for exports"
+        ],
+        "screenshot": "https://sidquake.c64demo.com/SIDquake.png"
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="genesis-header.css">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles-deferred.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="styles-deferred.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </noscript>
 </head>
 <body>
     <!-- Genesis Project Common Header -->
@@ -26,22 +93,34 @@
 
     <div class="container">
         <div class="header">
-            <div class="logo-container">
-                <img src="SIDquake.png" alt="SIDquake" class="logo" />
-                <div class="header-info">
-                    <h1>SIDquake</h1>
-                    <p class="tagline">C64 SID Analyzer, Linker & Tool Suite</p>
-                    <div class="version-badge">PREVIEW</div>
+            <div class="site-header-content">
+                <div class="site-header-scanlines"></div>
+                <div class="site-header-inner">
+                    <div class="site-header-badge">GENESIS PROJECT PRESENTS</div>
+                    <h1 class="site-header-title">SID<span class="accent">quake</span></h1>
+                    <p class="site-header-subtitle">The Easiest Way for Artists to Bundle &amp; Ship Their C64 SID Music</p>
                 </div>
             </div>
+            <!-- Page Tabs -->
+            <nav class="page-tabs" role="tablist" aria-label="Main navigation">
+                <button class="page-tab active" data-tab="tool" role="tab" id="tab-tool" aria-selected="true" aria-controls="tabTool">
+                    <i class="fas fa-tools"></i> <span>Tool</span>
+                </button>
+                <button class="page-tab" data-tab="releases" role="tab" id="tab-releases" aria-selected="false" aria-controls="tabReleases">
+                    <i class="fas fa-music"></i> <span>Releases</span>
+                </button>
+                <button class="page-tab" data-tab="about" role="tab" id="tab-about" aria-selected="false" aria-controls="tabAbout">
+                    <i class="fas fa-info-circle"></i> <span>About</span>
+                </button>
+            </nav>
         </div>
 
-        <div class="main-content">
+        <div class="main-content" id="tabTool" role="tabpanel" aria-labelledby="tab-tool">
             <!-- Simplified Upload Section -->
             <div class="upload-container">
                 <!-- Drag & Drop Area -->
                 <div class="upload-section" id="uploadSection">
-                    <div class="upload-icon">📂</div>
+                    <div class="upload-icon"><i class="fas fa-file-upload"></i></div>
                     <div class="upload-text">Drop your SID file here</div>
                     <div class="upload-subtext">or use the buttons below</div>
                 </div>
@@ -49,15 +128,15 @@
                 <!-- Upload Buttons -->
                 <div class="upload-buttons">
                     <button class="upload-btn" id="uploadBtn">
-                        <span class="upload-btn-icon">📁</span>
+                        <i class="fas fa-folder-open"></i>
                         <span>Upload SID</span>
                     </button>
                     <button class="upload-btn" id="hvscBtn">
-                        <span class="upload-btn-icon">🎵</span>
+                        <i class="fas fa-music"></i>
                         <span>Browse HVSC</span>
                     </button>
                     <button class="upload-btn random-btn" id="randomBtn">
-                        <span class="upload-btn-icon">🎲</span>
+                        <i class="fas fa-random"></i>
                         <span>Random SID</span>
                     </button>
                 </div>
@@ -75,6 +154,7 @@
             <div class="song-title-section disabled" id="songTitleSection">
                 <div class="song-title" id="songTitle">[ No SID Loaded ]</div>
                 <div class="song-author" id="songAuthor">Load a SID file to begin</div>
+                <div class="sid-player-container" id="mainPlayerContainer"></div>
             </div>
 
             <!-- Error Message -->
@@ -85,26 +165,26 @@
                 <div class="info-panels" id="infoPanels">
                     <!-- File Information Panel -->
                     <div class="panel">
-                        <h2>📄 File Information</h2>
+                        <h2><i class="fas fa-file-alt"></i> File Information</h2>
                         <div class="info-row">
                             <span class="info-label">Title:</span>
                             <span class="info-value editable" id="sidTitle" data-field="title" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Author:</span>
                             <span class="info-value editable" id="sidAuthor" data-field="author" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Copyright:</span>
                             <span class="info-value editable" id="sidCopyright" data-field="copyright" title="Click to edit">
                                 <span class="text">-</span>
-                                <span class="edit-icon">✏️</span>
+                                <i class="fas fa-pen edit-icon"></i>
                             </span>
                         </div>
                         <div class="info-row">
@@ -122,8 +202,8 @@
                     </div>
 
                     <!-- Technical Details Panel -->
-                    <div class="panel">
-                        <h2>⚙️ Technical Details</h2>
+                    <details class="panel" open>
+                        <summary><h2><i class="fas fa-microchip"></i> Technical Details</h2></summary>
                         <div class="info-row">
                             <span class="info-label">Load Address:</span>
                             <span class="info-value" id="loadAddress">-</span>
@@ -168,13 +248,13 @@
                             <span class="info-label">Max CPU Cycles:</span>
                             <span class="info-value" id="maxCycles">-</span>
                         </div>
-                    </div>
+                    </details>
                 </div>
 
-                <!-- Export Modified SID Button (moved here) -->
+                <!-- Export Modified SID Button -->
                 <div class="export-modified-container">
                     <button class="export-button" id="exportModifiedSIDButton" disabled>
-                        💾 Save SID
+                        <i class="fas fa-save"></i> Save SID
                     </button>
                     <div class="export-hint" id="exportHint">Edit the metadata above to enable export</div>
                 </div>
@@ -182,31 +262,602 @@
 
             <!-- Export Section -->
             <div class="section-group export-section disabled" id="exportSection">
-                <h2>🎮 Choose Your Visualizer</h2>
+                <h2><i class="fas fa-tv"></i> Choose Your Visualizer</h2>
 
-                <!-- Visualizer Grid -->
+                <!-- Visualizer Grid (cards populated by visualizer-registry.js) -->
                 <div class="visualizer-grid" id="visualizerGrid">
-                    <!-- Cards will be dynamically added here -->
                 </div>
 
-                <!-- Dynamic Options Container -->
+                <!-- Dynamic Options Container (populated based on selected visualizer) -->
                 <div class="visualizer-options" id="visualizerOptions" style="display: none;">
-                    <!-- Options will be dynamically added based on selected visualizer -->
                 </div>
 
                 <!-- Export Button -->
                 <div class="export-buttons">
                     <button class="export-button" id="exportPRGButton" disabled>
-                        🎮 Export PRG
+                        <i class="fas fa-download"></i> Export PRG
                     </button>
                 </div>
 
                 <div class="export-status" id="exportStatus"></div>
             </div>
         </div>
+
+        <!-- About Page -->
+        <div class="about-content" id="tabAbout" role="tabpanel" aria-labelledby="tab-about" style="display: none;">
+            <!-- Hero Section -->
+            <section class="about-hero about-hero-simple">
+                <div class="about-hero-scanlines"></div>
+                <div class="about-hero-inner">
+                    <h2 class="about-hero-title">About</h2>
+                    <div class="about-hero-divider">
+                        <span class="divider-chip"><i class="fas fa-microchip"></i></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- What is SIDquake -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">01</span>
+                    <h2>What is SIDquake?</h2>
+                </div>
+                <div class="about-card-grid">
+                    <article class="about-card about-card-featured">
+                        <div class="about-card-icon"><i class="fas fa-rocket"></i></div>
+                        <h3>Ship Your Music</h3>
+                        <p>SIDquake makes it <strong>super easy</strong> for Commodore 64 musicians and artists to take their SID compositions and package them into ready-to-run executable PRG files. No assembly knowledge required. No complex toolchains. Just upload your SID, pick a visualizer, and export.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-search-plus"></i></div>
+                        <h3>Analyze</h3>
+                        <p>Deep-dive into any SID file's internals. View load addresses, init routines, play calls, memory ranges, SID chip models, clock speeds, and CPU cycle usage &mdash; all parsed in real-time via WebAssembly.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-database"></i></div>
+                        <h3>Browse HVSC</h3>
+                        <p>Access the entire <strong>High Voltage SID Collection</strong> directly from your browser. Navigate thousands of SID tunes, preview them with in-browser playback powered by reSID, and select tracks for export.</p>
+                    </article>
+                    <article class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-download"></i></div>
+                        <h3>Export PRG</h3>
+                        <p>Generate executable C64 PRG files bundled with beautiful visualizer effects. Choose from multiple visualizer styles, customize colors, add logos, and compress with TSCrunch &mdash; all in the browser.</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- The SID Chip -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">02</span>
+                    <h2>The Legendary SID Chip</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-sid-chips">
+                        <a href="https://en.wikipedia.org/wiki/MOS_Technology_6581" class="chip-link" target="_blank" rel="noopener" title="MOS 6581 on Wikipedia">
+                            <div class="chip-visual">
+                                <div class="chip-pins chip-pins-left"></div>
+                                <div class="chip-body">
+                                    <div class="chip-label">MOS</div>
+                                    <div class="chip-model">6581</div>
+                                    <div class="chip-sublabel">SID</div>
+                                </div>
+                                <div class="chip-pins chip-pins-right"></div>
+                            </div>
+                        </a>
+                        <a href="https://en.wikipedia.org/wiki/MOS_Technology_6581" class="chip-link chip-link-8580" target="_blank" rel="noopener" title="MOS 8580 on Wikipedia">
+                            <div class="chip-visual">
+                                <div class="chip-pins chip-pins-left"></div>
+                                <div class="chip-body chip-body-8580">
+                                    <div class="chip-label">MOS</div>
+                                    <div class="chip-model">8580</div>
+                                    <div class="chip-sublabel">SID</div>
+                                </div>
+                                <div class="chip-pins chip-pins-right"></div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="about-text-content">
+                        <p>The <strong>MOS Technology 6581/8580 SID</strong> (Sound Interface Device) is the legendary sound chip at the heart of the Commodore 64. Designed by Bob Yannes in 1981, it was revolutionary for its time &mdash; a synthesizer-on-a-chip that gave the C64 its distinctive, unmistakable sound.</p>
+                        <p>With <strong>three independent oscillators</strong>, each capable of sawtooth, triangle, pulse, and noise waveforms, plus a multi-mode resonant filter and ring modulation, the SID was years ahead of its competition. It turned a home computer into a genuine musical instrument.</p>
+                        <p>The original <strong>6581</strong> (found in earlier C64 models) and the revised <strong>8580</strong> (in the C64C) each have their own character. The 6581 is known for its raw, gritty filter and louder volume, while the 8580 offers cleaner output and better-defined waveforms. Both are beloved by musicians and collectors worldwide.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- The Demoscene -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">03</span>
+                    <h2>The Demoscene &amp; C64 Culture</h2>
+                </div>
+                <div class="about-columns">
+                    <div class="about-column">
+                        <div class="about-quote">
+                            <blockquote>&ldquo;The demoscene is digital art as a competitive sport.&rdquo;</blockquote>
+                        </div>
+                        <p>The <strong>demoscene</strong> is a vibrant international computer art subculture that emerged in the 1980s. Groups of programmers, musicians, and graphic artists collaborate to create <strong>demos</strong> &mdash; non-interactive audiovisual presentations that push hardware to its absolute limits.</p>
+                        <p>In 2020, the demoscene was officially inscribed on <strong>UNESCO's Representative List of Intangible Cultural Heritage</strong> in Finland, Germany, and Poland &mdash; a recognition of its unique artistic and cultural significance.</p>
+                    </div>
+                    <div class="about-column">
+                        <p>The <strong>Commodore 64</strong> remains one of the most active demoscene platforms decades after its release. New demos, music disks, and intros are still being created today, with musicians composing fresh SID tunes and coders finding new tricks on the venerable 6510 CPU.</p>
+                        <p>Major C64 demoscene events include <strong>X Party</strong>, <strong>Revision</strong>, <strong>Transmission64</strong>, and <strong>BIT Party</strong> among many others, where sceners gather to compete, collaborate, and celebrate this unique art form.</p>
+                        <div class="about-tags">
+                            <span class="about-tag">Demos</span>
+                            <span class="about-tag">Intros</span>
+                            <span class="about-tag">Music Disks</span>
+                            <span class="about-tag">Cracktros</span>
+                            <span class="about-tag">Trackmos</span>
+                            <span class="about-tag">Digi-tunes</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SID Music & HVSC -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">04</span>
+                    <h2>SID Music &amp; HVSC</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-text-content about-text-full">
+                        <p>SID music is a thriving art form with an incredible heritage. Legendary composers like <strong>Rob Hubbard</strong>, <strong>Martin Galway</strong>, <strong>Jeroen Tel</strong>, <strong>Ben Daglish</strong>, <strong>Chris H&uuml;lsbeck</strong>, and <strong>Tim Follin</strong> defined the golden age of C64 game music. Today, the demoscene keeps the SID alive with an amazing community of musicians still pushing the chip to new creative heights.</p>
+                        <p>The <strong>High Voltage SID Collection (HVSC)</strong> is the definitive archive of C64 SID music, containing over <strong>57,000 tunes</strong> by thousands of composers. Maintained by a dedicated team of volunteers, HVSC preserves the complete history of SID music from 1982 to the present day. SIDquake provides direct browsing access to the entire HVSC collection.</p>
+                    </div>
+                </div>
+                <div class="about-musicians">
+                    <h3 class="about-musicians-title"><i class="fas fa-headphones"></i> Active Scene Musicians</h3>
+                    <div class="about-musicians-grid">
+                        <a href="https://csdb.dk/scener/?id=8098" class="about-musician-link" target="_blank" rel="noopener">6R6</a>
+                        <a href="https://csdb.dk/scener/?id=34424" class="about-musician-link" target="_blank" rel="noopener">acrouzet</a>
+                        <a href="https://csdb.dk/scener/?id=3288" class="about-musician-link" target="_blank" rel="noopener">celticdesign</a>
+                        <a href="https://csdb.dk/scener/?id=16" class="about-musician-link" target="_blank" rel="noopener">Drax</a>
+                        <a href="https://csdb.dk/scener/?id=8105" class="about-musician-link" target="_blank" rel="noopener">Jammer</a>
+                        <a href="https://csdb.dk/scener/?id=626" class="about-musician-link" target="_blank" rel="noopener">JCH</a>
+                        <a href="https://csdb.dk/scener/?id=677" class="about-musician-link" target="_blank" rel="noopener">Laxity</a>
+                        <a href="https://csdb.dk/scener/?id=40096" class="about-musician-link" target="_blank" rel="noopener">Leaf</a>
+                        <a href="https://csdb.dk/scener/?id=10025" class="about-musician-link" target="_blank" rel="noopener">Linus</a>
+                        <a href="https://csdb.dk/scener/?id=23279" class="about-musician-link" target="_blank" rel="noopener">LMan</a>
+                        <a href="https://csdb.dk/scener/?id=16913" class="about-musician-link" target="_blank" rel="noopener">Magnar</a>
+                        <a href="https://csdb.dk/scener/?id=16398" class="about-musician-link" target="_blank" rel="noopener">MCH</a>
+                        <a href="https://csdb.dk/scener/?id=19" class="about-musician-link" target="_blank" rel="noopener">Mermaid</a>
+                        <a href="https://csdb.dk/scener/?id=30573" class="about-musician-link" target="_blank" rel="noopener">Mibri</a>
+                        <a href="https://csdb.dk/scener/?id=763" class="about-musician-link" target="_blank" rel="noopener">Mr. Mouse</a>
+                        <a href="https://csdb.dk/scener/?id=12931" class="about-musician-link" target="_blank" rel="noopener">psych858o</a>
+                        <a href="https://csdb.dk/scener/?id=1651" class="about-musician-link" target="_blank" rel="noopener">Steel</a>
+                        <a href="https://csdb.dk/scener/?id=23584" class="about-musician-link" target="_blank" rel="noopener">Stinsen</a>
+                        <a href="https://csdb.dk/scener/?id=4559" class="about-musician-link" target="_blank" rel="noopener">Vincenzo</a>
+                        <a href="https://csdb.dk/scener/?id=21605" class="about-musician-link" target="_blank" rel="noopener">X-Jammer</a>
+                        <a href="https://csdb.dk/scener/?id=12697" class="about-musician-link" target="_blank" rel="noopener">Xiny6581</a>
+                    </div>
+                    <p class="about-musicians-credit">Profiles on <a href="https://csdb.dk" target="_blank" rel="noopener">CSDb</a> &mdash; The Encyclopaedia of C64 Scene Related Activities</p>
+                </div>
+                <div class="about-stats">
+                    <div class="about-stat">
+                        <div class="about-stat-value">57,000+</div>
+                        <div class="about-stat-label">SID tunes in HVSC</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">40+</div>
+                        <div class="about-stat-label">Years of SID music</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">3</div>
+                        <div class="about-stat-label">Oscillators per SID</div>
+                    </div>
+                    <div class="about-stat">
+                        <div class="about-stat-value">$D400</div>
+                        <div class="about-stat-label">SID base address</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">05</span>
+                    <h2>How SIDquake Works</h2>
+                </div>
+                <div class="about-pipeline">
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-file-upload"></i></div>
+                        <div class="pipeline-content">
+                            <h4>1. Load</h4>
+                            <p>Upload a SID file or browse HVSC to select a tune</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="pipeline-content">
+                            <h4>2. Analyze</h4>
+                            <p>WASM-powered 6510 CPU emulation parses every detail</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-palette"></i></div>
+                        <div class="pipeline-content">
+                            <h4>3. Customize</h4>
+                            <p>Choose a visualizer, set colors, and add your logo</p>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-icon"><i class="fas fa-download"></i></div>
+                        <div class="pipeline-content">
+                            <h4>4. Export</h4>
+                            <p>Download a ready-to-run C64 PRG with visualizer</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Technical Details -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">06</span>
+                    <h2>Under the Hood</h2>
+                </div>
+                <div class="about-card-grid about-card-grid-2">
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-microchip"></i> WebAssembly Emulation</h3>
+                        <p>SIDquake runs a full <strong>MOS 6510 CPU emulator</strong> compiled to WebAssembly. This allows real-time analysis of SID files directly in your browser &mdash; no plugins, no downloads, no server-side processing.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-volume-up"></i> reSID Playback</h3>
+                        <p>In-browser SID playback is powered by <strong>reSID</strong>, the industry-standard cycle-accurate SID chip emulator. Hear your tunes exactly as they'd sound on real hardware.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-compress-arrows-alt"></i> TSCrunch Compression</h3>
+                        <p>Exported PRG files can be compressed using <strong>TSCrunch</strong>, an efficient C64 packer. This creates self-extracting executables that fit more into the C64's 64KB of RAM.</p>
+                    </article>
+                    <article class="about-card about-card-tech">
+                        <h3><i class="fas fa-code"></i> KickAssembler Players</h3>
+                        <p>Visualizer routines are written in <strong>6502/6510 assembly</strong> and compiled with KickAssembler. Multiple load addresses ensure compatibility with any SID file's memory layout.</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Genesis Project -->
+            <section class="about-section about-section-genesis">
+                <div class="about-section-header">
+                    <span class="about-section-number">07</span>
+                    <h2>Genesis Project</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-text-content about-text-full">
+                        <p>SIDquake is part of the <strong>Genesis Project</strong> family of C64 tools and resources. Genesis Project is an active demoscene group dedicated to preserving and advancing Commodore 64 culture through modern tools and new productions.</p>
+                        <p>Got questions, feedback, or want to get involved? Drop us a line at <a href="mailto:raistlin@c64demo.com">raistlin@c64demo.com</a></p>
+                    </div>
+                </div>
+                <div class="about-links-grid">
+                    <a href="https://c64gfx.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-paint-brush"></i></div>
+                        <h4>C64GFX</h4>
+                        <p>C64 graphics gallery &amp; archive</p>
+                    </a>
+                    <a href="https://c64demo.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-film"></i></div>
+                        <h4>C64Demo</h4>
+                        <p>C64 demo database &amp; resources</p>
+                    </a>
+                    <a href="https://sidquake.c64demo.com" class="about-link-card about-link-card-active">
+                        <div class="about-link-icon"><i class="fas fa-music"></i></div>
+                        <h4>SIDquake</h4>
+                        <p>SID music analyzer &amp; linker</p>
+                    </a>
+                    <a href="https://dirquake.c64demo.com" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-folder-open"></i></div>
+                        <h4>DIRquake</h4>
+                        <p>C64 disk image tool</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Friends & Community -->
+            <section class="about-section">
+                <div class="about-section-header">
+                    <span class="about-section-number">08</span>
+                    <h2>Friends &amp; Community</h2>
+                </div>
+                <div class="about-text-block">
+                    <div class="about-text-content about-text-full">
+                        <p>The C64 and SID music scene thrives thanks to an amazing community of creators, archivists, and enthusiasts. Here are some of our favourite channels and resources.</p>
+                    </div>
+                </div>
+                <div class="about-links-grid">
+                    <a href="https://deepsid.chordian.net/" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fas fa-search"></i></div>
+                        <h4>DeepSID</h4>
+                        <p>Advanced online SID player &amp; HVSC browser</p>
+                    </a>
+                    <a href="https://www.youtube.com/@jeLM134" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fab fa-youtube"></i></div>
+                        <h4>sLASH</h4>
+                        <p>SID music videos &amp; C64 scene content</p>
+                    </a>
+                    <a href="https://www.youtube.com/c/TheDemoscene" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fab fa-youtube"></i></div>
+                        <h4>The Demoscene</h4>
+                        <p>Demoscene productions &amp; culture</p>
+                    </a>
+                    <a href="https://www.youtube.com/@magnarmusician" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fab fa-youtube"></i></div>
+                        <h4>Magnar Harestad</h4>
+                        <p>SID music covers &amp; performances</p>
+                    </a>
+                    <a href="https://www.youtube.com/c/acrouzet" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fab fa-youtube"></i></div>
+                        <h4>acrouzet</h4>
+                        <p>C64 music &amp; retro computing videos</p>
+                    </a>
+                    <a href="https://www.youtube.com/@UnepicStonedHighSIDCollection" class="about-link-card" target="_blank" rel="noopener">
+                        <div class="about-link-icon"><i class="fab fa-youtube"></i></div>
+                        <h4>Unepic SID Channel</h4>
+                        <p>Curated SID music collection</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="about-footer">
+                <div class="about-footer-inner">
+                    <div class="about-footer-logo">SIDquake</div>
+                    <p>Made with <span class="heart">&hearts;</span> for the C64 community</p>
+                    <p class="about-footer-contact"><i class="fas fa-envelope"></i> <a href="mailto:raistlin@c64demo.com">raistlin@c64demo.com</a></p>
+                    <p class="about-footer-tech">Powered by WebAssembly &middot; reSID &middot; KickAssembler &middot; TSCrunch</p>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Releases Page -->
+        <div class="releases-content" id="tabReleases" role="tabpanel" aria-labelledby="tab-releases" style="display: none;">
+            <section class="releases-hero">
+                <div class="about-hero-scanlines"></div>
+                <h1 class="releases-title">SIDquake Releases</h1>
+                <p class="releases-subtitle">SID tunes released using SIDquake, listed on <a href="https://csdb.dk" target="_blank" rel="noopener">CSDb</a></p>
+            </section>
+
+            <div class="releases-cta">
+                <i class="fas fa-envelope"></i>
+                <p>Released a tune using SIDquake? We'd love to add it here! Email us at <a href="mailto:raistlin@c64demo.com">raistlin@c64demo.com</a> with the CSDb link and we'll include it in the list.</p>
+            </div>
+
+            <section class="releases-list">
+                <div class="releases-grid">
+                    <a href="https://csdb.dk/release/?id=259596" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259596.png" alt="364 Days Before The Deadline" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">364 Days Before The Deadline</span>
+                            <span class="release-artist">by <span class="release-artist-name">Sonki</span></span>
+                            <span class="release-date">21 February 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259586" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259586.png" alt="Maneater" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Maneater</span>
+                            <span class="release-artist">by <span class="release-artist-name">Manganoid</span></span>
+                            <span class="release-date">21 February 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259557" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259557.png" alt="Olympionics" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Olympionics</span>
+                            <span class="release-artist">by <span class="release-artist-name">Sage</span></span>
+                            <span class="release-date">21 February 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259407" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259407.png" alt="The Big Bang Brewery" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">The Big Bang Brewery</span>
+                            <span class="release-artist">by <span class="release-artist-name">Sage</span></span>
+                            <span class="release-date">14 February 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259033" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259033.png" alt="Butterflies" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Butterflies</span>
+                            <span class="release-artist">by <span class="release-artist-name">Steel</span></span>
+                            <span class="release-date">31 January 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259028" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259028.png" alt="Ein Geschenk" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Ein Geschenk</span>
+                            <span class="release-artist">by <span class="release-artist-name">The Syndrom</span></span>
+                            <span class="release-date">31 January 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=259027" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/259027.png" alt="Shalloon and Collywobbles" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Shalloon and Collywobbles</span>
+                            <span class="release-artist">by <span class="release-artist-name">Xiny6581</span></span>
+                            <span class="release-date">31 January 2026</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=247798" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/247798.png" alt="With Love From Mysdata" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">With Love From Mysdata</span>
+                            <span class="release-artist">by <span class="release-artist-name">Magnar</span></span>
+                            <span class="release-date">23 November 2024</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=247797" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/247797.png" alt="The Protector" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">The Protector</span>
+                            <span class="release-artist">by <span class="release-artist-name">Magnar</span></span>
+                            <span class="release-date">23 November 2024</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=236972" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/236972.png" alt="Shadows of Life" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Shadows of Life</span>
+                            <span class="release-artist">by <span class="release-artist-name">MCH</span> &amp; <span class="release-artist-name">Steel</span></span>
+                            <span class="release-date">18 November 2023</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=218299" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/218299.png" alt="Fish Tit Supremacy" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Fish Tit Supremacy</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">25 May 2022</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=217748" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/217748.png" alt="Electric Zoo" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Electric Zoo</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">10 May 2022</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=214738" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/214738.png" alt="The Descent" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">The Descent</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">22 February 2022</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=214468" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/214468.png" alt="Last Night On The Lonely Island" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Last Night On The Lonely Island</span>
+                            <span class="release-artist">by <span class="release-artist-name">psych858o</span></span>
+                            <span class="release-date">17 February 2022</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=212356" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/212356.png" alt="Happy Happy Christmas" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Happy Happy Christmas</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">25 December 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=212358" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/212358.png" alt="Doublebass (V2)" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Doublebass (V2)</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">24 December 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=211650" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/211650.png" alt="Augmented Arguments" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Augmented Arguments</span>
+                            <span class="release-artist">by <span class="release-artist-name">Steel</span></span>
+                            <span class="release-date">4 December 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=211649" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/211649.png" alt="Epic Fail" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Epic Fail</span>
+                            <span class="release-artist">by <span class="release-artist-name">celticdesign</span></span>
+                            <span class="release-date">4 December 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=211439" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/211439.png" alt="Background Noise (Syntax Edit)" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Background Noise (Syntax Edit)</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">27 November 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=205472" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/205472.png" alt="Layer by Layer" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Layer by Layer</span>
+                            <span class="release-artist">by <span class="release-artist-name">psych858o</span></span>
+                            <span class="release-date">2 July 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=202282" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/202282.png" alt="Last Night We Drank Too Much" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Last Night We Drank Too Much</span>
+                            <span class="release-artist">by <span class="release-artist-name">Steel</span></span>
+                            <span class="release-date">31 March 2021</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=197865" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/197865.png" alt="Transformation" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Transformation</span>
+                            <span class="release-artist">by <span class="release-artist-name">psych858o</span></span>
+                            <span class="release-date">28 November 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=197529" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/197529.png" alt="Bad Ass (Laidback Version)" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Bad Ass (Laidback Version)</span>
+                            <span class="release-artist">by <span class="release-artist-name">psych858o</span></span>
+                            <span class="release-date">14 November 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=195382" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/195382.png" alt="Colosso" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Colosso</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">5 September 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=194049" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/194049.png" alt="My PALs Must Have a Clue (at This Rate)" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">My PALs Must Have a Clue (at This Rate)</span>
+                            <span class="release-artist">by <span class="release-artist-name">acrouzet</span></span>
+                            <span class="release-date">31 July 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=192902" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/192902.png" alt="Monty on the Run - D'n'B Edit" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Monty on the Run - D'n'B Edit</span>
+                            <span class="release-artist">by <span class="release-artist-name">MCH</span></span>
+                            <span class="release-date">27 June 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=192869" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/192869.png" alt="The C= Is Mine" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">The C= Is Mine</span>
+                            <span class="release-artist">by <span class="release-artist-name">Steel</span></span>
+                            <span class="release-date">26 June 2020</span>
+                        </div>
+                    </a>
+                    <a href="https://csdb.dk/release/?id=192867" class="release-card" target="_blank" rel="noopener">
+                        <div class="release-screenshot"><img src="PNG/Releases/192867.png" alt="Arpalooza" loading="lazy" width="384" height="272"></div>
+                        <div class="release-info">
+                            <span class="release-title">Arpalooza</span>
+                            <span class="release-artist">by <span class="release-artist-name">Stinsen</span> &amp; <span class="release-artist-name">Mr.Death</span></span>
+                            <span class="release-date">26 June 2020</span>
+                        </div>
+                    </a>
+                </div>
+
+                <p class="releases-credit">All releases listed on <a href="https://csdb.dk" target="_blank" rel="noopener">CSDb</a> &mdash; The Encyclopaedia of C64 Scene Related Activities</p>
+            </section>
+        </div>
     </div>
-    </div> <!-- End of site content wrapper -->
-    <!-- Modal Overlay - Unified error/success/warning modal -->
+    <!-- Unified modal: error / success / warning / confirm -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content">
             <div class="modal-icon" id="modalIcon"></div>
@@ -226,77 +877,56 @@
         </div>
     </div>
 
-    <!-- Load TSCrunch as ES module -->
-    <script type="module">
-        import { Cruncher, createSFX } from './lib/index.js';
+    <!-- TSCrunch lazy loader - only imports the heavy compression library on first use -->
+    <script>
+        window.loadTSCrunch = async function() {
+            if (window.TSCrunch) return;
 
-        // Buffer polyfill for browser
-        if (typeof Buffer === 'undefined') {
-            window.Buffer = {
-                from: function (data) {
-                    if (data instanceof Uint8Array) return data;
-                    if (Array.isArray(data)) return new Uint8Array(data);
-                    return new Uint8Array(0);
+            const { Cruncher, createSFX } = await import('./lib/index.js');
+
+            if (typeof Buffer === 'undefined') {
+                window.Buffer = {
+                    from: function (data) {
+                        if (data instanceof Uint8Array) return data;
+                        if (Array.isArray(data)) return new Uint8Array(data);
+                        return new Uint8Array(0);
+                    }
+                };
+            }
+
+            window.TSCrunch = {
+                compress: function (data, options = {}) {
+                    const {
+                        prg = true, sfx = true, sfxMode = 0,
+                        jumpAddress = 0x1000, blank = false, inplace = false
+                    } = options;
+
+                    const dataArray = Array.from(data);
+                    let sourceData = dataArray;
+                    let loadAddress = 0x0801;
+
+                    if (prg && dataArray.length >= 2) {
+                        loadAddress = dataArray[0] | (dataArray[1] << 8);
+                        sourceData = dataArray.slice(2);
+                    }
+
+                    const cruncher = new Cruncher(sourceData);
+                    cruncher.ocrunch({ inplace, verbose: false, sfxMode: sfx });
+
+                    let compressed = cruncher.crunched;
+                    if (sfx) {
+                        compressed = Array.from(createSFX(Buffer.from(compressed), {
+                            jumpAddress, decrunchAddress: loadAddress,
+                            optimalRun: cruncher.optimalRun, sfxMode, blank
+                        }));
+                    }
+
+                    return new Uint8Array(compressed);
                 }
             };
-        }
 
-        // Make TSCrunch available globally
-        window.TSCrunch = {
-            compress: function (data, options = {}) {
-                const {
-                    prg = true,
-                    sfx = true,
-                    sfxMode = 0,
-                    jumpAddress = 0x1000,
-                    blank = false,
-                    inplace = false
-                } = options;
-
-                // Convert data to array if needed
-                const dataArray = Array.from(data);
-
-                // Handle PRG format (skip load address)
-                let sourceData = dataArray;
-                let loadAddress = 0x0801;
-
-                if (prg && dataArray.length >= 2) {
-                    loadAddress = dataArray[0] | (dataArray[1] << 8);
-                    sourceData = dataArray.slice(2);
-                }
-
-                // Create cruncher
-                const cruncher = new Cruncher(sourceData);
-
-                // Compress
-                cruncher.ocrunch({
-                    inplace: inplace,
-                    verbose: false,
-                    sfxMode: sfx
-                });
-
-                // Get compressed data
-                let compressed = cruncher.crunched;
-
-                // Create SFX if requested
-                if (sfx) {
-                    compressed = Array.from(createSFX(Buffer.from(compressed), {
-                        jumpAddress: jumpAddress,
-                        decrunchAddress: loadAddress,
-                        optimalRun: cruncher.optimalRun,
-                        sfxMode: sfxMode,
-                        blank: blank
-                    }));
-                }
-
-                // The SFX already has the load address from createSFX
-                // Don't add it again!
-                return new Uint8Array(compressed);
-            }
+            window.dispatchEvent(new Event('tscrunch-ready'));
         };
-
-        // Signal that TSCrunch is ready
-        window.dispatchEvent(new Event('tscrunch-ready'));
     </script>
 
     <!-- HVSC Modal -->
@@ -316,20 +946,54 @@
                             </button>
                             <input type="text" class="path-bar" id="pathBar" readonly>
                         </div>
+                        <div class="browser-search">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-bar" id="hvscSearchBar" placeholder="Search the whole collection by title, author, or filename..." autocomplete="off" spellcheck="false">
+                            <button class="search-clear" id="hvscSearchClear" title="Clear search" style="display: none;">✕</button>
+                        </div>
                     </div>
 
                     <div class="browser-content">
                         <div class="file-panel">
-                            <div class="panel-header">Files & Directories</div>
+                            <div class="panel-header" id="filePanelHeader">Files & Directories</div>
                             <div class="file-list" id="fileList">
-                                <div class="loading">Loading directory</div>
+                                <div class="file-list-loading"><div class="file-list-spinner"></div></div>
+                            </div>
+                        </div>
+                        <div class="sid-info-panel" id="sidInfoPanel">
+                            <div class="panel-header">SID Info</div>
+                            <div class="sid-info-content" id="sidInfoContent">
+                                <div class="sid-info-placeholder">Select a SID file to view details</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="status-bar">
                         <span id="itemCount">0 items</span>
-                        <span style="margin-left: auto; color: #888; font-size: 11px;">Double-click to select a SID file</span>
+                        <span style="margin-left: auto; font-size: 11px;">Double-click to select a SID file</span>
+                    </div>
+
+                    <!-- HVSC Playback Preview (disabled until a SID is selected) -->
+                    <div class="hvsc-player-container" id="hvscPlayerContainer">
+                        <div class="sid-player">
+                            <button class="sid-player-btn sid-player-play" title="Play" disabled><i class="fas fa-play"></i></button>
+                            <button class="sid-player-btn sid-player-stop" title="Stop" disabled><i class="fas fa-stop"></i></button>
+                            <button class="sid-player-btn sid-player-restart" title="Restart" disabled><i class="fas fa-undo"></i></button>
+                            <div class="sid-player-subtune">
+                                <button class="sid-player-btn sid-player-prev" title="Previous subtune" disabled><i class="fas fa-step-backward"></i></button>
+                                <span class="sid-player-subtune-display">1/1</span>
+                                <button class="sid-player-btn sid-player-next" title="Next subtune" disabled><i class="fas fa-step-forward"></i></button>
+                            </div>
+                            <div class="sid-player-time">0:00</div>
+                            <div class="sid-player-quality">
+                                <select class="sid-player-quality-select" title="Sampling quality" disabled>
+                                    <option value="0">Fast</option>
+                                    <option value="1" selected>Interpolate</option>
+                                    <option value="2">Resample</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sid-player-credit">Playback by <a href="https://github.com/libsidplayfp/resid" target="_blank" rel="noopener">reSID</a></div>
                     </div>
                 </div>
             </div>
@@ -343,7 +1007,7 @@
             <div class="gallery-modal-body">
                 <div class="gallery-container">
                     <div class="gallery-header">
-                        <div class="gallery-title">🎨 Image Gallery</div>
+                        <div class="gallery-title"><i class="fas fa-images"></i> Image Gallery</div>
                         <div class="gallery-subtitle" id="gallerySubtitle">Select an image</div>
                     </div>
 
@@ -354,33 +1018,76 @@
 
                     <div class="gallery-status-bar">
                         <span id="galleryItemCount">0 items</span>
-                        <span style="margin-left: auto; color: #888; font-size: 11px;">Click to select an image</span>
+                        <span style="margin-left: auto; font-size: 11px;">Click to select an image</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Regular scripts -->
-    <script src="error-modal.js"></script>
-    <script src="sidwinder.js"></script>
-    <script src="sidwinder-core.js"></script>
-    <script src="png-converter.js"></script>
-    <script src="image-preview-manager.js"></script>
-    <script src="compressor-manager.js"></script>
-    <script src="bar-styles-data.js"></script>
-    <script src="color-palettes-data.js"></script>
-    <script src="font-data.js"></script>
-    <script src="prg-builder.js"></script>
-    <script src="hvsc-browser.js"></script>
-    <script src="hvsc-random.js"></script>
-    <script src="ui.js"></script>
-    <script src="visualizer-registry.js"></script>
-    <script src="visualizer-configs.js"></script>
-    <script src="floating-notes.js"></script>
-    <script src="text-drop-zone.js"></script>
-    <script src="petscii-sanitizer.js"></script>
-    <script src="petscii-converter.js"></script>
+    <!-- Lazy script loader + core script bootstrapper -->
+    <script>
+        window.lazyScripts = {};
+        window.loadScript = function(src) {
+            if (!window.lazyScripts[src]) {
+                window.lazyScripts[src] = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+            return window.lazyScripts[src];
+        };
+
+        // Load core scripts sequentially, yielding between each to reduce TBT.
+        // Each setTimeout(0) lets the browser run other tasks (paint, input, etc.)
+        // instead of blocking the main thread in one giant 2+ second task.
+        (function() {
+            var scripts = [
+                'error-modal.js', 'visualizer-registry.js', 'ui.js'
+            ];
+            var i = 0;
+            function loadNext() {
+                if (i >= scripts.length) return;
+                var s = document.createElement('script');
+                s.src = scripts[i++];
+                s.onload = function() { setTimeout(loadNext, 0); };
+                s.onerror = function() { setTimeout(loadNext, 0); };
+                document.head.appendChild(s);
+            }
+            // Start after first paint
+            requestAnimationFrame(function() { setTimeout(loadNext, 0); });
+        })();
+
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            var tabs = document.querySelectorAll('.page-tab');
+            var panels = {
+                tool: document.getElementById('tabTool'),
+                releases: document.getElementById('tabReleases'),
+                about: document.getElementById('tabAbout')
+            };
+
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    var target = this.getAttribute('data-tab');
+
+                    tabs.forEach(function(t) {
+                        t.classList.remove('active');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+
+                    Object.keys(panels).forEach(function(key) {
+                        panels[key].style.display = key === target ? 'block' : 'none';
+                    });
+                });
+            });
+        });
+    </script>
 
 </body>
 </html>

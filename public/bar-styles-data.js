@@ -87,7 +87,7 @@ const BAR_STYLES_MAIN = [
         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66      // Full
     ]),
 
-    // Style 5: SMOOTH (RaistlinMirrorBars style - no highlight)
+    // Style 5: SMOOTH (rounded, no highlight)
     new Uint8Array([
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Empty
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7C,     // 1/8
@@ -208,7 +208,6 @@ function getBarStyleData(styleType, styleIndex) {
     return null;
 }
 
-// Export for use in other modules
 window.BAR_STYLES_DATA = {
     main: BAR_STYLES_MAIN,
     getBarStyleData: getBarStyleData,

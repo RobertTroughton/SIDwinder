@@ -1,4 +1,3 @@
-// musicplayback.asm - Music playback routines
 // =============================================================================
 //                          MUSIC PLAYBACK MODULE
 //                     Unified music playback for all visualizers
@@ -7,7 +6,8 @@
 #importonce
 
 // =============================================================================
-// Standard music playback (with optional raster bars)
+// JustPlayMusic - call SIDPlay, optionally bracketed by border-colour writes
+// to $D020 to draw a raster timing bar when ShowRasterBars is set.
 // =============================================================================
 JustPlayMusic:
     #if INCLUDE_F1_SHOWRASTERTIMINGBAR

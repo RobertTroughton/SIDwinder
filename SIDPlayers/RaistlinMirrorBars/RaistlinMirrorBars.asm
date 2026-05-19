@@ -149,7 +149,7 @@ Initialize:
 	jsr NMIFix
 
 	jsr InitializeVIC
-	//; Bar style character data is now injected at build time by the web app
+	//; Bar style character data is injected at build time by the web app
 	jsr ClearScreens
 	jsr InitializeColors
 	jsr DisplaySongInfo
@@ -580,10 +580,6 @@ currentScreenBuffer:		.byte $00
 D018Values:					.byte D018_VALUE_0, D018_VALUE_1
 
 //; =============================================================================
-//; Note: Height color table is now at COLOR_TABLE_ADDRESS and injected at build time
-//; =============================================================================
-
-//; =============================================================================
 //; DATA SECTION - Display Mapping
 //; =============================================================================
 
@@ -600,12 +596,12 @@ barCharacterMap:
 	.fill min($700, file_charsetData.getSize()), file_charsetData.get(i)
 
 * = CHARSET_ADDRESS + (224 * 8) "Bar Chars"
-//; This area is filled at build time by the web app based on BarStyle selection
+//; Filled at build time by the web app based on BarStyle selection
 	.fill BAR_STYLE_SIZE_MIRROR, $00
 
 //; =============================================================================
 //; COLOR TABLE DATA
-//; This area is filled at build time by the web app based on colorEffect selection
+//; Filled at build time by the web app based on colorEffect selection
 //; =============================================================================
 
 * = COLOR_TABLE_ADDRESS "Color Table"
