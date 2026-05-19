@@ -19,14 +19,25 @@ BasicUpstart2(start)
 .label sinecount2 = $18
 .label sinecount3 = $19
 
+.label spritebuffer = $1a // + $1b
+
+.label buffer = $3200
+
 // =============================================================================
 // SETUP
 // =============================================================================
-start:   
-sei   
+start:
+sei
 lda #$35
-sta $01 
- 
+sta $01
+
+lda #$7b                // blank screen
+sta $d011
+lda #%11011000          // MC on
+sta $d016
+lda #%00011000          // charset $2000, videoram $0400
+sta $d018
+
 lda #0
 sta sinecount
 lda #20
@@ -38,8 +49,6 @@ lda #$00
 sta $d020
 sta $d021
 sta $d026
-sta $d01b
-sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
 jsr music.init
 
 lda #$0c
@@ -48,32 +57,11 @@ sta $d025
 lda #$0b
 sta $d023
 
-lda #%00000011
-sta $3fff
+// Render the logo text into the sprite buffers (screen is blanked above)
+jsr textrender
 
-
-// =============================================================================
-// SETUP SPRITES
-// =============================================================================
-lda #%01111111 
+lda #%01111111
 sta $d015
-sta $d01d
-sta $d017
-sta $d01c
-
-lda #$fa
-sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
-
-lda #$18
-clc
-sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
-adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
-
-lda #%01100000
-sta $d010
-
-lda #sprite/64
-sta $07f8 ; sta $07f9 ; sta $07fa ; sta $07fb ; sta $07fc ; sta $07fd ; sta $07fe
 
 
 // =============================================================================
@@ -92,14 +80,6 @@ sta $da80,Y
 sta $db00,Y
 iny
 bne colorfill
-
-
-lda #$7b                // blank screen
-sta $d011
-lda #%11011000          // MC on
-sta $d016
-lda #%00011000          // charset $2000, videoram $0400
-sta $d018
 
 
 // =============================================================================
@@ -175,6 +155,36 @@ sty $d021
 jsr columnseffect
 jsr sinecopy            // fill columnbuffer with sinedata
 jsr music.play
+
+
+// =============================================================================
+// LOWER SPRITES - bottom-border filler
+// =============================================================================
+lda #%00000011
+sta $3fff
+
+lda #$fa
+sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
+
+lda #$00
+sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
+sta $d01b
+
+lda #$18
+clc
+sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
+adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
+
+lda #$ff
+sta $d01d
+sta $d017
+sta $d01c
+
+lda #%01100000
+sta $d010
+
+lda #sprite/64
+sta $07f8 ; sta $07f9 ; sta $07fa ; sta $07fb ; sta $07fc ; sta $07fd ; sta $07fe
 
 asl $d019
 lda #irq01
@@ -920,6 +930,38 @@ lda #%00011011                                  //close border & reset d021
 sta $d011
 lda #0
 sta $d021
+
+// =============================================================================
+// UPPER SPRITES - logo above the bars
+// =============================================================================
+lda #20
+sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
+
+lda #$18    // x-pos
+clc
+sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
+adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
+
+lda #$01
+sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
+
+lda #$ff
+sta $d01d
+sta $d01b //prio
+lda #$00
+sta $d017
+sta $d01c
+
+lda #%01100000
+sta $d010
+
+lda #%10000001
+sta $3fff
+
+ldy #sprite_0 /64
+sty $07f8 ; iny ; sty $07f9 ; iny ; sty $07fa ; iny
+sty $07fb ; iny ; sty $07fc ; iny ; sty $07fd ; iny ; sty $07fe
+// =============================================================================
 
 lda upper+05,X
 sta screen +30 +200
@@ -2893,6 +2935,332 @@ sta screen +39 +920
 rts
 
 
+// =============================================================================
+// TEXT RENDER - build the logo into the sprite buffers
+// =============================================================================
+textrender:
+
+
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldx #0
+fill_buffer:
+ldy texta,x             // get char (left nibble)
+lda font_lo,y           // get charpos from table
+sta modupper
+lda font_hi,y
+sta modupper+1 
+ldy texta+1,x           // get char (right nibble)
+lda font_lo,y           // get charpos from table
+sta modupper2
+lda font_hi,y
+sta modupper2+1         
+
+ldy #7                      // copy one half of char (8 bytes) to buffer
+copytobuffer:
+lda modupper: charset,y     // left nibble
+sta (spritebuffer),y
+lda modupper2: charset,y    // right nibble
+lsr ; lsr ; lsr ; lsr 
+ora (spritebuffer),y
+sta (spritebuffer),y
+dey
+bpl copytobuffer
+
+clc
+lda spritebuffer
+adc #8
+sta spritebuffer
+bcc nohi2
+inc spritebuffer+1
+nohi2:
+
+inx ; inx                   // next char
+cpx #40
+bne fill_buffer
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldy #0
+ldx #0
+copybuffer:
+lda buffer+$00,Y           // sprite 0 / col 1
+sta sprite_0 +0+0,X
+lda buffer+$08,Y           // sprite 0 / col 2
+sta sprite_0 +0+1,X
+lda buffer+$10,Y           // sprite 0 / col 3
+sta sprite_0 +0+2,X
+
+lda buffer+$18,Y           // sprite 1 / col 1
+sta sprite_1 +0+0,X
+lda buffer+$20,Y           // sprite 1 / col 2
+sta sprite_1 +0+1,X
+lda buffer+$28,Y           // sprite 1 / col 3
+sta sprite_1 +0+2,X
+
+lda buffer+$30,Y           // sprite 2 / col 1
+sta sprite_2 +0+0,X
+lda buffer+$38,Y           // sprite 2 / col 2
+sta sprite_2 +0+1,X
+lda buffer+$40,Y           // sprite 2 / col 3
+sta sprite_2 +0+2,X
+
+lda buffer+$48,Y           // sprite 3 / col 1
+sta sprite_3 +0+0,X
+lda buffer+$50,Y           // sprite 3 / col 2
+sta sprite_3 +0+1,X
+lda buffer+$58,Y           // sprite 3 / col 3
+sta sprite_3 +0+2,X
+
+lda buffer+$60,Y           // sprite 4 / col 1
+sta sprite_4 +0+0,X
+lda buffer+$68,Y           // sprite 4 / col 2
+sta sprite_4 +0+1,X
+lda buffer+$70,Y           // sprite 4 / col 3
+sta sprite_4 +0+2,X
+
+lda buffer+$78,Y           // sprite 5 / col 1
+sta sprite_5 +0+0,X
+lda buffer+$80,Y           // sprite 5 / col 2
+sta sprite_5 +0+1,X
+lda buffer+$88,Y           // sprite 5 / col 3
+sta sprite_5 +0+2,X
+
+lda buffer+$90,Y           // sprite 6 / col 1
+sta sprite_6 +0+0,X
+lda buffer+$98,Y           // sprite 6 / col 2
+sta sprite_6 +0+1,X
+
+inx ; inx ; inx
+iny
+cpy #6
+beq exitbuffer
+jmp copybuffer
+
+exitbuffer:
+
+//////////////////////////
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldx #0
+fill_bufferb:
+ldy textb,x             // get char (left nibble)
+lda font_lo,y           // get charpos from table
+sta modupperb
+lda font_hi,y
+sta modupperb+1 
+ldy textb+1,x           // get char (right nibble)
+lda font_lo,y           // get charpos from table
+sta modupper2b
+lda font_hi,y
+sta modupper2b+1         
+
+ldy #7                      // copy one half of char (8 bytes) to buffer
+copytobufferb:
+lda modupperb: charset,y     // left nibble
+sta (spritebuffer),y
+lda modupper2b: charset,y    // right nibble
+lsr ; lsr ; lsr ; lsr 
+ora (spritebuffer),y
+sta (spritebuffer),y
+dey
+bpl copytobufferb
+
+clc
+lda spritebuffer
+adc #8
+sta spritebuffer
+bcc nohi2b
+inc spritebuffer+1
+nohi2b:
+
+inx ; inx                   // next char
+cpx #40
+bne fill_bufferb
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldy #0
+ldx #0
+copybufferb:
+lda buffer+$00,Y           // sprite 0 / col 1
+sta sprite_0 +21+0,X
+lda buffer+$08,Y           // sprite 0 / col 2
+sta sprite_0 +21+1,X
+lda buffer+$10,Y           // sprite 0 / col 3
+sta sprite_0 +21+2,X
+
+lda buffer+$18,Y           // sprite 1 / col 1
+sta sprite_1 +21+0,X
+lda buffer+$20,Y           // sprite 1 / col 2
+sta sprite_1 +21+1,X
+lda buffer+$28,Y           // sprite 1 / col 3
+sta sprite_1 +21+2,X
+
+lda buffer+$30,Y           // sprite 2 / col 1
+sta sprite_2 +21+0,X
+lda buffer+$38,Y           // sprite 2 / col 2
+sta sprite_2 +21+1,X
+lda buffer+$40,Y           // sprite 2 / col 3
+sta sprite_2 +21+2,X
+
+lda buffer+$48,Y           // sprite 3 / col 1
+sta sprite_3 +21+0,X
+lda buffer+$50,Y           // sprite 3 / col 2
+sta sprite_3 +21+1,X
+lda buffer+$58,Y           // sprite 3 / col 3
+sta sprite_3 +21+2,X
+
+lda buffer+$60,Y           // sprite 4 / col 1
+sta sprite_4 +21+0,X
+lda buffer+$68,Y           // sprite 4 / col 2
+sta sprite_4 +21+1,X
+lda buffer+$70,Y           // sprite 4 / col 3
+sta sprite_4 +21+2,X
+
+lda buffer+$78,Y           // sprite 5 / col 1
+sta sprite_5 +21+0,X
+lda buffer+$80,Y           // sprite 5 / col 2
+sta sprite_5 +21+1,X
+lda buffer+$88,Y           // sprite 5 / col 3
+sta sprite_5 +21+2,X
+
+lda buffer+$90,Y           // sprite 6 / col 1
+sta sprite_6 +21+0,X
+lda buffer+$98,Y           // sprite 6 / col 2
+sta sprite_6 +21+1,X
+
+inx ; inx ; inx
+iny
+cpy #6
+beq exitbufferb
+jmp copybufferb
+
+exitbufferb:
+
+//////////////////////////
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldx #0
+fill_bufferc:
+ldy textc,x             // get char (left nibble)
+lda font_lo,y           // get charpos from table
+sta modupperc
+lda font_hi,y
+sta modupperc+1 
+ldy textc+1,x           // get char (right nibble)
+lda font_lo,y           // get charpos from table
+sta modupper2c
+lda font_hi,y
+sta modupper2c+1         
+
+ldy #7                      // copy one half of char (8 bytes) to buffer
+copytobufferc:
+lda modupperc: charset,y     // left nibble
+sta (spritebuffer),y
+lda modupper2c: charset,y    // right nibble
+lsr ; lsr ; lsr ; lsr 
+ora (spritebuffer),y
+sta (spritebuffer),y
+dey
+bpl copytobufferc
+
+clc
+lda spritebuffer
+adc #8
+sta spritebuffer
+bcc nohi2c
+inc spritebuffer+1
+nohi2c:
+
+inx ; inx                   // next char
+cpx #40
+bne fill_bufferc
+
+lda #<buffer
+sta spritebuffer
+lda #>buffer
+sta spritebuffer+1
+
+ldy #0
+ldx #0
+copybufferc:
+lda buffer+$00,Y           // sprite 0 / col 1
+sta sprite_0 +42+0,X
+lda buffer+$08,Y           // sprite 0 / col 2
+sta sprite_0 +42+1,X
+lda buffer+$10,Y           // sprite 0 / col 3
+sta sprite_0 +42+2,X
+
+lda buffer+$18,Y           // sprite 1 / col 1
+sta sprite_1 +42+0,X
+lda buffer+$20,Y           // sprite 1 / col 2
+sta sprite_1 +42+1,X
+lda buffer+$28,Y           // sprite 1 / col 3
+sta sprite_1 +42+2,X
+
+lda buffer+$30,Y           // sprite 2 / col 1
+sta sprite_2 +42+0,X
+lda buffer+$38,Y           // sprite 2 / col 2
+sta sprite_2 +42+1,X
+lda buffer+$40,Y           // sprite 2 / col 3
+sta sprite_2 +42+2,X
+
+lda buffer+$48,Y           // sprite 3 / col 1
+sta sprite_3 +42+0,X
+lda buffer+$50,Y           // sprite 3 / col 2
+sta sprite_3 +42+1,X
+lda buffer+$58,Y           // sprite 3 / col 3
+sta sprite_3 +42+2,X
+
+lda buffer+$60,Y           // sprite 4 / col 1
+sta sprite_4 +42+0,X
+lda buffer+$68,Y           // sprite 4 / col 2
+sta sprite_4 +42+1,X
+lda buffer+$70,Y           // sprite 4 / col 3
+sta sprite_4 +42+2,X
+
+lda buffer+$78,Y           // sprite 5 / col 1
+sta sprite_5 +42+0,X
+lda buffer+$80,Y           // sprite 5 / col 2
+sta sprite_5 +42+1,X
+lda buffer+$88,Y           // sprite 5 / col 3
+sta sprite_5 +42+2,X
+
+lda buffer+$90,Y           // sprite 6 / col 1
+sta sprite_6 +42+0,X
+lda buffer+$98,Y           // sprite 6 / col 2
+sta sprite_6 +42+1,X
+
+inx ; inx ; inx
+iny
+cpy #7
+beq exitbufferc
+jmp copybufferc
+
+exitbufferc:
+
+rts
+
+
 
 // =============================================================================
 // CHARTABLE - upper columns
@@ -3821,6 +4189,13 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 
 
+// =============================================================================
+// SPRITES
+// sprite      = solid filler used for the bottom-border trick
+// sprite_0..6 = logo sprites at the top of the screen (filled by textrender)
+// =============================================================================
+* = $2800 "sprites"
+
 sprite:
 .byte  80,  80,  80
 .byte  80,  80,  80
@@ -3842,5 +4217,139 @@ sprite:
 .byte  80,  80,  80
 .byte  80,  80,  80
 .byte  80,  80,  80
-.byte  80,  80,  80
+.byte  80,  80,  80,0
 
+
+
+
+sprite_0:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_1:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_2:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_3:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_4:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_5:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+sprite_6:
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+
+
+
+* = $3000 "charset"
+charset:
+.byte $60,$90,$B0,$A0,$80,$70,$00,$00
+.byte $60,$90,$F0,$90,$90,$90,$00,$00
+.byte $E0,$90,$E0,$90,$90,$E0,$00,$00
+.byte $60,$90,$80,$80,$90,$60,$00,$00
+.byte $E0,$90,$90,$90,$90,$E0,$00,$00
+.byte $F0,$80,$E0,$80,$80,$F0,$00,$00
+.byte $F0,$80,$E0,$80,$80,$80,$00,$00
+.byte $70,$80,$B0,$90,$90,$60,$00,$00
+.byte $90,$90,$F0,$90,$90,$90,$00,$00
+.byte $80,$00,$80,$80,$80,$60,$00,$00
+.byte $10,$10,$10,$10,$90,$60,$00,$00
+.byte $90,$90,$E0,$90,$90,$90,$00,$00
+.byte $80,$80,$80,$80,$90,$60,$00,$00
+.byte $90,$F0,$90,$90,$90,$90,$00,$00
+.byte $E0,$90,$90,$90,$90,$90,$00,$00
+.byte $60,$90,$90,$90,$90,$60,$00,$00
+.byte $E0,$90,$90,$E0,$80,$80,$00,$00
+.byte $60,$90,$90,$90,$A0,$50,$00,$00
+.byte $E0,$90,$E0,$90,$90,$90,$00,$00
+.byte $70,$80,$60,$10,$90,$60,$00,$00
+.byte $E0,$10,$10,$10,$10,$10,$00,$00
+.byte $90,$90,$90,$90,$90,$60,$00,$00
+.byte $90,$90,$90,$90,$50,$20,$00,$00
+.byte $90,$90,$90,$90,$F0,$90,$00,$00
+.byte $90,$90,$60,$90,$90,$90,$00,$00
+.byte $90,$90,$70,$10,$90,$60,$00,$00
+.byte $F0,$10,$20,$40,$80,$F0,$00,$00
+.byte $C0,$80,$80,$80,$80,$C0,$00,$00
+.byte $00,$60,$60,$60,$60,$00,$00,$00
+.byte $30,$10,$10,$10,$10,$30,$00,$00
+.byte $60,$F0,$F0,$F0,$F0,$60,$00,$00
+.byte $F0,$90,$90,$90,$90,$F0,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $80,$80,$80,$80,$00,$80,$00,$00
+.byte $90,$90,$90,$00,$00,$00,$00,$00
+.byte $90,$F0,$90,$90,$F0,$90,$00,$00
+.byte $20,$70,$80,$60,$10,$E0,$40,$00
+.byte $90,$10,$20,$40,$80,$90,$00,$00
+.byte $60,$90,$60,$90,$80,$70,$00,$00
+.byte $80,$80,$80,$00,$00,$00,$00,$00
+.byte $40,$80,$80,$80,$80,$40,$00,$00
+.byte $20,$10,$10,$10,$10,$20,$00,$00
+.byte $00,$90,$60,$F0,$60,$90,$00,$00
+.byte $00,$40,$40,$E0,$40,$40,$00,$00
+.byte $00,$00,$00,$80,$80,$80,$00,$00
+.byte $00,$00,$00,$F0,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$80,$00,$00
+.byte $10,$10,$20,$40,$80,$80,$00,$00
+.byte $60,$90,$90,$90,$90,$60,$00,$00
+.byte $10,$70,$10,$10,$10,$10,$00,$00
+.byte $E0,$10,$60,$80,$80,$F0,$00,$00
+.byte $E0,$10,$60,$10,$10,$E0,$00,$00
+.byte $80,$90,$90,$70,$10,$10,$00,$00
+.byte $F0,$80,$E0,$10,$90,$60,$00,$00
+.byte $70,$80,$E0,$90,$90,$60,$00,$00
+.byte $F0,$10,$20,$40,$80,$80,$00,$00
+.byte $60,$90,$60,$90,$90,$60,$00,$00
+.byte $60,$90,$90,$70,$10,$E0,$00,$00
+.byte $00,$00,$80,$00,$00,$80,$00,$00
+.byte $00,$00,$80,$00,$80,$80,$00,$00
+.byte $00,$30,$40,$80,$40,$30,$00,$00
+.byte $00,$f0,$00,$00,$f0,$00,$00,$00
+.byte $00,$C0,$20,$10,$20,$C0,$00,$00
+.byte $60,$90,$10,$60,$00,$40,$00,$00
+
+.label charset2 = charset +$200
+
+* = $3400 "text"
+
+///////0123456789012345678901234567890123456789
+texta:
+.text "genesis project sidquake tripple columns"
+textb:
+.text "the quick brown fox  jumps over the lazy"
+textc:
+.text "0123456789!$%&/()=,.;:-' abcdefghijklmno"
+
+
+* = $3500 "charpositions"
+font_lo:
+.byte <charset+$0000, <charset+$0008, <charset+$0010, <charset+$0018, <charset+$0020, <charset+$0028, <charset+$0030, <charset+$0038
+.byte <charset+$0040, <charset+$0048, <charset+$0050, <charset+$0058, <charset+$0060, <charset+$0068, <charset+$0070, <charset+$0078
+.byte <charset+$0080, <charset+$0088, <charset+$0090, <charset+$0098, <charset+$00a0, <charset+$00a8, <charset+$00b0, <charset+$00b8
+.byte <charset+$00c0, <charset+$00c8, <charset+$00d0, <charset+$00d8, <charset+$00e0, <charset+$00e8, <charset+$00f0, <charset+$00f8
+.byte <charset+$0100, <charset+$0108, <charset+$0110, <charset+$0118, <charset+$0120, <charset+$0128, <charset+$0130, <charset+$0138
+.byte <charset+$0140, <charset+$0148, <charset+$0150, <charset+$0158, <charset+$0160, <charset+$0168, <charset+$0170, <charset+$0178
+.byte <charset+$0180, <charset+$0188, <charset+$0190, <charset+$0198, <charset+$01a0, <charset+$01a8, <charset+$01b0, <charset+$01b8
+.byte <charset+$01c0, <charset+$01c8, <charset+$01d0, <charset+$01d8, <charset+$01e0, <charset+$01e8, <charset+$01f0, <charset+$01f8
+
+font_hi:
+.byte >charset+$0000, >charset+$0008, >charset+$0010, >charset+$0018, >charset+$0020, >charset+$0028, >charset+$0030, >charset+$0038
+.byte >charset+$0040, >charset+$0048, >charset+$0050, >charset+$0058, >charset+$0060, >charset+$0068, >charset+$0070, >charset+$0078
+.byte >charset+$0080, >charset+$0088, >charset+$0090, >charset+$0098, >charset+$00a0, >charset+$00a8, >charset+$00b0, >charset+$00b8
+.byte >charset+$00c0, >charset+$00c8, >charset+$00d0, >charset+$00d8, >charset+$00e0, >charset+$00e8, >charset+$00f0, >charset+$00f8
+.byte >charset+$0100, >charset+$0108, >charset+$0110, >charset+$0118, >charset+$0120, >charset+$0128, >charset+$0130, >charset+$0138
+.byte >charset+$0140, >charset+$0148, >charset+$0150, >charset+$0158, >charset+$0160, >charset+$0168, >charset+$0170, >charset+$0178
+.byte >charset+$0180, >charset+$0188, >charset+$0190, >charset+$0198, >charset+$01a0, >charset+$01a8, >charset+$01b0, >charset+$01b8
+.byte >charset+$01c0, >charset+$01c8, >charset+$01d0, >charset+$01d8, >charset+$01e0, >charset+$01e8, >charset+$01f0, >charset+$01f8
