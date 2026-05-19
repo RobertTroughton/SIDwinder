@@ -376,12 +376,12 @@ SetTopSprites:
     }
     .for(var i = 0; i < 4; i++)
     {
-        ldx #248 + (i * 24)
+        ldx #261 + (i * 24)
         stx $d006 + (i * 2)
         sty $d007 + (i * 2)
         sta $d02a + i
     }
-    lda #$70
+    lda #$78
     sta $d010
 
     .for(var i = 0; i < 7; i++)
