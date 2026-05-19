@@ -1,5 +1,6 @@
 
-.var music = LoadSid ("/Users/olima/C64_Resources/Human_Race.sid")
+// Standalone testing: change this filename to play a different local SID.
+.var music = LoadSid ("Human_Race.sid")
 * = music.location "Music"
 .fill music.size, music.getData (i)
 
@@ -9,7 +10,6 @@ BasicUpstart2(start)
  
 .label screen = $0400
 .label dummy =  $07f5
-.label buffer = $3200
 
 .label areg =       $13
 .label yreg =       $14
@@ -19,22 +19,14 @@ BasicUpstart2(start)
 .label sinecount2 = $18
 .label sinecount3 = $19
 
-.label spritebuffer = $1a //1b
-
-///////////////////////////////////// setup
-
+// =============================================================================
+// SETUP
+// =============================================================================
 start:   
 sei   
 lda #$35
 sta $01 
  
-lda #$7b                // blank screen
-sta $d011
-lda #%11011000          // MC on
-sta $d016
-lda #%00011000          // charset $2000, videoram $0400
-sta $d018
-
 lda #0
 sta sinecount
 lda #20
@@ -46,7 +38,8 @@ lda #$00
 sta $d020
 sta $d021
 sta $d026
-
+sta $d01b
+sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
 jsr music.init
 
 lda #$0c
@@ -55,13 +48,37 @@ sta $d025
 lda #$0b
 sta $d023
 
-jsr textrender
+lda #%00000011
+sta $3fff
 
+
+// =============================================================================
+// SETUP SPRITES
+// =============================================================================
 lda #%01111111 
 sta $d015
+sta $d01d
+sta $d017
+sta $d01c
+
+lda #$fa
+sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
+
+lda #$18
+clc
+sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
+adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
+
+lda #%01100000
+sta $d010
+
+lda #sprite/64
+sta $07f8 ; sta $07f9 ; sta $07fa ; sta $07fb ; sta $07fc ; sta $07fd ; sta $07fe
 
 
-///////////////////////////////////// set charcolors
+// =============================================================================
+// SET CHAR COLORS
+// =============================================================================
 ldy #0
 colorfill:
 lda #$0B
@@ -77,7 +94,17 @@ iny
 bne colorfill
 
 
-///////////////////////////////////// display row 25
+lda #$7b                // blank screen
+sta $d011
+lda #%11011000          // MC on
+sta $d016
+lda #%00011000          // charset $2000, videoram $0400
+sta $d018
+
+
+// =============================================================================
+// DISPLAY ROW 25
+// =============================================================================
 ldy #00
 lastrow:
 lda #$0e
@@ -91,8 +118,9 @@ bne lastrow
 
 
 .label irq01 = $f8
-
-///////////////////////////////////// irq setup
+// =============================================================================
+// IRQ SETUP
+// =============================================================================
 lda #$7f
 sta $dc0d  
 sta $dd0d 
@@ -125,7 +153,9 @@ idleloop:
 jmp idleloop
 
 
-///////////////////////////////////// irq
+// =============================================================================
+// IRQ HANDLER
+// =============================================================================
 irq:
 sta areg ; sty yreg ; stx xreg
 
@@ -146,45 +176,16 @@ jsr columnseffect
 jsr sinecopy            // fill columnbuffer with sinedata
 jsr music.play
 
-// lower sprites
-
-lda #%00000011
-sta $3fff
-
-lda #$fa
-sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
-
-lda #$00
-sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
-sta $d01b
-
-lda #$18
-clc
-sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
-adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
-
-lda #$ff
-sta $d01d
-sta $d017
-sta $d01c
-
-lda #%01100000
-sta $d010
-
-lda #sprite/64
-sta $07f8 ; sta $07f9 ; sta $07fa ; sta $07fb ; sta $07fc ; sta $07fd ; sta $07fe
-
-// end lower sprites
-
 asl $d019
 lda #irq01
 sta $d012
-
 lda areg ; ldy yreg ; ldx xreg
 rti
 
 
-///////////////////////////////////// copy new sinedata to columnbuffer
+// =============================================================================
+// COPY NEW SINE DATA TO COLUMN BUFFER
+// =============================================================================
 sinecopy:
 ldy sinecount
 ldx #19
@@ -219,11 +220,14 @@ inc sinecount3
 rts
 
 
-///////////////////////////////////// columns effect
+// =============================================================================
+// COLUMNS EFFECT
+// Each // ----- block below renders one screen column from sine data.
+// =============================================================================
 
 columnseffect:
 
-////////////// every section = 1 column
+// ----- column 0 -----
 ldy sinebuffer
 ldx convtable,Y
 clc
@@ -267,7 +271,7 @@ sta screen +00 +280
 adc #1
 sta screen +01 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+1
 ldx convtable,Y
 clc
@@ -311,7 +315,7 @@ sta screen +02 +280
 adc #1
 sta screen +03 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+2
 ldx convtable,Y
 clc
@@ -355,7 +359,7 @@ sta screen +04 +280
 adc #1
 sta screen +05 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+3
 ldx convtable,Y
 clc
@@ -399,7 +403,7 @@ sta screen +06 +280
 adc #1
 sta screen +07 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+4
 ldx convtable,Y
 clc
@@ -443,7 +447,7 @@ sta screen +08 +280
 adc #1
 sta screen +09 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+5
 ldx convtable,Y
 clc
@@ -487,7 +491,7 @@ sta screen +10 +280
 adc #1
 sta screen +11 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+6
 ldx convtable,Y
 clc
@@ -531,7 +535,7 @@ sta screen +12 +280
 adc #1
 sta screen +13 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+7
 ldx convtable,Y
 clc
@@ -575,7 +579,7 @@ sta screen +14 +280
 adc #1
 sta screen +15 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+8
 ldx convtable,Y
 clc
@@ -619,7 +623,7 @@ sta screen +16 +280
 adc #1
 sta screen +17 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+9
 ldx convtable,Y
 clc
@@ -663,7 +667,7 @@ sta screen +18 +280
 adc #1
 sta screen +19 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+10
 ldx convtable,Y
 clc
@@ -707,7 +711,7 @@ sta screen +20 +280
 adc #1
 sta screen +21 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+11
 ldx convtable,Y
 clc
@@ -751,7 +755,7 @@ sta screen +22 +280
 adc #1
 sta screen +23 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+12
 ldx convtable,Y
 clc
@@ -795,7 +799,7 @@ sta screen +24 +280
 adc #1
 sta screen +25 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+13
 ldx convtable,Y
 clc
@@ -839,7 +843,7 @@ sta screen +26 +280
 adc #1
 sta screen +27 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+14
 ldx convtable,Y
 clc
@@ -883,7 +887,7 @@ sta screen +28 +280
 adc #1
 sta screen +29 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+15
 ldx convtable,Y
 clc
@@ -912,64 +916,10 @@ sta screen +30 +160
 adc #1
 sta screen +31 +160
 
-
-
-
-
-
-
-
-
-
-
 lda #%00011011                                  //close border & reset d021
 sta $d011
 lda #0
 sta $d021
-
-// upper sprites
-
-lda #20
-sta $d001 ; sta $d003 ; sta $d005 ; sta $d007 ; sta $d009 ; sta $d00b ; sta $d00d
-
-lda #$18    // x-pos
-clc
-sta $d000 ; adc #$30 ; sta $d002 ; adc #$30 ; sta $d004 ; adc #$30 ; sta $d006
-adc #$30 ; sta $d008 ; adc #$30 ; sta $d00a ; clc ; adc #$30 ; sta $d00c
-
-lda #$01
-sta $d027 ; sta $d028 ; sta $d029 ; sta $d02a ; sta $d02b ; sta $d02c ; sta $d02d
-
-lda #$ff
-sta $d01d
-sta $d01b //prio
-lda #$00
-sta $d017
-sta $d01c
-
-lda #%01100000
-sta $d010
-
-lda #%10000001
-sta $3fff
-
-
-
-
-ldy #sprite_0 /64
-sty $07f8 ; iny ; sty $07f9 ; iny ; sty $07fa ; iny 
-sty $07fb ; iny ; sty $07fc ; iny ; sty $07fd ; iny ; sty $07fe
-
-// end upper sprites
-
-
-
-
-
-
-
-
-
 
 lda upper+05,X
 sta screen +30 +200
@@ -986,7 +936,7 @@ sta screen +30 +280
 adc #1
 sta screen +31 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+16
 ldx convtable,Y
 clc
@@ -1030,7 +980,7 @@ sta screen +32 +280
 adc #1
 sta screen +33 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+17
 ldx convtable,Y
 clc
@@ -1074,7 +1024,7 @@ sta screen +34 +280
 adc #1
 sta screen +35 +280
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+18
 ldx convtable,Y
 clc
@@ -1119,7 +1069,7 @@ adc #1
 sta screen +37 +280
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer+19
 ldx convtable,Y
 clc
@@ -1164,9 +1114,11 @@ adc #1
 sta screen +39 +280
 
 
-//////////////////////////////////
+// =============================================================================
+// COLUMNS EFFECT - middle band (sinebuffer2)
+// =============================================================================
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2
 ldx convtable,Y
 clc
@@ -1210,7 +1162,7 @@ sta screen +00 +600
 adc #1
 sta screen +01 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+1
 ldx convtable,Y
 clc
@@ -1254,7 +1206,7 @@ sta screen +02 +600
 adc #1
 sta screen +03 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+2
 ldx convtable,Y
 clc
@@ -1298,7 +1250,7 @@ sta screen +04 +600
 adc #1
 sta screen +05 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+3
 ldx convtable,Y
 clc
@@ -1342,7 +1294,7 @@ sta screen +06 +600
 adc #1
 sta screen +07 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+4
 ldx convtable,Y
 clc
@@ -1386,7 +1338,7 @@ sta screen +08 +600
 adc #1
 sta screen +09 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+5
 ldx convtable,Y
 clc
@@ -1431,7 +1383,7 @@ adc #1
 sta screen +11 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+6
 ldx convtable,Y
 clc
@@ -1476,7 +1428,7 @@ adc #1
 sta screen +13 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+7
 ldx convtable,Y
 clc
@@ -1521,7 +1473,7 @@ adc #1
 sta screen +15 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+8
 ldx convtable,Y
 clc
@@ -1565,7 +1517,7 @@ sta screen +16 +600
 adc #1
 sta screen +17 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+9
 ldx convtable,Y
 clc
@@ -1610,7 +1562,7 @@ adc #1
 sta screen +19 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+10
 ldx convtable,Y
 clc
@@ -1654,7 +1606,7 @@ sta screen +20 +600
 adc #1
 sta screen +21 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+11
 ldx convtable,Y
 clc
@@ -1699,7 +1651,7 @@ adc #1
 sta screen +23 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+12
 ldx convtable,Y
 clc
@@ -1743,7 +1695,7 @@ sta screen +24 +600
 adc #1
 sta screen +25 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+13
 ldx convtable,Y
 clc
@@ -1787,7 +1739,7 @@ sta screen +26 +600
 adc #1
 sta screen +27 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+14
 ldx convtable,Y
 clc
@@ -1831,7 +1783,7 @@ sta screen +28 +600
 adc #1
 sta screen +29 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+15
 ldx convtable,Y
 clc
@@ -1875,7 +1827,7 @@ sta screen +30 +600
 adc #1
 sta screen +31 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+16
 ldx convtable,Y
 clc
@@ -1920,7 +1872,7 @@ adc #1
 sta screen +33 +600
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+17
 ldx convtable,Y
 clc
@@ -1964,7 +1916,7 @@ sta screen +34 +600
 adc #1
 sta screen +35 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+18
 ldx convtable,Y
 clc
@@ -2008,7 +1960,7 @@ sta screen +36 +600
 adc #1
 sta screen +37 +600
 
-//////////////
+// ----- next column -----
 ldy sinebuffer2+19
 ldx convtable,Y
 clc
@@ -2052,9 +2004,11 @@ sta screen +38 +600
 adc #1
 sta screen +39 +600
 
-//////////////////////////////////
+// =============================================================================
+// COLUMNS EFFECT - lowest band (sinebuffer3)
+// =============================================================================
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3
 ldx convtable,Y
 clc
@@ -2098,7 +2052,7 @@ sta screen +00 +920
 adc #1
 sta screen +01 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+1
 ldx convtable,Y
 clc
@@ -2142,7 +2096,7 @@ sta screen +02 +920
 adc #1
 sta screen +03 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+2
 ldx convtable,Y
 clc
@@ -2186,7 +2140,7 @@ sta screen +04 +920
 adc #1
 sta screen +05 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+3
 ldx convtable,Y
 clc
@@ -2230,7 +2184,7 @@ sta screen +06 +920
 adc #1
 sta screen +07 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+4
 ldx convtable,Y
 clc
@@ -2274,7 +2228,7 @@ sta screen +08 +920
 adc #1
 sta screen +09 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+5
 ldx convtable,Y
 clc
@@ -2318,7 +2272,7 @@ sta screen +10 +920
 adc #1
 sta screen +11 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+6
 ldx convtable,Y
 clc
@@ -2362,7 +2316,7 @@ sta screen +12 +920
 adc #1
 sta screen +13 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+7
 ldx convtable,Y
 clc
@@ -2406,7 +2360,7 @@ sta screen +14 +920
 adc #1
 sta screen +15 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+8
 ldx convtable,Y
 clc
@@ -2450,7 +2404,7 @@ sta screen +16 +920
 adc #1
 sta screen +17 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+9
 ldx convtable,Y
 clc
@@ -2495,7 +2449,7 @@ adc #1
 sta screen +19 +920
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+10
 ldx convtable,Y
 clc
@@ -2539,7 +2493,7 @@ sta screen +20 +920
 adc #1
 sta screen +21 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+11
 ldx convtable,Y
 clc
@@ -2583,7 +2537,7 @@ sta screen +22 +920
 adc #1
 sta screen +23 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+12
 ldx convtable,Y
 clc
@@ -2627,7 +2581,7 @@ sta screen +24 +920
 adc #1
 sta screen +25 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+13
 ldx convtable,Y
 clc
@@ -2671,7 +2625,7 @@ sta screen +26 +920
 adc #1
 sta screen +27 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+14
 ldx convtable,Y
 clc
@@ -2716,7 +2670,7 @@ adc #1
 sta screen +29 +920
 
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+15
 ldx convtable,Y
 clc
@@ -2760,7 +2714,7 @@ sta screen +30 +920
 adc #1
 sta screen +31 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+16
 ldx convtable,Y
 clc
@@ -2804,7 +2758,7 @@ sta screen +32 +920
 adc #1
 sta screen +33 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+17
 ldx convtable,Y
 clc
@@ -2848,7 +2802,7 @@ sta screen +34 +920
 adc #1
 sta screen +35 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+18
 ldx convtable,Y
 clc
@@ -2892,7 +2846,7 @@ sta screen +36 +920
 adc #1
 sta screen +37 +920
 
-//////////////
+// ----- next column -----
 ldy sinebuffer3+19
 ldx convtable,Y
 clc
@@ -2940,332 +2894,9 @@ rts
 
 
 
-textrender:
-
-
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldx #0
-fill_buffer:
-ldy texta,x             // get char (left nibble)
-lda font_lo,y           // get charpos from table
-sta modupper
-lda font_hi,y
-sta modupper+1 
-ldy texta+1,x           // get char (right nibble)
-lda font_lo,y           // get charpos from table
-sta modupper2
-lda font_hi,y
-sta modupper2+1         
-
-ldy #7                      // copy one half of char (8 bytes) to buffer
-copytobuffer:
-lda modupper: charset,y     // left nibble
-sta (spritebuffer),y
-lda modupper2: charset,y    // right nibble
-lsr ; lsr ; lsr ; lsr 
-ora (spritebuffer),y
-sta (spritebuffer),y
-dey
-bpl copytobuffer
-
-clc
-lda spritebuffer
-adc #8
-sta spritebuffer
-bcc nohi2
-inc spritebuffer+1
-nohi2:
-
-inx ; inx                   // next char
-cpx #40
-bne fill_buffer
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldy #0
-ldx #0
-copybuffer:
-lda buffer+$00,Y           // sprite 0 / col 1
-sta sprite_0 +0+0,X
-lda buffer+$08,Y           // sprite 0 / col 2
-sta sprite_0 +0+1,X
-lda buffer+$10,Y           // sprite 0 / col 3
-sta sprite_0 +0+2,X
-
-lda buffer+$18,Y           // sprite 1 / col 1
-sta sprite_1 +0+0,X
-lda buffer+$20,Y           // sprite 1 / col 2
-sta sprite_1 +0+1,X
-lda buffer+$28,Y           // sprite 1 / col 3
-sta sprite_1 +0+2,X
-
-lda buffer+$30,Y           // sprite 2 / col 1
-sta sprite_2 +0+0,X
-lda buffer+$38,Y           // sprite 2 / col 2
-sta sprite_2 +0+1,X
-lda buffer+$40,Y           // sprite 2 / col 3
-sta sprite_2 +0+2,X
-
-lda buffer+$48,Y           // sprite 3 / col 1
-sta sprite_3 +0+0,X
-lda buffer+$50,Y           // sprite 3 / col 2
-sta sprite_3 +0+1,X
-lda buffer+$58,Y           // sprite 3 / col 3
-sta sprite_3 +0+2,X
-
-lda buffer+$60,Y           // sprite 4 / col 1
-sta sprite_4 +0+0,X
-lda buffer+$68,Y           // sprite 4 / col 2
-sta sprite_4 +0+1,X
-lda buffer+$70,Y           // sprite 4 / col 3
-sta sprite_4 +0+2,X
-
-lda buffer+$78,Y           // sprite 5 / col 1
-sta sprite_5 +0+0,X
-lda buffer+$80,Y           // sprite 5 / col 2
-sta sprite_5 +0+1,X
-lda buffer+$88,Y           // sprite 5 / col 3
-sta sprite_5 +0+2,X
-
-lda buffer+$90,Y           // sprite 6 / col 1
-sta sprite_6 +0+0,X
-lda buffer+$98,Y           // sprite 6 / col 2
-sta sprite_6 +0+1,X
-
-inx ; inx ; inx
-iny
-cpy #6
-beq exitbuffer
-jmp copybuffer
-
-exitbuffer:
-
-//////////////////////////
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldx #0
-fill_bufferb:
-ldy textb,x             // get char (left nibble)
-lda font_lo,y           // get charpos from table
-sta modupperb
-lda font_hi,y
-sta modupperb+1 
-ldy textb+1,x           // get char (right nibble)
-lda font_lo,y           // get charpos from table
-sta modupper2b
-lda font_hi,y
-sta modupper2b+1         
-
-ldy #7                      // copy one half of char (8 bytes) to buffer
-copytobufferb:
-lda modupperb: charset,y     // left nibble
-sta (spritebuffer),y
-lda modupper2b: charset,y    // right nibble
-lsr ; lsr ; lsr ; lsr 
-ora (spritebuffer),y
-sta (spritebuffer),y
-dey
-bpl copytobufferb
-
-clc
-lda spritebuffer
-adc #8
-sta spritebuffer
-bcc nohi2b
-inc spritebuffer+1
-nohi2b:
-
-inx ; inx                   // next char
-cpx #40
-bne fill_bufferb
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldy #0
-ldx #0
-copybufferb:
-lda buffer+$00,Y           // sprite 0 / col 1
-sta sprite_0 +21+0,X
-lda buffer+$08,Y           // sprite 0 / col 2
-sta sprite_0 +21+1,X
-lda buffer+$10,Y           // sprite 0 / col 3
-sta sprite_0 +21+2,X
-
-lda buffer+$18,Y           // sprite 1 / col 1
-sta sprite_1 +21+0,X
-lda buffer+$20,Y           // sprite 1 / col 2
-sta sprite_1 +21+1,X
-lda buffer+$28,Y           // sprite 1 / col 3
-sta sprite_1 +21+2,X
-
-lda buffer+$30,Y           // sprite 2 / col 1
-sta sprite_2 +21+0,X
-lda buffer+$38,Y           // sprite 2 / col 2
-sta sprite_2 +21+1,X
-lda buffer+$40,Y           // sprite 2 / col 3
-sta sprite_2 +21+2,X
-
-lda buffer+$48,Y           // sprite 3 / col 1
-sta sprite_3 +21+0,X
-lda buffer+$50,Y           // sprite 3 / col 2
-sta sprite_3 +21+1,X
-lda buffer+$58,Y           // sprite 3 / col 3
-sta sprite_3 +21+2,X
-
-lda buffer+$60,Y           // sprite 4 / col 1
-sta sprite_4 +21+0,X
-lda buffer+$68,Y           // sprite 4 / col 2
-sta sprite_4 +21+1,X
-lda buffer+$70,Y           // sprite 4 / col 3
-sta sprite_4 +21+2,X
-
-lda buffer+$78,Y           // sprite 5 / col 1
-sta sprite_5 +21+0,X
-lda buffer+$80,Y           // sprite 5 / col 2
-sta sprite_5 +21+1,X
-lda buffer+$88,Y           // sprite 5 / col 3
-sta sprite_5 +21+2,X
-
-lda buffer+$90,Y           // sprite 6 / col 1
-sta sprite_6 +21+0,X
-lda buffer+$98,Y           // sprite 6 / col 2
-sta sprite_6 +21+1,X
-
-inx ; inx ; inx
-iny
-cpy #6
-beq exitbufferb
-jmp copybufferb
-
-exitbufferb:
-
-//////////////////////////
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldx #0
-fill_bufferc:
-ldy textc,x             // get char (left nibble)
-lda font_lo,y           // get charpos from table
-sta modupperc
-lda font_hi,y
-sta modupperc+1 
-ldy textc+1,x           // get char (right nibble)
-lda font_lo,y           // get charpos from table
-sta modupper2c
-lda font_hi,y
-sta modupper2c+1         
-
-ldy #7                      // copy one half of char (8 bytes) to buffer
-copytobufferc:
-lda modupperc: charset,y     // left nibble
-sta (spritebuffer),y
-lda modupper2c: charset,y    // right nibble
-lsr ; lsr ; lsr ; lsr 
-ora (spritebuffer),y
-sta (spritebuffer),y
-dey
-bpl copytobufferc
-
-clc
-lda spritebuffer
-adc #8
-sta spritebuffer
-bcc nohi2c
-inc spritebuffer+1
-nohi2c:
-
-inx ; inx                   // next char
-cpx #40
-bne fill_bufferc
-
-lda #<buffer
-sta spritebuffer
-lda #>buffer
-sta spritebuffer+1
-
-ldy #0
-ldx #0
-copybufferc:
-lda buffer+$00,Y           // sprite 0 / col 1
-sta sprite_0 +42+0,X
-lda buffer+$08,Y           // sprite 0 / col 2
-sta sprite_0 +42+1,X
-lda buffer+$10,Y           // sprite 0 / col 3
-sta sprite_0 +42+2,X
-
-lda buffer+$18,Y           // sprite 1 / col 1
-sta sprite_1 +42+0,X
-lda buffer+$20,Y           // sprite 1 / col 2
-sta sprite_1 +42+1,X
-lda buffer+$28,Y           // sprite 1 / col 3
-sta sprite_1 +42+2,X
-
-lda buffer+$30,Y           // sprite 2 / col 1
-sta sprite_2 +42+0,X
-lda buffer+$38,Y           // sprite 2 / col 2
-sta sprite_2 +42+1,X
-lda buffer+$40,Y           // sprite 2 / col 3
-sta sprite_2 +42+2,X
-
-lda buffer+$48,Y           // sprite 3 / col 1
-sta sprite_3 +42+0,X
-lda buffer+$50,Y           // sprite 3 / col 2
-sta sprite_3 +42+1,X
-lda buffer+$58,Y           // sprite 3 / col 3
-sta sprite_3 +42+2,X
-
-lda buffer+$60,Y           // sprite 4 / col 1
-sta sprite_4 +42+0,X
-lda buffer+$68,Y           // sprite 4 / col 2
-sta sprite_4 +42+1,X
-lda buffer+$70,Y           // sprite 4 / col 3
-sta sprite_4 +42+2,X
-
-lda buffer+$78,Y           // sprite 5 / col 1
-sta sprite_5 +42+0,X
-lda buffer+$80,Y           // sprite 5 / col 2
-sta sprite_5 +42+1,X
-lda buffer+$88,Y           // sprite 5 / col 3
-sta sprite_5 +42+2,X
-
-lda buffer+$90,Y           // sprite 6 / col 1
-sta sprite_6 +42+0,X
-lda buffer+$98,Y           // sprite 6 / col 2
-sta sprite_6 +42+1,X
-
-inx ; inx ; inx
-iny
-cpy #7
-beq exitbufferc
-jmp copybufferc
-
-exitbufferc:
-
-rts
-
-
-
-
-///////////////////////////////////// chartable for upper columns
+// =============================================================================
+// CHARTABLE - upper columns
+// =============================================================================
 * = $6000 "upper"
 upper:
 c07:
@@ -3460,7 +3091,9 @@ c38:
 .byte $76
 .byte $76
 
-///////////////////////////////////// chartable for middle columns
+// =============================================================================
+// CHARTABLE - middle columns
+// =============================================================================
 * = $6080 "lower"
 lower:
 d07:
@@ -3655,7 +3288,9 @@ d38:
 .byte $f6
 .byte $f6
 
-///////////////////////////////////// chartable for lower columns
+// =============================================================================
+// CHARTABLE - lower columns
+// =============================================================================
 * = $6100 "lowest"
 lowest:
 e07:
@@ -3851,7 +3486,9 @@ e38:
 .byte $7e
 
 
-///////////////////////////////////// offset table for char lookup
+// =============================================================================
+// OFFSET TABLE FOR CHAR LOOKUP
+// =============================================================================
 * = $6180 "conv1"
 convtable:
 .byte <c00,<c01,<c02,<c03,<c04,<c05,<c06,<c07,<c08,<c09,<c0a,<c0b,<c0c,<c0d,<c0e,<c0f
@@ -3860,8 +3497,9 @@ convtable:
 .byte <c30,<c31,<c32,<c33,<c34,<c35,<c36,<c37,<c38,<c39,<c3a,<c3b,<c3c,<c3d,<c3e,<c3f
 
 
-///////////////////////////////////// 3 buffers for column date
-///////////////////////////////////// values can go from 16 to 63 
+// =============================================================================
+// 3 column-data buffers (values range 16..63)
+// =============================================================================
 * = $61c0 "sinebuffer"
 sinebuffer:
 .byte 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
@@ -3871,7 +3509,9 @@ sinebuffer3:
 .byte 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 
 
-///////////////////////////////////// sinewave for testing
+// =============================================================================
+// SINEWAVE TABLE
+// =============================================================================
 * = $6200 "sine"
 sine:
 .byte 58,59,60,61,62,63
@@ -3919,7 +3559,9 @@ sine:
 .byte 50,52,54,56
 
 
-///////////////////////////////////// pre shifted char data
+// =============================================================================
+// PRE-SHIFTED CHAR DATA (font)
+// =============================================================================
 * = $2000 "font"
 .byte $01,$07,$1F,$7F,$FF,$FF,$7F,$5F
 .byte $00,$40,$D0,$F4,$FC,$F4,$D8,$64
@@ -3929,8 +3571,8 @@ sine:
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $56,$5B,$6F,$BF,$FF,$FF,$7F,$5F
-.byte $A8,$28,$C8,$F0,$FC,$F4,$D8,$64
+.byte $16,$1B,$2F,$BF,$FF,$FF,$7F,$5F
+.byte $6A,$AA,$CA,$F2,$FC,$F4,$D8,$64
 .byte $77,$5D,$57,$5D,$57,$55,$57,$55
 .byte $98,$68,$98,$68,$A8,$68,$A8,$A8
 .byte $57,$55,$55,$55,$55,$55,$55,$55
@@ -3945,8 +3587,8 @@ sine:
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$56,$5B,$6F,$BF,$FF,$FF,$7F
-.byte $A8,$A8,$28,$C8,$F0,$FC,$F4,$D8
+.byte $15,$16,$1B,$2F,$BF,$FF,$FF,$7F
+.byte $6A,$6A,$AA,$CA,$F2,$FC,$F4,$D8
 .byte $5F,$77,$5D,$57,$5D,$57,$55,$57
 .byte $64,$98,$68,$98,$68,$A8,$68,$A8
 .byte $55,$57,$55,$55,$55,$55,$55,$55
@@ -3961,8 +3603,8 @@ sine:
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$56,$5B,$6F,$BF,$FF,$FF
-.byte $A8,$A8,$A8,$28,$C8,$F0,$FC,$F4
+.byte $15,$15,$16,$1B,$2F,$BF,$FF,$FF
+.byte $6A,$6A,$6A,$AA,$CA,$F2,$FC,$F4
 .byte $7F,$5F,$77,$5D,$57,$5D,$57,$55
 .byte $D8,$64,$98,$68,$98,$68,$A8,$68
 .byte $57,$55,$57,$55,$55,$55,$55,$55
@@ -3977,8 +3619,8 @@ sine:
 .byte $68,$A8,$A8,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$56,$5B,$6F,$BF,$FF
-.byte $A8,$A8,$A8,$A8,$28,$C8,$F0,$FC
+.byte $15,$15,$15,$16,$1B,$2F,$BF,$FF
+.byte $6A,$6A,$6A,$6A,$AA,$CA,$F2,$FC
 .byte $FF,$7F,$5F,$77,$5D,$57,$5D,$57
 .byte $F4,$D8,$64,$98,$68,$98,$68,$A8
 .byte $55,$57,$55,$57,$55,$55,$55,$55
@@ -3993,8 +3635,8 @@ sine:
 .byte $A8,$68,$A8,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$56,$5B,$6F,$BF
-.byte $A8,$A8,$A8,$A8,$A8,$28,$C8,$F0
+.byte $15,$15,$15,$15,$16,$1B,$2F,$BF
+.byte $6A,$6A,$6A,$6A,$6A,$AA,$CA,$F2
 .byte $FF,$FF,$7F,$5F,$77,$5D,$57,$5D
 .byte $FC,$F4,$D8,$64,$98,$68,$98,$68
 .byte $57,$55,$57,$55,$57,$55,$55,$55
@@ -4009,10 +3651,10 @@ sine:
 .byte $68,$A8,$68,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$56,$5B,$6F
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$28,$C8
+.byte $15,$15,$15,$15,$15,$16,$1B,$2F
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$AA,$CA
 .byte $BF,$FF,$FF,$7F,$5F,$77,$5D,$57
-.byte $F0,$FC,$F4,$D8,$64,$98,$68,$98
+.byte $F2,$FC,$F4,$D8,$64,$98,$68,$98
 .byte $5D,$57,$55,$57,$55,$57,$55,$55
 .byte $68,$A8,$68,$A8,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
@@ -4025,10 +3667,10 @@ sine:
 .byte $98,$68,$A8,$68,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$56,$5B
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$28
-.byte $6F,$BF,$FF,$FF,$7F,$5F,$77,$5D
-.byte $C8,$F0,$FC,$F4,$D8,$64,$98,$68
+.byte $15,$15,$15,$15,$15,$15,$16,$1B
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$2A
+.byte $2F,$BF,$FF,$FF,$7F,$5F,$77,$5D
+.byte $CA,$F2,$FC,$F4,$D8,$64,$98,$68
 .byte $57,$5D,$57,$55,$57,$55,$57,$55
 .byte $98,$68,$A8,$68,$A8,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
@@ -4041,22 +3683,22 @@ sine:
 .byte $68,$98,$68,$A8,$68,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$56
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $5B,$6F,$BF,$FF,$FF,$7F,$5F,$77
-.byte $28,$C8,$F0,$FC,$F4,$D8,$64,$98
+.byte $15,$15,$15,$15,$15,$15,$15,$16
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
+.byte $1B,$2F,$3F,$FF,$FF,$7F,$5F,$77
+.byte $AA,$CA,$F2,$FC,$F4,$D8,$64,$98
 .byte $5D,$57,$5D,$57,$55,$57,$55,$57
 .byte $68,$98,$68,$A8,$68,$A8,$A8,$A8
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $56,$5B,$6F,$BF,$FF,$FF,$7F,$5F
-.byte $A8,$28,$C8,$F0,$FC,$F4,$D8,$64
-.byte $77,$5D,$57,$5D,$57,$55,$57,$55
-.byte $98,$68,$98,$68,$A8,$68,$A8,$A8
-.byte $57,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $55,$56,$5B,$6F,$BF,$3F,$1F,$17
+.byte $28,$C8,$F0,$FC,$FF,$FD,$F6,$D9
+.byte $1D,$17,$15,$17,$15,$15,$15,$15
+.byte $E6,$5A,$E6,$5A,$EA,$5A,$EA,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $EA,$6A,$6A,$6A,$6A,$6A,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4065,14 +3707,14 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $55,$56,$5B,$6F,$BF,$FF,$FF,$7F
-.byte $A8,$A8,$28,$C8,$F0,$FC,$F4,$D8
-.byte $5F,$77,$5D,$57,$5D,$57,$55,$57
-.byte $64,$98,$68,$98,$68,$A8,$68,$A8
-.byte $55,$57,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $55,$55,$56,$5B,$6F,$BF,$3F,$1F
+.byte $A8,$28,$C8,$F0,$FC,$FF,$FD,$F6
+.byte $17,$1D,$17,$15,$17,$15,$15,$15
+.byte $D9,$E6,$5A,$E6,$5A,$EA,$5A,$EA
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$EA,$6A,$6A,$6A,$6A,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4081,30 +3723,14 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $55,$55,$56,$5B,$6F,$BF,$FF,$FF
-.byte $A8,$A8,$A8,$28,$C8,$F0,$FC,$F4
-.byte $7F,$5F,$77,$5D,$57,$5D,$57,$55
-.byte $D8,$64,$98,$68,$98,$68,$A8,$68
-.byte $57,$55,$57,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $55,$55,$55,$56,$5B,$6F,$BF,$FF
-.byte $A8,$A8,$A8,$A8,$28,$C8,$F0,$FC
-.byte $FF,$7F,$5F,$77,$5D,$57,$5D,$57
-.byte $F4,$D8,$64,$98,$68,$98,$68,$A8
-.byte $55,$57,$55,$57,$55,$55,$55,$55
-.byte $68,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $55,$55,$55,$56,$5B,$6F,$BF,$3F
+.byte $A8,$A8,$28,$C8,$F0,$FC,$FF,$FD
+.byte $1F,$17,$1D,$17,$15,$17,$15,$15
+.byte $F6,$D9,$E6,$5A,$E6,$5A,$EA,$5A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $EA,$6A,$EA,$6A,$6A,$6A,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4114,13 +3740,13 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $55,$55,$55,$55,$56,$5B,$6F,$BF
-.byte $A8,$A8,$A8,$A8,$A8,$28,$C8,$F0
-.byte $FF,$FF,$7F,$5F,$77,$5D,$57,$5D
-.byte $FC,$F4,$D8,$64,$98,$68,$98,$68
-.byte $57,$55,$57,$55,$57,$55,$55,$55
-.byte $A8,$68,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $A8,$A8,$A8,$28,$C8,$F0,$FC,$FF
+.byte $3F,$1F,$17,$1D,$17,$15,$17,$15
+.byte $FD,$F6,$D9,$E6,$5A,$E6,$5A,$EA
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $5A,$EA,$6A,$EA,$6A,$6A,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4130,13 +3756,13 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $55,$55,$55,$55,$55,$56,$5B,$6F
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$28,$C8
-.byte $BF,$FF,$FF,$7F,$5F,$77,$5D,$57
-.byte $F0,$FC,$F4,$D8,$64,$98,$68,$98
-.byte $5D,$57,$55,$57,$55,$57,$55,$55
-.byte $68,$A8,$68,$A8,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $A8,$A8,$A8,$A8,$28,$C8,$F0,$FC
+.byte $BF,$3F,$1F,$17,$1D,$17,$15,$17
+.byte $FF,$FD,$F6,$D9,$E6,$5A,$E6,$5A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $EA,$5A,$EA,$6A,$EA,$6A,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4146,13 +3772,13 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $55,$55,$55,$55,$55,$55,$56,$5B
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$28
-.byte $6F,$BF,$FF,$FF,$7F,$5F,$77,$5D
-.byte $C8,$F0,$FC,$F4,$D8,$64,$98,$68
-.byte $57,$5D,$57,$55,$57,$55,$57,$55
-.byte $98,$68,$A8,$68,$A8,$A8,$A8,$A8
-.byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $A8,$A8,$A8,$A8,$A8,$28,$C8,$F0
+.byte $6F,$BF,$3F,$1F,$17,$1D,$17,$15
+.byte $FC,$FF,$FD,$F6,$D9,$E6,$5A,$E6
+.byte $17,$15,$15,$15,$15,$15,$15,$15
+.byte $5A,$EA,$5A,$EA,$6A,$EA,$6A,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4162,13 +3788,29 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $55,$55,$55,$55,$55,$55,$55,$56
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
-.byte $5B,$6F,$BF,$FF,$FF,$7F,$5F,$77
-.byte $28,$C8,$F0,$FC,$F4,$D8,$64,$98
-.byte $5D,$57,$5D,$57,$55,$57,$55,$57
-.byte $68,$98,$68,$A8,$68,$A8,$A8,$A8
+.byte $A8,$A8,$A8,$A8,$A8,$A8,$28,$C8
+.byte $5B,$6F,$BF,$3F,$1F,$17,$1D,$17
+.byte $F0,$FC,$FF,$FD,$F6,$D9,$E6,$5A
+.byte $15,$17,$15,$15,$15,$15,$15,$15
+.byte $E6,$5A,$EA,$5A,$EA,$6A,$EA,$6A
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$A8
+.byte $A8,$A8,$A8,$A8,$A8,$A8,$A8,$28
+.byte $56,$5B,$6F,$BF,$3F,$1F,$17,$1D
+.byte $C8,$F0,$FC,$FF,$FD,$F6,$D9,$E6
+.byte $17,$15,$17,$15,$15,$15,$15,$15
+.byte $5A,$E6,$5A,$EA,$5A,$EA,$6A,$EA
+.byte $15,$15,$15,$15,$15,$15,$15,$15
+.byte $6A,$6A,$6A,$6A,$6A,$6A,$6A,$6A
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
@@ -4177,9 +3819,6 @@ sine:
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
 .byte $00,$00,$00,$00,$00,$00,$00,$00
-
-* = $2800 "sprites"
-
 
 
 sprite:
@@ -4203,137 +3842,5 @@ sprite:
 .byte  80,  80,  80
 .byte  80,  80,  80
 .byte  80,  80,  80
-.byte  80,  80,  80,0
+.byte  80,  80,  80
 
-
-sprite_0:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_1:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_2:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_3:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_4:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_5:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-sprite_6:
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-
-
-
-* = $3000 "charset"
-charset:
-.byte $60,$90,$B0,$A0,$80,$70,$00,$00
-.byte $60,$90,$F0,$90,$90,$90,$00,$00
-.byte $E0,$90,$E0,$90,$90,$E0,$00,$00
-.byte $60,$90,$80,$80,$90,$60,$00,$00
-.byte $E0,$90,$90,$90,$90,$E0,$00,$00
-.byte $F0,$80,$E0,$80,$80,$F0,$00,$00
-.byte $F0,$80,$E0,$80,$80,$80,$00,$00
-.byte $70,$80,$B0,$90,$90,$60,$00,$00
-.byte $90,$90,$F0,$90,$90,$90,$00,$00
-.byte $80,$00,$80,$80,$80,$60,$00,$00
-.byte $10,$10,$10,$10,$90,$60,$00,$00
-.byte $90,$90,$E0,$90,$90,$90,$00,$00
-.byte $80,$80,$80,$80,$90,$60,$00,$00
-.byte $90,$F0,$90,$90,$90,$90,$00,$00
-.byte $E0,$90,$90,$90,$90,$90,$00,$00
-.byte $60,$90,$90,$90,$90,$60,$00,$00
-.byte $E0,$90,$90,$E0,$80,$80,$00,$00
-.byte $60,$90,$90,$90,$A0,$50,$00,$00
-.byte $E0,$90,$E0,$90,$90,$90,$00,$00
-.byte $70,$80,$60,$10,$90,$60,$00,$00
-.byte $E0,$10,$10,$10,$10,$10,$00,$00
-.byte $90,$90,$90,$90,$90,$60,$00,$00
-.byte $90,$90,$90,$90,$50,$20,$00,$00
-.byte $90,$90,$90,$90,$F0,$90,$00,$00
-.byte $90,$90,$60,$90,$90,$90,$00,$00
-.byte $90,$90,$70,$10,$90,$60,$00,$00
-.byte $F0,$10,$20,$40,$80,$F0,$00,$00
-.byte $C0,$80,$80,$80,$80,$C0,$00,$00
-.byte $00,$60,$60,$60,$60,$00,$00,$00
-.byte $30,$10,$10,$10,$10,$30,$00,$00
-.byte $60,$F0,$F0,$F0,$F0,$60,$00,$00
-.byte $F0,$90,$90,$90,$90,$F0,$00,$00
-.byte $00,$00,$00,$00,$00,$00,$00,$00
-.byte $80,$80,$80,$80,$00,$80,$00,$00
-.byte $90,$90,$90,$00,$00,$00,$00,$00
-.byte $90,$F0,$90,$90,$F0,$90,$00,$00
-.byte $20,$70,$80,$60,$10,$E0,$40,$00
-.byte $90,$10,$20,$40,$80,$90,$00,$00
-.byte $60,$90,$60,$90,$80,$70,$00,$00
-.byte $80,$80,$80,$00,$00,$00,$00,$00
-.byte $40,$80,$80,$80,$80,$40,$00,$00
-.byte $20,$10,$10,$10,$10,$20,$00,$00
-.byte $00,$90,$60,$F0,$60,$90,$00,$00
-.byte $00,$40,$40,$E0,$40,$40,$00,$00
-.byte $00,$00,$00,$80,$80,$80,$00,$00
-.byte $00,$00,$00,$F0,$00,$00,$00,$00
-.byte $00,$00,$00,$00,$00,$80,$00,$00
-.byte $10,$10,$20,$40,$80,$80,$00,$00
-.byte $60,$90,$90,$90,$90,$60,$00,$00
-.byte $10,$70,$10,$10,$10,$10,$00,$00
-.byte $E0,$10,$60,$80,$80,$F0,$00,$00
-.byte $E0,$10,$60,$10,$10,$E0,$00,$00
-.byte $80,$90,$90,$70,$10,$10,$00,$00
-.byte $F0,$80,$E0,$10,$90,$60,$00,$00
-.byte $70,$80,$E0,$90,$90,$60,$00,$00
-.byte $F0,$10,$20,$40,$80,$80,$00,$00
-.byte $60,$90,$60,$90,$90,$60,$00,$00
-.byte $60,$90,$90,$70,$10,$E0,$00,$00
-.byte $00,$00,$80,$00,$00,$80,$00,$00
-.byte $00,$00,$80,$00,$80,$80,$00,$00
-.byte $00,$30,$40,$80,$40,$30,$00,$00
-.byte $00,$f0,$00,$00,$f0,$00,$00,$00
-.byte $00,$C0,$20,$10,$20,$C0,$00,$00
-.byte $60,$90,$10,$60,$00,$40,$00,$00
-
-.label charset2 = charset +$200
-
-* = $3400 "text"
-
-///////0123456789012345678901234567890123456789
-texta:
-.text "genesis project sidquake tripple columns"
-textb:
-.text "the quick brown fox  jumps over the lazy"
-textc:
-.text "0123456789!$%&/()=,.;:-' abcdefghijklmno"
-
-
-* = $3500 "charpositions"
-font_lo:
-.byte <charset+$0000, <charset+$0008, <charset+$0010, <charset+$0018, <charset+$0020, <charset+$0028, <charset+$0030, <charset+$0038
-.byte <charset+$0040, <charset+$0048, <charset+$0050, <charset+$0058, <charset+$0060, <charset+$0068, <charset+$0070, <charset+$0078
-.byte <charset+$0080, <charset+$0088, <charset+$0090, <charset+$0098, <charset+$00a0, <charset+$00a8, <charset+$00b0, <charset+$00b8
-.byte <charset+$00c0, <charset+$00c8, <charset+$00d0, <charset+$00d8, <charset+$00e0, <charset+$00e8, <charset+$00f0, <charset+$00f8
-.byte <charset+$0100, <charset+$0108, <charset+$0110, <charset+$0118, <charset+$0120, <charset+$0128, <charset+$0130, <charset+$0138
-.byte <charset+$0140, <charset+$0148, <charset+$0150, <charset+$0158, <charset+$0160, <charset+$0168, <charset+$0170, <charset+$0178
-.byte <charset+$0180, <charset+$0188, <charset+$0190, <charset+$0198, <charset+$01a0, <charset+$01a8, <charset+$01b0, <charset+$01b8
-.byte <charset+$01c0, <charset+$01c8, <charset+$01d0, <charset+$01d8, <charset+$01e0, <charset+$01e8, <charset+$01f0, <charset+$01f8
-
-font_hi:
-.byte >charset+$0000, >charset+$0008, >charset+$0010, >charset+$0018, >charset+$0020, >charset+$0028, >charset+$0030, >charset+$0038
-.byte >charset+$0040, >charset+$0048, >charset+$0050, >charset+$0058, >charset+$0060, >charset+$0068, >charset+$0070, >charset+$0078
-.byte >charset+$0080, >charset+$0088, >charset+$0090, >charset+$0098, >charset+$00a0, >charset+$00a8, >charset+$00b0, >charset+$00b8
-.byte >charset+$00c0, >charset+$00c8, >charset+$00d0, >charset+$00d8, >charset+$00e0, >charset+$00e8, >charset+$00f0, >charset+$00f8
-.byte >charset+$0100, >charset+$0108, >charset+$0110, >charset+$0118, >charset+$0120, >charset+$0128, >charset+$0130, >charset+$0138
-.byte >charset+$0140, >charset+$0148, >charset+$0150, >charset+$0158, >charset+$0160, >charset+$0168, >charset+$0170, >charset+$0178
-.byte >charset+$0180, >charset+$0188, >charset+$0190, >charset+$0198, >charset+$01a0, >charset+$01a8, >charset+$01b0, >charset+$01b8
-.byte >charset+$01c0, >charset+$01c8, >charset+$01d0, >charset+$01d8, >charset+$01e0, >charset+$01e8, >charset+$01f0, >charset+$01f8

@@ -19,12 +19,12 @@ class ImageSelectorModal {
         const modalHTML = `
             <div class="image-selector-modal" id="imageSelectorModal">
                 <div class="image-selector-modal-content">
-                    <button class="image-selector-modal-close" id="imageSelectorModalClose">✕</button>
+                    <button class="image-selector-modal-close" id="imageSelectorModalClose"><i class="fas fa-times"></i></button>
                     <div class="image-selector-modal-body">
                         <h3 class="image-selector-title" id="imageSelectorTitle">Select Image</h3>
                         
                         <div class="image-selector-drop-zone" id="imageSelectorDropZone">
-                            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #667eea; margin-bottom: 15px;"></i>
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--accent); margin-bottom: 15px;"></i>
                             <div class="drop-zone-text">Drag and drop an image here</div>
                             <div class="drop-zone-subtext">or use the options below</div>
                         </div>
@@ -120,7 +120,6 @@ class ImageSelectorModal {
                     window.imagePreviewManager.handleFileChange({ target: { files: [file] } }, this.currentConfig);
                     this.close();
                 } else {
-                    // Use unified error modal instead of alert()
                     if (window.showWarning) {
                         window.showWarning('Please drop a valid image file (PNG format required)');
                     } else {
@@ -295,7 +294,7 @@ class GalleryModal {
                 <div class="gallery-item-info">
                     <div class="gallery-item-name">${item.name}</div>
                 </div>
-                <div class="gallery-item-selected-badge">✓ Selected</div>
+                <div class="gallery-item-selected-badge"><i class="fas fa-check"></i> Selected</div>
             `;
 
             card.addEventListener('click', () => {
@@ -405,7 +404,6 @@ class ImagePreviewManager {
 
     showError(container, message) {
         console.error(message);
-        // Use unified error modal for user visibility
         if (window.showError) {
             window.showError(message, { duration: 4000 });
         }

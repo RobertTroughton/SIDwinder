@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-// Generate palette preview PNG images for SIDquake
+/**
+ * Generate 64x64 PNG previews for each color palette defined below.
+ * Output goes to public/PNG/Palettes/ and is consumed by the picker UI.
+ * Palette gradient definitions must stay in sync with color-palettes-data.js.
+ */
 
 const fs = require('fs');
 const path = require('path');
 const { PNG } = require('pngjs');
 
-// C64 color palette - RGB values
+// C64 hardware colors as RGB triples, indexed by C64 colour code $0..$F.
 const C64_COLORS = {
     0x00: { r: 0,   g: 0,   b: 0   },   // Black
     0x01: { r: 255, g: 255, b: 255 },   // White
@@ -25,7 +29,8 @@ const C64_COLORS = {
     0x0F: { r: 159, g: 159, b: 159 }    // Light Grey
 };
 
-// Palette definitions (matching color-palettes-data.js)
+// Mirror of COLOR_PALETTE_GRADIENTS in public/color-palettes-data.js.
+// Keep entries here in lockstep with that file.
 const PALETTES = [
     {
         name: "palette-rainbow",
@@ -134,8 +139,12 @@ const PALETTES = [
     }
 ];
 
+/**
+ * Pick the C64 colour at a given percentage along a gradient.
+ * Stops are nearest-neighbour (stepped), not interpolated, to match the
+ * runtime palette generator in color-palettes-data.js.
+ */
 function getColorAtPosition(gradient, pct) {
-    // Find the color at a given percentage
     let color = gradient[0].color;
 
     for (let g = 0; g < gradient.length - 1; g++) {
@@ -158,11 +167,10 @@ function generatePalettePNG(palette, outputPath) {
 
     const png = new PNG({ width, height });
 
-    // Fill with background color
     const bgColor = C64_COLORS[palette.backgroundColor];
 
     for (let y = 0; y < height; y++) {
-        // Calculate percentage from bottom (inverted Y)
+        // Gradient runs from bottom (0%) to top (100%), so invert Y.
         const pct = ((height - 1 - y) / (height - 1)) * 100;
         const c64Color = getColorAtPosition(palette.gradient, pct);
         const color = C64_COLORS[c64Color];
@@ -170,7 +178,7 @@ function generatePalettePNG(palette, outputPath) {
         for (let x = 0; x < width; x++) {
             const idx = (width * y + x) << 2;
 
-            // Add a border (2 pixels on each side)
+            // 2-pixel border filled with the palette's background colour.
             if (x < 2 || x >= width - 2 || y < 2 || y >= height - 2) {
                 png.data[idx] = bgColor.r;
                 png.data[idx + 1] = bgColor.g;
@@ -185,21 +193,17 @@ function generatePalettePNG(palette, outputPath) {
         }
     }
 
-    // Write the PNG
     const buffer = PNG.sync.write(png);
     fs.writeFileSync(outputPath, buffer);
     console.log(`Generated: ${outputPath}`);
 }
 
-// Main
 const outputDir = path.join(__dirname, '../public/PNG/Palettes');
 
-// Ensure output directory exists
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
 }
 
-// Generate each palette PNG
 for (const palette of PALETTES) {
     const outputPath = path.join(outputDir, `${palette.name}.png`);
     generatePalettePNG(palette, outputPath);

@@ -3,35 +3,42 @@
   "description": "Text information display with 9-row PETSCII art logo",
   "maxCallsPerFrame": 8,
   "needsSaveRestore": false,
+  "fontType": "1x1",
 
   "layouts": {
     "bank4000": {
       "binary": "prg/DefaultWithLogo-4000.bin",
-      "size": "0x1000",
+      "size": "0x1300",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
       "binaryDataStart": "0x4000",
-      "binaryDataEnd": "0x4FCF",
+      "binaryDataEnd": "0x52FF",
       "borderColor": "0x400D",
       "backgroundColor": "0x400E",
       "logoScreenAddress": "0x4D00",
       "logoColorAddress": "0x4E68",
-      "logoCharsetTypeAddress": "0x4070"
+      "logoCharsetTypeAddress": "0x4070",
+      "fontModeAddress": "0x4071",
+      "charsetAddress": "0x5000",
+      "charsetSize": "0x300"
     },
     "bank8000": {
       "binary": "prg/DefaultWithLogo-8000.bin",
-      "size": "0x1000",
+      "size": "0x1300",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
       "binaryDataStart": "0x8000",
-      "binaryDataEnd": "0x8FCF",
+      "binaryDataEnd": "0x92FF",
       "borderColor": "0x800D",
       "backgroundColor": "0x800E",
       "logoScreenAddress": "0x8D00",
       "logoColorAddress": "0x8E68",
-      "logoCharsetTypeAddress": "0x8070"
+      "logoCharsetTypeAddress": "0x8070",
+      "fontModeAddress": "0x8071",
+      "charsetAddress": "0x9000",
+      "charsetSize": "0x300"
     }
   },
 
@@ -92,6 +99,12 @@
   ],
 
   "options": [
+    {
+      "id": "font",
+      "label": "Font",
+      "type": "fontSelector",
+      "default": 0
+    },
     {
       "id": "bgColor",
       "label": "Background Colour",

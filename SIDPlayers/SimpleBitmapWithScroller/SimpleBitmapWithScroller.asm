@@ -8,7 +8,10 @@
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
 
 * = DATA_ADDRESS "Data Block"
-    .fill $100, $00
+    .fill $71, $00
+fontMode:
+    .byte $00                           // 0 = scroller reads C64 ROM, 1 = scroller reads injected RAM charset
+    .fill $100 - $72, $00
 
 * = CODE_ADDRESS "Main Code"
 
@@ -22,6 +25,13 @@
 .var SPRITES_INDEX                  = $00
 
 .var ScrollColour					= DATA_ADDRESS + $80
+
+// Optional injected charset. Sits in the gap between sprite data ($x000-$x1FF)
+// and bitmap screen ($x800), on a $400 boundary so the scroller's
+// `ora #high` indexing addresses three contiguous 256-byte pages
+// (codes 0-31, 32-63, 64-95) without carry collisions.
+.const RAM_CHARSET_ADDRESS          = LOAD_ADDRESS + $400
+.const RAM_CHARSET_BASE_HI          = >RAM_CHARSET_ADDRESS
 
 .const DD00Value                        = 3 - VIC_BANK
 .const DD02Value                        = 60 + VIC_BANK
@@ -60,6 +70,8 @@ Initialize:
 
     lda #$35
     sta $01
+
+    jsr SetupCharset
 
     jsr RunLinkedWithEffect
 
@@ -341,7 +353,9 @@ ReadScroller:
     lsr
     lsr
     lsr
-    ora #$d8            //; ROM Charset High Byte
+ScrollerCharsetOra:
+    ora #$d8            //; ROM Charset High Byte ($d8) — patched to the
+                        //; RAM charset high byte at init when fontMode != 0.
     sta InCharPtr + 2
     txa
     asl
@@ -349,8 +363,9 @@ ReadScroller:
     asl
     sta InCharPtr + 1
 
-    lda #$33
-    sta $01
+ScrollerExposeROM:
+    lda #$33            //; bring char ROM into view at $D000-$DFFF (4 bytes
+    sta $01             //; total — patched to 4×NOP when reading from RAM).
 
     ldx #7
     ldy #(7 * 3)
@@ -363,8 +378,9 @@ InCharPtr:
     dex
     bpl InCharPtr
 
-    lda #$35
-    sta $01
+ScrollerRestoreIO:
+    lda #$35            //; restore I/O at $D000 (4 bytes — patched to
+    sta $01             //; 4×NOP when reading from RAM).
 
     inc ReadScroller + 1
     bne !skip+
@@ -430,6 +446,42 @@ VICConfigStart:
 	.byte $01, $01, $01, $01			//; Sprite colors 0-3
 	.byte $01, $01, $01, $01			//; Sprite colors 4-7
 VICConfigEnd:
+
+// =============================================================================
+// CHARSET SETUP
+//
+// In ROM mode (fontMode == 0) the scroller continues to read the C64 lowercase
+// ROM via the $01 banking trick. In RAM mode (fontMode != 0) the scroller's
+// `ora #$d8` immediate is patched to address the injected RAM charset and the
+// two `lda #imm; sta $01` pairs are replaced with NOPs so I/O stays mapped.
+// =============================================================================
+
+SetupCharset:
+    lda fontMode
+    beq !done+
+
+    lda #RAM_CHARSET_BASE_HI
+    sta ScrollerCharsetOra + 1
+
+    lda #$ea                            // NOP
+    sta ScrollerExposeROM + 0
+    sta ScrollerExposeROM + 1
+    sta ScrollerExposeROM + 2
+    sta ScrollerExposeROM + 3
+    sta ScrollerRestoreIO + 0
+    sta ScrollerRestoreIO + 1
+    sta ScrollerRestoreIO + 2
+    sta ScrollerRestoreIO + 3
+!done:
+    rts
+
+// =============================================================================
+// EMBEDDED CHARSET DATA (768 bytes; populated by prg-builder when not ROM mode)
+// =============================================================================
+
+* = RAM_CHARSET_ADDRESS "Embedded Charset"
+EmbeddedCharset:
+    .fill $300, $00
 
 // =============================================================================
 // DATA SECTION - Placeholder screen and bitmap data

@@ -3,6 +3,7 @@
   "maxCallsPerFrame": 6,
   "version": "1.0",
   "needsSaveRestore": false,
+  "fontType": "1x1",
 
   "layouts": {
     "bank4000": {
@@ -16,7 +17,10 @@
       "borderColor": "0x500D",
       "backgroundColor": "0x500E",
       "scrollTextAddr": "0x2800",
-      "scrollColor": "0x5080"
+      "scrollColor": "0x5080",
+      "charsetAddress": "0x4400",
+      "charsetSize": "0x300",
+      "fontModeAddress": "0x5071"
     },
     "bank8000": {
       "binary": "prg/SimpleBitmapWithScroller-8000.bin",
@@ -29,7 +33,10 @@
       "borderColor": "0x900D",
       "backgroundColor": "0x900E",
       "scrollTextAddr": "0x6800",
-      "scrollColor": "0x9080"
+      "scrollColor": "0x9080",
+      "charsetAddress": "0x8400",
+      "charsetSize": "0x300",
+      "fontModeAddress": "0x9071"
     }
   },
 
@@ -119,6 +126,12 @@
   ],
 
   "options": [
+    {
+      "id": "font",
+      "label": "Font",
+      "type": "fontSelector",
+      "default": 0
+    },
     {
       "id": "borderColor",
       "label": "Border Color",

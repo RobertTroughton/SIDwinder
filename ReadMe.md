@@ -1,27 +1,29 @@
 # SIDwinder
 
-*SIDwinder 0.2.6 - C64 SID Music File Processor*
+*C64 SID Music Analyzer & PRG Builder*
 
 <p align="center"><img src="SIDwinder.png" alt="SIDwinder Logo" width="1600"/></p>
 
-Developed by Robert Troughton (Raistlin of Genesis Project)
+Developed by Robert Troughton (Raistlin of [Genesis Project](https://genesisproject.com))
 
-## Overview
+## What is SIDwinder?
 
-SIDwinder is a versatile tool for processing C64 SID music files. It provides several key functions:
+SIDwinder is a web-based tool for working with Commodore 64 SID music files. Drop in a .sid file and SIDwinder will:
 
-- **Player**: Convert SID files to executable PRG files with various player routines
-- **Relocate**: Move SID music to different memory addresses while preserving functionality
-- **Disassemble**: Convert SID files to human-readable assembly language
-- **Trace**: Analyze SID register access patterns for debugging and verification
+- **Analyze** the tune using a full 6510 CPU emulator running in WebAssembly
+- **Display** detailed technical info: memory usage, SID register writes, CIA timers, multi-SID detection
+- **Build executable C64 PRGs** with your choice of visualizer effect, custom logos, and metadata
+- **Browse HVSC** (High Voltage SID Collection) to find and load tunes directly
 
-## Screenshots
+No plugins, no installs - runs entirely in your browser.
+
+## Visualizers
+
+SIDwinder includes 9 visualizer templates that can be linked with any SID tune to create a standalone C64 executable:
 
 <p align="center">
 <img src="Screens/ScreensAnim.gif" alt="SIDwinder Visualizers in Action" width="800"/>
 </p>
-
-### Available Player Types
 
 <table>
 <tr>
@@ -41,306 +43,107 @@ SIDwinder is a versatile tool for processing C64 SID music files. It provides se
 </tr>
 </table>
 
-## Basic Usage
+### Visualizer Types
+
+| Visualizer | Description |
+|------------|-------------|
+| **Default** | Minimal text display with song info |
+| **Default With Logo** | Text display with PETSCII logo area |
+| **Simple Raster** | Classic rasterbar color effect |
+| **Simple Bitmap** | Full-screen Koala bitmap background |
+| **Simple Bitmap With Scroller** | Bitmap background with scrolling text |
+| **Raistlin Bars** | Real-time frequency spectrum analyzer |
+| **Raistlin Bars With Logo** | Spectrum bars with custom Koala logo |
+| **Raistlin Mirror Bars** | Mirrored spectrum effect |
+| **Raistlin Mirror Bars With Logo** | Mirrored bars with custom logo |
+
+## Features
+
+### SID Analysis
+- Full 6510 CPU emulation via WebAssembly for accurate analysis
+- Memory map visualization showing code vs data regions
+- SID register write tracking across all voices
+- Multi-SID chip detection (2SID, 3SID)
+- CIA timer analysis for non-standard play routines
+- Zero-page usage tracking
+
+### PRG Export
+- Automatic memory layout planning to avoid collisions between music and player code
+- Multiple load address options ($4000, $8000, $C000) with automatic selection
+- TSCrunch compression for smaller executables
+- Custom metadata: edit song title, author, and copyright before export
+- Custom logos: import PNG or Koala images, or use PETSCII text art
+- Bar style and color palette customization for spectrum visualizers
+
+### Image Conversion
+- PNG to C64 multicolor bitmap conversion with palette matching
+- PNG to PETSCII character art conversion
+- 60+ authentic C64 color palettes (VICE, Pepto, Colodore, and more)
+- Gallery of pre-made logos and backgrounds
+
+### HVSC Browser
+- Browse the complete High Voltage SID Collection
+- Navigate by composer or category
+- Load any tune directly into the analyzer
+- Random tune picker from curated selections
+
+## How It Works
+
+1. **Load** a .sid file (drag-drop, file picker, or browse HVSC)
+2. **Analyze** - SIDwinder emulates thousands of frames of 6510 execution to map memory usage and SID register patterns
+3. **Choose** a visualizer template and customize options (logo, colors, bar style)
+4. **Export** a .prg file ready to run on real C64 hardware or in an emulator (VICE, etc.)
+
+## Development
+
+### Prerequisites
+
+- Java (for KickAss assembler)
+- Python 3 (for frequency table generation)
+- Emscripten SDK (for WASM compilation)
+
+### Building
 
 ```
-SIDwinder [command] [options] inputfile [outputfile]
+0-build.bat
 ```
 
-## Commands
+This runs three steps:
+1. Generates frequency lookup tables for spectrum analyzers
+2. Compiles all SID player assembly to .bin files via KickAss
+3. Compiles WASM modules from C++ via Emscripten
 
-SIDwinder supports the following main commands:
-
-### `-player[=<type>]` 
-Links a SID file with a player routine to create an executable PRG file.
-
-```
-SIDwinder -player music.sid music.prg
-```
-
-Options:
-- Use `-player` for the default player (SimpleRaster)
-- Use `-player=<type>` to specify a different player (e.g., `-player=SimpleBitmap` or `-player=RaistlinBars`)
-- `-playeraddr=<address>`: Player load address (default: $4000)
-- `-define <key>=<value>`: Pass custom definitions to the player (can be used multiple times)
-
-### `-relocate=<address>`
-Relocates a SID file to a different memory address. By default, performs verification to ensure the relocated file behaves identically to the original.
+### Running Locally
 
 ```
-SIDwinder -relocate=$2000 music.sid relocated.sid
+1-runserver.bat
 ```
 
-The address parameter is required and specifies the target memory location (e.g., $2000).
+Or use any static file server pointing at the `public/` directory.
 
-Options:
-- `-noverify`: Skip verification after relocation (faster, but less safe)
-
-### `-disassemble`
-Disassembles a SID file to assembly code.
+### Project Structure
 
 ```
-SIDwinder -disassemble music.sid music.asm
+public/           Web frontend (vanilla JS, no framework or build step)
+wasm/             C++ sources for WASM modules (6510 emulator, SID processor, PNG converter)
+SIDPlayers/       C64 assembly source for visualizer player routines
+netlify/          Serverless function for HVSC proxy
 ```
 
-### `-trace[=<file>]`
-Traces SID register writes during emulation.
-
-```
-SIDwinder -trace music.sid
-```
-
-Options:
-- Use `-trace` to output to default file (trace.bin in binary format)
-- Use `-trace=<file>` to specify output file
-  - Files with .txt or .log extension use text format
-  - Files with other extensions use binary format
-- `-frames=<num>`: Number of frames to emulate (default: 30000)
-
-## General Options
-
-These options can be used with any command:
-
-- `-verbose`: Enable verbose logging
-- `-force`: Force overwrite of output file
-- `-log=<file>`: Log file path (default: SIDwinder.log)
-- `-kickass=<path>`: Path to KickAss.jar assembler
-- `-exomizer=<path>`: Path to Exomizer compression tool
-- `-nocompress`: Disable compression for PRG output
-
-## SID Metadata Options
-
-Override the metadata stored in SID files:
-
-- `-sidname=<name>`: Override SID title/name
-- `-sidauthor=<author>`: Override SID author
-- `-sidcopyright=<text>`: Override SID copyright
-- `-sidloadaddr=<address>`: Override SID load address
-- `-sidinitaddr=<address>`: Override SID init address
-- `-sidplayaddr=<address>`: Override SID play address
-- 
-These options work with all commands and will update the metadata in the output file (whether it's a relocated SID or when used with the player command).
-
-## Configuration System
-
-SIDwinder features a comprehensive configuration system that allows you to customize default settings. When you first run SIDwinder, it automatically creates a configuration file (`SIDwinder.cfg`) that contains all available settings with their default values.
-
-### Configuration File Location
-
-SIDwinder looks for the configuration file in the following locations, in order:
-1. The current working directory
-2. The executable's directory
-
-### Editing the Configuration File
-
-The configuration file is a plain text file that you can edit with any text editor. Each setting is defined in a `key=value` format, with sections organized by comments.
-
-Example configuration entries:
-```
-# Path to KickAss jar file (include 'java -jar' prefix if needed)
-kickassPath=java -jar KickAss.jar -silentMode
-
-# Number of frames to emulate for analysis and tracing
-emulationFrames=30000
-```
-
-### Common Configuration Settings
-
-Here are some common settings you might want to customize:
-
-#### Tool Paths
-- `kickassPath`: Path to KickAss assembler (e.g., `java -jar C:\Tools\KickAss.jar -silentMode`)
-- `exomizerPath`: Path to Exomizer compression tool
-- `pucrunchPath`: Path to Pucrunch compression tool (alternative to Exomizer)
-- `compressorType`: Preferred compression tool (`exomizer` or `pucrunch`)
-
-#### Player Settings
-- `playerName`: Default player routine to use (e.g., `SimpleRaster`, `SimpleBitmap`, `RaistlinBars`)
-- `playerAddress`: Default memory address for player code (e.g., `$4000`)
-- `playerDirectory`: Directory containing player code files
-
-#### Emulation Settings
-- `emulationFrames`: Number of frames to emulate (default: `30000`, about 10 minutes of C64 time)
-- `clockStandard`: Whether the emulation system should be PAL or NTSC
-
-#### Logging Settings
-- `logFile`: Default log file path
-- `logLevel`: Logging detail level (1=Error, 2=Warning, 3=Info, 4=Debug)
-
-### When to Use Configuration vs. Command Line
-
-- **Configuration File**: Use for persistent changes that you want to apply to all operations (e.g., paths to external tools, emulation performance settings, default player preferences)
-- **Command Line Options**: Use for operation-specific settings that vary by task (e.g., specific relocate addresses, trace file names)
-
-### Configuration Updates
-
-The configuration file is automatically updated with new settings when SIDwinder adds features. Your custom settings will be preserved during updates.
-
-## Player Types
-
-SIDwinder includes several player routines:
-
-- **SimpleRaster**: Basic raster-based player (default)
-- **SimpleBitmap**: Player with bitmap display capabilities
-- **RaistlinBars**: Advanced spectrum analyzer visualization
-- **RaistlinBarsWithLogo**: RaistlinBars with custom logo support
-- **RaistlinMirrorBarsWithLogo**: Mirrored bars effect with logo
-
-Additional player types may be available in the SIDPlayers directory.
-
-### Using Custom Logos with Players
-
-Some players (like `RaistlinBarsWithLogo`) support custom logos. You can specify a custom logo using the `-define` option:
-
-```
-SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/MyLogo.kla" music.sid music.prg
-```
-
-The logo should be in Koala format (.kla) and placed in a location accessible from the player directory.
-
-## Examples
-
-### Convert SID to PRG with default player:
-
-```
-SIDwinder -player music.sid music.prg
-```
-
-### Convert SID with specific player:
-
-```
-SIDwinder -player=SimpleBitmap music.sid player.prg
-```
-
-### Convert SID with RaistlinBars visualizer:
-
-```
-SIDwinder -player=RaistlinBars music.sid visualizer.prg
-```
-
-### Convert SID with custom logo:
-
-```
-SIDwinder -player=RaistlinBarsWithLogo -define KoalaFile="../../Logos/custom.kla" music.sid player.prg
-```
-
-### Define custom colors for a player:
-
-```
-SIDwinder -player=RaistlinBars -define BorderColor=$06 -define BackgroundColor=$00 music.sid player.prg
-```
-
-### Convert SID with custom metadata:
-
-```
-SIDwinder -player -sidname="My Cool Tune" -sidauthor="DJ Awesome" music.sid player.prg
-```
-
-### Relocate SID to address $2000:
-
-```
-SIDwinder -relocate=$2000 music.sid relocated.sid
-```
-
-### Relocate SID with updated metadata:
-
-```
-SIDwinder -relocate=$3000 -sidcopyright="(C) 2025 My Label" music.sid relocated.sid
-```
-
-### Relocate SID without verification:
-
-```
-SIDwinder -relocate=$2000 -noverify music.sid relocated.sid
-```
-
-### Update only SID metadata (no relocation):
-
-```
-SIDwinder -sidname="New Title" -sidauthor="New Author" -sidcopyright="New Copyright" original.sid updated.sid
-```
-
-### Disassemble SID to assembly:
-
-```
-SIDwinder -disassemble music.sid music.asm
-```
-
-### Trace SID register writes to default output:
-
-```
-SIDwinder -trace music.sid
-```
-
-### Trace SID register writes to custom file:
-
-```
-SIDwinder -trace=music.log music.sid
-```
-
-### Trace with specific number of frames:
-
-```
-SIDwinder -trace -frames=1000 music.sid
-```
-
-## Supported File Formats
-
-- **Input**: SID files (.sid)
-- **Output**: 
-  - PRG files (.prg) - Executable Commodore 64 programs
-  - SID files (.sid) - Commodore 64 music format
-  - ASM files (.asm) - Assembly language source code
-
-## Requirements
-
-- Java Runtime Environment (for KickAss assembler)
-- KickAss Assembler (for assembling code)
-- Exomizer (for compression, optional)
-
-## Technical Details
-
-SIDwinder includes a complete 6510 CPU emulator to analyze SID files and ensure accurate relocation and disassembly. It tracks memory access patterns to identify code, data, and jump targets, producing high-quality disassembly output with meaningful labels.
-
-The relocation verification process traces SID register writes from both the original and relocated files to ensure they behave identically, guaranteeing that the relocation preserves all musical features.
-
-## Advanced Features
-
-### Player Development
-
-SIDwinder analyzes SID files to generate helpful data for player development, including:
-- Memory locations modified during playback
-- SID register write patterns
-- Optimal double-buffering strategies
-
-This data is automatically included when building players, enabling advanced visualization techniques like those used in the RaistlinBars players.
-
-### Custom Definitions
-
-The `-define` option allows you to pass custom values to player code. These definitions become available as KickAss variables in the player assembly code:
-
-```
-SIDwinder -player=MyPlayer -define PlayerSpeed=2 -define ColorScheme=rainbow music.sid output.prg
-```
-
-In the player code, these would be accessible as:
-```asm
-.if (USERDEFINES_PlayerSpeed)
-    .var speed = PlayerSpeed  // Will be 2
-.endif
-```
-
-### Metadata Variables in Players
-
-When creating players, SID metadata is available as KickAss variables:
-- `SIDName`: The song title
-- `SIDAuthor`: The song author
-- `SIDCopyright`: The copyright information
-
-These can be overridden using the `-sidname`, `-sidauthor`, and `-sidcopyright` options.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed component documentation.
+
+## Technology
+
+- **Frontend**: Vanilla JavaScript with ES6 classes - no framework, no bundler, no build step for JS
+- **Emulation**: MOS 6510 CPU emulator compiled to WebAssembly via Emscripten
+- **Assembly**: KickAss assembler for C64 player routines
+- **Compression**: TSCrunch (JavaScript port) for self-extracting C64 executables
+- **Hosting**: Netlify with serverless functions for HVSC proxy
 
 ## Acknowledgements
 
-- Zagon for Exomizer
 - Mads Nielsen for KickAss assembler
-- Adam Dunkels (Trident), Andy Zeidler (Shine), Burglar and Magnar Harestad for help
+- Zagon for Exomizer
+- The TSCrunch compression algorithm
+- Adam Dunkels (Trident), Andy Zeidler (Shine), Burglar and Magnar Harestad for help and testing
+- The HVSC team for maintaining the High Voltage SID Collection

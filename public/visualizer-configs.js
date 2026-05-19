@@ -1,7 +1,10 @@
+/**
+ * Loads visualizer JSON configs and merges inline + external image galleries.
+ */
 class VisualizerConfig {
     constructor() {
         this.configs = new Map();
-        this.galleryCache = new Map(); // Cache loaded galleries
+        this.galleryCache = new Map();
     }
 
     async loadConfig(visualizerId) {
@@ -69,7 +72,6 @@ class VisualizerConfig {
     }
 
     async loadGalleryFile(galleryFile) {
-        // Check cache first
         if (this.galleryCache.has(galleryFile)) {
             return this.galleryCache.get(galleryFile);
         }
@@ -82,19 +84,16 @@ class VisualizerConfig {
 
             const items = await response.json();
 
-            // Validate format
             if (!Array.isArray(items)) {
                 throw new Error('Gallery file must contain an array');
             }
 
-            // Validate each item
             for (const item of items) {
                 if (!item.name || !item.file) {
                     throw new Error('Gallery items must have "name" and "file" properties');
                 }
             }
 
-            // Cache the result
             this.galleryCache.set(galleryFile, items);
             return items;
         } catch (error) {
@@ -141,7 +140,6 @@ class VisualizerConfig {
         return regions;
     }
 
-    // Clear the gallery cache if needed
     clearGalleryCache() {
         this.galleryCache.clear();
     }

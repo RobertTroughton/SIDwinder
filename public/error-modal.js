@@ -1,5 +1,7 @@
-// error-modal.js - Unified error handling system for SIDquake
-// Provides consistent error, warning, success, and info modals throughout the application
+// error-modal.js - Unified error/notification modal.
+// Provides error, warning, success, info and confirm dialogs through a single
+// global instance, so the rest of the app does not depend on alert()/confirm()
+// (which block the audio thread on some browsers).
 
 class ErrorModal {
     constructor() {
@@ -8,26 +10,21 @@ class ErrorModal {
         this.initialized = false;
     }
 
-    /**
-     * Initialize the modal DOM elements
-     */
+    /** Initialize the modal DOM elements, creating them if absent. */
     init() {
         if (this.initialized) return;
 
-        // Check if modal already exists in DOM (from index.html)
+        // The modal element is normally pre-rendered in index.html; fall back to
+        // injecting it dynamically so this module works standalone too.
         this.modalElement = document.getElementById('modalOverlay');
 
         if (!this.modalElement) {
-            // Create modal if it doesn't exist
             this.createModalHTML();
         }
 
         this.initialized = true;
     }
 
-    /**
-     * Create modal HTML if not present in DOM
-     */
     createModalHTML() {
         const modalHTML = `
             <div class="modal-overlay" id="modalOverlay">
@@ -60,9 +57,9 @@ class ErrorModal {
     error(message, options = {}) {
         const defaultOptions = {
             title: 'Error',
-            icon: '\u2717', // X mark
+            icon: '\u2717',
             iconClass: 'error',
-            duration: 0, // Errors require manual dismiss by default
+            duration: 0,  // errors require explicit dismissal
             log: true,
             ...options
         };
@@ -82,7 +79,7 @@ class ErrorModal {
     warning(message, options = {}) {
         const defaultOptions = {
             title: 'Warning',
-            icon: '\u26A0', // Warning triangle
+            icon: '\u26A0',
             iconClass: 'warning',
             duration: 4000,
             log: true,
@@ -104,7 +101,7 @@ class ErrorModal {
     success(message, options = {}) {
         const defaultOptions = {
             title: '',
-            icon: '\u2713', // Checkmark
+            icon: '\u2713',
             iconClass: 'success',
             duration: 2000,
             log: false,
@@ -122,7 +119,7 @@ class ErrorModal {
     info(message, options = {}) {
         const defaultOptions = {
             title: '',
-            icon: '\u2139', // Info symbol
+            icon: '\u2139',
             iconClass: 'info',
             duration: 3000,
             log: false,
@@ -156,13 +153,10 @@ class ErrorModal {
         });
     }
 
-    /**
-     * Internal method to display the modal
-     */
+    /** Internal method to display the modal. */
     _show(message, options) {
         if (!this.initialized) this.init();
 
-        // Clear any existing timeout
         if (this.timeoutId) {
             clearTimeout(this.timeoutId);
             this.timeoutId = null;
@@ -174,24 +168,21 @@ class ErrorModal {
         const detailsEl = document.getElementById('modalDetails');
         const actionsEl = document.getElementById('modalActions');
 
-        // Set icon
         if (iconEl) {
             iconEl.textContent = options.icon || '';
             iconEl.className = `modal-icon ${options.iconClass || ''}`;
         }
 
-        // Set title (optional)
         if (titleEl) {
             titleEl.textContent = options.title || '';
             titleEl.style.display = options.title ? 'block' : 'none';
         }
 
-        // Set message
         if (messageEl) {
             messageEl.textContent = message;
         }
 
-        // Set details (optional, collapsible for technical info)
+        // Optional collapsible block for technical details (stack traces, etc.)
         if (detailsEl) {
             if (options.details) {
                 detailsEl.innerHTML = `
@@ -207,7 +198,6 @@ class ErrorModal {
             }
         }
 
-        // Set action buttons
         if (actionsEl) {
             actionsEl.innerHTML = '';
 
@@ -224,7 +214,7 @@ class ErrorModal {
                 });
                 actionsEl.style.display = 'flex';
             } else if (options.duration === 0) {
-                // Add dismiss button for manual-dismiss modals without actions
+                // Manual-dismiss modal with no custom actions: provide a default OK button.
                 const btn = document.createElement('button');
                 btn.className = 'modal-action-btn primary';
                 btn.textContent = 'OK';
@@ -236,17 +226,16 @@ class ErrorModal {
             }
         }
 
-        // Show modal
         this.modalElement.classList.add('visible');
 
-        // Auto-dismiss if duration is set
         if (options.duration > 0) {
             this.timeoutId = setTimeout(() => {
                 this.hide();
             }, options.duration);
         }
 
-        // Add click-outside to dismiss (only for success/info messages)
+        // Allow click-outside dismissal only for transient (auto-dismiss) modals;
+        // errors/confirms must be acknowledged explicitly.
         if (options.duration > 0) {
             const clickHandler = (e) => {
                 if (e.target === this.modalElement) {
@@ -258,9 +247,7 @@ class ErrorModal {
         }
     }
 
-    /**
-     * Hide the modal
-     */
+    /** Hide the modal. */
     hide() {
         if (this.timeoutId) {
             clearTimeout(this.timeoutId);
@@ -272,9 +259,7 @@ class ErrorModal {
         }
     }
 
-    /**
-     * Escape HTML to prevent XSS
-     */
+    /** Escape HTML to prevent XSS when rendering details/messages. */
     _escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -282,17 +267,15 @@ class ErrorModal {
     }
 }
 
-// Create global instance
 window.errorModal = new ErrorModal();
 
-// Convenience functions for global access
+// Convenience functions used throughout the app.
 window.showError = (message, options) => window.errorModal.error(message, options);
 window.showWarning = (message, options) => window.errorModal.warning(message, options);
 window.showSuccess = (message, options) => window.errorModal.success(message, options);
 window.showInfo = (message, options) => window.errorModal.info(message, options);
 window.showConfirm = (message, options) => window.errorModal.confirm(message, options);
 
-// Export class for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ErrorModal;
 }

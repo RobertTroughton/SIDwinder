@@ -1,4 +1,15 @@
+// =============================================================================
+//                              COMMON MODULE
+//          Shared data layout, NMI fix, VSync and raster timing helpers
+// =============================================================================
+
 #importonce
+
+// =============================================================================
+// DATA BLOCK LAYOUT
+// Fields populated at build time by prg-builder.js at fixed offsets from
+// DATA_ADDRESS so the JS side and the C64 player agree on the contract.
+// =============================================================================
 
 .var SIDInit						= DATA_ADDRESS + $00 // 3-byte JMP
 .var SIDPlay						= DATA_ADDRESS + $03 // 3-byte JMP
@@ -19,14 +30,15 @@
 .var NumSongs						= DATA_ADDRESS + $c8 // 1 byte
 .var ClockType						= DATA_ADDRESS + $c9 // 1 byte, 0=PAL, 1=NTSC
 .var SIDModel						= DATA_ADDRESS + $ca // 1 byte, 0=6581, 1=8580
-// $CB-$CC reserved for modifiedCount (set by prg-builder.js)
+// $CB-$CC reserved for modifiedCount (written by prg-builder.js)
 .var NumSIDChips					= DATA_ADDRESS + $cd // 1 byte, 1-4 SID chips supported
 .var BitmapMode						= DATA_ADDRESS + $70 // 1 byte, 0=multicolor, 1=hires
 .var ZPUsageData					= DATA_ADDRESS + $e0 // 32-byte string
 
-//; =============================================================================
-//; NMI Fix Routine (prevent crashing on RESTORE key hitting)
-//; =============================================================================
+// =============================================================================
+// NMIFix - point NMI vector at a bare RTI and silence CIA2 NMI sources
+// so pressing RESTORE cannot crash the player.
+// =============================================================================
 
 NMIFix:
 
@@ -51,9 +63,10 @@ NMIFix:
 
 		rti
 
-//; =============================================================================
-//; VERTICAL SYNC ROUTINE
-//; =============================================================================
+// =============================================================================
+// VSync - busy-wait until raster passes the top of the visible frame.
+// Spins on bit 7 of $D011 (which mirrors bit 8 of the 9-bit raster line).
+// =============================================================================
 
 VSync:
     bit $d011
@@ -63,9 +76,11 @@ VSync:
     rts
 
 
-//; =============================================================================
-//; D011/D012 raster timing bar support
-//; =============================================================================
+// =============================================================================
+// $D011/$D012 raster timing bar support
+// Precomputes raster line targets evenly spaced across the 312-line PAL frame
+// for 1..8 SID play calls per frame, used to draw raster timing debug bars.
+// =============================================================================
 
 #if INCLUDE_RASTER_TIMING_CODE
 .var FrameHeight = 312

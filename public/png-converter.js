@@ -86,8 +86,8 @@ class PNGConverter {
                     this.Module._free(exactPtr);
                     this.Module._free(distancePtr);
                 }
-                // Query bitmap mode (0=multicolor, 1=hires)
-                // Gracefully handle missing WASM export (pre-rebuild)
+                // Query bitmap mode (0=multicolor, 1=hires); fall back to
+                // multicolor if the WASM export is unavailable.
                 let bitmapMode = 0;
                 try {
                     bitmapMode = this.Module.ccall(

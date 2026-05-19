@@ -1,0 +1,66 @@
+{
+  "name": "Raistlin Triple Mirror Bars",
+  "maxCallsPerFrame": 1,
+  "maxSIDChips": 1,
+  "needsSaveRestore": true,
+  "barStyleType": "mirror",
+  "fontType": "1x2",
+
+  "layouts": {
+    "bank4000": {
+      "binary": "prg/RaistlinTripleMirrorBars-4000.bin",
+      "size": "0x4000",
+      "baseAddress": "0x4000",
+      "dataAddress": "0x4000",
+      "sysAddress": "0x4100",
+      "binaryDataStart": "0x4000",
+      "binaryDataEnd": "0x7FFF",
+      "barCharsAddress": "0x7F00",
+      "charsetAddress": "0x7800",
+      "charsetSize": "0x700",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x4000",
+      "saveRestoreMaxSize": "0x3800"
+    },
+    "bank8000": {
+      "binary": "prg/RaistlinTripleMirrorBars-8000.bin",
+      "size": "0x4000",
+      "baseAddress": "0x8000",
+      "dataAddress": "0x8000",
+      "sysAddress": "0x8100",
+      "binaryDataStart": "0x8000",
+      "binaryDataEnd": "0xBFFF",
+      "barCharsAddress": "0xBF00",
+      "charsetAddress": "0xB800",
+      "charsetSize": "0x700",
+      "saveRestoreLocation": "before",
+      "saveRestoreEndAddress": "0x8000",
+      "saveRestoreMaxSize": "0x7800"
+    }
+  },
+
+  "options": [
+    {
+      "id": "font",
+      "label": "Font",
+      "type": "fontSelector",
+      "default": 0
+    },
+    {
+      "id": "barStyle",
+      "label": "Bar Style",
+      "type": "imageGrid",
+      "default": 0,
+      "values": [
+        { "value": 0, "label": "Curved - Rounded with highlights", "shortLabel": "curved" },
+        { "value": 1, "label": "Box - Full solid bars", "shortLabel": "box" },
+        { "value": 2, "label": "Thin Box - Narrow 4-pixel bars", "shortLabel": "thin box" },
+        { "value": 3, "label": "Outline - Hollow bars", "shortLabel": "outline" },
+        { "value": 4, "label": "Doubles - Blocky pixel bars", "shortLabel": "doubles" },
+        { "value": 5, "label": "Shine - Rounded without highlights", "shortLabel": "shine" },
+        { "value": 6, "label": "Pointed - Pointed top", "shortLabel": "pointed" },
+        { "value": 7, "label": "Dashed - Solid with scanlines", "shortLabel": "dashed" }
+      ]
+    }
+  ]
+}
