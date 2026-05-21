@@ -37,8 +37,10 @@
 // Each voice section has 48 height levels (0-47), mapped to $10-$3F
 .const MAX_BAR_HEIGHT               = 47
 
-// Rate of 3 gives sub-pixel smooth movement through Scrap's 8-position character cells
-.const BAR_INCREASE_RATE            = 3
+// Match RaistlinBars' rise speed: it climbs ~1.3/8 of full height per frame
+// (rate = TOP_SPECTRUM_HEIGHT*1.3 over a TOP_SPECTRUM_HEIGHT*8 scale). Scaled to
+// this visualizer's MAX_BAR_HEIGHT so a bar takes a similar time to shoot up.
+.const BAR_INCREASE_RATE            = ceil(MAX_BAR_HEIGHT * 1.3 / 8)
 .const BAR_DECREASE_RATE            = ceil(MAX_BAR_HEIGHT / 24.0)
 
 // =============================================================================
