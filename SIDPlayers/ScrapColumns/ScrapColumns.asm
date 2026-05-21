@@ -363,7 +363,7 @@ ScreenIRQ:
 SetTopSprites:
 
     lda #$01
-    ldy #20
+    ldy #$14
     .for(var i = 0; i < 3; i++)
     {
         ldx #24 + (i * 24)
