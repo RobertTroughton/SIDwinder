@@ -243,19 +243,45 @@ extern "C" {
         set_flag(FLAG_CARRY, reg >= v);
         set_zn_flags(r);
     }
-    inline void do_adc(uint8_t v) {  // binary mode only (decimal flag ignored)
-        uint16_t r = uint16_t(cpu.a) + v + (test_flag(FLAG_CARRY) ? 1 : 0);
-        set_flag(FLAG_CARRY, r > 0xFF);
-        set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (v ^ r) & 0x80) != 0);
-        cpu.a = uint8_t(r);
-        set_zn_flags(cpu.a);
+    inline void do_adc(uint8_t v) {
+        uint16_t carry = test_flag(FLAG_CARRY) ? 1 : 0;
+        if (test_flag(FLAG_DECIMAL)) {
+            // NMOS 6502 BCD add. Z comes from the binary result; N and V are
+            // taken from the intermediate sum before the high-nibble fixup.
+            int al = (cpu.a & 0x0F) + (v & 0x0F) + carry;
+            if (al >= 0x0A) al = ((al + 0x06) & 0x0F) + 0x10;
+            int a2 = (cpu.a & 0xF0) + (v & 0xF0) + al;
+            set_flag(FLAG_ZERO, ((cpu.a + v + carry) & 0xFF) == 0);
+            set_flag(FLAG_NEGATIVE, (a2 & 0x80) != 0);
+            set_flag(FLAG_OVERFLOW, (~(cpu.a ^ v) & (cpu.a ^ a2) & 0x80) != 0);
+            if (a2 >= 0xA0) a2 += 0x60;
+            set_flag(FLAG_CARRY, a2 >= 0x100);
+            cpu.a = uint8_t(a2 & 0xFF);
+        } else {
+            uint16_t r = uint16_t(cpu.a) + v + carry;
+            set_flag(FLAG_CARRY, r > 0xFF);
+            set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (v ^ r) & 0x80) != 0);
+            cpu.a = uint8_t(r);
+            set_zn_flags(cpu.a);
+        }
     }
-    inline void do_sbc(uint8_t v) {  // binary mode only (decimal flag ignored)
-        uint16_t r = uint16_t(cpu.a) - v - (test_flag(FLAG_CARRY) ? 0 : 1);
-        set_flag(FLAG_CARRY, r < 0x100);
-        set_flag(FLAG_OVERFLOW, ((cpu.a ^ r) & (~v ^ r) & 0x80) != 0);
-        cpu.a = uint8_t(r);
-        set_zn_flags(cpu.a);
+    inline void do_sbc(uint8_t v) {
+        uint16_t borrow = test_flag(FLAG_CARRY) ? 0 : 1;
+        uint16_t bin = uint16_t(cpu.a) - v - borrow;
+        // NMOS 6502: SBC sets N, V, Z and C identically in binary and decimal
+        // mode - only the accumulator result differs.
+        set_flag(FLAG_CARRY, bin < 0x100);
+        set_flag(FLAG_OVERFLOW, ((cpu.a ^ bin) & (~v ^ bin) & 0x80) != 0);
+        if (test_flag(FLAG_DECIMAL)) {
+            int al = (cpu.a & 0x0F) - (v & 0x0F) - (int)borrow;
+            if (al < 0) al = ((al - 0x06) & 0x0F) - 0x10;
+            int a2 = (cpu.a & 0xF0) - (v & 0xF0) + al;
+            if (a2 < 0) a2 -= 0x60;
+            cpu.a = uint8_t(a2 & 0xFF);
+        } else {
+            cpu.a = uint8_t(bin);
+        }
+        set_zn_flags(uint8_t(bin));
     }
 
     // RMW helpers (memory)
@@ -900,51 +926,27 @@ extern "C" {
 
         // Arithmetic
         case 0x69: // ADC immediate
-        {
-            uint8_t value = cpu.memory[pc++];
-            uint16_t result = cpu.a + value + (test_flag(FLAG_CARRY) ? 1 : 0);
-            set_flag(FLAG_CARRY, result > 0xFF);
-            set_flag(FLAG_OVERFLOW, ((cpu.a ^ result) & (value ^ result) & 0x80) != 0);
-            cpu.a = result & 0xFF;
-            set_zn_flags(cpu.a);
+            do_adc(cpu.memory[pc++]);
             cpu.cycles += 2;
-        }
-        break;
+            break;
 
         case 0x65: // ADC zero page
         {
             uint8_t zp = cpu.memory[pc++];
-            uint8_t value = cpu.memory[zp];
-            uint16_t result = cpu.a + value + (test_flag(FLAG_CARRY) ? 1 : 0);
-            set_flag(FLAG_CARRY, result > 0xFF);
-            set_flag(FLAG_OVERFLOW, ((cpu.a ^ result) & (value ^ result) & 0x80) != 0);
-            cpu.a = result & 0xFF;
-            set_zn_flags(cpu.a);
+            do_adc(rd(zp));
             cpu.cycles += 3;
         }
         break;
 
         case 0xE9: // SBC immediate
-        {
-            uint8_t value = cpu.memory[pc++];
-            uint16_t result = cpu.a - value - (test_flag(FLAG_CARRY) ? 0 : 1);
-            set_flag(FLAG_CARRY, result < 0x100);
-            set_flag(FLAG_OVERFLOW, ((cpu.a ^ result) & (~value ^ result) & 0x80) != 0);
-            cpu.a = result & 0xFF;
-            set_zn_flags(cpu.a);
+            do_sbc(cpu.memory[pc++]);
             cpu.cycles += 2;
-        }
-        break;
+            break;
 
         case 0xE5: // SBC zero page
         {
             uint8_t zp = cpu.memory[pc++];
-            uint8_t value = cpu.memory[zp];
-            uint16_t result = cpu.a - value - (test_flag(FLAG_CARRY) ? 0 : 1);
-            set_flag(FLAG_CARRY, result < 0x100);
-            set_flag(FLAG_OVERFLOW, ((cpu.a ^ result) & (~value ^ result) & 0x80) != 0);
-            cpu.a = result & 0xFF;
-            set_zn_flags(cpu.a);
+            do_sbc(rd(zp));
             cpu.cycles += 3;
         }
         break;
@@ -1265,6 +1267,30 @@ extern "C" {
         // AXS/SBX (X=(A&X)-imm)
         case 0xCB: { uint8_t i = cpu.memory[pc++]; uint8_t t = (cpu.a & cpu.x); uint16_t r = uint16_t(t) - i; set_flag(FLAG_CARRY, r < 0x100); cpu.x = uint8_t(r); set_zn_flags(cpu.x); add(2); } break;
 
+        // SBC #imm (illegal alias of $E9)
+        case 0xEB: { do_sbc(cpu.memory[pc++]); add(2); } break;
+
+        // LAX #imm (a.k.a. LXA/ATX): A = X = imm. Unstable on hardware; the
+        // common emulated form just loads the immediate into both registers.
+        case 0xAB: { uint8_t v = cpu.memory[pc++]; cpu.a = v; cpu.x = v; set_zn_flags(v); add(2); } break;
+
+        // XAA #imm (a.k.a. ANE): A = X & imm. Highly unstable on hardware.
+        case 0x8B: { uint8_t v = cpu.memory[pc++]; cpu.a = cpu.x & v; set_zn_flags(cpu.a); add(2); } break;
+
+        // SHA/AHX: store A & X & (addrHi+1).
+        case 0x9F: { uint16_t base = read_word(pc); uint16_t a = base + cpu.y; uint8_t v = cpu.a & cpu.x & uint8_t((a >> 8) + 1); write_memory_internal(a, v); add(5); } break;
+        case 0x93: { uint8_t z = cpu.memory[pc++]; uint16_t b = rd(z) | (rd((z + 1) & 0xFF) << 8); uint16_t a = b + cpu.y; uint8_t v = cpu.a & cpu.x & uint8_t((a >> 8) + 1); write_memory_internal(a, v); add(6); } break;
+
+        // SHX/SHY: store reg & (addrHi+1).
+        case 0x9E: { uint16_t base = read_word(pc); uint16_t a = base + cpu.y; uint8_t v = cpu.x & uint8_t((a >> 8) + 1); write_memory_internal(a, v); add(5); } break;
+        case 0x9C: { uint16_t base = read_word(pc); uint16_t a = base + cpu.x; uint8_t v = cpu.y & uint8_t((a >> 8) + 1); write_memory_internal(a, v); add(5); } break;
+
+        // TAS/SHS: SP = A & X, then store A & X & (addrHi+1).
+        case 0x9B: { uint16_t base = read_word(pc); uint16_t a = base + cpu.y; cpu.sp = cpu.a & cpu.x; uint8_t v = cpu.a & cpu.x & uint8_t((a >> 8) + 1); write_memory_internal(a, v); add(5); } break;
+
+        // LAS/LAR: A = X = SP = mem & SP.
+        case 0xBB: { auto e = ea_absy(pc); uint8_t v = rd(e.addr) & cpu.sp; cpu.a = v; cpu.x = v; cpu.sp = v; set_zn_flags(v); add_read(4, e.cross); } break;
+
         // KIL/JAM (halt): CPU is permanently halted
         case 0x02: case 0x12: case 0x22: case 0x32: case 0x42: case 0x52:
         case 0x62: case 0x72: case 0x92: case 0xB2: case 0xD2: case 0xF2:
@@ -1289,30 +1315,21 @@ extern "C" {
 
         default:
         {
-            printf("ERROR: Unimplemented opcode $%02X at PC=$%04X\n", opcode, cpu.pc - 1);
-
-            printf("  A=$%02X X=$%02X Y=$%02X SP=$%02X\n", cpu.a, cpu.x, cpu.y, cpu.sp);
-            printf("  Next bytes: $%02X $%02X $%02X\n",
-                cpu.memory[pc],
-                cpu.memory[(pc + 1) & 0xFFFF],
-                cpu.memory[(pc + 2) & 0xFFFF]);
-
-            // Track first occurrences so the log isn't flooded by repeats.
+            // All 256 opcodes are handled above, so this is unreachable in
+            // practice. Kept as a defensive fallback: log each opcode at most
+            // once (never per-execution, which would cripple the analysis loop)
+            // and skip past it using the opcode-size table.
             static std::set<uint8_t> unimplementedOpcodes;
             if (unimplementedOpcodes.find(opcode) == unimplementedOpcodes.end()) {
                 unimplementedOpcodes.insert(opcode);
-                printf("  (First occurrence of this opcode)\n");
+                printf("ERROR: Unimplemented opcode $%02X at PC=$%04X\n", opcode, cpu.pc - 1);
             }
 
-            // Best-effort continue using the opcode size table to skip past the
-            // instruction; otherwise advance by a guess and risk corruption.
             if (opcodeTable[opcode].size > 0) {
                 pc += opcodeTable[opcode].size - 1;
                 cpu.cycles += opcodeTable[opcode].cycles;
-                printf("  Attempting to skip instruction (size=%d)\n", opcodeTable[opcode].size);
             }
             else {
-                printf("  FATAL: Unknown instruction size - emulation may be corrupted\n");
                 cpu.cycles += 2;
             }
         }
