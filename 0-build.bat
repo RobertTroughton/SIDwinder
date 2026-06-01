@@ -106,6 +106,20 @@ REM Activate Emscripten environment
 echo Activating Emscripten environment...
 call "%EMSDK_PATH%\emsdk_env.bat"
 
+REM emsdk_env.bat exists even on a fresh clone, but emcc only lands on PATH
+REM after the toolchain is installed AND activated. Verify before compiling.
+where emcc >nul 2>nul
+if errorlevel 1 (
+    echo.
+    echo ERROR: Found emsdk at "%EMSDK_PATH%" but 'emcc' is not on the PATH.
+    echo The toolchain is probably not installed/activated yet. Run once:
+    echo     cd /d "%EMSDK_PATH%"
+    echo     emsdk install latest
+    echo     emsdk activate latest
+    echo then re-run this build. Skipping WASM build.
+    goto :done
+)
+
 echo.
 echo Compiling WASM module (cpu6510 + SID processor + PNG converter + reSID audio)...
 echo.
