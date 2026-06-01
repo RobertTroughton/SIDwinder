@@ -35,9 +35,10 @@
 // Each voice section has 48 height levels (0-47), mapped to $10-$3F
 .const MAX_BAR_HEIGHT               = 47
 
-// Tracks note attacks tightly (matches RaistlinTripleBars' responsiveness);
-// higher than 3 trades some 3D-column glide for musical accuracy.
-.const BAR_INCREASE_RATE            = 7
+// Match RaistlinBars' rise speed: it climbs ~1.3/8 of full height per frame
+// (rate = TOP_SPECTRUM_HEIGHT*1.3 over a TOP_SPECTRUM_HEIGHT*8 scale). Scaled to
+// this visualizer's MAX_BAR_HEIGHT so a bar takes a similar time to shoot up.
+.const BAR_INCREASE_RATE            = ceil(MAX_BAR_HEIGHT * 1.3 / 8)
 .const BAR_DECREASE_RATE            = ceil(MAX_BAR_HEIGHT / 24.0)
 
 // =============================================================================
