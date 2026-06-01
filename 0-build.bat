@@ -53,15 +53,48 @@ echo [3/3] Building WASM modules...
 echo.
 
 REM Set up Emscripten environment
-REM Adjust this path to where you installed emsdk
-set EMSDK_PATH=D:\git\emsdk
+REM Auto-detect the Emscripten SDK. Resolution order:
+REM   1. An EMSDK_PATH you set yourself before running this script (wins).
+REM   2. The EMSDK env var that "emsdk activate" sets.
+REM   3. A list of common install locations (edit/add your own below).
+REM To force a path, run e.g.  set EMSDK_PATH=C:\path\to\emsdk  before this script.
 
-if not exist "%EMSDK_PATH%" (
-    echo ERROR: EMSDK not found at %EMSDK_PATH%
-    echo Please install Emscripten or update EMSDK_PATH in this script.
+if defined EMSDK_PATH goto :emsdk_check
+
+if defined EMSDK if exist "%EMSDK%\emsdk_env.bat" set "EMSDK_PATH=%EMSDK%"
+
+if not defined EMSDK_PATH (
+    for %%D in (
+        "D:\git\emsdk"
+        "C:\git\emsdk"
+        "%USERPROFILE%\emsdk"
+        "%LOCALAPPDATA%\emsdk"
+        "C:\emsdk"
+        "C:\tools\emsdk"
+    ) do (
+        if not defined EMSDK_PATH if exist "%%~D\emsdk_env.bat" set "EMSDK_PATH=%%~D"
+    )
+)
+
+:emsdk_check
+if not defined EMSDK_PATH (
+    echo ERROR: Could not locate the Emscripten SDK.
+    echo Searched the EMSDK env var and common install locations.
+    echo Install it from https://github.com/emscripten-core/emsdk then either:
+    echo   - run "emsdk activate latest" so the EMSDK variable is set, or
+    echo   - set EMSDK_PATH before running this script, e.g. set EMSDK_PATH=C:\path\to\emsdk
     echo Skipping WASM build.
     goto :done
 )
+
+if not exist "%EMSDK_PATH%\emsdk_env.bat" (
+    echo ERROR: EMSDK_PATH is "%EMSDK_PATH%" but no emsdk_env.bat was found there.
+    echo Please correct EMSDK_PATH or reinstall the Emscripten SDK.
+    echo Skipping WASM build.
+    goto :done
+)
+
+echo Using Emscripten SDK at: %EMSDK_PATH%
 
 REM Check output directory
 if not exist "public" (
