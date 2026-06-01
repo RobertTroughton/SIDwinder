@@ -17,6 +17,8 @@
 //   +$2D80-$2DBF : Conversion table
 //   +$2DC0-$2DFF : Column height buffers (3 x 20 bytes)
 
+.var SpritesBINFile = LoadBinary("sprites.bin")
+
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
 .var CODE_ADDRESS                   = cmdLineVars.get("sysAddress").asNumber()
 .var DATA_ADDRESS                   = cmdLineVars.get("dataAddress").asNumber()
@@ -69,8 +71,6 @@ artistNameColor:
 .var VIC_BANK                       = floor(LOAD_ADDRESS / $4000)
 .var VIC_BANK_ADDRESS               = VIC_BANK * $4000
 .var SPRITES_ADDRESS			    = VIC_BANK_ADDRESS + $3400
-
-.var SpritesBINFile = LoadBinary("sprites.bin")
 
 // =============================================================================
 // CONFIGURATION CONSTANTS (continued)
@@ -218,11 +218,9 @@ InitializeVIC:
 
     // Multicolor shared colors (charset bit pairs: 01=$d022, 10=$d023)
     lda #$0c
-    sta $d022                           // MC color 1 (medium grey)
+    sta $d022
     lda #$00
-    sta $d023                           // MC color 2 (black - was dark grey, swapped with bg)
-
-    lda #$00
+    sta $d023
     sta $d01b                           // Sprites in front of background
     sta $d026                           // Sprite MC color 1 = black
     lda #$0c
@@ -367,7 +365,7 @@ ScreenIRQ:
 SetTopSprites:
 
     lda #$01
-    ldy #20
+    ldy #$14
     .for(var i = 0; i < 3; i++)
     {
         ldx #24 + (i * 24)
@@ -884,8 +882,8 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $94,$93,$8F,$3F,$FF,$FF,$7F,$5F
-.byte $40,$00,$E0,$F8,$FE,$F6,$D2,$46
+.byte $54,$53,$4F,$3F,$FF,$FF,$7F,$5F
+.byte $02,$82,$E2,$FA,$FE,$F6,$D2,$46
 .byte $77,$5D,$57,$5D,$57,$55,$57,$55
 .byte $12,$42,$12,$42,$02,$42,$02,$02
 .byte $57,$55,$55,$55,$55,$55,$55,$55
@@ -900,8 +898,8 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$94,$93,$8F,$3F,$FF,$FF,$7F
-.byte $40,$40,$00,$E0,$F8,$FE,$F6,$D2
+.byte $55,$54,$53,$4F,$3F,$FF,$FF,$7F
+.byte $02,$02,$82,$E2,$FA,$FE,$F6,$D2
 .byte $5F,$77,$5D,$57,$5D,$57,$55,$57
 .byte $46,$12,$42,$12,$42,$02,$42,$02
 .byte $55,$57,$55,$55,$55,$55,$55,$55
@@ -916,8 +914,8 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$94,$93,$8F,$3F,$FF,$FF
-.byte $40,$40,$40,$00,$E0,$F8,$FE,$F6
+.byte $55,$55,$54,$53,$4F,$3F,$FF,$FF
+.byte $02,$02,$02,$82,$E2,$FA,$FE,$F6
 .byte $7F,$5F,$77,$5D,$57,$5D,$57,$55
 .byte $D2,$46,$12,$42,$12,$42,$02,$42
 .byte $57,$55,$57,$55,$55,$55,$55,$55
@@ -932,8 +930,8 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $42,$02,$02,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$95,$94,$93,$8F,$3F,$FF
-.byte $40,$40,$40,$40,$00,$E0,$F8,$FE
+.byte $55,$55,$55,$54,$53,$4F,$3F,$FF
+.byte $02,$02,$02,$02,$82,$E2,$FA,$FE
 .byte $FF,$7F,$5F,$77,$5D,$57,$5D,$57
 .byte $F6,$D2,$46,$12,$42,$12,$42,$02
 .byte $55,$57,$55,$57,$55,$55,$55,$55
@@ -948,8 +946,8 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $02,$42,$02,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$95,$95,$94,$93,$8F,$3F
-.byte $40,$40,$40,$40,$40,$00,$E0,$F8
+.byte $55,$55,$55,$55,$54,$53,$4F,$3F
+.byte $02,$02,$02,$02,$02,$82,$E2,$FA
 .byte $FF,$FF,$7F,$5F,$77,$5D,$57,$5D
 .byte $FE,$F6,$D2,$46,$12,$42,$12,$42
 .byte $57,$55,$57,$55,$57,$55,$55,$55
@@ -964,10 +962,10 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $42,$02,$42,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$95,$95,$95,$94,$93,$8F
-.byte $40,$40,$40,$40,$40,$40,$00,$E0
+.byte $55,$55,$55,$55,$55,$54,$53,$4F
+.byte $02,$02,$02,$02,$02,$02,$82,$E2
 .byte $3F,$FF,$FF,$7F,$5F,$77,$5D,$57
-.byte $F8,$FE,$F6,$D2,$46,$12,$42,$12
+.byte $FA,$FE,$F6,$D2,$46,$12,$42,$12
 .byte $5D,$57,$55,$57,$55,$57,$55,$55
 .byte $42,$02,$42,$02,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
@@ -980,10 +978,10 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $12,$42,$02,$42,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$95,$95,$95,$95,$94,$93
-.byte $40,$40,$40,$40,$40,$40,$40,$80
-.byte $8F,$3F,$FF,$FF,$7F,$5F,$77,$5D
-.byte $E0,$F8,$FE,$F6,$D2,$46,$12,$42
+.byte $55,$55,$55,$55,$55,$55,$54,$53
+.byte $02,$02,$02,$02,$02,$02,$02,$82
+.byte $4F,$3F,$FF,$FF,$7F,$5F,$77,$5D
+.byte $E2,$FA,$FE,$F6,$D2,$46,$12,$42
 .byte $57,$5D,$57,$55,$57,$55,$57,$55
 .byte $12,$42,$02,$42,$02,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
@@ -996,24 +994,22 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $42,$12,$42,$02,$42,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-.byte $95,$95,$95,$95,$95,$95,$95,$94
-.byte $40,$40,$40,$40,$40,$40,$40,$40
-.byte $93,$8F,$BF,$FF,$FF,$7F,$5F,$77
-.byte $00,$E0,$F8,$FE,$F6,$D2,$46,$12
+.byte $55,$55,$55,$55,$55,$55,$55,$54
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $53,$4F,$3F,$FF,$FF,$7F,$5F,$77
+.byte $82,$E2,$FA,$FE,$F6,$D2,$46,$12
 .byte $5D,$57,$5D,$57,$55,$57,$55,$57
 .byte $42,$12,$42,$02,$42,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
 .byte $02,$02,$02,$02,$02,$02,$02,$02
-// Bottom cap / base characters
-.byte $55,$54,$53,$4F,$3F,$BF,$9F,$97
-.byte $82,$E2,$FA,$FE,$FF,$FD,$F4,$D1
-.byte $9D,$97,$95,$97,$95,$95,$95,$95
-.byte $C4,$50,$C4,$50,$C0,$50,$C0,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $C0,$40,$40,$40,$40,$40,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
-// Empty / space character
+.byte $54,$53,$4F,$3F,$FF,$FF,$7F,$5F
+.byte $02,$82,$E2,$FA,$FE,$F6,$D2,$46
+.byte $77,$5D,$57,$5D,$57,$55,$57,$55
+.byte $12,$42,$12,$42,$02,$42,$02,$02
+.byte $57,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1022,15 +1018,14 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-// More shifted variants
-.byte $55,$55,$54,$53,$4F,$3F,$BF,$9F
-.byte $02,$82,$E2,$FA,$FE,$FF,$FD,$F4
-.byte $97,$9D,$97,$95,$97,$95,$95,$95
-.byte $D1,$C4,$50,$C4,$50,$C0,$50,$C0
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$C0,$40,$40,$40,$40,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $55,$54,$53,$4F,$3F,$FF,$FF,$7F
+.byte $02,$02,$82,$E2,$FA,$FE,$F6,$D2
+.byte $5F,$77,$5D,$57,$5D,$57,$55,$57
+.byte $46,$12,$42,$12,$42,$02,$42,$02
+.byte $55,$57,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1039,14 +1034,30 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $55,$55,$55,$54,$53,$4F,$3F,$BF
-.byte $02,$02,$82,$E2,$FA,$FE,$FF,$FD
-.byte $9F,$97,$9D,$97,$95,$97,$95,$95
-.byte $F4,$D1,$C4,$50,$C4,$50,$C0,$50
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $C0,$40,$C0,$40,$40,$40,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $55,$55,$54,$53,$4F,$3F,$FF,$FF
+.byte $02,$02,$02,$82,$E2,$FA,$FE,$F6
+.byte $7F,$5F,$77,$5D,$57,$5D,$57,$55
+.byte $D2,$46,$12,$42,$12,$42,$02,$42
+.byte $57,$55,$57,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $55,$55,$55,$54,$53,$4F,$3F,$FF
+.byte $02,$02,$02,$02,$82,$E2,$FA,$FE
+.byte $FF,$7F,$5F,$77,$5D,$57,$5D,$57
+.byte $F6,$D2,$46,$12,$42,$12,$42,$02
+.byte $55,$57,$55,$57,$55,$55,$55,$55
+.byte $42,$02,$02,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1056,13 +1067,13 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $55,$55,$55,$55,$54,$53,$4F,$3F
-.byte $02,$02,$02,$82,$E2,$FA,$FE,$FF
-.byte $BF,$9F,$97,$9D,$97,$95,$97,$95
-.byte $FD,$F4,$D1,$C4,$50,$C4,$50,$C0
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $50,$C0,$40,$C0,$40,$40,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $02,$02,$02,$02,$02,$82,$E2,$FA
+.byte $FF,$FF,$7F,$5F,$77,$5D,$57,$5D
+.byte $FE,$F6,$D2,$46,$12,$42,$12,$42
+.byte $57,$55,$57,$55,$57,$55,$55,$55
+.byte $02,$42,$02,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1072,13 +1083,13 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $55,$55,$55,$55,$55,$54,$53,$4F
-.byte $02,$02,$02,$02,$82,$E2,$FA,$FE
-.byte $3F,$BF,$9F,$97,$9D,$97,$95,$97
-.byte $FF,$FD,$F4,$D1,$C4,$50,$C4,$50
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $C0,$50,$C0,$40,$C0,$40,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $02,$02,$02,$02,$02,$02,$82,$E2
+.byte $3F,$FF,$FF,$7F,$5F,$77,$5D,$57
+.byte $FA,$FE,$F6,$D2,$46,$12,$42,$12
+.byte $5D,$57,$55,$57,$55,$57,$55,$55
+.byte $42,$02,$42,$02,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1088,13 +1099,13 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $55,$55,$55,$55,$55,$55,$54,$53
-.byte $02,$02,$02,$02,$02,$82,$E2,$FA
-.byte $4F,$3F,$BF,$9F,$97,$9D,$97,$95
-.byte $FE,$FF,$FD,$F4,$D1,$C4,$50,$C4
-.byte $97,$95,$95,$95,$95,$95,$95,$95
-.byte $50,$C0,$50,$C0,$40,$C0,$40,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $02,$02,$02,$02,$02,$02,$02,$82
+.byte $4F,$3F,$FF,$FF,$7F,$5F,$77,$5D
+.byte $E2,$FA,$FE,$F6,$D2,$46,$12,$42
+.byte $57,$5D,$57,$55,$57,$55,$57,$55
+.byte $12,$42,$02,$42,$02,$02,$02,$02
+.byte $55,$55,$55,$55,$55,$55,$55,$55
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1104,29 +1115,13 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $55,$55,$55,$55,$55,$55,$55,$54
-.byte $02,$02,$02,$02,$02,$02,$82,$E2
-.byte $53,$4F,$3F,$BF,$9F,$97,$9D,$97
-.byte $FA,$FE,$FF,$FD,$F4,$D1,$C4,$50
-.byte $95,$97,$95,$95,$95,$95,$95,$95
-.byte $C4,$50,$C0,$50,$C0,$40,$C0,$40
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-.byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
+.byte $02,$02,$02,$02,$02,$02,$02,$02
+.byte $53,$4F,$3F,$FF,$FF,$7F,$5F,$77
+.byte $82,$E2,$FA,$FE,$F6,$D2,$46,$12
+.byte $5D,$57,$5D,$57,$55,$57,$55,$57
+.byte $42,$12,$42,$02,$42,$02,$02,$02
 .byte $55,$55,$55,$55,$55,$55,$55,$55
-.byte $02,$02,$02,$02,$02,$02,$02,$82
-.byte $54,$53,$4F,$3F,$BF,$9F,$97,$9D
-.byte $E2,$FA,$FE,$FF,$FD,$F4,$D1,$C4
-.byte $97,$95,$97,$95,$95,$95,$95,$95
-.byte $50,$C4,$50,$C0,$50,$C0,$40,$C0
-.byte $95,$95,$95,$95,$95,$95,$95,$95
-.byte $40,$40,$40,$40,$40,$40,$40,$40
+.byte $02,$02,$02,$02,$02,$02,$02,$02
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
@@ -1135,34 +1130,13 @@ heightToColor:              .fill COLOR_TABLE_SIZE, $0b
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 .byte $AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-
 
 // =============================================================================
 // SPRITE DATA (bottom border visual)
 // =============================================================================
 
 * = SPRITE_DATA_ADDRESS "Sprite"
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
-.byte  80,  80,  80
+.fill 64, $50
 
 // =============================================================================
 // SCREEN
