@@ -77,6 +77,13 @@ const VISUALIZERS = [
         description: 'Minimal rasterbar effect',
         preview: 'prg/simpleraster.png',
         config: 'prg/simpleraster.json'
+    },
+    {
+        id: 'ScrapColumns',
+        name: 'Scrap Columns',
+        description: '3D column spectrum visualizer by Scrap',
+        preview: 'prg/scrapcolumns.png',
+        config: 'prg/scrapcolumns.json'
     }
 ];
 
