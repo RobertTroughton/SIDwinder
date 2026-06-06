@@ -17,10 +17,36 @@ fontMode:
 
     jmp Initialize
 
-// VIC-accessible RAM target for the optional RAM charset (VIC bank 0).
-.const RAM_CHARSET_ADDRESS  = $2000
-.const D018_VALUE_ROM       = $16   // screen $0400 + charset $1800 (lowercase ROM)
-.const D018_VALUE_RAM       = $18   // screen $0400 + charset $2000
+// =============================================================================
+// VIC BANK / SCREEN / CHARSET LAYOUT
+//
+// The player runs from whichever VIC bank its code was assembled into
+// (LOAD_ADDRESS / $4000). Keeping the screen and charset inside that bank
+// means a SID that loads as low as $0400 is never overwritten by the display.
+//
+//   Bank 0   : screen $0400,        charset RAM $2000        (classic low map)
+//   Bank 1-3 : screen <bank>+$2000, charset RAM <bank>+$2800
+//
+// The charset always lives in RAM: the C64 character ROM is only VIC-visible
+// in banks 0 and 2, so banks 1 and 3 must have a copy. At init we copy the
+// lowercase character ROM into CHARSET_RAM; a custom font, if injected,
+// overwrites it after the intro.
+// =============================================================================
+
+.var VIC_BANK           = floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS   = VIC_BANK * $4000
+
+.var SCREEN_RAM         = VIC_BANK_ADDRESS + $2000
+.var CHARSET_RAM        = VIC_BANK_ADDRESS + $2800
+.var ScreenD018Nibble   = 8     // $2000 / $400
+.var CharsetD018Nibble  = 5     // $2800 / $800
+.if (VIC_BANK == 0) {
+    .eval SCREEN_RAM        = $0400
+    .eval CHARSET_RAM       = $2000
+    .eval ScreenD018Nibble  = 1     // $0400 / $400
+    .eval CharsetD018Nibble = 4     // $2000 / $800
+}
+.var D018_VALUE         = (ScreenD018Nibble * 16) + (CharsetD018Nibble * 2)
 
 .var Display_Title_Colour           = $01
 .var Display_Artist_Colour          = $0c
@@ -80,7 +106,6 @@ fontMode:
 .var Display_Controls_SongSelectKeys_X = 8
 .var Display_Controls_SongSelectKeys_Y = 24
 
-.const SCREEN_RAM = $0400
 .const COLOR_RAM = $d800
 .const ROW_WIDTH = 40
 
@@ -97,6 +122,10 @@ fontMode:
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 250
 
+// Make the shared intro effect draw into this player's in-bank screen/charset
+// instead of the fixed bank-0 $0400 screen.
+#define BANK_AWARE_EFFECT
+
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
@@ -112,6 +141,13 @@ Initialize:
 
     lda #$35
     sta $01
+
+    // Point the VIC at our bank and load the charset before anything is drawn,
+    // so the intro and the main display both render from in-bank RAM.
+    jsr SetupVICBank
+    jsr CopyRomCharset
+    lda #D018_VALUE
+    sta $d018
 
     jsr RunLinkedWithEffect
 
@@ -841,32 +877,63 @@ SpaceText:          .text "SPACE = Fast Forward (Hold)"
                     .byte 0
 
 // =============================================================================
+// VIC BANK SETUP
+//
+// Switch the VIC to VIC_BANK by writing the (inverted) bank bits into the low
+// two bits of CIA2 $dd00, after making sure those lines are outputs in $dd02.
+// =============================================================================
+
+SetupVICBank:
+    lda $dd02
+    ora #$03
+    sta $dd02
+    lda $dd00
+    and #$fc
+    ora #(3 - VIC_BANK)
+    sta $dd00
+    rts
+
+// =============================================================================
 // CHARSET SETUP
 //
-// In ROM mode (fontMode == 0) point $d018 at the C64 lowercase ROM charset.
-// In RAM mode (fontMode != 0) copy the 768 injected bytes from EmbeddedCharset
-// into VIC bank 0 RAM at $2000 and point $d018 there.
+// CopyRomCharset copies the 2K lowercase character ROM into CHARSET_RAM so the
+// intro and (in ROM mode) the main display have a charset inside our VIC bank.
+// The character ROM is only reachable while I/O is banked out, so we flip $01
+// to $33 across the copy with interrupts already disabled.
+//
+// SetupCharset then overlays the injected custom font (fontMode != 0) on top of
+// the ROM copy; in ROM mode it does nothing because $d018 already points at the
+// CHARSET_RAM copy made above.
 // =============================================================================
+
+CopyRomCharset:
+    lda #$33                    // CHAREN=0: character ROM visible at $D000-$DFFF
+    sta $01
+    ldx #0
+!loop:
+    .for (var i = 0; i < 8; i++) {
+        lda $d800 + (i * 256), x
+        sta CHARSET_RAM + (i * 256), x
+    }
+    inx
+    bne !loop-
+    lda #$35
+    sta $01
+    rts
 
 SetupCharset:
     lda fontMode
-    beq !rom+
+    beq !done+
 
     ldx #0
 !loop:
     .for (var i = 0; i < 3; i++) {
         lda EmbeddedCharset + (i * 256), x
-        sta RAM_CHARSET_ADDRESS + (i * 256), x
+        sta CHARSET_RAM + (i * 256), x
     }
     inx
     bne !loop-
-
-    lda #D018_VALUE_RAM
-    bne !set+
-!rom:
-    lda #D018_VALUE_ROM
-!set:
-    sta $d018
+!done:
     rts
 
 // =============================================================================

@@ -15,6 +15,11 @@ REM --- Step 2: Build SID Players for Web ---
 echo [2/3] Building SID Players for Web...
 echo.
 
+REM Bank 0 builds (screen $0400, code $0800) for the text players. Auto-selected
+REM for SIDs that load high enough to leave $0400-$2FFF free.
+java -jar .\KickAss.jar :loadAddress=2048 :sysAddress=2304 :dataAddress=2048 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-0800.bin || goto :error
+java -jar .\KickAss.jar :loadAddress=2048 :sysAddress=2304 :dataAddress=2048 .\SIDPlayers\DefaultWithLogo\DefaultWithLogo.asm -showmem -binfile -o public\prg\DefaultWithLogo-0800.bin || goto :error
+
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\Default\Default.asm -showmem -binfile -o public\prg\Default-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\DefaultWithLogo\DefaultWithLogo.asm -showmem -binfile -o public\prg\DefaultWithLogo-4000.bin || goto :error
 java -jar .\KickAss.jar :loadAddress=16384 :sysAddress=16640 :dataAddress=16384 .\SIDPlayers\RaistlinBars\RaistlinBars.asm -showmem -binfile -o public\prg\RaistlinBars-4000.bin || goto :error

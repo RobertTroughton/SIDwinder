@@ -16,7 +16,15 @@
 .const EFFECT_LINE_X            = 10
 .const EFFECT_WIDTH             = 20
 
+// When BANK_AWARE_EFFECT is defined the host player has already selected its
+// VIC bank and copied a charset into CHARSET_RAM, so the intro draws into that
+// player's in-bank screen. Otherwise it falls back to the classic bank-0 $0400
+// screen with the lowercase ROM charset (used by all the other players).
+#if BANK_AWARE_EFFECT
+.var ScreenAddress = SCREEN_RAM
+#else
 .var ScreenAddress = $0400
+#endif
 .var VIC_COLOURMEMORY = $d800
 
 // =============================================================================
@@ -73,10 +81,15 @@ RunLinkedWithEffect:
 
     jsr VSync
 
+#if BANK_AWARE_EFFECT
+    lda #D018_VALUE             // in-bank screen + charset; VIC bank already set
+    sta $d018
+#else
     lda #$17
     sta $d018
     lda #$97
     sta $dd00
+#endif
     lda #$08
     sta $d016
     lda #$00
