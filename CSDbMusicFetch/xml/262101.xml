@@ -46,14 +46,42 @@
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280474/TwinCross.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322481</CounterLink>
+<Downloads>33</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280488/twincross.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322495</CounterLink>
 <Downloads>15</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
-<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280472/twincross.prg</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322480</CounterLink>
-<Downloads>20</Downloads>
-<Status>Ok</Status>
-</DownloadLink>
 </DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>3443</ID>
+<Login>syndrom</Login>
+<Handle>The Syndrom</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1028</ID>
+<Handle>The Syndrom</Handle>
+<AKA>Syndrom</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>picked it off the game-title "alien syndrome", though never even played that ;-)</HandleStory>
+<Scener><ID>1012</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>1028</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>Excellent work!</Text>
+</UserComment>
+</Comments>
 </Release>
 </CSDbData>

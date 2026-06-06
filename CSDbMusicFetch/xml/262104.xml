@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CSDbData><Release><ID>262104</ID>
-<Name>Beautiful struggle</Name>
+<Name>Beautiful Struggle</Name>
 <AKA>We Steeleaf</AKA>
 <Type>C64 Music</Type>
 <ReleaseDay>5</ReleaseDay>
@@ -206,14 +206,26 @@ Came back to the scene in 2016.</Trivia>
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280479/beautiful struggle RC4.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322486</CounterLink>
-<Downloads>5</Downloads>
+<Downloads>25</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 <DownloadLink><Link>https://csdb.dk/getinternalfile.php/280478/beautifulstruggle.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322485</CounterLink>
-<Downloads>8</Downloads>
+<Downloads>43</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>3987</ID>
+<Login>STEEL</Login>
+<Handle>Steel</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1651</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>This tune is a colab between Leaf and Steel. Due to some miscommunication Problem with the Upload Form the Song was Not proper credited at the compo and Leaf was Not mentioned. I Take the blame and i feel extremely sorry for That.</Text>
+</UserComment>
+</Comments>
 </Release>
 </CSDbData>

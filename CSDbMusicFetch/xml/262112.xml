@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>262112</ID>
+<Name>Sugar Rush</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>5</ReleaseDay>
+<ReleaseMonth>6</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3485</ID>
+<Name>X'2026</Name>
+<EventType>C64 Only Party</EventType>
+<AKA>X 2026 X2026 X-2026 X'26 X26 X-26</AKA>
+<StartDay>5</StartDay>
+<StartMonth>6</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>7</EndDay>
+<EndMonth>6</EndMonth>
+<EndYear>2026</EndYear>
+<Address>De Hoof 18</Address>
+<Zip>5712LM</Zip>
+<City>Someren</City>
+<State>NB</State>
+<Country>Netherlands</Country>
+<Website>https://xparty.net/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/262000/262112.png</ScreenShot>
+<ReleasedBy><Handle><ID>1130</ID>
+<Handle>Youth</Handle>
+<AKA>youtH</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Saw the name on an Orb album</HandleStory>
+<Scener><ID>1114</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>35839</ID>
+<Handle>Animal</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1130</ID>
+</Handle>
+<Handle><ID>4750</ID>
+<Handle>Mad B</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>They are my initials: M.A.D.B.</HandleStory>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1126</ID>
+<Handle>Yavin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Always been a Star Wars fan, so...</HandleStory>
+<Scener><ID>1110</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>23990</ID>
+<Handle>Marvin Design</Handle>
+<AKA>Marvin</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1110</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>6862</ID>
+<Handle>MJ Design</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1110</ID>
+</Scener>
+</Handle>
+<Handle><ID>1126</ID>
+</Handle>
+<Handle><ID>4752</ID>
+<Handle>Trooper</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1110</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</ReleasedBy>
+<Credits><Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>1130</ID>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>1126</ID>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280495/yavinyouthsugarrush.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322503</CounterLink>
+<Downloads>11</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>1667</ID>
+<Login>youth</Login>
+<Handle>Youth</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1130</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>Woops thanks Raistlin, had a bad connection @ X</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4468</ID>
+<Login>RaistlinGP</Login>
+<Handle>Raistlin</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>848</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>Download missing... Youth, did you forget to upload?</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>
