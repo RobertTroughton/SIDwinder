@@ -109,13 +109,13 @@ artistNameColor:
 #define INCLUDE_F1_SHOWRASTERTIMINGBAR
 #define INCLUDE_MUSIC_ANALYSIS
 
-.import source "../INC/Common.asm"
-.import source "../INC/Keyboard.asm"
-.import source "../INC/MusicPlayback.asm"
-.import source "../INC/StableRasterSetup.asm"
-.import source "../INC/SpectrometerPerVoice.asm"
-.import source "../INC/FreqTable20.asm"
-.import source "../INC/LinkedWithEffect.asm"
+.import source "../INC/common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+.import source "../INC/stablerastersetup.asm"
+.import source "../INC/spectrometerpervoice.asm"
+.import source "../INC/freqtable20.asm"
+.import source "../INC/linkedwitheffect.asm"
 
 // =============================================================================
 // DATA

@@ -56,10 +56,10 @@ fontMode:
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 250
 
-.import source "../INC/Common.asm"
+.import source "../INC/common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
-.import source "../INC/LinkedWithEffect.asm"
+.import source "../INC/linkedwitheffect.asm"
 
 // =============================================================================
 // INITIALIZATION ENTRY POINT

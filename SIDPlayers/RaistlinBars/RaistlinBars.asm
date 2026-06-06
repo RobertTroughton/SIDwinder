@@ -112,14 +112,14 @@ artistNameColor:
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 232
 
-.import source "../INC/Common.asm"
-.import source "../INC/Keyboard.asm"
-.import source "../INC/MusicPlayback.asm"
-.import source "../INC/StableRasterSetup.asm"
-.import source "../INC/Spectrometer.asm"
-.import source "../INC/FreqTable.asm"
-.import source "../INC/BarStyles.asm"
-.import source "../INC/LinkedWithEffect.asm"
+.import source "../INC/common.asm"
+.import source "../INC/keyboard.asm"
+.import source "../INC/musicplayback.asm"
+.import source "../INC/stablerastersetup.asm"
+.import source "../INC/spectrometer.asm"
+.import source "../INC/freqtable.asm"
+.import source "../INC/barstyles.asm"
+.import source "../INC/linkedwitheffect.asm"
 
 //; =============================================================================
 //; DATA

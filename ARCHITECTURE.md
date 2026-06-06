@@ -151,7 +151,7 @@ Built from KickAss assembly in `SIDPlayers/` via `0-build.bat`.
 
 KickAss assembly source for each visualizer type:
 - Main file (e.g., `RaistlinBars.asm`)
-- Shared includes in `INC/`: Common.asm, Spectrometer.asm, MusicPlayback.asm, Keyboard.asm, StableRasterSetup.asm, BarStyles.asm
+- Shared includes in `INC/` (lowercase filenames): common.asm, spectrometer.asm, musicplayback.asm, keyboard.asm, stablerastersetup.asm, barstyles.asm
 - Binary data: FreqTable.bin, SoundbarSine.bin, character sets
 - Compiled by `0-build.bat` using KickAss.jar
 
