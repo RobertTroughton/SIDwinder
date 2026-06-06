@@ -46,6 +46,20 @@ ColourFadeValues:       .fill 70, $00
 
 RunLinkedWithEffect:
 
+#if BANK_AWARE_EFFECT
+    // Screen addresses are fixed in-bank; no relocation needed.
+#else
+    // Relocate the intro screen onto the safe bank-0 page chosen by the
+    // exporter (avoids a SID that loads low). Patch the clear-loop base and the
+    // two text-line store high bytes; the colour writes use fixed $D800.
+    ldx IntroScreenHi
+    stx ClrSt + 2
+    inx
+    stx TxtL1 + 2
+    inx
+    stx TxtL2 + 2
+#endif
+
     jsr VSync
 
     lda #$00
@@ -54,23 +68,28 @@ RunLinkedWithEffect:
 
     jsr VSync
 
-    // Clear screen
+    // Clear 4 pages (1000 bytes) of the screen via a single self-modifying
+    // store whose high byte walks through the pages.
     ldx #0
+    ldy #4
     lda #$20
 !clr:
-    sta ScreenAddress + (0 * 256),x
-    sta ScreenAddress + (1 * 256),x
-    sta ScreenAddress + (2 * 256),x
-    sta ScreenAddress + (3 * 256),x
+ClrSt:
+    sta ScreenAddress,x
     inx
+    bne !clr-
+    inc ClrSt + 2
+    dey
     bne !clr-
 
     // Draw text and init colors to black
     ldx #EFFECT_WIDTH-1
 !txt:
     lda EffectLine1,x
+TxtL1:
     sta ScreenAddress + (EFFECT_LINE1_Y * 40) + EFFECT_LINE_X,x
     lda EffectLine2,x
+TxtL2:
     sta ScreenAddress + (EFFECT_LINE2_Y * 40) + EFFECT_LINE_X,x
 
     lda #0              // Start with black (invisible)
@@ -85,7 +104,8 @@ RunLinkedWithEffect:
     lda #D018_VALUE             // in-bank screen + charset; VIC bank already set
     sta $d018
 #else
-    lda #$17
+    // screen = IntroScreenHi page, charset = lowercase ROM ($1800), VIC bank 0
+    lda IntroD018
     sta $d018
     lda #$97
     sta $dd00
