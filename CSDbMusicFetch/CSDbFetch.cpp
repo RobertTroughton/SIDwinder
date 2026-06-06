@@ -6,7 +6,15 @@
 #include "CSDbFetch.h"
 
 #include <tinyxml2.h>
-#include <curl/curl.h>
+
+// HTTP backend: WinHTTP on Windows (no external dependency), libcurl elsewhere.
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#  include <winhttp.h>
+#else
+#  include <curl/curl.h>
+#endif
 
 #include <chrono>
 #include <cstdint>
@@ -21,8 +29,11 @@ namespace csdb {
 	// CSDb webservice endpoint. depth=2 is required for the <Credits> block.
 	static const std::string kReleaseURL = "https://csdb.dk/webservice/?type=release&depth=2&id=";
 
+#ifndef _WIN32
 	// CSDb rejects requests without a Referer. Point this at your own site.
+	// (The WinHTTP backend sets the Referer header inline; see HttpGet below.)
 	static const char* kReferer = "https://csdb.dk/";
+#endif
 
 	// CSDb rate limit: keep at least 200ms between requests (5/sec).
 	static const int kMinIntervalMs = 200;
@@ -125,6 +136,116 @@ namespace csdb {
 	}
 
 	// ---- HTTP ---------------------------------------------------------------
+	//
+	// A tiny client abstraction over the platform HTTP stack. HttpOpen() returns
+	// a reusable handle (one per FetchReleases run), HttpGet() performs a single
+	// GET, HttpClose() releases it. Two backends share this interface so the
+	// release/credit parsing below is platform-agnostic.
+
+#ifdef _WIN32
+
+	// ---- WinHTTP backend ----------------------------------------------------
+
+	using HttpHandle = HINTERNET; // a WinHTTP session handle
+
+	static HttpHandle HttpOpen() {
+		return WinHttpOpen(L"CSDbMusicFetch/1.0",
+			WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+			WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	}
+
+	static void HttpClose(HttpHandle session) {
+		if (session)
+			WinHttpCloseHandle(session);
+	}
+
+	static bool HttpGet(HttpHandle session, const std::string& url, std::string& out) {
+		out.clear();
+		if (!session)
+			return false;
+
+		// CSDb URLs are ASCII; widen for the WinHTTP wide-char API.
+		std::wstring wurl(url.begin(), url.end());
+
+		wchar_t host[256] = { 0 };
+		wchar_t path[2048] = { 0 };
+		wchar_t extra[2048] = { 0 };
+
+		URL_COMPONENTS uc;
+		ZeroMemory(&uc, sizeof(uc));
+		uc.dwStructSize = sizeof(uc);
+		uc.lpszHostName = host;       uc.dwHostNameLength = 255;
+		uc.lpszUrlPath = path;        uc.dwUrlPathLength = 2047;
+		uc.lpszExtraInfo = extra;     uc.dwExtraInfoLength = 2047;
+
+		if (!WinHttpCrackUrl(wurl.c_str(), static_cast<DWORD>(wurl.size()), 0, &uc))
+			return false;
+
+		host[uc.dwHostNameLength] = 0;
+		path[uc.dwUrlPathLength] = 0;
+		extra[uc.dwExtraInfoLength] = 0;
+		std::wstring resource = std::wstring(path) + std::wstring(extra);
+
+		const bool secure = (uc.nScheme == INTERNET_SCHEME_HTTPS);
+
+		HINTERNET hConnect = WinHttpConnect(session, host, uc.nPort, 0);
+		if (!hConnect)
+			return false;
+
+		HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET",
+			resource.c_str(), nullptr,
+			WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+			secure ? WINHTTP_FLAG_SECURE : 0);
+		if (!hRequest) {
+			WinHttpCloseHandle(hConnect);
+			return false;
+		}
+
+		// CSDb rejects requests without a Referer.
+		static const wchar_t* kRefererHeader = L"Referer: https://csdb.dk/\r\n";
+		WinHttpAddRequestHeaders(hRequest, kRefererHeader, (DWORD)-1L,
+			WINHTTP_ADDREQ_FLAG_ADD);
+
+		bool ok = false;
+		if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+			WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+			WinHttpReceiveResponse(hRequest, nullptr)) {
+
+			DWORD status = 0, statusLen = sizeof(status);
+			WinHttpQueryHeaders(hRequest,
+				WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+				WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusLen,
+				WINHTTP_NO_HEADER_INDEX);
+
+			DWORD avail = 0;
+			do {
+				avail = 0;
+				if (!WinHttpQueryDataAvailable(hRequest, &avail))
+					break;
+				if (avail == 0)
+					break;
+				std::string chunk(avail, '\0');
+				DWORD read = 0;
+				if (!WinHttpReadData(hRequest, &chunk[0], avail, &read))
+					break;
+				out.append(chunk.data(), read);
+			} while (avail > 0);
+
+			ok = (status >= 200 && status < 300 && !out.empty());
+		}
+
+		WinHttpCloseHandle(hRequest);
+		WinHttpCloseHandle(hConnect);
+		return ok;
+	}
+
+#else
+
+	// ---- libcurl backend ----------------------------------------------------
+
+	static const char* kUserAgent = "CSDbMusicFetch/1.0";
+
+	using HttpHandle = CURL*;
 
 	static size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
 		std::string* out = static_cast<std::string*>(userdata);
@@ -132,16 +253,27 @@ namespace csdb {
 		return size * nmemb;
 	}
 
+	static HttpHandle HttpOpen() {
+		return curl_easy_init();
+	}
+
+	static void HttpClose(HttpHandle curl) {
+		if (curl)
+			curl_easy_cleanup(curl);
+	}
+
 	// Single GET. Returns true and fills `out` on a 2xx response with a body.
-	static bool HttpGet(CURL* curl, const std::string& url, std::string& out) {
+	static bool HttpGet(HttpHandle curl, const std::string& url, std::string& out) {
 		out.clear();
+		if (!curl)
+			return false;
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_REFERER, kReferer);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, "CSDbMusicFetch/1.0");
+		curl_easy_setopt(curl, CURLOPT_USERAGENT, kUserAgent);
 
 		CURLcode res = curl_easy_perform(curl);
 		if (res != CURLE_OK)
@@ -151,6 +283,8 @@ namespace csdb {
 		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 		return httpCode >= 200 && httpCode < 300 && !out.empty();
 	}
+
+#endif
 
 	// CSDb returns the 3 bytes "huh" for a non-existent entry.
 	static bool IsHuhResponse(const std::string& body) {
@@ -213,6 +347,18 @@ namespace csdb {
 
 	// ---- Public API ---------------------------------------------------------
 
+	void GlobalInit() {
+#ifndef _WIN32
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+#endif
+	}
+
+	void GlobalCleanup() {
+#ifndef _WIN32
+		curl_global_cleanup();
+#endif
+	}
+
 	std::vector<int> LoadReleaseIDs(const std::string& filename) {
 		std::vector<int> ids;
 		std::ifstream file(filename);
@@ -237,8 +383,8 @@ namespace csdb {
 		std::vector<ReleaseRecord> records;
 		records.reserve(releaseIDs.size());
 
-		CURL* curl = curl_easy_init();
-		if (!curl) {
+		HttpHandle http = HttpOpen();
+		if (!http) {
 			// Return empty records (found == false) for every ID.
 			for (int id : releaseIDs) {
 				ReleaseRecord rec;
@@ -268,7 +414,7 @@ namespace csdb {
 				if (attempt > 0)
 					std::this_thread::sleep_for(std::chrono::milliseconds(kRetryDelaysMs[attempt - 1]));
 
-				ok = HttpGet(curl, url, body);
+				ok = HttpGet(http, url, body);
 				lastRequest = std::chrono::steady_clock::now();
 
 				if (ok)
@@ -295,7 +441,7 @@ namespace csdb {
 			records.push_back(std::move(rec));
 		}
 
-		curl_easy_cleanup(curl);
+		HttpClose(http);
 		return records;
 	}
 

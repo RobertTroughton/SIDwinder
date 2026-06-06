@@ -28,6 +28,12 @@ namespace csdb {
 		std::vector<MusicCredit> music;   // zero or more Music credits
 	};
 
+	// One-time process init/cleanup for the underlying HTTP stack (libcurl on
+	// non-Windows; a no-op for the WinHTTP backend). Call GlobalInit() once
+	// before FetchReleases() and GlobalCleanup() once at shutdown.
+	void GlobalInit();
+	void GlobalCleanup();
+
 	// Reads a .txt file of release IDs (one integer per line; blank lines and
 	// non-numeric lines are skipped). Returns the parsed IDs in file order.
 	std::vector<int> LoadReleaseIDs(const std::string& filename);

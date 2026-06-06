@@ -1,2 +1,39 @@
-228429
-192284
+# CSDb release IDs for the SIDwinder "Releases" page.
+# One ID per line. Blank lines and lines starting with '#' are ignored.
+# Order here only breaks ties between releases sharing the same date - the
+# tool sorts cards newest-first by CSDb release date automatically.
+#
+# To add a release: paste its CSDb release ID below, drop the matching
+# screenshot in public/PNG/Releases/<id>.png, then run update-releases.bat.
+
+262091
+262101
+261993
+259596
+259586
+259557
+259407
+259033
+259028
+259027
+247798
+247797
+236972
+218299
+217748
+214738
+214468
+212356
+212358
+211650
+211649
+211439
+205472
+202282
+197865
+197529
+195382
+194049
+192902
+192869
+192867

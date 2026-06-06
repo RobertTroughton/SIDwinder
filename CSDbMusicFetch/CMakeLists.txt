@@ -4,10 +4,8 @@ project(CSDbMusicFetch CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# libcurl: system-provided (libcurl4-openssl-dev / curl on Homebrew / vcpkg).
-find_package(CURL REQUIRED)
-
-# tinyxml2: fetched and built automatically, so no manual vendoring needed.
+# tinyxml2 is fetched and built automatically on every platform, so there is
+# nothing to vendor by hand.
 include(FetchContent)
 FetchContent_Declare(
     tinyxml2
@@ -20,6 +18,16 @@ FetchContent_MakeAvailable(tinyxml2)
 add_executable(csdbmusicfetch
     main.cpp
     CSDbFetch.cpp
+    HtmlGenerator.cpp
 )
 
-target_link_libraries(csdbmusicfetch PRIVATE CURL::libcurl tinyxml2::tinyxml2)
+target_link_libraries(csdbmusicfetch PRIVATE tinyxml2::tinyxml2)
+
+# HTTP backend: WinHTTP on Windows (ships with the OS - no extra dependency),
+# libcurl everywhere else.
+if(WIN32)
+    target_link_libraries(csdbmusicfetch PRIVATE winhttp)
+else()
+    find_package(CURL REQUIRED)
+    target_link_libraries(csdbmusicfetch PRIVATE CURL::libcurl)
+endif()
