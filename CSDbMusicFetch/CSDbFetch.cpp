@@ -16,6 +16,8 @@
 #  include <curl/curl.h>
 #endif
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -496,23 +498,49 @@ namespace csdb {
 #endif
 	}
 
-	std::vector<int> LoadReleaseIDs(const std::string& filename) {
+	std::vector<int> LoadReleaseIDsFromPngDir(const std::string& dir) {
 		std::vector<int> ids;
-		std::ifstream file(filename);
-		std::string line;
-		while (std::getline(file, line)) {
-			// Trim whitespace.
-			size_t start = line.find_first_not_of(" \t\r\n");
-			if (start == std::string::npos)
-				continue;
-			size_t end = line.find_last_not_of(" \t\r\n");
-			std::string token = line.substr(start, end - start + 1);
+		std::error_code ec;
+		std::filesystem::directory_iterator it(dir, ec), end;
+		if (ec) {
+			std::fprintf(stderr, "[error] could not read PNG directory: %s\n", dir.c_str());
+			return ids;
+		}
 
-			char* parseEnd = nullptr;
-			long value = std::strtol(token.c_str(), &parseEnd, 10);
-			if (parseEnd != token.c_str() && value > 0)
+		for (; it != end; it.increment(ec)) {
+			if (ec)
+				break;
+			const std::filesystem::path& path = it->path();
+
+			// Case-insensitive ".png" extension only.
+			std::string ext = path.extension().string();
+			for (char& c : ext)
+				c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+			if (ext != ".png")
+				continue;
+
+			// Stem must be all digits (skips viewpic.htm, stray files, ...).
+			const std::string stem = path.stem().string();
+			if (stem.empty())
+				continue;
+			bool allDigits = true;
+			for (char c : stem) {
+				if (!std::isdigit(static_cast<unsigned char>(c))) {
+					allDigits = false;
+					break;
+				}
+			}
+			if (!allDigits)
+				continue;
+
+			const long value = std::strtol(stem.c_str(), nullptr, 10);
+			if (value > 0)
 				ids.push_back(static_cast<int>(value));
 		}
+
+		// Highest ID first - roughly newest first, and deterministic regardless
+		// of the order the filesystem hands files back.
+		std::sort(ids.begin(), ids.end(), [](int a, int b) { return a > b; });
 		return ids;
 	}
 

@@ -19,9 +19,10 @@ namespace {
 
 	void PrintUsage(const char* exe) {
 		std::fprintf(stderr,
-			"Usage: %s <release-ids.txt> <template.html> [output.html] [options]\n"
+			"Usage: %s <png-dir> <template.html> [output.html] [options]\n"
 			"\n"
-			"  <release-ids.txt>  One CSDb release ID per line (blank/non-numeric lines ignored).\n"
+			"  <png-dir>          Folder of release screenshots named <id>.png; their IDs\n"
+			"                     drive the page (e.g. ..\\public\\PNG\\Releases).\n"
 			"  <template.html>    HTML containing <!-- RELEASES:BEGIN --> / <!-- RELEASES:END --> markers.\n"
 			"  [output.html]      Where to write the result. Defaults to <template.html> (in place).\n"
 			"\n"
@@ -55,7 +56,7 @@ namespace {
 } // namespace
 
 int main(int argc, char** argv) {
-	std::string idsFile;
+	std::string pngDir;
 	std::string templateFile;
 	std::string outputFile;
 	bool printRecords = false;
@@ -89,13 +90,13 @@ int main(int argc, char** argv) {
 		PrintUsage(argv[0]);
 		return 1;
 	}
-	idsFile = positionals[0];
+	pngDir = positionals[0];
 	templateFile = positionals[1];
 	outputFile = (positionals.size() == 3) ? positionals[2] : templateFile;
 
-	std::vector<int> ids = csdb::LoadReleaseIDs(idsFile);
+	std::vector<int> ids = csdb::LoadReleaseIDsFromPngDir(pngDir);
 	if (ids.empty()) {
-		std::fprintf(stderr, "No release IDs found in %s\n", idsFile.c_str());
+		std::fprintf(stderr, "No <id>.png screenshots found in %s\n", pngDir.c_str());
 		return 1;
 	}
 	std::fprintf(stderr, "Fetching %zu release(s) from CSDb...\n", ids.size());

@@ -6,8 +6,10 @@ echo ========================================
 echo CSDbMusicFetch - Update Releases page
 echo ========================================
 echo.
-echo Fetches every ID in release-ids.txt from CSDb and rewrites the
-echo auto-generated release cards in ..\public\index.html (in place).
+echo Reads the release IDs from the screenshots in
+echo ..\public\PNG\Releases (one <id>.png per release), fetches each from
+echo CSDb, and rewrites the auto-generated release cards in
+echo ..\public\index.html (in place).
 echo.
 
 REM Locate the built executable (multi-config builds put it under Release\).
@@ -20,7 +22,7 @@ if not exist "%EXE%" (
     exit /b 1
 )
 
-"%EXE%" release-ids.txt ..\public\index.html
+"%EXE%" ..\public\PNG\Releases ..\public\index.html
 if errorlevel 1 goto :error
 
 echo.

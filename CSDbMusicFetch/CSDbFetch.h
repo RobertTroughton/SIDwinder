@@ -34,9 +34,12 @@ namespace csdb {
 	void GlobalInit();
 	void GlobalCleanup();
 
-	// Reads a .txt file of release IDs (one integer per line; blank lines and
-	// non-numeric lines are skipped). Returns the parsed IDs in file order.
-	std::vector<int> LoadReleaseIDs(const std::string& filename);
+	// Scans a directory for release screenshots named "<id>.png" and returns the
+	// numeric IDs found, sorted newest (highest ID) first. Non-PNG files and
+	// files whose name isn't purely numeric (e.g. viewpic.htm) are ignored. This
+	// is the source of truth for which releases appear on the page - to add one,
+	// drop its <id>.png into the folder.
+	std::vector<int> LoadReleaseIDsFromPngDir(const std::string& dir);
 
 	// Tweaks for FetchReleases: diagnostics and on-disk caching of the raw XML.
 	struct FetchOptions {

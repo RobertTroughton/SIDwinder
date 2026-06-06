@@ -1,17 +1,18 @@
 # CSDbMusicFetch
 
 Standalone C++ console tool that keeps the SIDwinder **Releases** page
-(`public/index.html`) up to date from a plain list of CSDb release IDs.
+(`public/index.html`) up to date directly from the release screenshots.
 
-Given `release-ids.txt`, it pulls per release:
+The list of releases is driven by the PNG files in `public/PNG/Releases/`: every
+`<id>.png` there is one release. For each, the tool pulls from CSDb:
 
 - **Release name**
 - **Release date** (day / month / year — any may be 0 if CSDb only has a partial date)
 - **Music credit(s)** — handle name(s)
 
 …and writes the corresponding release cards straight into `public/index.html`,
-**newest first, one compact card per line**. No more hand-editing HTML for every
-new tune — add an ID, drop in a screenshot, run the tool.
+**newest first, one compact card per line**. No more hand-editing HTML, and no
+separate ID list to maintain — drop in a screenshot, run the tool.
 
 Modelled on the CSDb scraping logic in C64GFX (`CPPTool/CSDbScrape_*` and
 `CPPTool/Core.cpp`), XML via **tinyxml2**. HTTP uses **WinHTTP** on Windows (no
@@ -44,8 +45,8 @@ page byte-for-byte untouched, so it is safe to re-run any time.
    Requires CMake, a C++17 compiler (MSVC / Visual Studio Build Tools) and Git
    (CMake fetches tinyxml2). Nothing else — WinHTTP ships with Windows.
 
-2. **Add a release:** put its CSDb release ID in `release-ids.txt` and drop the
-   screenshot at `public/PNG/Releases/<id>.png`.
+2. **Add a release:** drop its screenshot at `public/PNG/Releases/<id>.png`
+   (the filename's number is the CSDb release ID). That's the only step.
 
 3. **Regenerate the page:**
 
@@ -53,8 +54,8 @@ page byte-for-byte untouched, so it is safe to re-run any time.
    update-releases.bat
    ```
 
-   This runs the tool over `release-ids.txt` and rewrites the cards in
-   `..\public\index.html`. Review the diff and commit.
+   This scans `..\public\PNG\Releases` for `<id>.png` files and rewrites the
+   cards in `..\public\index.html`. Review the diff and commit.
 
 ## Building / running manually
 
@@ -63,10 +64,12 @@ page byte-for-byte untouched, so it is safe to re-run any time.
 cmake -B build
 cmake --build build --config Release
 
-# Run: <ids file> <template html> [output html] [options]
-./build/csdbmusicfetch release-ids.txt ../public/index.html
+# Run: <png-dir> <template html> [output html] [options]
+./build/csdbmusicfetch ../public/PNG/Releases ../public/index.html
 ```
 
+- IDs are taken from the `<id>.png` filenames in `<png-dir>`, sorted newest
+  (highest ID) first; the cards are then ordered by release date.
 - If the output path is omitted, the template is updated **in place**.
 - On Linux/macOS install libcurl headers first
   (`sudo apt install libcurl4-openssl-dev` / `brew install curl`).
