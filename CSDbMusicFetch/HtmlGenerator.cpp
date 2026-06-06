@@ -48,15 +48,19 @@ namespace csdb {
 	// e.g.  <span class="release-artist-name">A</span> &amp; <span ...>B</span>
 	static std::string BuildArtists(const ReleaseRecord& rec) {
 		std::string artists;
-		for (size_t i = 0; i < rec.music.size(); ++i) {
-			if (i > 0)
+		size_t count = 0;
+		for (const MusicCredit& mc : rec.music) {
+			if (mc.handle.empty())
+				continue; // unresolved name - skip rather than emit an empty span
+			if (count > 0)
 				artists += " &amp; ";
 			artists += "<span class=\"release-artist-name\">";
-			artists += EscapeHtml(rec.music[i].handle);
+			artists += EscapeHtml(mc.handle);
 			artists += "</span>";
+			++count;
 		}
 		if (artists.empty()) {
-			// No Music credit on CSDb - keep the markup shape but mark unknown.
+			// No usable Music credit - keep the markup shape but mark unknown.
 			artists = "<span class=\"release-artist-name\">Unknown</span>";
 		}
 		return artists;

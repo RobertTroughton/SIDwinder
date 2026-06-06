@@ -38,10 +38,19 @@ namespace csdb {
 	// non-numeric lines are skipped). Returns the parsed IDs in file order.
 	std::vector<int> LoadReleaseIDs(const std::string& filename);
 
+	// Tweaks for FetchReleases: diagnostics and on-disk caching of the raw XML.
+	struct FetchOptions {
+		bool verbose = false;     // log every credit/name we read to stderr
+		std::string xmlDir;       // if non-empty, save each raw XML response to <xmlDir>/<id>.xml
+	};
+
 	// Fetches every release from the CSDb webservice and returns one record per
 	// input ID, in the same order. Honors CSDb's rate limit and retries transient
-	// failures. Records that could not be fetched have found == false.
-	std::vector<ReleaseRecord> FetchReleases(const std::vector<int>& releaseIDs);
+	// failures. Records that could not be fetched have found == false. Warnings
+	// (missing release, missing Music credit, unresolvable scener name, ...) are
+	// always written to stderr; `options.verbose` adds per-credit detail.
+	std::vector<ReleaseRecord> FetchReleases(const std::vector<int>& releaseIDs,
+		const FetchOptions& options = {});
 
 	// Decodes HTML entities (&amp; &lt; &gt; &quot; &apos; &nbsp; and numeric
 	// &#NNN; / &#xHH;) into UTF-8. CSDb returns text content HTML-pre-encoded.

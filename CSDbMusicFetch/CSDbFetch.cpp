@@ -18,8 +18,11 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -307,9 +310,66 @@ namespace csdb {
 		return std::string();
 	}
 
+	// Serialises an element back to XML text - used to show exactly what CSDb
+	// returned when we can't resolve a name.
+	static std::string ElementToString(tinyxml2::XMLElement* e) {
+		if (!e)
+			return std::string();
+		tinyxml2::XMLPrinter printer;
+		e->Accept(&printer);
+		return printer.CStr() ? printer.CStr() : std::string();
+	}
+
+	// Returns the first non-empty text among the named child elements of `parent`.
+	static std::string FirstChildText(tinyxml2::XMLElement* parent,
+		std::initializer_list<const char*> names) {
+		for (const char* name : names) {
+			std::string t = ChildText(parent, name);
+			if (!t.empty())
+				return t;
+		}
+		return std::string();
+	}
+
+	// A single resolved credit entity (a scener handle, or a group).
+	struct CreditEntity {
+		int id = -1;
+		std::string name;       // decoded display name ("" if unresolved)
+		const char* kind = "?"; // "Handle", "Group", ...
+		bool found = false;     // an entity element was present at all
+	};
+
+	// Pulls the entity (and its display name) out of a <Credit>. CSDb credits a
+	// release's music either to a <Handle> (an individual scener) or, less often,
+	// to a <Group>. The display name has historically lived under a couple of
+	// different child tags, so we try the likely ones in order.
+	static CreditEntity ResolveCreditEntity(tinyxml2::XMLElement* credit) {
+		CreditEntity ce;
+
+		if (tinyxml2::XMLElement* handle = credit->FirstChildElement("Handle")) {
+			ce.found = true;
+			ce.kind = "Handle";
+			ce.id = ChildInt(handle, "ID", -1);
+			// The nick normally lives in a nested <Handle>; fall back to <Nick>/<Name>.
+			ce.name = DecodeHtmlEntities(FirstChildText(handle, { "Handle", "Nick", "Name" }));
+			return ce;
+		}
+
+		if (tinyxml2::XMLElement* group = credit->FirstChildElement("Group")) {
+			ce.found = true;
+			ce.kind = "Group";
+			ce.id = ChildInt(group, "ID", -1);
+			ce.name = DecodeHtmlEntities(FirstChildText(group, { "Name", "Group" }));
+			return ce;
+		}
+
+		return ce;
+	}
+
 	// Parses one <Release> element into a record. Returns false if the element
-	// is malformed.
-	static bool ParseRelease(tinyxml2::XMLElement* release, ReleaseRecord& rec) {
+	// is malformed. Always warns to stderr about anything that would leave a
+	// card without a proper artist name; `verbose` adds per-credit tracing.
+	static bool ParseRelease(tinyxml2::XMLElement* release, ReleaseRecord& rec, bool verbose) {
 		rec.releaseId = ChildInt(release, "ID", rec.releaseId);
 
 		std::string name = ChildText(release, "Name");
@@ -319,27 +379,56 @@ namespace csdb {
 		rec.releaseMonth = ChildInt(release, "ReleaseMonth", 0);
 		rec.releaseYear = ChildInt(release, "ReleaseYear", 0);
 
-		tinyxml2::XMLElement* credits = release->FirstChildElement("Credits");
-		if (credits) {
-			for (tinyxml2::XMLElement* credit = credits->FirstChildElement("Credit");
-				credit;
-				credit = credit->NextSiblingElement("Credit")) {
-
-				if (ChildText(credit, "CreditType") != "Music")
-					continue;
-
-				// Each <Credit> has a child <Handle> element which itself holds
-				// <ID> and a (further nested) <Handle> name element.
-				tinyxml2::XMLElement* handle = credit->FirstChildElement("Handle");
-				if (!handle)
-					continue;
-
-				MusicCredit mc;
-				mc.scenerId = ChildInt(handle, "ID", -1);
-				mc.handle = DecodeHtmlEntities(ChildText(handle, "Handle"));
-				rec.music.push_back(std::move(mc));
-			}
+		if (verbose) {
+			std::fprintf(stderr, "  name=\"%s\" date=%04d-%02d-%02d\n",
+				rec.name.c_str(), rec.releaseYear, rec.releaseMonth, rec.releaseDay);
 		}
+
+		tinyxml2::XMLElement* credits = release->FirstChildElement("Credits");
+		if (!credits) {
+			std::fprintf(stderr, "  [warn] release %d has no <Credits> block.\n", rec.releaseId);
+			rec.found = true;
+			return true;
+		}
+
+		int musicCount = 0;
+		for (tinyxml2::XMLElement* credit = credits->FirstChildElement("Credit");
+			credit;
+			credit = credit->NextSiblingElement("Credit")) {
+
+			const std::string type = ChildText(credit, "CreditType");
+			if (verbose)
+				std::fprintf(stderr, "  credit type=\"%s\"\n", type.c_str());
+
+			if (type != "Music")
+				continue;
+
+			++musicCount;
+			CreditEntity ce = ResolveCreditEntity(credit);
+
+			if (!ce.found) {
+				std::fprintf(stderr,
+					"  [warn] release %d: Music credit has no <Handle> or <Group>. Raw credit XML:\n%s\n",
+					rec.releaseId, ElementToString(credit).c_str());
+			}
+			else if (ce.name.empty()) {
+				std::fprintf(stderr,
+					"  [warn] release %d: Music credit %s ID %d has no resolvable name. Raw credit XML:\n%s\n",
+					rec.releaseId, ce.kind, ce.id, ElementToString(credit).c_str());
+			}
+			else if (verbose) {
+				std::fprintf(stderr, "    -> music: \"%s\" (%s ID %d)\n",
+					ce.name.c_str(), ce.kind, ce.id);
+			}
+
+			MusicCredit mc;
+			mc.scenerId = ce.id;
+			mc.handle = ce.name;
+			rec.music.push_back(std::move(mc));
+		}
+
+		if (musicCount == 0)
+			std::fprintf(stderr, "  [warn] release %d has no Music credits.\n", rec.releaseId);
 
 		rec.found = true;
 		return true;
@@ -379,12 +468,28 @@ namespace csdb {
 		return ids;
 	}
 
-	std::vector<ReleaseRecord> FetchReleases(const std::vector<int>& releaseIDs) {
+	// Writes the raw XML for one release to <xmlDir>/<id>.xml. Best-effort: any
+	// failure is reported but does not abort the run.
+	static void SaveXml(const std::string& xmlDir, int id, const std::string& body) {
+		std::error_code ec;
+		std::filesystem::create_directories(xmlDir, ec);
+		const std::string path = (std::filesystem::path(xmlDir) / (std::to_string(id) + ".xml")).string();
+		std::ofstream f(path, std::ios::binary | std::ios::trunc);
+		if (!f) {
+			std::fprintf(stderr, "  [warn] could not write %s\n", path.c_str());
+			return;
+		}
+		f.write(body.data(), static_cast<std::streamsize>(body.size()));
+	}
+
+	std::vector<ReleaseRecord> FetchReleases(const std::vector<int>& releaseIDs,
+		const FetchOptions& options) {
 		std::vector<ReleaseRecord> records;
 		records.reserve(releaseIDs.size());
 
 		HttpHandle http = HttpOpen();
 		if (!http) {
+			std::fprintf(stderr, "[error] could not initialise the HTTP client.\n");
 			// Return empty records (found == false) for every ID.
 			for (int id : releaseIDs) {
 				ReleaseRecord rec;
@@ -396,7 +501,9 @@ namespace csdb {
 
 		auto lastRequest = std::chrono::steady_clock::now() - std::chrono::milliseconds(kMinIntervalMs);
 
+		size_t index = 0;
 		for (int id : releaseIDs) {
+			++index;
 			ReleaseRecord rec;
 			rec.releaseId = id;
 
@@ -411,8 +518,10 @@ namespace csdb {
 				if (elapsed < kMinIntervalMs)
 					std::this_thread::sleep_for(std::chrono::milliseconds(kMinIntervalMs - elapsed));
 
-				if (attempt > 0)
+				if (attempt > 0) {
+					std::fprintf(stderr, "  [retry %d/%d] release %d\n", attempt, kMaxRetries, id);
 					std::this_thread::sleep_for(std::chrono::milliseconds(kRetryDelaysMs[attempt - 1]));
+				}
 
 				ok = HttpGet(http, url, body);
 				lastRequest = std::chrono::steady_clock::now();
@@ -421,22 +530,39 @@ namespace csdb {
 					break;
 			}
 
-			if (!ok || IsHuhResponse(body)) {
-				// Leave found == false.
+			std::fprintf(stderr, "[%zu/%zu] release %d: %zu bytes\n",
+				index, releaseIDs.size(), id, body.size());
+
+			// Cache the raw XML (also captures "huh"/error bodies for inspection).
+			if (!options.xmlDir.empty() && !body.empty())
+				SaveXml(options.xmlDir, id, body);
+
+			if (!ok) {
+				std::fprintf(stderr, "  [warn] release %d: fetch failed after %d attempts.\n", id, kMaxRetries + 1);
+				records.push_back(std::move(rec));
+				continue;
+			}
+			if (IsHuhResponse(body)) {
+				std::fprintf(stderr, "  [warn] release %d: CSDb returned \"huh\" (no such release).\n", id);
 				records.push_back(std::move(rec));
 				continue;
 			}
 
 			tinyxml2::XMLDocument doc;
 			if (doc.Parse(body.c_str(), body.size()) != tinyxml2::XML_SUCCESS) {
+				std::fprintf(stderr, "  [warn] release %d: XML parse error (%s).\n", id, doc.ErrorStr());
 				records.push_back(std::move(rec));
 				continue;
 			}
 
 			tinyxml2::XMLElement* root = doc.FirstChildElement("CSDbData");
 			tinyxml2::XMLElement* release = root ? root->FirstChildElement("Release") : nullptr;
-			if (release)
-				ParseRelease(release, rec);
+			if (release) {
+				ParseRelease(release, rec, options.verbose);
+			}
+			else {
+				std::fprintf(stderr, "  [warn] release %d: no <CSDbData><Release> in response.\n", id);
+			}
 
 			records.push_back(std::move(rec));
 		}

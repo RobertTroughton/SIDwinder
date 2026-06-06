@@ -63,14 +63,43 @@ page byte-for-byte untouched, so it is safe to re-run any time.
 cmake -B build
 cmake --build build --config Release
 
-# Run: <ids file> <template html> [output html] [--print]
+# Run: <ids file> <template html> [output html] [options]
 ./build/csdbmusicfetch release-ids.txt ../public/index.html
 ```
 
 - If the output path is omitted, the template is updated **in place**.
-- `--print` also dumps the fetched records to stdout (handy for debugging).
 - On Linux/macOS install libcurl headers first
   (`sudo apt install libcurl4-openssl-dev` / `brew install curl`).
+
+### Options / diagnostics
+
+| Option           | Effect                                                            |
+|------------------|------------------------------------------------------------------|
+| `--verbose`      | Log every credit and resolved name as it's read from CSDb.       |
+| `--xml-dir <d>`  | Save each raw XML response to `<d>/<id>.xml` (default: `xml`).    |
+| `--no-xml`       | Don't save the raw XML.                                          |
+| `--print`        | Also dump the fetched records to stdout.                          |
+
+Every run prints a per-release line and a final summary. **Warnings always
+print** when something would leave a card without a proper artist, e.g.:
+
+```
+[13/31] release 236972: 4821 bytes
+  [warn] release 236972: Music credit Handle ID 4711 has no resolvable name. Raw credit XML:
+  <Credit> ... </Credit>
+...
+Summary: 31/31 releases resolved, 1 with no artist name.
+```
+
+### Why is a scener's name missing?
+
+The tool resolves a music credit's name from the CSDb `<Credit>` element,
+trying a `<Handle>` (individual scener) first and then a `<Group>`, and within
+those the `<Handle>`/`<Nick>`/`<Name>` tags in turn. If none of those hold a
+name it warns and dumps the raw `<Credit>` XML so you can see what CSDb actually
+returned. The full responses are also saved under `xml/` (by default), so you
+can open `xml/<id>.xml` and inspect the `<Credits>` block directly. A card with
+no resolvable name falls back to "Unknown" rather than rendering blank.
 
 ## Data structures
 

@@ -1,0 +1,5 @@
+# CMake build output
+/build/
+
+# Cached raw CSDb XML responses (saved by csdbmusicfetch for inspection)
+/xml/

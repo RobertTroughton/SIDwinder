@@ -19,11 +19,16 @@ namespace {
 
 	void PrintUsage(const char* exe) {
 		std::fprintf(stderr,
-			"Usage: %s <release-ids.txt> <template.html> [output.html] [--print]\n"
+			"Usage: %s <release-ids.txt> <template.html> [output.html] [options]\n"
 			"\n"
 			"  <release-ids.txt>  One CSDb release ID per line (blank/non-numeric lines ignored).\n"
 			"  <template.html>    HTML containing <!-- RELEASES:BEGIN --> / <!-- RELEASES:END --> markers.\n"
 			"  [output.html]      Where to write the result. Defaults to <template.html> (in place).\n"
+			"\n"
+			"Options:\n"
+			"  --verbose          Log every credit and name read from CSDb.\n"
+			"  --xml-dir <dir>    Save each raw XML response to <dir>/<id>.xml (default: xml).\n"
+			"  --no-xml           Do not save raw XML responses.\n"
 			"  --print            Also print the fetched records to stdout.\n",
 			exe);
 	}
@@ -54,11 +59,24 @@ int main(int argc, char** argv) {
 	std::string templateFile;
 	std::string outputFile;
 	bool printRecords = false;
+	bool verbose = false;
+	std::string xmlDir = "xml"; // save raw XML by default
 
 	std::vector<std::string> positionals;
 	for (int i = 1; i < argc; ++i) {
 		if (std::strcmp(argv[i], "--print") == 0)
 			printRecords = true;
+		else if (std::strcmp(argv[i], "--verbose") == 0)
+			verbose = true;
+		else if (std::strcmp(argv[i], "--no-xml") == 0)
+			xmlDir.clear();
+		else if (std::strcmp(argv[i], "--xml-dir") == 0) {
+			if (i + 1 >= argc) {
+				std::fprintf(stderr, "Error: --xml-dir needs a directory argument.\n");
+				return 1;
+			}
+			xmlDir = argv[++i];
+		}
 		else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
 			PrintUsage(argv[0]);
 			return 0;
@@ -81,25 +99,46 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	std::fprintf(stderr, "Fetching %zu release(s) from CSDb...\n", ids.size());
+	if (!xmlDir.empty())
+		std::fprintf(stderr, "Saving raw XML to '%s'\n", xmlDir.c_str());
+
+	csdb::FetchOptions options;
+	options.verbose = verbose;
+	options.xmlDir = xmlDir;
 
 	csdb::GlobalInit();
-	std::vector<csdb::ReleaseRecord> records = csdb::FetchReleases(ids);
+	std::vector<csdb::ReleaseRecord> records = csdb::FetchReleases(ids, options);
 	csdb::GlobalCleanup();
 
 	if (printRecords)
 		PrintRecords(records);
 
 	size_t found = 0;
+	size_t missingArtist = 0;
 	for (const csdb::ReleaseRecord& rec : records) {
-		if (rec.found)
-			++found;
-		else
-			std::fprintf(stderr, "Warning: release %d not found on CSDb - skipping.\n", rec.releaseId);
+		if (!rec.found)
+			continue;
+		++found;
+
+		bool hasNamedArtist = false;
+		for (const csdb::MusicCredit& mc : rec.music) {
+			if (!mc.handle.empty()) {
+				hasNamedArtist = true;
+				break;
+			}
+		}
+		if (!hasNamedArtist) {
+			++missingArtist;
+			std::fprintf(stderr, "Note: release %d (\"%s\") has no resolved artist name - card will show \"Unknown\".\n",
+				rec.releaseId, rec.name.c_str());
+		}
 	}
 	if (found == 0) {
 		std::fprintf(stderr, "No releases could be fetched; leaving %s untouched.\n", templateFile.c_str());
 		return 1;
 	}
+	std::fprintf(stderr, "\nSummary: %zu/%zu releases resolved, %zu with no artist name.\n",
+		found, ids.size(), missingArtist);
 
 	std::string error;
 	if (!csdb::ApplyTemplate(templateFile, outputFile, records, error)) {
