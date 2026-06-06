@@ -97,9 +97,10 @@ The tool resolves a music credit's name from the CSDb `<Credit>` element,
 trying a `<Handle>` (individual scener) first and then a `<Group>`, and within
 those the `<Handle>`/`<Nick>`/`<Name>` tags in turn. If none of those hold a
 name it warns and dumps the raw `<Credit>` XML so you can see what CSDb actually
-returned. The full responses are also saved under `xml/` (by default), so you
-can open `xml/<id>.xml` and inspect the `<Credits>` block directly. A card with
-no resolvable name falls back to "Unknown" rather than rendering blank.
+returned. The full responses are also saved under `xml/` (by default) **and
+committed to the repo**, so you can open `xml/<id>.xml` and inspect the
+`<Credits>` block directly without re-running the tool. A card with no
+resolvable name falls back to "Unknown" rather than rendering blank.
 
 ## Data structures
 
