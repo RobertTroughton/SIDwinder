@@ -29,15 +29,38 @@
 .const INFO_START_ROW               = 9
 .const TOTAL_ROWS                   = 25
 
-// D018 values: screen at $0400 = bank 1
-// Uppercase ROM charset at $1000 = charset bank 2: (1 << 4) | (2 << 1) = $14
-// Lowercase ROM charset at $1800 = charset bank 3: (1 << 4) | (3 << 1) = $16
-// RAM charset at $2000 (VIC bank 0) = charset bank 4: (1 << 4) | (4 << 1) = $18
-.const D018_LOGO_UPPERCASE          = $14
-.const D018_LOGO_LOWERCASE          = $16
-.const D018_INFO_ROM                = $16   // Info uses lowercase ROM
-.const D018_INFO_RAM                = $18   // Info uses injected RAM charset
-.const RAM_CHARSET_ADDRESS          = $2000
+// =============================================================================
+// VIC BANK / SCREEN / CHARSET LAYOUT
+//
+// The player runs from whichever VIC bank its code was assembled into
+// (LOAD_ADDRESS / $4000). The screen and both charsets (the logo charset and
+// the info charset, switched by the raster split) live inside that bank, so a
+// SID that loads as low as $0400 is never overwritten by the display.
+//
+//   Bank 0   : screen $0400        logo cs $2000  info cs $2800
+//   Bank 1-3 : screen <bank>+$3000 logo cs <bank>+$2000  info cs <bank>+$2800
+//
+// Both charsets are copied into RAM at init (the character ROM is only
+// VIC-visible in banks 0 and 2, so banks 1 and 3 need a copy). A custom info
+// font, if injected, overwrites the info charset after the intro.
+// =============================================================================
+
+.var VIC_BANK           = floor(LOAD_ADDRESS / $4000)
+.var VIC_BANK_ADDRESS   = VIC_BANK * $4000
+
+.var SCREEN_RAM         = VIC_BANK_ADDRESS + $3000
+.var LOGO_CHARSET_RAM   = VIC_BANK_ADDRESS + $2000
+.var INFO_CHARSET_RAM   = VIC_BANK_ADDRESS + $2800
+.var ScreenD018Nibble   = 12    // $3000 / $400
+.if (VIC_BANK == 0) {
+    .eval SCREEN_RAM       = $0400
+    .eval ScreenD018Nibble = 1      // $0400 / $400
+}
+.var LogoCharsetNibble  = 4     // $2000 / $800
+.var InfoCharsetNibble  = 5     // $2800 / $800
+.var D018_LOGO          = (ScreenD018Nibble * 16) + (LogoCharsetNibble * 2)
+.var D018_INFO          = (ScreenD018Nibble * 16) + (InfoCharsetNibble * 2)
+.var D018_VALUE         = D018_INFO     // intro draws with the lowercase info charset
 
 // Raster line where the split occurs (first visible line + rows * 8 pixels)
 .const SPLIT_RASTERLINE             = 50 + (LOGO_ROWS * 8) - 1
@@ -145,7 +168,6 @@ fontMode:
 .var Display_Controls_Line2_X       = 3
 .var Display_Controls_Line2_Y       = 24
 
-.const SCREEN_RAM = $0400
 .const COLOR_RAM = $d800
 .const ROW_WIDTH = 40
 
@@ -162,6 +184,10 @@ fontMode:
 #define INCLUDE_RASTER_TIMING_CODE
 .var DEFAULT_RASTERTIMING_Y = 250
 
+// Make the shared intro effect draw into this player's in-bank screen/charset
+// instead of the fixed bank-0 $0400 screen.
+#define BANK_AWARE_EFFECT
+
 .import source "../INC/Common.asm"
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
@@ -177,6 +203,13 @@ Initialize:
 
     lda #$35
     sta $01
+
+    // Point the VIC at our bank and load the info charset before anything is
+    // drawn, so the intro renders from in-bank RAM.
+    jsr SetupVICBank
+    jsr CopyInfoRomCharset
+    lda #D018_VALUE
+    sta $d018
 
     jsr RunLinkedWithEffect
 
@@ -208,14 +241,10 @@ Initialize:
     lda backgroundColor
     sta $d021
 
-    // Determine logo D018 value from charset type byte
-    lda logoCharsetType
-    beq !uppercase+
-    lda #D018_LOGO_LOWERCASE
-    jmp !storeD018+
-!uppercase:
-    lda #D018_LOGO_UPPERCASE
-!storeD018:
+    // Copy the requested (uppercase/lowercase) ROM charset into the logo
+    // charset RAM. The logo always uses the in-bank D018_LOGO value.
+    jsr CopyLogoRomCharset
+    lda #D018_LOGO
     sta LogoD018Value + 1
 
     // Copy logo screen codes to screen RAM (rows 0-8)
@@ -230,7 +259,7 @@ Initialize:
     jsr SetupCharset
 
     // Set initial D018 for logo area
-    lda #D018_LOGO_LOWERCASE
+    lda #D018_LOGO
     sta $d018
 
     jsr PopulateMetadata
@@ -303,7 +332,7 @@ MainLoop:
 // =============================================================================
 
 CopyLogoToScreen:
-    // Copy 360 bytes of screen codes from staging to $0400
+    // Copy 360 bytes of screen codes from staging to SCREEN_RAM
     // We do this in two chunks: 256 + 104
     ldx #0
 !loop1:
@@ -847,7 +876,7 @@ TopIRQ:
 
     // Set D018 for logo area (PETSCII charset)
 LogoD018Value:
-    lda #D018_LOGO_LOWERCASE    // Self-modified at init based on charset type
+    lda #D018_LOGO             // Self-modified at init (kept for symmetry)
     sta $d018
 
     // Skip music playback if fast-forward is active (MainLoop handles it)
@@ -911,7 +940,7 @@ SplitIRQ:
     // Switch to info charset (immediate value self-modified by SetupCharset
     // when a custom RAM charset has been injected).
 InfoD018Value:
-    lda #D018_INFO_ROM
+    lda #D018_INFO
     sta $d018
 
     // Set up the top IRQ again for next frame (rasterline 250)
@@ -976,13 +1005,82 @@ ControlsLine2:      .text "+/-=Next/Prev 1-9,A-Z=Select"
                     .byte 0
 
 // =============================================================================
+// VIC BANK SETUP
+//
+// Switch the VIC to VIC_BANK by writing the (inverted) bank bits into the low
+// two bits of CIA2 $dd00, after making sure those lines are outputs in $dd02.
+// =============================================================================
+
+SetupVICBank:
+    lda $dd02
+    ora #$03
+    sta $dd02
+    lda $dd00
+    and #$fc
+    ora #(3 - VIC_BANK)
+    sta $dd00
+    rts
+
+// =============================================================================
 // CHARSET SETUP
 //
-// In ROM mode (fontMode == 0) leave the SplitIRQ pointing at the lowercase
-// ROM charset (D018_INFO_ROM). In RAM mode (fontMode != 0) copy the 768
-// injected bytes into VIC bank 0 RAM at $2000 and patch the SplitIRQ's
-// immediate $d018 value to D018_INFO_RAM.
+// The character ROM is only reachable while I/O is banked out, so each copy
+// flips $01 to $33 (with interrupts already disabled) and back to $35.
+//
+//   CopyInfoRomCharset : lowercase ROM ($D800) -> INFO_CHARSET_RAM
+//   CopyLogoRomCharset : uppercase ($D000) or lowercase ($D800) ROM, chosen by
+//                        logoCharsetType, -> LOGO_CHARSET_RAM
+//   SetupCharset       : overlay the injected custom font (fontMode != 0) on
+//                        top of the info charset; ROM mode keeps the copy made
+//                        by CopyInfoRomCharset.
 // =============================================================================
+
+CopyInfoRomCharset:
+    lda #$33
+    sta $01
+    lda #$d8                    // lowercase ROM at $D800
+    ldx #>INFO_CHARSET_RAM
+    jsr Copy2K
+    lda #$35
+    sta $01
+    rts
+
+CopyLogoRomCharset:
+    lda #$33
+    sta $01
+    lda logoCharsetType         // 0 = uppercase ($D000), non-zero = lowercase ($D800)
+    bne !lower+
+    lda #$d0
+    jmp !go+
+!lower:
+    lda #$d8
+!go:
+    ldx #>LOGO_CHARSET_RAM
+    jsr Copy2K
+    lda #$35
+    sta $01
+    rts
+
+// Copy 2K (8 pages) of page-aligned data. A = source high byte, X = dest high
+// byte (both low bytes are $00). Self-modifying.
+Copy2K:
+    sta Copy2K_src + 2
+    stx Copy2K_dst + 2
+    ldy #8
+!page:
+    ldx #0
+!byte:
+Copy2K_src:
+    lda $0000, x
+Copy2K_dst:
+    sta $0000, x
+    inx
+    bne !byte-
+    inc Copy2K_src + 2
+    inc Copy2K_dst + 2
+    dey
+    bne !page-
+    rts
 
 SetupCharset:
     lda fontMode
@@ -992,13 +1090,10 @@ SetupCharset:
 !loop:
     .for (var i = 0; i < 3; i++) {
         lda EmbeddedCharset + (i * 256), x
-        sta RAM_CHARSET_ADDRESS + (i * 256), x
+        sta INFO_CHARSET_RAM + (i * 256), x
     }
     inx
     bne !loop-
-
-    lda #D018_INFO_RAM
-    sta InfoD018Value + 1
 !done:
     rts
 
