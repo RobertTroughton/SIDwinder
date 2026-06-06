@@ -20,9 +20,11 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
+#include <map>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -366,6 +368,34 @@ namespace csdb {
 		return ce;
 	}
 
+	// CSDb's webservice expands each referenced object (a handle, a group, ...)
+	// only the FIRST time it appears in a response; every later reference to the
+	// same ID collapses to just <ID>. So a Music credit can carry only an <ID>
+	// while the actual name sits in an expanded copy elsewhere (the release's
+	// <ReleasedBy>, another credit, ...). This walks the whole subtree once and
+	// records id -> name for every expanded Handle/Group so collapsed references
+	// can be resolved.
+	static void CollectEntityNames(tinyxml2::XMLElement* el,
+		std::map<int, std::string>& handleNames,
+		std::map<int, std::string>& groupNames) {
+		for (tinyxml2::XMLElement* c = el->FirstChildElement(); c; c = c->NextSiblingElement()) {
+			const char* tag = c->Name();
+			if (tag && std::strcmp(tag, "Handle") == 0) {
+				const int id = ChildInt(c, "ID", -1);
+				const std::string name = FirstChildText(c, { "Handle", "Nick" });
+				if (id > 0 && !name.empty())
+					handleNames.emplace(id, DecodeHtmlEntities(name)); // first (expanded) wins
+			}
+			else if (tag && std::strcmp(tag, "Group") == 0) {
+				const int id = ChildInt(c, "ID", -1);
+				const std::string name = FirstChildText(c, { "Name", "Group" });
+				if (id > 0 && !name.empty())
+					groupNames.emplace(id, DecodeHtmlEntities(name));
+			}
+			CollectEntityNames(c, handleNames, groupNames);
+		}
+	}
+
 	// Parses one <Release> element into a record. Returns false if the element
 	// is malformed. Always warns to stderr about anything that would leave a
 	// card without a proper artist name; `verbose` adds per-credit tracing.
@@ -391,6 +421,11 @@ namespace csdb {
 			return true;
 		}
 
+		// Index every expanded handle/group in the response so we can fill in
+		// names for credits that CSDb collapsed to an <ID>-only reference.
+		std::map<int, std::string> handleNames, groupNames;
+		CollectEntityNames(release, handleNames, groupNames);
+
 		int musicCount = 0;
 		for (tinyxml2::XMLElement* credit = credits->FirstChildElement("Credit");
 			credit;
@@ -405,6 +440,19 @@ namespace csdb {
 
 			++musicCount;
 			CreditEntity ce = ResolveCreditEntity(credit);
+
+			// Recover a collapsed name from an expanded copy elsewhere in the doc.
+			if (ce.name.empty() && ce.id > 0) {
+				const std::map<int, std::string>& names =
+					(std::strcmp(ce.kind, "Group") == 0) ? groupNames : handleNames;
+				auto it = names.find(ce.id);
+				if (it != names.end()) {
+					ce.name = it->second;
+					if (verbose)
+						std::fprintf(stderr, "    (recovered name for %s ID %d from elsewhere in the response)\n",
+							ce.kind, ce.id);
+				}
+			}
 
 			if (!ce.found) {
 				std::fprintf(stderr,
