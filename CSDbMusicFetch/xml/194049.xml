@@ -1,0 +1,731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>194049</ID>
+<Name>My PALs Must Have a Clue (at This Rate)</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>31</ReleaseDay>
+<ReleaseMonth>7</ReleaseMonth>
+<ReleaseYear>2020</ReleaseYear>
+<ReleasedAt><Event><ID>2967</ID>
+<Name>25Hz Music Compo 2020</Name>
+<EventType>Standalone Compo</EventType>
+<AKA>Half-Speed Music Compo</AKA>
+<Tagline>25Hz Should Be Enough for Everyone!</Tagline>
+<StartDay>1</StartDay>
+<StartMonth>7</StartMonth>
+<StartYear>2020</StartYear>
+<EndDay>2</EndDay>
+<EndMonth>8</EndMonth>
+<EndYear>2020</EndYear>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>7</Place>
+</Achievement>
+<Rating>9.5</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/194000/194049.png</ScreenShot>
+<ReleasedBy><Group><ID>396</ID>
+<Name>Genesis Project</Name>
+<AKA>G*P</AKA>
+<Short>GP</Short>
+<Trivia>[IMG]https://i.imgur.com/xQ1uaEd.png [/IMG]
+Genesis Project is a multi platform demo group and one of the most well known and productive C64 cracking groups of all time, formed in late 1985 or early 1986 on the C64 by &amp;lt;scener id=6392&amp;gt; (TNT), later &amp;lt;scener id=315&amp;gt;. 
+
+in 1993 a lot of the members strated cracking for SNES/PC etc. (See &amp;lt;release id=261018&amp;gt;. - SNES: L.A.Style, Tyger, Red Skin, Airwolf, Lexi, Zammbo. PC: Snacky)
+
+A full detailed history 1986-2016 can be read in &amp;lt;release id=150629&amp;gt; (2016).
+
+[url=https://demozoo.org/groups/3170/]The history of Genesis Project and further information.[/url]
+
+
+Current (2024) G*P WHQ: &amp;lt;bbs id=103&amp;gt;, EHQ: &amp;lt;bbs id=1139&amp;gt;, and USHQ: &amp;lt;bbs id=320&amp;gt;. G*P also had
+ &amp;lt;bbs id=114&amp;gt;, &amp;lt;bbs id=221&amp;gt;, &amp;lt;bbs id=42&amp;gt;, &amp;lt;bbs id=182&amp;gt;, &amp;lt;bbs id=113&amp;gt;, &amp;lt;bbs id=286&amp;gt;, &amp;lt;bbs id=39&amp;gt;, &amp;lt;bbs id=68&amp;gt; and &amp;lt;bbs id=218&amp;gt; as HQs.
+
+G*P were the organizer of successful parties such as &amp;lt;event id=445&amp;gt;, &amp;lt;event id=128&amp;gt;, &amp;lt;event id=1846&amp;gt;, &amp;lt;event id=2316&amp;gt;, &amp;lt;event id=2879&amp;gt; and &amp;lt;event id=2756&amp;gt;.</Trivia>
+<FoundYear>1986</FoundYear>
+<Website>https://www.facebook.com/Genesis.Project.C64/</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Fixing Group</Grouptype>
+<Grouptype>Import Group</Grouptype>
+<Grouptype>Magazine Staff</Grouptype>
+</Grouptypes>
+<Slogan>Europe's No. 1</Slogan>
+<Slogan>Accept No Limits</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Graphics</CreditType>
+<Handle><ID>21388</ID>
+<Handle>Facet</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>19119</ID>
+<Country>Netherlands</Country>
+<Trivia>The famous Amiga pixeler!</Trivia>
+<Handles><Handle><ID>21388</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>34424</ID>
+<Handle>acrouzet</Handle>
+<AKA>acropix</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My first initial plus the first part of my last name.</HandleStory>
+<Scener><ID>31224</ID>
+<Country>United States</Country>
+<Handles><Handle><ID>34424</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<UsedSIDs><SID><ID>58056</ID>
+<HVSCPath>/MUSICIANS/A/Acrouzet/My_PALs_Must_Have_a_Clue_at_This_Rate.sid</HVSCPath>
+<Name>My PALs Must Have a Clue...</Name>
+<Author>Aidan Crouzet-Pascal (acrouzet)</Author>
+<Released>2020 Genesis Project</Released>
+<LoadAddr>2048</LoadAddr>
+<InitAddr>2048</InitAddr>
+<PlayAddr>2051</PlayAddr>
+<NOSongs>1</NOSongs>
+<DefaultSong>1</DefaultSong>
+<SIDModel>8580</SIDModel>
+<ClockSpeed>PAL</ClockSpeed>
+<DataSize>7301</DataSize>
+</SID>
+</UsedSIDs>
+<DownloadLinks><DownloadLink><Link>http://csdb.dk/getinternalfile.php/201993/My_PALs_Must_Have_a_Clue_at_This_Rate.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=239824</CounterLink>
+<Downloads>278</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>http://csdb.dk/getinternalfile.php/201992/My_PALs_Must_Have_a_Clue_at_This_Rate.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=239823</CounterLink>
+<Downloads>488</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><ProductionNote><CSDbUser><ID>7211</ID>
+<Login>acrouzet</Login>
+<Handle>acrouzet</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>34424</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Done in SidTracker64.</Text>
+</ProductionNote>
+<UserComment><CSDbUser><ID>5195</ID>
+<Login>TheRyk</Login>
+<Handle>TheRyk</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>19790</ID>
+<Handle>TheRyk</Handle>
+<AKA>ZuRück :TheRyk, Ryker, Ryk, ZeRayk, SeRück, DerRyk, Rykky Martin, Rykster, rayger, raigä, Rykten, Ryksinspektor AD, TheGlytch, Ryk Astley</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+<Country>Germany</Country>
+<Trivia>Trust me. I know what I'm doing.
+Too many errors. Goodbye.
+Produced too much code.
+Old dog old tryx</Trivia>
+<Handles><Handle><ID>19790</ID>
+</Handle>
+<Handle><ID>20035</ID>
+<Handle>Ned Ryker</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Sysop</Function>
+<Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.08.2020</Date>
+<Text>wow this rules never mind the no frame waste</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1934</ID>
+<Login>Thunder.Bird</Login>
+<Handle>Thunder.Bird</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4823</ID>
+<Handle>Thunder.Bird</Handle>
+<AKA>Thudner</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I called myself "Skyhawk" around 1991 for fun. My  classmate called himself "Wingcommander", because he loved the game so much. Together we made a rather cool (lame) demo that never saw the light because it was made with a demomaker. We called ourselves "Transcom". Later figured out that the handle Skyhawk and the group Transcom already existed.
+Short Handle first used on 15.11.2003</HandleStory>
+<Scener><ID>4743</ID>
+<Country>Germany</Country>
+<Trivia>I got a C16 for xmas 1989 and sold it one year later to buy a real (more familiar) computer!
+The C64 I bought from another classmate already had three diskboxes full of stuff. Stumbled upon intros and demoscene then and kept loving demos.
+I am a collector and beta tester of hard- and software. My biggest invention was a 2-SID plugin solution named "STEREOinSID" but it failed for beeing a kit only (needed soldering). 
+Did some (bad) pixeling years ago. More active as organizer for yearly BCC and co-orga for ASOA and BEE.
+Invented and hosted the "Clubtape" livestream early 2019 nearly every Saturday at 12, even spread them on tape for friends. SID music and some german crap talking. Stopped that mid 2019.
+Now researching for the cultures around homecomputer music in the 80s. Podcast is called Blips and is german only.</Trivia>
+<Handles><Handle><ID>4823</ID>
+</Handle>
+<Handle><ID>24372</ID>
+<Handle>Skyhawk</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>First  ever  used  Nickname  back  in  my  schooldays  in  1994.  Coped  with  Wingcommander,  my  classmate  and  did  a  dmo  /w demomaker.  Our  group  was  Transcom,  not  having  anything  to  do  with  existing  groups.</HandleStory>
+<Scener><ID>4743</ID>
+</Scener>
+<FreelanceFunctions><Function>Phreaker</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Co-Organizer</Function>
+<Function>Diskmag Editor</Function>
+<Function>Hardware-Guru</Function>
+<Function>Organizer</Function>
+<Function>Tester</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>04.08.2020</Date>
+<Text>The bell sound is just &amp;lt;3 
+Melody and rythm make me breakbeat'n (I just have this boombox with the msx in mind)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6435</ID>
+<Login>GH/dSr/MSL/Toonvast</Login>
+<Handle>GH</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4594</ID>
+<Handle>GH</Handle>
+<AKA>G. Hultink</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>It's my name.. Gerard Hultink</HandleStory>
+<Scener><ID>4551</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>33249</ID>
+<Handle>Fabisch</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4551</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>7600</ID>
+<Handle>KRS One</Handle>
+<AKA>KRS 1, KRS#1, KRS1</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>4551</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Importer</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>4594</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>03.08.2020</Date>
+<Text>Sweet easy listening funk, intro takes a bit to long for my taste but metal sounds in counterpart of the melody I dig 
+
+At 1:10 and 1:21 i'm hearing some JT influences? :D
+
+Grreat stuff!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1691</ID>
+<Login>jojeli</Login>
+<Handle>Frostbyte</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>35326</ID>
+<Handle>Frostbyte</Handle>
+<AKA>Frostie, F0</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>After a few years of consideration, I decided to abandon my "historical" handle, and change it to Frostbyte. Never liked my previous handle, and it was impossible to pronounce for foreigners anyway. :) Frostbyte pays homage to Finland and its winter (a season I love), and is appropriately oldskool and a little bit nerdy too.</HandleStory>
+<Scener><ID>2675</ID>
+<Country>Finland</Country>
+<Trivia>I left the C64 scene at late -92 or early -93 due to being totally bored with the prods released at that time, thinking that everything on this machine that can be done, has been done. Demos and games seemed to get worse and worse every day. What comes to games, that was true (but only for a few years... Things have improved greatly since). What comes to demos, oh how wrong was I...
+
+Even though I left the scene, I never fully abandoned it (or the C64), but just kept following it passively through my friend, Aomeba/Siesta. Closer to Y2K I got more and more "actively passive", and got interested in other scenes too, mainly VIC-20, partially thanks to ease of getting new releases from the web. I even made a few tunes on VIC using Fisichella, and attended Alt party V and VI in 2004 and 2005.
+
+I moved to Netherlands in 2006, and a couple of years later found out that there's going to be a C64 only party close to where I lived, so of course it was a must to attend. That party was X'2008. I went there with Aomeba who flew from Finland, dragging an SX-64 with us that I had bought just a while earlier for repair, and that Aomeba repaired on the day before party. Totally worth it. :) And what a great party it was! Felt really pumped and full of C64 energy after it. I was keen to finally start composing on C64 (a dream since the beginning of my "scene career"), and maybe learn a bit of coding as well... But as usual, time passed, nothing got done, and enthusiasm faded away.
+
+Many things happened since. I moved back to Finland in 2014, and in 2015 we went to Zoo Party with Aomeba. After the party we were pumped again. We thought that it is now or never - we're not getting any younger. If we want to become active on C64 scene again and actually produce something, this is the time. So things started rolling. Aomeba got in touch with Adder, we woke up Siesta from the dead, I began composing and we made  few demos. Three years later we all co-joined Artline Designs (while Siesta still producing stuff too), and we are still on that road.</Trivia>
+<Handles><Handle><ID>35326</ID>
+</Handle>
+<Handle><ID>7099</ID>
+<Handle>Dr Lamer</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2675</ID>
+</Scener>
+</Handle>
+<Handle><ID>2685</ID>
+<Handle>Jojeli</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I entered the C64 scene as Dr Lamer. Later (quite soon actually) changed the handle to Jojeli. Now after a comeback to the scene and a few years of consideration, decided to change it to Frostbyte.</HandleStory>
+<Scener><ID>2675</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>03.08.2020</Date>
+<Text>What Mibri said. Even though sounds are superb, they are not the main - or only - point of focus of the tune. Instead, they are there to brilliantly support the oldschoolishly beautiful and ridiculously uplifting composition. Absolutely love this! &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.08.2020</Date>
+<Text>Wow, super nice 25hz drumset you have there :-)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2680</ID>
+<Login>psycho</Login>
+<Handle>psych</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12931</ID>
+<Handle>psych858o</Handle>
+<AKA>Psych, Psycho, psych858o, Psycho8580</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Why psych858o? Just listen to some of my earliest tunes like Schizeralize and you'll find out ;)
+
+Beside that, 8580 was my first and true love. I've been loyal until now, and I'm pretty sure that nothing will change that.</HandleStory>
+<Scener><ID>11584</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>12931</ID>
+</Handle>
+<Handle><ID>13034</ID>
+<Handle>Mr.Big</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>11584</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Lovely tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5035</ID>
+<Login>JCH</Login>
+<Handle>JCH</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>626</ID>
+<Handle>JCH</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>"JCH was just my initials, so there was not much thought about that. Chordian, which I took in 2006, was "inspired" by one of my C64 tunes. I thought it had a nice ring to it and would do nicely as a handle too."</HandleStory>
+<Scener><ID>610</ID>
+<Country>Denmark</Country>
+<Trivia>Former computer musician on C64 and PC. He made his own crude music player on the C64 in 1987, messed around in &amp;lt;scener id="677"&amp;gt;'s player for a while, then created an improved second generation player in 1988-92, with an editor that became very popular. In 1989, he formed the music group &amp;lt;group id="328"&amp;gt; together with &amp;lt;scener id="1208"&amp;gt;.
+
+On JCH's blog, you can read his [url=http://chordian.net/2017/01/09/my-computer-chronicles-part-1/]computer chronicles[/url] (four parts) and see a [url=http://chordian.net/computer-timeline/]timeline[/url].
+
+DeepSID: [url=http://deepsid.chordian.net/?file=/MUSICIANS/J/JCH/]/MUSICIANS/J/JCH/[/url]</Trivia>
+<Handles><Handle><ID>19150</ID>
+<Handle>Chordian</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>610</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>626</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Sweet.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5175</ID>
+<Login>hedning</Login>
+<Handle>hedning</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20879</ID>
+<Handle>hedning</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Herman Hedning, nuff said.</HandleStory>
+<Scener><ID>18641</ID>
+<Country>Sweden</Country>
+<Trivia>Got his first c64 in 1986. Did some c64-swapping 89-91, until he followed Jack Tramiel to the Atari ST (handles Mr.Marvel and Julgran until 1993). 2009 c64 saved him back to the right path. In 2010 he joined Genesis Project as graphician and helped Sixx rebuilding the group. Quickly he was doing more original supplies than gfx, and became the main original supplier of GP the same year. In 2011 he became GP co-organizer and 2012 main organizer. 
+
+He is also into preserving old releases, and between 2010 and 2025 he uploaded ~28 000 releases, and added ~2400 sceners, ~100 BBSs, and about 1200 groups to CSDb.
+
+Organizer of the successful Gubbdata parties in Lund 2012-2022, Sweden. Also co-organized the Datastorm parties, and the last LCP.</Trivia>
+<Handles><Handle><ID>20879</ID>
+</Handle>
+<Handle><ID>24058</ID>
+<Handle>Mr. Marvel</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>18641</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Diskmag Editor</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>Public Relations Manager</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Crazy cool! Good work!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6701</ID>
+<Login>Dymo</Login>
+<Handle>Dymo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>29510</ID>
+<Handle>Dymo</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>26556</ID>
+<Country>Sweden</Country>
+<Trivia>Was at the brim of the scene back in the days,
+knew a few fine gents...
+
+Nowadays, I preserve old magnetic-media as somewhat of a hobby, trying to help the scene recollecting those hard to find bits..
+
+Had a somewhat finished graphic production for datastorm 2017, but hardware malfunction
+ made me loose all the work I did unfortunantly.. 
+Hopefully I'll find the motivation and time to produce another one, for any future party.
+
+Currently testing out stuff for GP, have worked as a software tester before, so might come in handy :)
+
+Joined Genesis Project as tester in 2017.</Trivia>
+<Handles><Handle><ID>29510</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Lovely stuff!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6878</ID>
+<Login>mibri</Login>
+<Handle>Mibri</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>30573</ID>
+<Handle>Mibri</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>27533</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>30573</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Great!! Oldschool melody meets newschool sounds... in 25Hz!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4617</ID>
+<Login>Shogoon</Login>
+<Handle>Shogoon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8127</ID>
+<Handle>Shogoon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7396</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8127</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Lovely tune:) Some instruments are just wow!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>408</ID>
+<Login>Joe/Wrath Designs</Login>
+<Handle>Joe</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1672</ID>
+<Handle>Joe</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1660</ID>
+<Country>Sweden</Country>
+<Trivia>I am an Artist which freelance on projects I decide upon. 
+I have worked with some of the most prominent and interesting persons around this scene.
+All well kept in my heart (eventhough good or bad outcome). It has been joyful years with all of you.
+
+Published in:
+The Masters of Pixel Art: Volume 2, (c) 2016 Klas Benjaminsson, pages 167-178.
+RETURN, No. 21 May 2015, pages 86-87.
+Practical Photoshop No. 49 April 2015.
+CAP&amp;Design No.1 February 2015, pages 28-29.
+
+Articles and small interviews:
+http://www.idesigni.co.uk/blog/past-present-future-pixel-art/
+http://www.8bittoday.com/articles/32/the-work-of-ed-and-joe/
+http://www.atlantis-prophecy.org/recollection/?load=interviews&amp;id_interview=91
+
+Complementary site where I release my artwork:
+https://www.behance.net/james_svard</Trivia>
+<Handles><Handle><ID>1672</ID>
+</Handle>
+<Handle><ID>17436</ID>
+<Handle>James Svärd</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1660</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Lovely tune. I like that bell sound, it's very nice!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>909</ID>
+<Login>jammerc64</Login>
+<Handle>Jammer</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8105</ID>
+<Handle>Jammer</Handle>
+<AKA>Dżemik</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Acquired in high school after Cakewalk's tool. Never used this soft, though ;)</HandleStory>
+<Scener><ID>7378</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8105</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Amazing funky piece and ringing instrument is simply gorgeous! &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1701</ID>
+<Login>yogibear/ptv</Login>
+<Handle>Yogibear</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1129</ID>
+<Handle>Yogibear</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+<Country>Netherlands</Country>
+<Trivia>Listen to my published SID tunes at The High Voltage SID Collection, www.hvsc.c64.org, under the name Wijnhoven_Joachim.</Trivia>
+<Handles><Handle><ID>13337</ID>
+<Handle>Joachim Wijnhoven</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5386</ID>
+<Handle>Banana Joachim</Handle>
+<AKA>B.J.</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5388</ID>
+<Handle>Jack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5387</ID>
+<Handle>CBJ</Handle>
+<AKA>Colonel Blood &amp; Jaws</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1129</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Pretty good! BTW nice logo!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4779</ID>
+<Login>esg-ibb</Login>
+<Handle>E$G</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>11448</ID>
+<Handle>E$G</Handle>
+<AKA>ESG</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>In 1982 together with a friend of mine we traded a lot of heavy metal bootlegs. He played in a local band called STEEL GREY. So i liked es, my initials, and sg. But the handle essg doesn't sound good and the standard should be 3 characters. So joining the 2 s it became $. I used also the $ character in my sign.</HandleStory>
+<Scener><ID>10298</ID>
+<Country>Italy</Country>
+<Trivia>The story so far, as a student of computer science I approached Apple II and his underworld, I started to trade Apple II warez and study 6502 assembler. Then my first computer was VIC 20, nice low-memory machine. Later I got my Apple II and when I heard Sweet Dreams / Eurythmics song played on a 64 I went mad. So the 64 arrived on 1984, I started to collect games ... TO BE CONTINUED</Trivia>
+<Handles><Handle><ID>11448</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Mega Swapper</Function>
+<Function>Modem Trader</Function>
+<Function>Organizer</Function>
+<Function>Phreaker</Function>
+<Function>Public Relations Manager</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.08.2020</Date>
+<Text>Nice, catchy and clean instruments!</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

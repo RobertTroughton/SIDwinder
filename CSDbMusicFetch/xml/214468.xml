@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>214468</ID>
+<Name>Last Night On The Lonely Island</Name>
+<AKA>Late to Stinsen's party...</AKA>
+<Type>C64 Music</Type>
+<ReleaseDay>17</ReleaseDay>
+<ReleaseMonth>2</ReleaseMonth>
+<ReleaseYear>2022</ReleaseYear>
+<Rating>9.62</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/214000/214468.png</ScreenShot>
+<ReleasedBy><Group><ID>1563</ID>
+<Name>MultiStyle Labs</Name>
+<AKA>Mueslistyle</AKA>
+<Short>MSL</Short>
+<Trivia>Nothing but a bunch of friends annoying you in their spare time.</Trivia>
+<FoundDay>15</FoundDay>
+<FoundMonth>7</FoundMonth>
+<FoundYear>2000</FoundYear>
+<Website>http://multistylelabs.bandcamp.com</Website>
+<Rating>9.23</Rating>
+<Grouptypes><Grouptype>Music Group</Grouptype>
+</Grouptypes>
+<Slogan>we ar moor inteligend then yu</Slogan>
+</Group>
+<Group><ID>396</ID>
+<Name>Genesis Project</Name>
+<AKA>G*P</AKA>
+<Short>GP</Short>
+<Trivia>[IMG]https://i.imgur.com/xQ1uaEd.png [/IMG]
+Genesis Project is a multi platform demo group and one of the most well known and productive C64 cracking groups of all time, formed in late 1985 or early 1986 on the C64 by &amp;lt;scener id=6392&amp;gt; (TNT), later &amp;lt;scener id=315&amp;gt;. 
+
+in 1993 a lot of the members strated cracking for SNES/PC etc. (See &amp;lt;release id=261018&amp;gt;. - SNES: L.A.Style, Tyger, Red Skin, Airwolf, Lexi, Zammbo. PC: Snacky)
+
+A full detailed history 1986-2016 can be read in &amp;lt;release id=150629&amp;gt; (2016).
+
+[url=https://demozoo.org/groups/3170/]The history of Genesis Project and further information.[/url]
+
+
+Current (2024) G*P WHQ: &amp;lt;bbs id=103&amp;gt;, EHQ: &amp;lt;bbs id=1139&amp;gt;, and USHQ: &amp;lt;bbs id=320&amp;gt;. G*P also had
+ &amp;lt;bbs id=114&amp;gt;, &amp;lt;bbs id=221&amp;gt;, &amp;lt;bbs id=42&amp;gt;, &amp;lt;bbs id=182&amp;gt;, &amp;lt;bbs id=113&amp;gt;, &amp;lt;bbs id=286&amp;gt;, &amp;lt;bbs id=39&amp;gt;, &amp;lt;bbs id=68&amp;gt; and &amp;lt;bbs id=218&amp;gt; as HQs.
+
+G*P were the organizer of successful parties such as &amp;lt;event id=445&amp;gt;, &amp;lt;event id=128&amp;gt;, &amp;lt;event id=1846&amp;gt;, &amp;lt;event id=2316&amp;gt;, &amp;lt;event id=2879&amp;gt; and &amp;lt;event id=2756&amp;gt;.</Trivia>
+<FoundYear>1986</FoundYear>
+<Website>https://www.facebook.com/Genesis.Project.C64/</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Fixing Group</Grouptype>
+<Grouptype>Import Group</Grouptype>
+<Grouptype>Magazine Staff</Grouptype>
+</Grouptypes>
+<Slogan>Europe's No. 1</Slogan>
+<Slogan>Accept No Limits</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Graphics</CreditType>
+<Handle><ID>21388</ID>
+<Handle>Facet</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>19119</ID>
+<Country>Netherlands</Country>
+<Trivia>The famous Amiga pixeler!</Trivia>
+<Handles><Handle><ID>21388</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>12931</ID>
+<Handle>psych858o</Handle>
+<AKA>Psych, Psycho, psych858o, Psycho8580</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Why psych858o? Just listen to some of my earliest tunes like Schizeralize and you'll find out ;)
+
+Beside that, 8580 was my first and true love. I've been loyal until now, and I'm pretty sure that nothing will change that.</HandleStory>
+<Scener><ID>11584</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>12931</ID>
+</Handle>
+<Handle><ID>13034</ID>
+<Handle>Mr.Big</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>11584</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<UsedSIDs><SID><ID>60575</ID>
+<HVSCPath>/MUSICIANS/P/Psych858o/Last_Night_on_the_Lonely_Island.sid</HVSCPath>
+<Name>Last Night on the Lonely Island</Name>
+<Author>Marcin Majdzik (psych858o)</Author>
+<Released>2022 Genesis Project</Released>
+<LoadAddr>4096</LoadAddr>
+<InitAddr>9553</InitAddr>
+<PlayAddr>9572</PlayAddr>
+<NOSongs>1</NOSongs>
+<DefaultSong>1</DefaultSong>
+<SIDModel>8580</SIDModel>
+<ClockSpeed>PAL</ClockSpeed>
+<DataSize>5494</DataSize>
+</SID>
+</UsedSIDs>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/225148/psych858o-lastnightonthelonelyisland.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=264519</CounterLink>
+<Downloads>369</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/225149/Last-Night-On-The-Lonely-Island.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=264520</CounterLink>
+<Downloads>170</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><ProductionNote><CSDbUser><ID>2680</ID>
+<Login>psycho</Login>
+<Handle>psych</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12931</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>I didn't manage to finish this tune for famous Stinsen's compo: https://csdb.dk/event/?id=3043.</Text>
+</ProductionNote>
+<UserComment><CSDbUser><ID>7018</ID>
+<Login>TLF</Login>
+<Handle>TLF</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>3771</ID>
+<Handle>T.L.F.</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>3771</ID>
+</Handle>
+<Handle><ID>17269</ID>
+<Handle>Dr. Bass</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>9736</ID>
+<Handle>Chris</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>18.02.2022</Date>
+<Text>Definitely worth the wait!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6982</ID>
+<Login>Mikael/P.L</Login>
+<Handle>Mikael</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>734</ID>
+<Handle>Mikael</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>All my handles sucked so in the early nineties I dropped them and begun using my real name instead. And, as nobody calls me by that, I figured Mikael would work great as a handle on the scene!</HandleStory>
+<Scener><ID>718</ID>
+<Country>Sweden</Country>
+<Trivia>Original member of Pretzel Logic since 1989.</Trivia>
+<Handles><Handle><ID>734</ID>
+</Handle>
+<Handle><ID>5611</ID>
+<Handle>Rastan</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>718</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>16974</ID>
+<Handle>Mikael Edlund</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>718</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5610</ID>
+<Handle>Antigone</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>718</ID>
+</Scener>
+</Handle>
+<Handle><ID>5609</ID>
+<Handle>Electron</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>718</ID>
+</Scener>
+</Handle>
+<Handle><ID>5608</ID>
+<Handle>Toyball</Handle>
+<AKA>Toy-Ball</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>718</ID>
+</Scener>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>18.02.2022</Date>
+<Text>Stinsen's tune is on the verge of becoming eternal. Lovely take on this great piece bro!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2515</ID>
+<Login>superlinus</Login>
+<Handle>Linus</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>10025</ID>
+<Handle>Linus</Handle>
+<AKA>Superlinus, Bruce Leenus, Bruce Leet, Helmut Körschgen, Nihil Baxter, Sam Peckinpah</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>9051</ID>
+<Country>Germany</Country>
+<Trivia>The only known man in Kleve who is allowed to push Fanta around.
+
+SID-Remixes:
+[url]https://remix.kwed.org/remix/6992
+[url]https://remix.kwed.org/remix/6804
+[url]https://remix.kwed.org/remix/6548
+[url]https://remix.kwed.org/remix/6419
+[url]https://remix.kwed.org/remix/6453
+[url]https://remix.kwed.org/remix/6401
+[url]https://remix.kwed.org/remix/6280
+[url]https://remix.kwed.org/remix/6499
+[url]https://remix.kwed.org/remix/6479
+
+Spotify:
+[url]https://open.spotify.com/artist/4RUTqRhSBV9gadOLqp7HUX
+
+Bandcamp:
+[url]http://www.mini-melodies.de</Trivia>
+<Handles><Handle><ID>10025</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Has its moments :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+<Login>Stinsen</Login>
+<Handle>Stinsen</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23584</ID>
+<Handle>Stinsen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>21086</ID>
+<Handles><Handle><ID>23584</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Coconut vibes &amp;lt;3 Like you said, better late than never, so glad you finished it!! :D</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7254</ID>
+<Login>theK</Login>
+<Handle>theK</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>35132</ID>
+<Handle>theK</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>31912</ID>
+<Country>Sweden</Country>
+<Trivia>It's pronounced [di:kei], a play with words on the word "decay".</Trivia>
+<Handles><Handle><ID>35132</ID>
+</Handle>
+<Handle><ID>35885</ID>
+<Handle>Beatless</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>31912</ID>
+</Scener>
+</Handle>
+<Handle><ID>35354</ID>
+<Handle>Niles</Handle>
+<AKA>nileS</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>31912</ID>
+</Scener>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Ooooh, lovely! &amp;lt;3 
+This one really put a smile on my face! Lovely composition!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4468</ID>
+<Login>RaistlinGP</Login>
+<Handle>Raistlin</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>848</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Wile: Happy to PM you. The bars are just a char-based animation, though. Nothing complex.. could of course use multicolour mode.
+
+I drew the bars myself, actually... C0d3rArt.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2243</ID>
+<Login>Wile Coyote</Login>
+<Handle>Wile Coyote</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1103</ID>
+<Handle>Wile Coyote</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1087</ID>
+<Country>England</Country>
+<Handles><Handle><ID>1103</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>@hedning i would need to know more info. ^_^</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5175</ID>
+<Login>hedning</Login>
+<Handle>hedning</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20879</ID>
+<Handle>hedning</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Herman Hedning, nuff said.</HandleStory>
+<Scener><ID>18641</ID>
+<Country>Sweden</Country>
+<Trivia>Got his first c64 in 1986. Did some c64-swapping 89-91, until he followed Jack Tramiel to the Atari ST (handles Mr.Marvel and Julgran until 1993). 2009 c64 saved him back to the right path. In 2010 he joined Genesis Project as graphician and helped Sixx rebuilding the group. Quickly he was doing more original supplies than gfx, and became the main original supplier of GP the same year. In 2011 he became GP co-organizer and 2012 main organizer. 
+
+He is also into preserving old releases, and between 2010 and 2025 he uploaded ~28 000 releases, and added ~2400 sceners, ~100 BBSs, and about 1200 groups to CSDb.
+
+Organizer of the successful Gubbdata parties in Lund 2012-2022, Sweden. Also co-organized the Datastorm parties, and the last LCP.</Trivia>
+<Handles><Handle><ID>20879</ID>
+</Handle>
+<Handle><ID>24058</ID>
+<Handle>Mr. Marvel</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>18641</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Diskmag Editor</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>Public Relations Manager</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Fantastic tune! Love it! 
+
+Wile Coyote: Awaiting your updated bars!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2680</ID>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>As they say, better late than never ;)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>909</ID>
+<Login>jammerc64</Login>
+<Handle>Jammer</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8105</ID>
+<Handle>Jammer</Handle>
+<AKA>Dżemik</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Acquired in high school after Cakewalk's tool. Never used this soft, though ;)</HandleStory>
+<Scener><ID>7378</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8105</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Man, you're late! :D But it was worth waiting ;)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2243</ID>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>Good tune. Great instruments.
+I like the pixels in the upper part of the screen. A mish-mash of?
+I wish you guy's would update the look of the visualizer. I have never been 100% sold on the hires-bars.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>I am delighted from the first notes of this work. Really Psych858o Your individual Talent that you possess captivates and amazes me every time you publish more music. The most beautiful thing is that you create amazing musical works on the C64 I have to write this, you are my TOP C64 Scene Demo musician! Every note, every note is perfectly polished I just LOVE EVERYTHING YOU DO!
+
+Ps. The graphics match this music like mine 10/10 for this production BRAWO!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>17.02.2022</Date>
+<Text>You're late around 1 year but it worth the wait. Lovely stuff.
+Seriously, we need another Last Night compo.</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

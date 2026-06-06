@@ -1,0 +1,74 @@
+D:\Git\SIDwinder\CSDbMusicFetch>update-releases.bat
+========================================
+CSDbMusicFetch - Update Releases page
+========================================
+
+Fetches every ID in release-ids.txt from CSDb and rewrites the
+auto-generated release cards in ..\public\index.html (in place).
+
+Fetching 31 release(s) from CSDb...
+Saving raw XML to 'xml'
+[1/31] release 262091: 4480 bytes
+[2/31] release 262101: 1710 bytes
+  [warn] release 262101: Music credit Handle ID 39452 has no resolvable name. Raw credit XML:
+<Credit>
+    <CreditType>Music</CreditType>
+    <Handle>
+        <ID>39452</ID>
+    </Handle>
+</Credit>
+
+[3/31] release 261993: 5177 bytes
+[4/31] release 259596: 7816 bytes
+[5/31] release 259586: 15493 bytes
+  [warn] release 259586: Music credit Handle ID 35468 has no resolvable name. Raw credit XML:
+<Credit>
+    <CreditType>Music</CreditType>
+    <Handle>
+        <ID>35468</ID>
+    </Handle>
+</Credit>
+
+[6/31] release 259557: 15881 bytes
+[7/31] release 259407: 15818 bytes
+[8/31] release 259033: 20044 bytes
+  [warn] release 259033: Music credit Handle ID 1651 has no resolvable name. Raw credit XML:
+<Credit>
+    <CreditType>Music</CreditType>
+    <Handle>
+        <ID>1651</ID>
+    </Handle>
+</Credit>
+
+[9/31] release 259028: 24682 bytes
+[10/31] release 259027: 11155 bytes
+[11/31] release 247798: 8668 bytes
+[12/31] release 247797: 10244 bytes
+[13/31] release 236972: 18136 bytes
+[14/31] release 218299: 15751 bytes
+[15/31] release 217748: 12357 bytes
+[16/31] release 214738: 15607 bytes
+[17/31] release 214468: 19096 bytes
+[18/31] release 212356: 13213 bytes
+[19/31] release 212358: 15203 bytes
+[20/31] release 211650: 23750 bytes
+[21/31] release 211649: 11465 bytes
+[22/31] release 211439: 18326 bytes
+[23/31] release 205472: 14901 bytes
+[24/31] release 202282: 20704 bytes
+[25/31] release 197865: 25997 bytes
+[26/31] release 197529: 17591 bytes
+[27/31] release 195382: 17229 bytes
+[28/31] release 194049: 29356 bytes
+[29/31] release 192902: 26387 bytes
+[30/31] release 192869: 17604 bytes
+[31/31] release 192867: 24919 bytes
+Note: release 262101 ("TwinCross") has no resolved artist name - card will show "Unknown".
+Note: release 259586 ("Maneater") has no resolved artist name - card will show "Unknown".
+Note: release 259033 ("Butterflies") has no resolved artist name - card will show "Unknown".
+
+Summary: 31/31 releases resolved, 3 with no artist name.
+Wrote 31 release card(s) to ..\public\index.html
+
+Done. Review the diff in ..\public\index.html and commit it.
+Press any key to continue . . .

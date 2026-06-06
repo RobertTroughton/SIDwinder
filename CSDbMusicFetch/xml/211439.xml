@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>211439</ID>
+<Name>Background Noise (Syntax Edit)</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>27</ReleaseDay>
+<ReleaseMonth>11</ReleaseMonth>
+<ReleaseYear>2021</ReleaseYear>
+<ReleasedAt><Event><ID>3119</ID>
+<Name>Syntax 2021</Name>
+<EventType>Demo Party</EventType>
+<StartDay>27</StartDay>
+<StartMonth>11</StartMonth>
+<StartYear>2021</StartYear>
+<EndDay>28</EndDay>
+<EndMonth>11</EndMonth>
+<EndYear>2021</EndYear>
+<Address>compos@syntaxparty.org</Address>
+<City>Melbourne</City>
+<State>Victoria</State>
+<Country>Australia</Country>
+<Website>http://syntaxparty.org</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>8</Place>
+</Achievement>
+<Rating>9.44</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/211000/211439.png</ScreenShot>
+<ReleasedBy><Group><ID>396</ID>
+<Name>Genesis Project</Name>
+<AKA>G*P</AKA>
+<Short>GP</Short>
+<Trivia>[IMG]https://i.imgur.com/xQ1uaEd.png [/IMG]
+Genesis Project is a multi platform demo group and one of the most well known and productive C64 cracking groups of all time, formed in late 1985 or early 1986 on the C64 by &amp;lt;scener id=6392&amp;gt; (TNT), later &amp;lt;scener id=315&amp;gt;. 
+
+in 1993 a lot of the members strated cracking for SNES/PC etc. (See &amp;lt;release id=261018&amp;gt;. - SNES: L.A.Style, Tyger, Red Skin, Airwolf, Lexi, Zammbo. PC: Snacky)
+
+A full detailed history 1986-2016 can be read in &amp;lt;release id=150629&amp;gt; (2016).
+
+[url=https://demozoo.org/groups/3170/]The history of Genesis Project and further information.[/url]
+
+
+Current (2024) G*P WHQ: &amp;lt;bbs id=103&amp;gt;, EHQ: &amp;lt;bbs id=1139&amp;gt;, and USHQ: &amp;lt;bbs id=320&amp;gt;. G*P also had
+ &amp;lt;bbs id=114&amp;gt;, &amp;lt;bbs id=221&amp;gt;, &amp;lt;bbs id=42&amp;gt;, &amp;lt;bbs id=182&amp;gt;, &amp;lt;bbs id=113&amp;gt;, &amp;lt;bbs id=286&amp;gt;, &amp;lt;bbs id=39&amp;gt;, &amp;lt;bbs id=68&amp;gt; and &amp;lt;bbs id=218&amp;gt; as HQs.
+
+G*P were the organizer of successful parties such as &amp;lt;event id=445&amp;gt;, &amp;lt;event id=128&amp;gt;, &amp;lt;event id=1846&amp;gt;, &amp;lt;event id=2316&amp;gt;, &amp;lt;event id=2879&amp;gt; and &amp;lt;event id=2756&amp;gt;.</Trivia>
+<FoundYear>1986</FoundYear>
+<Website>https://www.facebook.com/Genesis.Project.C64/</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Fixing Group</Grouptype>
+<Grouptype>Import Group</Grouptype>
+<Grouptype>Magazine Staff</Grouptype>
+</Grouptypes>
+<Slogan>Europe's No. 1</Slogan>
+<Slogan>Accept No Limits</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Graphics</CreditType>
+<Handle><ID>21388</ID>
+<Handle>Facet</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>19119</ID>
+<Country>Netherlands</Country>
+<Trivia>The famous Amiga pixeler!</Trivia>
+<Handles><Handle><ID>21388</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>34424</ID>
+<Handle>acrouzet</Handle>
+<AKA>acropix</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My first initial plus the first part of my last name.</HandleStory>
+<Scener><ID>31224</ID>
+<Country>United States</Country>
+<Handles><Handle><ID>34424</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<UsedSIDs><SID><ID>59625</ID>
+<HVSCPath>/MUSICIANS/A/Acrouzet/Background_Noise_Syntax_Edit.sid</HVSCPath>
+<Name>Background Noise (Syntax Edit)</Name>
+<Author>Aidan Crouzet-Pascal (acrouzet)</Author>
+<Released>2021 Genesis Project</Released>
+<LoadAddr>2048</LoadAddr>
+<InitAddr>2048</InitAddr>
+<PlayAddr>2051</PlayAddr>
+<NOSongs>1</NOSongs>
+<DefaultSong>1</DefaultSong>
+<SIDModel>8580</SIDModel>
+<ClockSpeed>PAL</ClockSpeed>
+<DataSize>10460</DataSize>
+</SID>
+</UsedSIDs>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/221638/acrouzet-backgroundnoise-syntaxedit.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=260846</CounterLink>
+<Downloads>336</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/221639/Background_Noise_Syntax_Edit.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=260847</CounterLink>
+<Downloads>162</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>7367</ID>
+<Login>viralbox</Login>
+<Handle>Viralbox</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>36447</ID>
+<Handle>Viralbox</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>33185</ID>
+<Country>Iraq</Country>
+<Handles><Handle><ID>36447</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.02.2022</Date>
+<Text>Sounds very Fanta-ish (or PRI-ish) with the low pass filtered lead. :D</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>10.12.2021</Date>
+<Text>What's wrong with the filename of this one? XD
+
+Anyway: nice, grooving tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7321</ID>
+<Login>et1999cc</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>35826</ID>
+<Handle>et1999cc</Handle>
+<AKA>Esteban Trujillo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My alias is made up of the initial of my middle name and my last name, adding the year I was born. I first used it to upload videos of old operating systems to YouTube, and over the years it became my identity for the internet.</HandleStory>
+<Scener><ID>32581</ID>
+<Country>Colombia</Country>
+<Trivia>Attempted musician and video editor from Ibagué, Colombia.
+Formally as a computer maintenance and repair technician.
+At the moment as an economics student.</Trivia>
+<Handles><Handle><ID>35826</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>29.11.2021</Date>
+<Text>The influence of Tel in this plus the combination of your style generate this spectacular piece!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5934</ID>
+<Login>wertstahl</Login>
+<Handle>ws</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23912</ID>
+<Handle>Wertstahl</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>wertstahl is a kunstwort built from the words wert and stahl. it was coined in november 1998, with the sole intent of being prominent. it previously was just the name of my techno-industrial band, and now is my universal nickname, too.</HandleStory>
+<Scener><ID>21394</ID>
+<Country>Germany</Country>
+<Trivia>Has hopelessly nonfamous musical endeavours going on under the monickers of aGe2.1, PSAUX, Fettpumpe, Das Neue Universum - which might be cross referenced here and there.
+
+Bandcamp: 
+[url=https://www.battlecommand.org]www.battlecommand.org[/url]</Trivia>
+<Handles><Handle><ID>23912</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+<Function>Swapper</Function>
+<Function>Tester</Function>
+<Function>Translator</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>28.11.2021</Date>
+<Text>Sweet tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2674</ID>
+<Login>DKT</Login>
+<Handle>DKT</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>9132</ID>
+<Handle>Don Kichote</Handle>
+<AKA>Don Quixote (EN), Don Quijote (ES), Don Kiszot (PL)</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Stolen from Don Kichot / Katharsis (Amiga) :)</HandleStory>
+<Scener><ID>8266</ID>
+<Country>Poland</Country>
+<Trivia>[url=https://sidcloud.net]sidcloud.net[/url]</Trivia>
+<Handles><Handle><ID>9132</ID>
+</Handle>
+<Handle><ID>33221</ID>
+<Handle>Prozessor</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>8266</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>Another great tune from Acrouzet!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7163</ID>
+<Login>KAL_123</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>29715</ID>
+<Handle>Miami Bass</Handle>
+<AKA>KAL_123</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>26742</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>29715</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>Great tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>712</ID>
+<Login>randall</Login>
+<Handle>gegegege gugugugu</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8501</ID>
+<Handle>Randall</Handle>
+<AKA>srandall</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>generic enough to match Jammer and Sidder, my only groupmates at the time :)</HandleStory>
+<Scener><ID>3723</ID>
+<Country>Poland</Country>
+<Trivia>to further inflate my sack of nicks, i'm also (un)known as glebogryzarka and afrojax elsewhere</Trivia>
+<Handles><Handle><ID>8501</ID>
+</Handle>
+<Handle><ID>3733</ID>
+<Handle>Smalltown Boy</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I named myself after one of my favourite songs (by Bronski Beat ofc).</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>34031</ID>
+<Handle>Chuinho</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>chuj = obscene description of penis in polish, but with a much broader meaning than just that, frequently used as an insult.
+-inho, because i hail from minas gerais ;)</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>33500</ID>
+<Handle>Vaginae Supremacy</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Valerie Solanas meets C64 coverbands, chaos ensues</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>36518</ID>
+<Handle>Hate Bush</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>a miserable wordplay on my favourite female singer's name. also a bit outdated political statement.</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>transposes the square root out of you and modulates your indefinite integral until you throw up. VERY NICE &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>909</ID>
+<Login>jammerc64</Login>
+<Handle>Jammer</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8105</ID>
+<Handle>Jammer</Handle>
+<AKA>Dżemik</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Acquired in high school after Cakewalk's tool. Never used this soft, though ;)</HandleStory>
+<Scener><ID>7378</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8105</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>Fantastic composition and nice Telish funkyness &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7348</ID>
+<Login>That8BitChiptuneGuy</Login>
+<Handle>dihhmosic</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>36891</ID>
+<Handle>demosic</Handle>
+<AKA>DeMOSic</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>32802</ID>
+<Country>Sweden</Country>
+<Trivia>15 Years old.</Trivia>
+<Handles><Handle><ID>36891</ID>
+</Handle>
+<Handle><ID>36052</ID>
+<Handle>That8BitChiptuneGuy</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I (DeMOSic) was gonna make a name for my youtube channel and "That8BitChiptuneGuy" just got into my head. I Couldnt come up with anything better and it stuck.</HandleStory>
+<Scener><ID>32802</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>Very nice tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5175</ID>
+<Login>hedning</Login>
+<Handle>hedning</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20879</ID>
+<Handle>hedning</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Herman Hedning, nuff said.</HandleStory>
+<Scener><ID>18641</ID>
+<Country>Sweden</Country>
+<Trivia>Got his first c64 in 1986. Did some c64-swapping 89-91, until he followed Jack Tramiel to the Atari ST (handles Mr.Marvel and Julgran until 1993). 2009 c64 saved him back to the right path. In 2010 he joined Genesis Project as graphician and helped Sixx rebuilding the group. Quickly he was doing more original supplies than gfx, and became the main original supplier of GP the same year. In 2011 he became GP co-organizer and 2012 main organizer. 
+
+He is also into preserving old releases, and between 2010 and 2025 he uploaded ~28 000 releases, and added ~2400 sceners, ~100 BBSs, and about 1200 groups to CSDb.
+
+Organizer of the successful Gubbdata parties in Lund 2012-2022, Sweden. Also co-organized the Datastorm parties, and the last LCP.</Trivia>
+<Handles><Handle><ID>20879</ID>
+</Handle>
+<Handle><ID>24058</ID>
+<Handle>Mr. Marvel</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>18641</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Diskmag Editor</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>Public Relations Manager</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.11.2021</Date>
+<Text>Really nice one! Good work!</Text>
+</UserComment>
+<Summary><CSDbUser><ID>7211</ID>
+<Login>acrouzet</Login>
+<Handle>acrouzet</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>34424</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>28.11.2021</Date>
+<Text>for PAL 8580.</Text>
+</Summary>
+</Comments>
+</Release>
+</CSDbData>

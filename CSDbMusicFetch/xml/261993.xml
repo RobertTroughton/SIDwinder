@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>261993</ID>
+<Name>Ostatnia prosta</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>30</ReleaseDay>
+<ReleaseMonth>5</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3576</ID>
+<Name>Moonshine Dragons 2026</Name>
+<EventType>Demo Party</EventType>
+<StartDay>29</StartDay>
+<StartMonth>5</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>31</EndDay>
+<EndMonth>5</EndMonth>
+<EndYear>2026</EndYear>
+<Address>Generała Kazimierza Sosnkowskiego 29A</Address>
+<Zip>45-271</Zip>
+<City>Opole</City>
+<State>opolskie</State>
+<Country>Poland</Country>
+<Website>https://moonshinedragons.party/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>2</Place>
+</Achievement>
+<Rating>9.62</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/261000/261993.png</ScreenShot>
+<ReleasedBy><Group><ID>1032</ID>
+<Name>Skylight Designs</Name>
+<Short>SLT</Short>
+<Trivia>The formation was founded in Szczecin in 1991 by Monsoon and Gandalf. The duo quickly transformed into a productive group that was active in the Polish demoscene in the years 1991-1993.
+Reactivation attempts took place in the late 1990s, but proved unsuccessful.
+
+On the initiative of Lotus (a member of the group since 1992) and Asthor, they managed to establish a team that resumed its activity from the beginning of 2025.</Trivia>
+<BaseCountry>Poland</BaseCountry>
+<FoundMonth>6</FoundMonth>
+<FoundYear>1991</FoundYear>
+<Website>http://skylightdesigns.pl</Website>
+<Grouptypes><Grouptype>Magazine Staff</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Cracker Group</Grouptype>
+</Grouptypes>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Music</CreditType>
+<Handle><ID>2912</ID>
+<Handle>Sage</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>2902</ID>
+<Country>Poland</Country>
+<Trivia>Brother of http://noname.c64.org/csdb/scener/?id=8457</Trivia>
+<Handles><Handle><ID>2912</ID>
+</Handle>
+<Handle><ID>15866</ID>
+<Handle>Scottie</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2902</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280351/Ostatnia_prosta.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322350</CounterLink>
+<Downloads>87</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>7622</ID>
+<Login>lotus_skylight</Login>
+<Handle>Lotus</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8457</ID>
+<Handle>Lotus</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+<Country>Poland</Country>
+<Trivia>Brother of &amp;lt;scener/index.php?id=2912&amp;gt;</Trivia>
+<Handles><Handle><ID>8457</ID>
+</Handle>
+<Handle><ID>22361</ID>
+<Handle>Ranx</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+</Scener>
+</Handle>
+<Handle><ID>22360</ID>
+<Handle>Killer</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.06.2026</Date>
+<Text>As usual, the piece is technically perfect. You have your own style, which I'm very happy about. But you know that, right? :-)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.06.2026</Date>
+<Text>Very nice !</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7635</ID>
+<Login>primek</Login>
+<Handle>primek</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>38640</ID>
+<Handle>primek</Handle>
+<AKA>Primek, pmk</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>stopped spelling himself with capital "P"  22 July 2023</HandleStory>
+<Scener><ID>19881</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>38640</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Cover Designer</Function>
+<Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>31.05.2026</Date>
+<Text>niceeee! real sid master.</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

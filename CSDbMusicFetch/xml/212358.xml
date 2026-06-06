@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>212358</ID>
+<Name>Doublebass (V2)</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>24</ReleaseDay>
+<ReleaseMonth>12</ReleaseMonth>
+<ReleaseYear>2021</ReleaseYear>
+<Rating>9.89</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/212000/212358.png</ScreenShot>
+<ReleasedBy><Group><ID>396</ID>
+<Name>Genesis Project</Name>
+<AKA>G*P</AKA>
+<Short>GP</Short>
+<Trivia>[IMG]https://i.imgur.com/xQ1uaEd.png [/IMG]
+Genesis Project is a multi platform demo group and one of the most well known and productive C64 cracking groups of all time, formed in late 1985 or early 1986 on the C64 by &amp;lt;scener id=6392&amp;gt; (TNT), later &amp;lt;scener id=315&amp;gt;. 
+
+in 1993 a lot of the members strated cracking for SNES/PC etc. (See &amp;lt;release id=261018&amp;gt;. - SNES: L.A.Style, Tyger, Red Skin, Airwolf, Lexi, Zammbo. PC: Snacky)
+
+A full detailed history 1986-2016 can be read in &amp;lt;release id=150629&amp;gt; (2016).
+
+[url=https://demozoo.org/groups/3170/]The history of Genesis Project and further information.[/url]
+
+
+Current (2024) G*P WHQ: &amp;lt;bbs id=103&amp;gt;, EHQ: &amp;lt;bbs id=1139&amp;gt;, and USHQ: &amp;lt;bbs id=320&amp;gt;. G*P also had
+ &amp;lt;bbs id=114&amp;gt;, &amp;lt;bbs id=221&amp;gt;, &amp;lt;bbs id=42&amp;gt;, &amp;lt;bbs id=182&amp;gt;, &amp;lt;bbs id=113&amp;gt;, &amp;lt;bbs id=286&amp;gt;, &amp;lt;bbs id=39&amp;gt;, &amp;lt;bbs id=68&amp;gt; and &amp;lt;bbs id=218&amp;gt; as HQs.
+
+G*P were the organizer of successful parties such as &amp;lt;event id=445&amp;gt;, &amp;lt;event id=128&amp;gt;, &amp;lt;event id=1846&amp;gt;, &amp;lt;event id=2316&amp;gt;, &amp;lt;event id=2879&amp;gt; and &amp;lt;event id=2756&amp;gt;.</Trivia>
+<FoundYear>1986</FoundYear>
+<Website>https://www.facebook.com/Genesis.Project.C64/</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Fixing Group</Grouptype>
+<Grouptype>Import Group</Grouptype>
+<Grouptype>Magazine Staff</Grouptype>
+</Grouptypes>
+<Slogan>Europe's No. 1</Slogan>
+<Slogan>Accept No Limits</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Graphics</CreditType>
+<Handle><ID>21388</ID>
+<Handle>Facet</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>19119</ID>
+<Country>Netherlands</Country>
+<Trivia>The famous Amiga pixeler!</Trivia>
+<Handles><Handle><ID>21388</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>34424</ID>
+<Handle>acrouzet</Handle>
+<AKA>acropix</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My first initial plus the first part of my last name.</HandleStory>
+<Scener><ID>31224</ID>
+<Country>United States</Country>
+<Handles><Handle><ID>34424</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<UsedSIDs><SID><ID>60661</ID>
+<HVSCPath>/MUSICIANS/A/Acrouzet/Doublebass_v2.sid</HVSCPath>
+<Name>Doublebass (v2)</Name>
+<Author>Aidan Crouzet-Pascal (acrouzet)</Author>
+<Released>2021 Genesis Project</Released>
+<LoadAddr>2048</LoadAddr>
+<InitAddr>2048</InitAddr>
+<PlayAddr>2051</PlayAddr>
+<NOSongs>1</NOSongs>
+<DefaultSong>1</DefaultSong>
+<SIDModel>8580</SIDModel>
+<ClockSpeed>PAL</ClockSpeed>
+<DataSize>10086</DataSize>
+</SID>
+</UsedSIDs>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/222736/acrouzet-doublebassv2.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=262013</CounterLink>
+<Downloads>182</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/222737/Doublebass_v2.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=262014</CounterLink>
+<Downloads>362</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><ProductionNote><CSDbUser><ID>7211</ID>
+<Login>acrouzet</Login>
+<Handle>acrouzet</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>34424</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>25.12.2021</Date>
+<Text>Version 1 of this tune was only released in video form on YouTube, as I couldn’t get SidTracker64 to properly export it to .sid. I was able to fix this by modifying the filter table to account for the skipping of frames by ST64’s player (presumably done to optimize rastertime).</Text>
+</ProductionNote>
+<UserComment><CSDbUser><ID>1701</ID>
+<Login>yogibear/ptv</Login>
+<Handle>Yogibear</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1129</ID>
+<Handle>Yogibear</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+<Country>Netherlands</Country>
+<Trivia>Listen to my published SID tunes at The High Voltage SID Collection, www.hvsc.c64.org, under the name Wijnhoven_Joachim.</Trivia>
+<Handles><Handle><ID>13337</ID>
+<Handle>Joachim Wijnhoven</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5386</ID>
+<Handle>Banana Joachim</Handle>
+<AKA>B.J.</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5388</ID>
+<Handle>Jack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5387</ID>
+<Handle>CBJ</Handle>
+<AKA>Colonel Blood &amp; Jaws</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1129</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>26.12.2021</Date>
+<Text>Pretty cool!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>25.12.2021</Date>
+<Text>Amazing</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3567</ID>
+<Login>celticdesign</Login>
+<Handle>celticdesign</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>3288</ID>
+<Handle>celticdesign</Handle>
+<AKA>celtic design</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was looking for a cool and appropriate handle and was given a "Celtic" sticker (was it a clothing company at the time?). I really liked that word and had no idea what it meant. Years later (around the early 90s) I realised that there was another scener (Hi Celtic! ;-) with the same handle. So I decided to keep the handle and added "design" as a suffix. At that time the word "design" was used in combination by many super groups like censor, panoramic, cosmos, MDG...
+
+Frustrated by fake democracy, Charlie, and war since 2021. I'm still thinking about a comeback here and there.</HandleStory>
+<Scener><ID>3278</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>3288</ID>
+</Handle>
+<Handle><ID>11375</ID>
+<Handle>dj3d</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3278</ID>
+</Scener>
+</Handle>
+<Handle><ID>11374</ID>
+<Handle>celtic</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3278</ID>
+</Scener>
+</Handle>
+<Handle><ID>11376</ID>
+<Handle>luziesoft</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3278</ID>
+</Scener>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>25.12.2021</Date>
+<Text>Good Stuff Fella! :-)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6022</ID>
+<Login>gaz1</Login>
+<Handle>G-Force</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>24396</ID>
+<Handle>G-Force</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>G-Force then later on changed to (battle of the planets) is taken from the cartoon from the 70's and 80's and which was one of favourite cartoons from that era and one of my favourite soundtracks as well.
+I insert ****G-FORCE**** in the disk id header of a program to signify the phoenix of g-force with the asterisks being the wings and looking like the wings are on fire also.
+Just doing my project at the moment,but when i have finished my big project i will have lots of spare time to make cracks of games.
+Started to make a game on the spectrum with my mates called mad mick in 1984 a platform type game,but they got fed up with the project so far through it and that was that.
+First game played was pong on the tv game at home in 1976 and from there i was always in the arcades from 1977-1988 playing the likes of space invaders and all the other classics like galaxians,defender,missile command,astro blaster,gorf,pac-man,super sprint,gauntlet etc.
+First went on a computer playing games in 1980 on my mates bbc b and atari 800 and then finally got to own one myself when the prices came down in 1983 which was a spectrum 16k later upgraded to 48k and the first game i got was atic atac and from then on i was hooked completely on home computers.
+Got a c64 in 1985 after seeing staff of karnath through (ultimate) again and then got a atari st in mid 1987 which broken down every week,so got an amiga in 1988 when i saw sinbad on my mates amiga and this was my most reliable computer ever with no problems at all with it in the 5 years that i owned it.
+Loved the demo scene and cracktro's on the amiga in its heyday with favourite's like demons are forever and favourite groups like unit a,ackerlight,tristar,red sector,paranoimia,defjam,bamiga sector one,crystal,trsi,wow etc.
+me and my mates bought originals from the computer shop and copied games from each other using the action replay,double adapter lead and double deck hi-fi.
+There used to be droves of mates waiting outside the rotherham micro fun computer shop where i used to live waiting to copy my originals that i bought and then off to their houses all day long to copy them onto their disk drives and in return to get their unreleased stuff.
+They mentioned a lot of my originals ended up with local sceners such as derby ram and other local groups.
+Im amazed we did not get caught we were that careless lol.
+Fav groups on the c64 now though are hokuto force,derbyshire ram,remember,triad,chromance,fairlight,laxity,bonzai,mayhem,excess,f4cg,rsi,triangle,hotline,onslaught,legend,hackersoft,genesis project,mr.z,esi,ikari,mhi,avt,hitmen,etc etc haha.
+Bought a amiga cd32 in 1993 then sold it in 1995 and then bought ps1 in 1995,ps2 2000,ps3 2007 and ps4 2014.
+Got about 130,000+ games so far on 31 different computers/emulators 8/16/32/64 bit which has taken me nearly five years all mostly checked and they take up 1.5tb on my external hardrive in which they are backed up on 4 different ones just in case and when i have finished renaming and checking games on the c64 in which they are 40,000 games left to do i will have finished with the emulators.
+So with everything finished i will then start to crack and train games,as i will have lots of spare time on my hands and there are 1,000,s of good original games yet to be cracked in my vast collection,so plenty of work to keep me occupied far into the future.
+First got a pc in 2000 and started with the emulators straight away and downloading games on and off,but started to download and check games heavily from 2005.</HandleStory>
+<Scener><ID>21824</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>24396</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Original Supplier</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>25.12.2021</Date>
+<Text>Just my type of music.
+Excellent from start to finish.</Text>
+</UserComment>
+<Summary><CSDbUser><ID>7211</ID>
+</CSDbUser>
+<Date>25.12.2021</Date>
+<Text>A small revision of my original “Doublebass”, which I composed in 2020 for PAL 8580. Changes were made in order to get a proper .sid export and to make the tune sound better on a real 8580.</Text>
+</Summary>
+</Comments>
+</Release>
+</CSDbData>

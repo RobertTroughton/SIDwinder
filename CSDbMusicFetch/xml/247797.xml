@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>247797</ID>
+<Name>The Protector</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>23</ReleaseDay>
+<ReleaseMonth>11</ReleaseMonth>
+<ReleaseYear>2024</ReleaseYear>
+<ReleasedAt><Event><ID>3474</ID>
+<Name>Mysdata 2024</Name>
+<EventType>Demo Party</EventType>
+<Tagline>Back with Mys!</Tagline>
+<StartDay>22</StartDay>
+<StartMonth>11</StartMonth>
+<StartYear>2024</StartYear>
+<EndDay>24</EndDay>
+<EndMonth>11</EndMonth>
+<EndYear>2024</EndYear>
+<City>Karlskrona</City>
+<Country>Sweden</Country>
+<Website>https://mysdata.org/2024/index.html</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>3</Place>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/247000/247797.png</ScreenShot>
+<ReleasedBy><Group><ID>2310</ID>
+<Name>Censor Design</Name>
+<AKA>CD</AKA>
+<Short>CEN</Short>
+<Trivia>Was formed after an issue Bob had with &amp;lt;scener id=629&amp;gt;/&amp;lt;group id=132&amp;gt;. Read more in &amp;lt;release id=620&amp;gt; and &amp;lt;release id=182506&amp;gt;.
+
+Group name inspired from the tune [url=https://www.youtube.com/watch?v=qGKByXNXCFc]Censor[/url] by Canadian electro-industrial group Skinny Puppy.
+Other Skinny Puppy tunes have given names to boards and demos through time.</Trivia>
+<BaseCountry>Sweden</BaseCountry>
+<FoundDay>28</FoundDay>
+<FoundMonth>6</FoundMonth>
+<FoundYear>1989</FoundYear>
+<Website>http://www.facebook.com/CensorDesign</Website>
+<Rating>9.29</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Fixing Group</Grouptype>
+<Grouptype>Import Group</Grouptype>
+<Grouptype>Magazine Staff</Grouptype>
+</Grouptypes>
+<Slogan>In the Name of Satan, We'll Take What we Want</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Music</CreditType>
+<Handle><ID>16913</ID>
+<Handle>Magnar Harestad</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>667</ID>
+<Country>Sweden</Country>
+<Trivia>This is not "just" a greeting list, it is "the list" of all the different group's I've been (or still am) active and proud demoscene member of: 
+
+* Abscess   
+* Anarchy
+* Andromeda
+* Cavalry
+* Censor Design
+* Legion Design
+* Lemon.
+* Irongods
+* Jolly Poppers
+* Megastyle Incorporated / Megastyle Productions
+* Nah Kolor
+* Noiseless
+* Offence / Offence Software
+* Reflex
+* Scoopex
+* Spaceballs
+* The Black Lotus / TBL
+* The Road Busters
+* The Pornos
+* The Silents
+
+And.. Somehow Fairlight is still missing on that list, Pantaloon.. :)
+
+
+I was the main-coordinator behind The Gathering 1995 party, which was hosted in Stavanger Idrettshall instead of Hamar Vikingship that year. In the late 80's, I also was Sysop and host of the AmiExpress BBS called "Noiseless". And Co-Sysop for a numberous of PC BBS, such as "Scandinavian BBS" etc.
+
+For free music on any platform and any purpose, don't hesitate to contact me. :) Cheers Magnar!
+
+https://open.spotify.com/artist/2nnXrL87cBFRyts2KrVSvv?si=dA_NP8TnRFeLQhWKv8ZfUA</Trivia>
+<Handles><Handle><ID>20194</ID>
+<Handle>Assassin</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>667</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>16913</ID>
+</Handle>
+<Handle><ID>683</ID>
+<Handle>Lizard</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>667</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Design</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Graphics</CreditType>
+<Handle><ID>848</ID>
+</Handle>
+</Credit>
+<Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+</Handle>
+</Credit>
+</Credits>
+<UsedSIDs><SID><ID>63902</ID>
+<HVSCPath>/MUSICIANS/M/Magnar/Protector.sid</HVSCPath>
+<Name>The Protector</Name>
+<Author>Magnar Harestad</Author>
+<Released>2024 Censor Design</Released>
+<LoadAddr>3072</LoadAddr>
+<InitAddr>3072</InitAddr>
+<PlayAddr>3075</PlayAddr>
+<NOSongs>1</NOSongs>
+<DefaultSong>1</DefaultSong>
+<SIDModel>8580</SIDModel>
+<ClockSpeed>PAL</ClockSpeed>
+<DataSize>4291</DataSize>
+</SID>
+</UsedSIDs>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/263096/theprotector.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=304126</CounterLink>
+<Downloads>331</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/263097/The Protector %28Mysdata2024%29.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=304127</CounterLink>
+<Downloads>104</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>1319</ID>
+<Login>bugjam</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1498</ID>
+<Handle>Bugjam</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>The name is taken from a famous English VW Beetle meeting.</HandleStory>
+<Scener><ID>1486</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>1498</ID>
+</Handle>
+<Handle><ID>8294</ID>
+<Handle>Fritzl Fliege</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1486</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.12.2024</Date>
+<Text>Great tune, and slick water effect in the equalizer!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1701</ID>
+<Login>yogibear/ptv</Login>
+<Handle>Yogibear</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1129</ID>
+<Handle>Yogibear</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+<Country>Netherlands</Country>
+<Trivia>Listen to my published SID tunes at The High Voltage SID Collection, www.hvsc.c64.org, under the name Wijnhoven_Joachim.</Trivia>
+<Handles><Handle><ID>13337</ID>
+<Handle>Joachim Wijnhoven</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5386</ID>
+<Handle>Banana Joachim</Handle>
+<AKA>B.J.</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5388</ID>
+<Handle>Jack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5387</ID>
+<Handle>CBJ</Handle>
+<AKA>Colonel Blood &amp; Jaws</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1129</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.12.2024</Date>
+<Text>Pretty nice!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>26.11.2024</Date>
+<Text>Cool msx.</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

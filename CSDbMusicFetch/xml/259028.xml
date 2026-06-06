@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>259028</ID>
+<Name>Ein Geschenk</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>31</ReleaseDay>
+<ReleaseMonth>1</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3548</ID>
+<Name>Fjälldata 2026</Name>
+<EventType>Demo Party</EventType>
+<AKA>fjalldata, fjelldata</AKA>
+<Tagline>Tunnel Vision</Tagline>
+<StartDay>30</StartDay>
+<StartMonth>1</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>1</EndDay>
+<EndMonth>2</EndMonth>
+<EndYear>2026</EndYear>
+<City>Frösön</City>
+<State>Jämtland</State>
+<Country>Sweden</Country>
+<Website>http://www.redcrab.se/fjalldata2026/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>2</Place>
+</Achievement>
+<Rating>9.88</Rating>
+<ScreenShot>https://csdb.dk/gfx/releases/259000/259028.png</ScreenShot>
+<ReleasedBy><Group><ID>16</ID>
+<Name>Pretzel Logic</Name>
+<Short>P.L</Short>
+<BaseCountry>Sweden</BaseCountry>
+<FoundMonth>11</FoundMonth>
+<FoundYear>1988</FoundYear>
+<Website>http://www.instagram.com/pretzellogic64</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Game Development Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+</Grouptypes>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>1028</ID>
+<Handle>The Syndrom</Handle>
+<AKA>Syndrom</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>picked it off the game-title "alien syndrome", though never even played that ;-)</HandleStory>
+<Scener><ID>1012</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>1028</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/276832/ein_geschenk.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=318689</CounterLink>
+<Downloads>149</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/276831/ein geschenk.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=318688</CounterLink>
+<Downloads>274</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>3443</ID>
+<Login>syndrom</Login>
+<Handle>The Syndrom</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1028</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>11.02.2026</Date>
+<Text>thank you for all your nice comments, I'm very grateful for that. (and I wish I'd had more time to add a proper ending to it)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2680</ID>
+<Login>psycho</Login>
+<Handle>psych</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12931</ID>
+<Handle>psych858o</Handle>
+<AKA>Psych, Psycho, psych858o, Psycho8580</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Why psych858o? Just listen to some of my earliest tunes like Schizeralize and you'll find out ;)
+
+Beside that, 8580 was my first and true love. I've been loyal until now, and I'm pretty sure that nothing will change that.</HandleStory>
+<Scener><ID>11584</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>12931</ID>
+</Handle>
+<Handle><ID>13034</ID>
+<Handle>Mr.Big</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>11584</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.02.2026</Date>
+<Text>Must be my new favourite from you! Great work!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+<Login>Stinsen</Login>
+<Handle>Stinsen</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23584</ID>
+<Handle>Stinsen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>21086</ID>
+<Handles><Handle><ID>23584</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.02.2026</Date>
+<Text>Just amazing!!! My favorite by far, The Syndrom doing his thing as a base but I keep hearing subtle details from other contemporary SID composers woven in seamlessly. &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1184</ID>
+<Login>hcl_bd</Login>
+<Handle>HCL</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8075</ID>
+<Handle>HCL</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7355</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>8075</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>05.02.2026</Date>
+<Text>Omg beautiful</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2333</ID>
+<Login>Clarence</Login>
+<Handle>Clarence</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>397</ID>
+<Handle>Clarence</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>381</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>397</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Really dig this tune.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2502</ID>
+<Login>Sage</Login>
+<Handle>Sage</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>2912</ID>
+<Handle>Sage</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>2902</ID>
+<Country>Poland</Country>
+<Trivia>Brother of http://noname.c64.org/csdb/scener/?id=8457</Trivia>
+<Handles><Handle><ID>2912</ID>
+</Handle>
+<Handle><ID>15866</ID>
+<Handle>Scottie</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2902</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Great zak! full of emotion and carried by a truly distinctive melody. You’re still keeping the same high level I remember from years ago - consistntly inspiring, deeply personal, and your own style. Bravo!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>94</ID>
+<Login>groepaz</Login>
+<Handle>chatGPZ</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>572</ID>
+<Handle>Groepaz</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>556</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>10217</ID>
+<Handle>Mr.Dudz</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>556</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cover Designer</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>11647</ID>
+<Handle>Haelmuth</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>556</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>11589</ID>
+<Handle>Tobias</Handle>
+<AKA>Toby</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>556</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>572</ID>
+</Handle>
+<Handle><ID>1486</ID>
+<Handle>Wurst Hans</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>fake handle of a well-known programmer that he used to enter the graphic competition at Mekka Symposium with the entry "Fantastica"</HandleStory>
+<Scener><ID>556</ID>
+</Scener>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Sysop</Function>
+<Function>Coder</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>My favourite from this compo. The only tune i remembered the next day. Very nice &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5195</ID>
+<Login>TheRyk</Login>
+<Handle>TheRyk</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>19790</ID>
+<Handle>TheRyk</Handle>
+<AKA>ZuRück :TheRyk, Ryker, Ryk, ZeRayk, SeRück, DerRyk, Rykky Martin, Rykster, rayger, raigä, Rykten, Ryksinspektor AD, TheGlytch, Ryk Astley</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+<Country>Germany</Country>
+<Trivia>Trust me. I know what I'm doing.
+Too many errors. Goodbye.
+Produced too much code.
+Old dog old tryx</Trivia>
+<Handles><Handle><ID>19790</ID>
+</Handle>
+<Handle><ID>20035</ID>
+<Handle>Ned Ryker</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Sysop</Function>
+<Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Top shelf!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7018</ID>
+<Login>TLF</Login>
+<Handle>TLF</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>3771</ID>
+<Handle>T.L.F.</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>3771</ID>
+</Handle>
+<Handle><ID>17269</ID>
+<Handle>Dr. Bass</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>9736</ID>
+<Handle>Chris</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Beautiful, absolutely love this.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5612</ID>
+<Login>JLD</Login>
+<Handle>JLD</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>636</ID>
+<Handle>JLD</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>620</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>636</ID>
+</Handle>
+<Handle><ID>7043</ID>
+<Handle>Orgazm</Handle>
+<AKA>Orgasm</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>620</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Awesome Melody!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4120</ID>
+<Login>fegolhuzz</Login>
+<Handle>Fegolhuzz</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>13646</ID>
+<Handle>Fegolhuzz</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>12243</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>13646</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>02.02.2026</Date>
+<Text>Smooth, fantastic sound and melodies! what not to like? :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4617</ID>
+<Login>Shogoon</Login>
+<Handle>Shogoon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8127</ID>
+<Handle>Shogoon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7396</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8127</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>Sweet echoes! Beautiful harmony in part B.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1667</ID>
+<Login>youth</Login>
+<Handle>Youth</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1130</ID>
+<Handle>Youth</Handle>
+<AKA>youtH</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Saw the name on an Orb album</HandleStory>
+<Scener><ID>1114</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>35839</ID>
+<Handle>Animal</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1130</ID>
+</Handle>
+<Handle><ID>4750</ID>
+<Handle>Mad B</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>They are my initials: M.A.D.B.</HandleStory>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>&amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7622</ID>
+<Login>lotus_skylight</Login>
+<Handle>Lotus</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8457</ID>
+<Handle>Lotus</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+<Country>Poland</Country>
+<Trivia>Brother of &amp;lt;scener/index.php?id=2912&amp;gt;</Trivia>
+<Handles><Handle><ID>8457</ID>
+</Handle>
+<Handle><ID>22361</ID>
+<Handle>Ranx</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+</Scener>
+</Handle>
+<Handle><ID>22360</ID>
+<Handle>Killer</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7661</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>The Syndrom... I've always loved your music, even since Padua. Great tunes and a wonderful player encoded by Raistlin. It's clear that this is a trend these days. The days of just music without visual effects are long gone. Congratulations and best regards.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7615</ID>
+<Login>Tommy</Login>
+<Handle>Tommy</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1045</ID>
+<Handle>Tommy</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1029</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>1045</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>Great progressions and melody. Amazing work.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3133</ID>
+<Login>digger</Login>
+<Handle>Digger</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>2269</ID>
+<Handle>Digger</Handle>
+<AKA>Dejd&amp;#380;er/Diggr/DGGR</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Derived from Amiga Lemmings game character.</HandleStory>
+<Scener><ID>2259</ID>
+<Country>Poland</Country>
+<Trivia>When I was around 7, my uncle Jasiek (RIP) bought Commodore C16, equipped with datasette (of course!) I instantly fell in love with that toy, but because I couldn't have it, I've nicked all his Bajtek magazines (polish equivalent of Byte Magazine) instead  I could hardly read but somehow all the listings of programs seem to look nice to me. Few years later my dad brought my very own Commodore C64 breadbox from Germany (actually, I still need to ask where did he get it from, I suppose fleamarket)  I've had played games for a few months but I quickly got bored with them. I felt it deeply in my gut  I needed to code.
+
+I begged my father again for weeks till he got me 1541-II disk drive; it costed something about 1,999,999 z&amp;#322; those days (yes, it was nearly 2 million polish zlotys!) I was in heaven  started swapping 5,25" disks with stangers on pirates' local markets, getting more stuff. It occasionally happened that a disk would contain a demo. Woah! Certainly that was far more interesting than some lousy shoot 'em ups. Also, I've bought absolutely every issue of C&amp;A (Commodore &amp; Amiga  hi Jetboy) and Kebab magazine (hi and thanks to Polonus and Silver Dream)  these were the best titles on the market  and I've learnt how to program in Basic 2.0.
+
+Few years later (I was about 13 then) I started exploring MOS 6502 and the whole world of assembler. I found about demoscene, called myself Digger and founded my own group called Atlantic and went to some crazy booze copy/demo parties to win/lose some demo competitions. I was also shown how to use tracker and write SID 6581 music (thanks Ivanhoe) for the first time. Exciting times they were, we've hardly slept for 3 days!
+Few people had a huge impact on me those days (thanks Carrion, Shogoon, Brush and Hain), few helped me a lot (thank you Toaster, Branzol, Morris and Druid). Please remember no one had heard about internet, BBS was a luxury so we had to swap disks via post (snailmail). I always used to attach a few pages written by hand, can't imagine how I've done that then  it's hard to find time to write an email nowadays! Sincere thanks to Wozio for giving me a hard lesson how not to be an arse!</Trivia>
+<Handles><Handle><ID>20708</ID>
+<Handle>Gustek</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2259</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>20707</ID>
+<Handle>Bufon</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2259</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>24334</ID>
+<Handle>DGGR</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2259</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>2269</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>The Syndrom's arrival from teh future. Sweet whammying!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3987</ID>
+<Login>STEEL</Login>
+<Handle>Steel</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1651</ID>
+<Handle>Steel</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1639</ID>
+<Country>Germany</Country>
+<Trivia>Handle change from Mc Moneysack to Steel mentioned in &amp;lt;release id=212933&amp;gt;.
+
+Co-Founder of Success
+
+Left the scene in 1993 and became a renowned graffiti artist.
+
+Came back to the scene in 2016.</Trivia>
+<Handles><Handle><ID>1651</ID>
+</Handle>
+<Handle><ID>27184</ID>
+<Handle>Mc Moneysack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1639</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>❤ ein Geschenk für meine Ohren!!!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>909</ID>
+<Login>jammerc64</Login>
+<Handle>Jammer</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8105</ID>
+<Handle>Jammer</Handle>
+<AKA>Dżemik</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Acquired in high school after Cakewalk's tool. Never used this soft, though ;)</HandleStory>
+<Scener><ID>7378</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8105</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>That one progression gave me literal goosebumps ❤ You know which one, right? 😉</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>What a great track! Vielen Dank fuer Das Geschenk &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7661</ID>
+<Login>Leaf</Login>
+<Handle>Leaf</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>40096</ID>
+<Handle>Leaf</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>36724</ID>
+<Country>Sweden</Country>
+<Trivia>Leaf is my last name</Trivia>
+<Handles><Handle><ID>40096</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>01.02.2026</Date>
+<Text>Really good tune!</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>
