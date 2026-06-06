@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>259596</ID>
+<Name>364 Days Before The Deadline</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>21</ReleaseDay>
+<ReleaseMonth>2</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3568</ID>
+<Name>BCC Party #20</Name>
+<EventType>Demo Party</EventType>
+<EventType>8 bit Party</EventType>
+<AKA>bcc20</AKA>
+<Tagline>20 years more of the same!</Tagline>
+<StartDay>20</StartDay>
+<StartMonth>2</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>22</EndDay>
+<EndMonth>2</EndMonth>
+<EndYear>2026</EndYear>
+<Address>Rungestraße 20</Address>
+<Zip>10179</Zip>
+<City>Berlin</City>
+<State>Berlin</State>
+<Country>Germany</Country>
+<Website>https://c64clubberlin.de/?p=7079</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>8</Place>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/259000/259596.png</ScreenShot>
+<ReleasedBy><Group><ID>4629</ID>
+<Name>C64 Club Berlin</Name>
+<AKA>C64 Club Berlin</AKA>
+<Short>BCC</Short>
+<Trivia>Oct 2006 we formed the Club to get free entrance /w a booth at ComBär, Berlin.
+Since May 17th 2011 we dropped our short handle and changed our name from BCC to CCB due to some trouble with Berlin Congress Centre :D
+Since May 2015 our homepage updated to Web 2.0 to be more interactive with our friends.
+Since 15.1.2017 we own a 72sqm big place to host all our C64-related stuff.
+Since May 25th our homepage follows the GDPR (DSGVO).
+All hardware and stuff moved to living-flat @TuB since ~2020.</Trivia>
+<BaseCountry>Germany</BaseCountry>
+<FoundDay>11</FoundDay>
+<FoundMonth>11</FoundMonth>
+<FoundYear>2006</FoundYear>
+<Website>https://c64clubberlin.de/</Website>
+<Grouptypes><Grouptype>Swapping Group</Grouptype>
+</Grouptypes>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>27509</ID>
+<Handle>Sonki</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Zong Hoa (korean name) was too hard to pronounce by the schoolkids, so they called me Sonki. I was born in Berlin-Charlottenburg (West Berlin those days)</HandleStory>
+<Scener><ID>24694</ID>
+<Country>Germany</Country>
+<Trivia>At the shop A-Z Elektronik in Berlin I bought my first C64 for 350 DM. Since I was a kid with 16 years, I needed to ask my parents in order to buy my own computer. The 1541 was more expensive, around 400 DM. The Phonemark Datasette (1530 clone) was available for only 30 DM.</Trivia>
+<Handles><Handle><ID>27509</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/277508/sonki0ff91e7f.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=319409</CounterLink>
+<Downloads>142</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><ProductionNote><CSDbUser><ID>5195</ID>
+<Login>TheRyk</Login>
+<Handle>TheRyk</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>19790</ID>
+<Handle>TheRyk</Handle>
+<AKA>ZuRück :TheRyk, Ryker, Ryk, ZeRayk, SeRück, DerRyk, Rykky Martin, Rykster, rayger, raigä, Rykten, Ryksinspektor AD, TheGlytch, Ryk Astley</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+<Country>Germany</Country>
+<Trivia>Trust me. I know what I'm doing.
+Too many errors. Goodbye.
+Produced too much code.
+Old dog old tryx</Trivia>
+<Handles><Handle><ID>19790</ID>
+</Handle>
+<Handle><ID>20035</ID>
+<Handle>Ned Ryker</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Sysop</Function>
+<Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>22.02.2026</Date>
+<Text>Player made with Raistlin's SIDQuake/SIDwinder</Text>
+</ProductionNote>
+<UserComment><CSDbUser><ID>538</ID>
+<Login>iAN CooG</Login>
+<Handle>iAN CooG</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>6662</ID>
+<Handle>Ian Coog</Handle>
+<AKA>iAN CooG</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Name of the main character of the anime "SF Saiyuki Starzinger" by Leiji Matsumoto. At least here in italy, since in japanese is written Jan Kugo. I've chosen the handle "IAN" to sign my high scores on arcade games ^_^, then changed to Ian7102 in the late 80's, and finally iAN CooG from 1999 or so.</HandleStory>
+<Scener><ID>6145</ID>
+<Country>Italy</Country>
+<Handles><Handle><ID>7474</ID>
+<Handle>IAN*7102</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>6145</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>6662</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>22.02.2026</Date>
+<Text>Too bad it ends abruptly at 1:49</Text>
+</UserComment>
+<Trivia><CSDbUser><ID>5195</ID>
+</CSDbUser>
+<Date>22.02.2026</Date>
+<Text>It's from the disk Sonki gave me with his annual Power Music entry (as usual without SYS line or .SID file) for BCC#19 - when the compos were already running and the deadline for #19 had passed for 8 hours...</Text>
+</Trivia>
+</Comments>
+</Release>
+</CSDbData>

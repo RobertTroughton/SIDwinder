@@ -6,9 +6,28 @@
   "fontType": "1x1",
 
   "layouts": {
+    "bank0800": {
+      "name": "Bank 0 ($0800)",
+      "binary": "prg/DefaultWithLogo-0800.bin",
+      "size": "0x2C00",
+      "baseAddress": "0x0400",
+      "dataAddress": "0x0800",
+      "sysAddress": "0x0900",
+      "binaryDataStart": "0x0800",
+      "binaryDataEnd": "0x1AFF",
+      "borderColor": "0x080D",
+      "backgroundColor": "0x080E",
+      "logoScreenAddress": "0x1500",
+      "logoColorAddress": "0x1668",
+      "logoCharsetTypeAddress": "0x0870",
+      "fontModeAddress": "0x0871",
+      "charsetAddress": "0x1800",
+      "charsetSize": "0x300"
+    },
     "bank4000": {
+      "name": "Bank 1 ($4000)",
       "binary": "prg/DefaultWithLogo-4000.bin",
-      "size": "0x1300",
+      "size": "0x3400",
       "baseAddress": "0x4000",
       "dataAddress": "0x4000",
       "sysAddress": "0x4100",
@@ -24,8 +43,9 @@
       "charsetSize": "0x300"
     },
     "bank8000": {
+      "name": "Bank 2 ($8000)",
       "binary": "prg/DefaultWithLogo-8000.bin",
-      "size": "0x1300",
+      "size": "0x3400",
       "baseAddress": "0x8000",
       "dataAddress": "0x8000",
       "sysAddress": "0x8100",
@@ -54,6 +74,26 @@
       "galleryFiles": [ "prg/galleries/petscii-logos.json" ],
       "default": "PNG/PETSCIILogos/0-default.png",
       "memory": {
+        "bank0800": [
+          {
+            "name": "screenCodes",
+            "sourceOffset": "0x0000",
+            "targetAddress": "0x1500",
+            "size": "0x0168"
+          },
+          {
+            "name": "colorData",
+            "sourceOffset": "0x0168",
+            "targetAddress": "0x1668",
+            "size": "0x0168"
+          },
+          {
+            "name": "charsetType",
+            "sourceOffset": "0x02D0",
+            "targetAddress": "0x0870",
+            "size": "0x0001"
+          }
+        ],
         "bank4000": [
           {
             "name": "screenCodes",

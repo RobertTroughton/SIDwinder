@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>259586</ID>
+<Name>Maneater</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>21</ReleaseDay>
+<ReleaseMonth>2</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3568</ID>
+<Name>BCC Party #20</Name>
+<EventType>Demo Party</EventType>
+<EventType>8 bit Party</EventType>
+<AKA>bcc20</AKA>
+<Tagline>20 years more of the same!</Tagline>
+<StartDay>20</StartDay>
+<StartMonth>2</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>22</EndDay>
+<EndMonth>2</EndMonth>
+<EndYear>2026</EndYear>
+<Address>Rungestraße 20</Address>
+<Zip>10179</Zip>
+<City>Berlin</City>
+<State>Berlin</State>
+<Country>Germany</Country>
+<Website>https://c64clubberlin.de/?p=7079</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>Mixed Music</Compo>
+<Place>2</Place>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/259000/259586.png</ScreenShot>
+<ReleasedBy><Group><ID>165</ID>
+<Name>TempesT</Name>
+<Short>TMP</Short>
+<Trivia>Tempest was created by merging &amp;lt;group id=9199&amp;gt; and &amp;lt;group id=4137&amp;gt;.
+&amp;lt;group id=9198&amp;gt; later merged too.</Trivia>
+<FoundMonth>6</FoundMonth>
+<FoundYear>1992</FoundYear>
+<Website>http://fb.me/tempest.c64</Website>
+<Slogan>Perfection is our satisfaction</Slogan>
+</Group>
+<Group><ID>435</ID>
+<Name>Hokuto Force</Name>
+<AKA>Digital Monastery (DM)</AKA>
+<Short>HF</Short>
+<Trivia>The name of this group is inspired by a postatomic japanese cartoon of martial arts called Hokuto No Ken. Probably you know it as "Fist of the north star".
+29/10/06: For many reasons I (The Overkiller) decided to put HF in inactive status.
+2009 A.D: Hokuto Force is back fully in activity!
+30/11/2012: &amp;lt;group id=10014&amp;gt;, the game developing division of Hokuto Force is born!
+
+
+[IMG]https://i.ibb.co/Lp1MxGv/245.png[/img]
+
+During its activity, Hokuto Force was in coop with: &amp;lt;group id=3416&amp;gt; , &amp;lt;group id=215&amp;gt; , &amp;lt;group id=8337&amp;gt; , &amp;lt;group id=7190&amp;gt; , &amp;lt;group id=4874&amp;gt; , &amp;lt;group id=185&amp;gt; (more than 50 1st releases were done and still counting) , &amp;lt;group id=13371&amp;gt;</Trivia>
+<BaseCountry>Italy</BaseCountry>
+<FoundYear>1988</FoundYear>
+<Website>http://www.hokutoforce.c64.org</Website>
+<Rating>9.14</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Game Development Group</Grouptype>
+<Grouptype>Swapping Group</Grouptype>
+</Grouptypes>
+<Slogan>Accuracy makes the difference!</Slogan>
+<Slogan>We give dignity even to the lamest games !!</Slogan>
+<Slogan>The fist of the north star !!</Slogan>
+<Slogan>Save 'em from the dust of time!!</Slogan>
+<Slogan>The power of the seven stars !!</Slogan>
+<Slogan>To serve and preserve !!</Slogan>
+<Slogan>We don't whine... we do facts !!</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Graphics</CreditType>
+<Handle><ID>35468</ID>
+<Handle>Manganoid</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>32241</ID>
+<Country>Macedonia, The Former Yugoslav Republic Of</Country>
+<Handles><Handle><ID>35468</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>35468</ID>
+</Handle>
+</Credit>
+<Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/277551/ManeaterV4pom5.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=319452</CounterLink>
+<Downloads>77</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/277498/maneaterv4pom5.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=319398</CounterLink>
+<Downloads>189</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>3353</ID>
+<Login>The_Shocker</Login>
+<Handle>El Jefe</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>39084</ID>
+<Handle>El Jefe</Handle>
+<AKA>El Hefe</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>- Suits me even better than Shocker.
+- No cerveza, no trabajo!</HandleStory>
+<Scener><ID>896</ID>
+<Country>Germany</Country>
+<Trivia>- &amp;lt;group id="1371"&amp;gt;
+After swapping around with local lamers for a year or so I got in touch with SD in late 1990 and was admitted to the group.
+
+- &amp;lt;group id="1342"&amp;gt;
+The only contact I had in MTC was my good friend &amp;lt;scener id="3488"&amp;gt;. He invited me to join the group although I did not have contact to any other member of the group back then.
+
+- &amp;lt;group id="1108"&amp;gt;
+Shortly after that I joined CPS. Dont remember when and under which circumstances ...
+
+-  &amp;lt;group id="156"&amp;gt;
+This is the only group I was ever kicked from AFAIR. I joined them after one member confirmed that I was allowed to join the group (unfortunately I dont remember who it was) BUT some days later one of the leaders (I think it was &amp;lt;scener id="2340"&amp;gt; or &amp;lt;scener id="3998"&amp;gt;) called me, in order to let me know that he did not think I am as perfect, as my handle might promise, and that I was kicked from the group. He expressed it in such a funny way that I hardly could  hold back laughing and was not too sad about it in the end.
+
+-  &amp;lt;group id="1084"&amp;gt;
+Then I joined HYS and while beeing a member, I was busted by the post for stamp cheating after my holliday in Spain. It was like getting back from holiday one day and being interrogated by (rather stupid) post office staff the next day. As a result I had to quit my activities and HYS for the time being. After my return to the scene I was not readmitted to the group because they had found some new swappers. 
+
+-  &amp;lt;group id="913"&amp;gt;/&amp;lt;group id="133"&amp;gt;
+But so I had the great opportunity to join SCS (and later SCS+TRC), in order to take over former member &amp;lt;scener id="5333"&amp;gt;'s swapping activities. A close friendship to most other members developed over the years!
+
+- &amp;lt;group id="148"&amp;gt;
+AFAIR I left SCS for some time to join F4CG and later rejoined SCS. Not too sure about that though. Maybe someone can help with that.
+
+-  &amp;lt;group id="853"&amp;gt;, &amp;lt;group id="853"&amp;gt;+&amp;lt;group id="184"&amp;gt; and later &amp;lt;group id="184"&amp;gt;
+After some (infact a very long) time of inactivity, most german members of SCS*TRC felt, that they wanted to try something new ... so we left The Ruling Coop, and formed Hardcore ... in order to continue our inactivity there :-)
+But somehow we managed to attract the attention of our fellow scener buddies in Onslaught and a new Coop was born. Later Hardcore fell apart when most members left the group and the scene for good. The rest of the groups was absorbed by Onslaught.
+
+-  &amp;lt;group id="176"&amp;gt;:
+I remember, that I joined a late rebuild of Legend (roundabout 1998?) when my interest in the scene had nearly completely vanished. When I was asked to join, I thought, that it would be a nice ending to my time in the scene and I joined ... but it turned out to be a nightmare, as most of the releases were lousy re-releases. :-(
+
+- &amp;lt;group id="184"&amp;gt; (again):
+While still lying in bed at 7 am in 2019 one morning, I got very excited when I saw this on German public television :D
+https://www.youtube.com/watch?v=3zpw4NeLQq0
+
+That video sparked my interest for the c64 scene again. I got in touch with Jazzcat after 23 years and soon I became a member of Onslaught again.
+
+If you want to get to know me a bit closer dont miss to check:
+&amp;lt;release id="219574"&amp;gt;, &amp;lt;release id="203363"&amp;gt;, &amp;lt;release id="256305"&amp;gt; or &amp;lt;release id="256565"&amp;gt; ;-)</Trivia>
+<Handles><Handle><ID>39084</ID>
+</Handle>
+<Handle><ID>6812</ID>
+<Handle>Mr Perfect</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I was much into wrestling in the middle of the 80s and the coolest dude around was without doubt Mr. Perfect.</HandleStory>
+<Scener><ID>896</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5024</ID>
+<Handle>Buddha</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>It was the premise of Communist, that I rename to Buddha in order to join the Fantastics. He liked my belly too much and he thought, that it was worth a reference. As usual I could not reject any of his wishes.</HandleStory>
+<Scener><ID>896</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>912</ID>
+<Handle>Shocker</Handle>
+<AKA>The Shocker</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>From the (crappy) Wes Craven movie. I somehow liked the idea of travelling through the power grid!</HandleStory>
+<Scener><ID>896</ID>
+</Scener>
+<FreelanceFunctions><Function>Co-Organizer</Function>
+<Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Graphician</Function>
+<Function>Modem Trader</Function>
+<Function>Original Supplier</Function>
+<Function>Phreaker</Function>
+<Function>Public Relations Manager</Function>
+<Function>Swapper</Function>
+<Function>Translator</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>27.02.2026</Date>
+<Text>Another nice rendition that the party crowd really liked!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>421</ID>
+<Login>dalezy</Login>
+<Handle>dalezy</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4433</ID>
+<Handle>dalezy</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4423</ID>
+<Handles><Handle><ID>4433</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>23.02.2026</Date>
+<Text>nice rendition indeed!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1701</ID>
+<Login>yogibear/ptv</Login>
+<Handle>Yogibear</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1129</ID>
+<Handle>Yogibear</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+<Country>Netherlands</Country>
+<Trivia>Listen to my published SID tunes at The High Voltage SID Collection, www.hvsc.c64.org, under the name Wijnhoven_Joachim.</Trivia>
+<Handles><Handle><ID>13337</ID>
+<Handle>Joachim Wijnhoven</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5386</ID>
+<Handle>Banana Joachim</Handle>
+<AKA>B.J.</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5388</ID>
+<Handle>Jack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>5387</ID>
+<Handle>CBJ</Handle>
+<AKA>Colonel Blood &amp; Jaws</AKA>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1113</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1129</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>23.02.2026</Date>
+<Text>Nice rendition!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5195</ID>
+<Login>TheRyk</Login>
+<Handle>TheRyk</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>19790</ID>
+<Handle>TheRyk</Handle>
+<AKA>ZuRück :TheRyk, Ryker, Ryk, ZeRayk, SeRück, DerRyk, Rykky Martin, Rykster, rayger, raigä, Rykten, Ryksinspektor AD, TheGlytch, Ryk Astley</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+<Country>Germany</Country>
+<Trivia>Trust me. I know what I'm doing.
+Too many errors. Goodbye.
+Produced too much code.
+Old dog old tryx</Trivia>
+<Handles><Handle><ID>19790</ID>
+</Handle>
+<Handle><ID>20035</ID>
+<Handle>Ned Ryker</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>17660</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Co-Sysop</Function>
+<Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>22.02.2026</Date>
+<Text>Thank YOU for doing it, was a great Kraut erh Crowd Pleaser at the party!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7287</ID>
+<Login>manganoid</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>35468</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>22.02.2026</Date>
+<Text>Thank you @TheRyk for posting this one :)</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

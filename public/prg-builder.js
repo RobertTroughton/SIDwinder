@@ -113,7 +113,35 @@ class SIDwinderPRGExporter {
      * @param {number} routineSize - Combined size of save+restore routines
      * @returns {number} Page-aligned address suitable for the routines
      */
-    findSafeMemoryForRoutines(routineSize, sidLoadAddress, sidDataLength) {
+    /**
+     * Choose the high byte of a 1K screen page in VIC bank 0 ($0000-$3FFF) for
+     * the "Linked With" intro that doesn't collide with anything already placed
+     * (most importantly a SID that loads low). Skips the zero page/stack/system
+     * area ($0000-$03FF) and the character-ROM shadow ($1000-$1FFF, where the
+     * VIC cannot use RAM as a screen). Legacy players relocate the intro screen
+     * onto this page via the data block; bank-aware players ignore it.
+     * @returns {number} High byte of the chosen page (e.g. 0x04 for $0400)
+     */
+    computeIntroScreenHi() {
+        const candidates = [0x04, 0x08, 0x0c, 0x20, 0x24, 0x28, 0x2c, 0x30, 0x34, 0x38, 0x3c];
+        for (const hi of candidates) {
+            const blockStart = hi << 8;
+            const blockEnd = blockStart + 0x3ff;
+            let clash = false;
+            for (const comp of this.builder.components) {
+                const cs = comp.loadAddress;
+                const ce = comp.loadAddress + comp.size - 1;
+                if (!(blockEnd < cs || blockStart > ce)) {
+                    clash = true;
+                    break;
+                }
+            }
+            if (!clash) return hi;
+        }
+        return 0x04; // best effort if bank 0 is unusually full
+    }
+
+    findSafeMemoryForRoutines(routineSize, sidLoadAddress, sidDataLength, reservedRanges = []) {
         const usedRanges = [];
 
         for (const comp of this.builder.components) {
@@ -121,6 +149,11 @@ class SIDwinderPRGExporter {
                 start: comp.loadAddress,
                 end: comp.loadAddress + comp.size
             });
+        }
+
+        // Reserve extra ranges (e.g. the intro screen page) so routines avoid them
+        for (const range of reservedRanges) {
+            usedRanges.push({ start: range.start, end: range.end });
         }
 
         // I/O area is always considered used so we don't try to place code there
@@ -320,7 +353,7 @@ class SIDwinderPRGExporter {
         return new Uint8Array(code);
     }
 
-    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1, needsSaveRestore = true) {
+    generateDataBlock(sidInfo, analysisResults, header, saveRoutineAddr, restoreRoutineAddr, numCallsPerFrame, maxCallsPerFrame, selectedSong = 0, modifiedCount = 0, sidChipCount = 1, needsSaveRestore = true, introScreenHi = 0x04) {
         const data = new Uint8Array(0x100);
 
         let effectiveCallsPerFrame = numCallsPerFrame;
@@ -423,6 +456,13 @@ class SIDwinderPRGExporter {
 
         // Store number of SID chips at $xxCD (1-4, clamped)
         data[0xCD] = Math.min(Math.max(sidChipCount, 1), 4) & 0xFF;
+
+        // Store the bank-0 intro screen page at $xxCE and the matching $d018
+        // value at $xxCF (screen page + lowercase ROM charset $1800). Legacy
+        // players use these to relocate the "Linked With" intro clear of a
+        // low-loading SID.
+        data[0xCE] = introScreenHi & 0xFF;
+        data[0xCF] = (((introScreenHi << 2) & 0xF0) | 0x06) & 0xFF;
 
         // ZP usage data
         let zpString = 'NONE';
@@ -1357,6 +1397,12 @@ class SIDwinderPRGExporter {
                 this.builder.addComponent(component.data, component.loadAddress, component.name);
             }
 
+            // Pick the bank-0 intro screen page now that every memory component
+            // (SID, visualizer, inputs, options) has been placed, so the intro
+            // never overwrites a low-loading SID.
+            const introScreenHi = this.computeIntroScreenHi();
+            const introScreenRange = { start: introScreenHi << 8, end: (introScreenHi << 8) + 0x400 };
+
             // Check if this visualizer needs save/restore functionality
             const needsSaveRestore = vizConfig?.needsSaveRestore !== false;
 
@@ -1374,7 +1420,8 @@ class SIDwinderPRGExporter {
                 const totalRoutineSize = routineSizes.totalSize;
 
                 // Find a safe address that can fit the routines without overflowing
-                let safeAddress = this.findSafeMemoryForRoutines(totalRoutineSize, actualSidAddress, sidInfo.data.length);
+                // (keeping clear of the intro screen page reserved above)
+                let safeAddress = this.findSafeMemoryForRoutines(totalRoutineSize, actualSidAddress, sidInfo.data.length, [introScreenRange]);
 
                 // Generate routines to get their actual sizes
                 const restoreRoutine = this.generateOptimizedRestoreRoutine(modifiedAddrs);
@@ -1415,7 +1462,8 @@ class SIDwinderPRGExporter {
                 selectedSong,
                 modifiedCount,
                 sidChipCount,
-                needsSaveRestore
+                needsSaveRestore,
+                introScreenHi
             );
 
             this.builder.addComponent(dataBlock, dataLoadAddress, 'Data Block');

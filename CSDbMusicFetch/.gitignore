@@ -1,0 +1,6 @@
+# CMake build output
+/build/
+
+# Note: the xml/ cache of raw CSDb responses IS committed on purpose - it
+# rarely changes, documents exactly what each card was generated from, and
+# can be inspected without re-running the tool.

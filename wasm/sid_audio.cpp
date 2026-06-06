@@ -148,6 +148,51 @@ static inline uint16_t am_aby()  { uint16_t a = (S.memory[S.pc] | (S.memory[S.pc
 static inline uint16_t am_izx()  { uint8_t zp = (S.memory[S.pc++] + S.x) & 0xFF; return S.memory[zp] | (S.memory[(zp+1) & 0xFF] << 8); }
 static inline uint16_t am_izy()  { uint8_t zp = S.memory[S.pc++]; return (S.memory[zp] | (S.memory[(zp+1) & 0xFF] << 8)) + S.y; }
 
+// ---- ADC/SBC with NMOS 6502 decimal-mode support ----
+static inline void adc_op(uint8_t v) {
+    uint16_t carry = (S.st & FLAG_C) ? 1 : 0;
+    S.st &= ~(FLAG_C | FLAG_Z | FLAG_N | FLAG_V);
+    if (S.st & FLAG_D) {
+        // BCD add: Z from the binary result; N/V from the pre-fixup sum.
+        int al = (S.a & 0x0F) + (v & 0x0F) + carry;
+        if (al >= 0x0A) al = ((al + 0x06) & 0x0F) + 0x10;
+        int a2 = (S.a & 0xF0) + (v & 0xF0) + al;
+        if (((S.a + v + carry) & 0xFF) == 0) S.st |= FLAG_Z;
+        if (a2 & 0x80) S.st |= FLAG_N;
+        if (~(S.a ^ v) & (S.a ^ a2) & 0x80) S.st |= FLAG_V;
+        if (a2 >= 0xA0) a2 += 0x60;
+        if (a2 >= 0x100) S.st |= FLAG_C;
+        S.a = (uint8_t)(a2 & 0xFF);
+    } else {
+        uint16_t r = (uint16_t)S.a + v + carry;
+        if (r > 0xFF) S.st |= FLAG_C;
+        if (~(S.a ^ v) & (S.a ^ r) & 0x80) S.st |= FLAG_V;
+        S.a = (uint8_t)r;
+        if (S.a == 0) S.st |= FLAG_Z;
+        if (S.a & 0x80) S.st |= FLAG_N;
+    }
+}
+static inline void sbc_op(uint8_t v) {
+    uint16_t borrow = (S.st & FLAG_C) ? 0 : 1;
+    int bin = (int)S.a - v - borrow;
+    uint8_t binr = (uint8_t)bin;
+    // NMOS: SBC sets all flags identically in binary and decimal mode.
+    S.st &= ~(FLAG_C | FLAG_Z | FLAG_N | FLAG_V);
+    if (bin >= 0) S.st |= FLAG_C;
+    if (binr == 0) S.st |= FLAG_Z;
+    if (binr & 0x80) S.st |= FLAG_N;
+    if ((S.a ^ v) & (S.a ^ binr) & 0x80) S.st |= FLAG_V;
+    if (S.st & FLAG_D) {
+        int al = (S.a & 0x0F) - (v & 0x0F) - (int)borrow;
+        if (al < 0) al = ((al - 0x06) & 0x0F) - 0x10;
+        int a2 = (S.a & 0xF0) - (v & 0xF0) + al;
+        if (a2 < 0) a2 -= 0x60;
+        S.a = (uint8_t)(a2 & 0xFF);
+    } else {
+        S.a = binr;
+    }
+}
+
 // ---- 6510 CPU step: execute one instruction, return cycle count ----
 static int cpu_step() {
     uint8_t op = S.memory[S.pc++];
@@ -238,16 +283,8 @@ static int cpu_step() {
     case 0x41: S.a ^= mem_read(am_izx());  set_nz(S.a); return 6;
     case 0x51: S.a ^= mem_read(am_izy());  set_nz(S.a); return 5;
 
-    // ---- ADC ----
-    #define DO_ADC(v) do { \
-        val = (v); \
-        tmp16 = (uint16_t)S.a + val + (S.st & FLAG_C); \
-        S.st = (S.st & ~(FLAG_C|FLAG_Z|FLAG_N|FLAG_V)) | \
-               (tmp16 > 0xFF ? FLAG_C : 0) | \
-               ((~(S.a ^ val) & (S.a ^ tmp16) & 0x80) ? FLAG_V : 0); \
-        S.a = tmp16 & 0xFF; \
-        set_nz(S.a); \
-    } while(0)
+    // ---- ADC (decimal-aware; see adc_op) ----
+    #define DO_ADC(v) adc_op(v)
     case 0x69: DO_ADC(mem_read(am_imm()));  return 2;
     case 0x65: DO_ADC(mem_read(am_zp()));   return 3;
     case 0x75: DO_ADC(mem_read(am_zpx()));  return 4;
@@ -257,16 +294,8 @@ static int cpu_step() {
     case 0x61: DO_ADC(mem_read(am_izx()));  return 6;
     case 0x71: DO_ADC(mem_read(am_izy()));  return 5;
 
-    // ---- SBC ----
-    #define DO_SBC(v) do { \
-        val = (v); \
-        tmp16 = (uint16_t)S.a - val - !(S.st & FLAG_C); \
-        S.st = (S.st & ~(FLAG_C|FLAG_Z|FLAG_N|FLAG_V)) | \
-               (tmp16 < 0x100 ? FLAG_C : 0) | \
-               (((S.a ^ val) & (S.a ^ tmp16) & 0x80) ? FLAG_V : 0); \
-        S.a = tmp16 & 0xFF; \
-        set_nz(S.a); \
-    } while(0)
+    // ---- SBC (decimal-aware; see sbc_op) ----
+    #define DO_SBC(v) sbc_op(v)
     case 0xE9: DO_SBC(mem_read(am_imm()));  return 2;
     case 0xEB: DO_SBC(mem_read(am_imm()));  return 2; // illegal SBC #imm
     case 0xE5: DO_SBC(mem_read(am_zp()));   return 3;
@@ -539,6 +568,26 @@ static int cpu_step() {
         S.x = tmp16 & 0xFF;
         set_nz(S.x);
         return 2;
+
+    // LAX #imm (LXA/ATX) - unstable; load immediate into A and X
+    case 0xAB: val=mem_read(am_imm()); S.a=S.x=val; set_nz(val); return 2;
+
+    // XAA #imm (ANE) - highly unstable; A = X & imm
+    case 0x8B: S.a = S.x & mem_read(am_imm()); set_nz(S.a); return 2;
+
+    // SHA/AHX - store A & X & (addrHi+1)
+    case 0x9F: addr=am_aby(); mem_write(addr, S.a & S.x & (uint8_t)((addr>>8)+1)); return 5;
+    case 0x93: addr=am_izy(); mem_write(addr, S.a & S.x & (uint8_t)((addr>>8)+1)); return 6;
+
+    // SHX / SHY - store reg & (addrHi+1)
+    case 0x9E: addr=am_aby(); mem_write(addr, S.x & (uint8_t)((addr>>8)+1)); return 5;
+    case 0x9C: addr=am_abx(); mem_write(addr, S.y & (uint8_t)((addr>>8)+1)); return 5;
+
+    // TAS/SHS - SP = A & X, then store A & X & (addrHi+1)
+    case 0x9B: addr=am_aby(); S.sp = S.a & S.x; mem_write(addr, S.a & S.x & (uint8_t)((addr>>8)+1)); return 5;
+
+    // LAS/LAR - A = X = SP = mem & SP
+    case 0xBB: addr=am_aby(); val = mem_read(addr) & S.sp; S.a=S.x=S.sp=val; set_nz(val); return 4;
 
     // Illegal NOPs (various sizes)
     case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA: case 0xFA:

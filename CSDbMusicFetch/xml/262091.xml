@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>262091</ID>
+<Name>Wanted or needed?</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>5</ReleaseDay>
+<ReleaseMonth>6</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3485</ID>
+<Name>X'2026</Name>
+<EventType>C64 Only Party</EventType>
+<AKA>X 2026 X2026 X-2026 X'26 X26 X-26</AKA>
+<StartDay>5</StartDay>
+<StartMonth>6</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>7</EndDay>
+<EndMonth>6</EndMonth>
+<EndYear>2026</EndYear>
+<Address>De Hoof 18</Address>
+<Zip>5712LM</Zip>
+<City>Someren</City>
+<State>NB</State>
+<Country>Netherlands</Country>
+<Website>https://xparty.net/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/262000/262091.png</ScreenShot>
+<ReleasedBy><Group><ID>16</ID>
+<Name>Pretzel Logic</Name>
+<Short>P.L</Short>
+<BaseCountry>Sweden</BaseCountry>
+<FoundMonth>11</FoundMonth>
+<FoundYear>1988</FoundYear>
+<Website>http://www.instagram.com/pretzellogic64</Website>
+<Rating>9.11</Rating>
+<Grouptypes><Grouptype>Game Development Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+</Grouptypes>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Music</CreditType>
+<Handle><ID>1028</ID>
+<Handle>The Syndrom</Handle>
+<AKA>Syndrom</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>picked it off the game-title "alien syndrome", though never even played that ;-)</HandleStory>
+<Scener><ID>1012</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>1028</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280459/wantedorneeded.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322465</CounterLink>
+<Downloads>56</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>2061</ID>
+<Login>GF</Login>
+<Handle>G-Fellow</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>7995</ID>
+<Handle>G-Fellow</Handle>
+<AKA>GFellow</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My first nickname was Short-Circuit and I did use this one in the demo group 'Future Technologics 2009'. My second handle was G-Force. 
+But when the graphics card 'Nvidia GeForce' came out, i decided to search a new handle and this was G-Fellow. The G and F represent my first and family name.</HandleStory>
+<Scener><ID>7285</ID>
+<Country>Germany</Country>
+<Trivia>I had contact with the C64 Scene since 1984 and I was in the demo group 'Future Technologics 2009' from 1987-1991 as swapper. In 1988 I did start to compose music, first in the Future Composer. 
+After this I used Voicetracker. I did teach myself composing learning by doing. I play not any music instrument, that I did not learn any music instrument can sometimes be a advantage but sometimes also a pain.
+
+In 1991 I stopped with the C64 and I moved to the PC. I made quite alot tunes on the PC with the Scream Tracker, some Scream Tracker tunes was uploaded on some Mailboxes.
+
+1998 I found my C64 in a hidden place and I made some tunes for my own pleasure in the Soundbooster from Midas. Between 1998 - 2003 I made some PC-Songs with a other music-editor. 
+
+Around 2003 I found in the net some Scene pages and finally in 2004 I rejoined the C64 Scene as Musician. 
+I was very happy that the JCH Editor was now free available and I must say that JCH was with his JCH Editor miles before its time (maybe Time-Machine).</Trivia>
+<Handles><Handle><ID>7995</ID>
+</Handle>
+<Handle><ID>13663</ID>
+<Handle>Lazy Jones</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7285</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>7696</ID>
+<Handle>Short Circuit</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7285</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>A very laid back tune and a perfect loop. I like this tune.</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>
