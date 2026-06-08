@@ -25,7 +25,9 @@
 </Event>
 </ReleasedAt>
 <Achievement><Compo>C64 Music</Compo>
+<Place>7</Place>
 </Achievement>
+<Rating>9.92</Rating>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262104.png</ScreenShot>
 <ReleasedBy><Group><ID>396</ID>
 <Name>Genesis Project</Name>
@@ -204,18 +206,229 @@ Came back to the scene in 2016.</Trivia>
 </Handle>
 </Credit>
 </Credits>
-<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280479/beautiful struggle RC4.sid</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322486</CounterLink>
-<Downloads>25</Downloads>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280478/beautifulstruggle.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322485</CounterLink>
+<Downloads>98</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
-<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280478/beautifulstruggle.prg</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322485</CounterLink>
-<Downloads>43</Downloads>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280479/beautiful struggle RC4.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322486</CounterLink>
+<Downloads>51</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>3987</ID>
+<Comments><UserComment><CSDbUser><ID>2680</ID>
+<Login>psycho</Login>
+<Handle>psych</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12931</ID>
+<Handle>psych858o</Handle>
+<AKA>Psych, Psycho, psych858o, Psycho8580</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Why psych858o? Just listen to some of my earliest tunes like Schizeralize and you'll find out ;)
+
+Beside that, 8580 was my first and true love. I've been loyal until now, and I'm pretty sure that nothing will change that.</HandleStory>
+<Scener><ID>11584</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>12931</ID>
+</Handle>
+<Handle><ID>13034</ID>
+<Handle>Mr.Big</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>11584</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Lovely!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4098</ID>
+<Login>Archmage</Login>
+<Handle>Archmage</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>14268</ID>
+<Handle>Archmage</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My finger is an electron gun.</HandleStory>
+<Scener><ID>12788</ID>
+<Country>Norway</Country>
+<Handles><Handle><ID>14269</ID>
+<Handle>Mage</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>12788</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>14268</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>I really like this tune. Chill and melodic. Great collaboration.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3443</ID>
+<Login>syndrom</Login>
+<Handle>The Syndrom</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1028</ID>
+<Handle>The Syndrom</Handle>
+<AKA>Syndrom</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>picked it off the game-title "alien syndrome", though never even played that ;-)</HandleStory>
+<Scener><ID>1012</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>1028</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>congrats to #7 in a strong compo. I already told you it should've been higher in my opinion.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>736</ID>
+<Login>DrVoice</Login>
+<Handle>Dr.Voice</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8374</ID>
+<Handle>Dr. Voice</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I have no idea how I ended up with such a horrible handle. Guess I had a hard time thinking one hehe.</HandleStory>
+<Scener><ID>7594</ID>
+<Country>Finland</Country>
+<Handles><Handle><ID>20051</ID>
+<Handle>Chaos</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7594</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>8374</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Lovely tune!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5713</ID>
+<Login>Elder0010</Login>
+<Handle>Elder0010</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>22731</ID>
+<Handle>Elder0010</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I have been using this on irc and in my death metal band (without the 0010) for years!
+
+https://www.elder0010.com</HandleStory>
+<Scener><ID>20313</ID>
+<Country>Italy</Country>
+<Handles><Handle><ID>22731</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>awesome teamwork guys!! I want to hear more from you!!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>Very cool !</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5175</ID>
+<Login>hedning</Login>
+<Handle>hedning</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20879</ID>
+<Handle>hedning</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Herman Hedning, nuff said.</HandleStory>
+<Scener><ID>18641</ID>
+<Country>Sweden</Country>
+<Trivia>Got his first c64 in 1986. Did some c64-swapping 89-91, until he followed Jack Tramiel to the Atari ST (handles Mr.Marvel and Julgran until 1993). 2009 c64 saved him back to the right path. In 2010 he joined Genesis Project as graphician and helped Sixx rebuilding the group. Quickly he was doing more original supplies than gfx, and became the main original supplier of GP the same year. In 2011 he became GP co-organizer and 2012 main organizer. 
+
+He is also into preserving old releases, and between 2010 and 2025 he uploaded ~28 000 releases, and added ~2400 sceners, ~100 BBSs, and about 1200 groups to CSDb.
+
+Organizer of the successful Gubbdata parties in Lund 2012-2022, Sweden. Also co-organized the Datastorm parties, and the last LCP.</Trivia>
+<Handles><Handle><ID>20879</ID>
+</Handle>
+<Handle><ID>24058</ID>
+<Handle>Mr. Marvel</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>18641</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Author</Function>
+<Function>Diskmag Editor</Function>
+<Function>Graphician</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>Public Relations Manager</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>Wow! &amp;lt;3 You guys!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3987</ID>
 <Login>STEEL</Login>
 <Handle>Steel</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>

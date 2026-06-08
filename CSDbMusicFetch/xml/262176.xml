@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>262176</ID>
+<Name>Auf Wiedersehen Linus</Name>
+<AKA>Sky 11</AKA>
+<Type>C64 Music</Type>
+<ReleaseDay>5</ReleaseDay>
+<ReleaseMonth>6</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3485</ID>
+<Name>X'2026</Name>
+<EventType>C64 Only Party</EventType>
+<AKA>X 2026 X2026 X-2026 X'26 X26 X-26</AKA>
+<StartDay>5</StartDay>
+<StartMonth>6</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>7</EndDay>
+<EndMonth>6</EndMonth>
+<EndYear>2026</EndYear>
+<Address>De Hoof 18</Address>
+<Zip>5712LM</Zip>
+<City>Someren</City>
+<State>NB</State>
+<Country>Netherlands</Country>
+<Website>https://xparty.net/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>11</Place>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/262000/262176.png</ScreenShot>
+<ReleasedBy><Group><ID>1563</ID>
+<Name>MultiStyle Labs</Name>
+<AKA>Mueslistyle</AKA>
+<Short>MSL</Short>
+<Trivia>Nothing but a bunch of friends annoying you in their spare time.</Trivia>
+<FoundDay>15</FoundDay>
+<FoundMonth>7</FoundMonth>
+<FoundYear>2000</FoundYear>
+<Website>http://multistylelabs.bandcamp.com</Website>
+<Rating>9.23</Rating>
+<Grouptypes><Grouptype>Music Group</Grouptype>
+</Grouptypes>
+<Slogan>we ar moor inteligend then yu</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Music</CreditType>
+<Handle><ID>10025</ID>
+<Handle>Linus</Handle>
+<AKA>Superlinus, Bruce Leenus, Bruce Leet, Helmut Körschgen, Nihil Baxter, Sam Peckinpah</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>9051</ID>
+<Country>Germany</Country>
+<Trivia>The only known man in Kleve who is allowed to push Fanta around.
+
+SID-Remixes:
+[url]https://remix.kwed.org/remix/6992
+[url]https://remix.kwed.org/remix/6804
+[url]https://remix.kwed.org/remix/6548
+[url]https://remix.kwed.org/remix/6419
+[url]https://remix.kwed.org/remix/6453
+[url]https://remix.kwed.org/remix/6401
+[url]https://remix.kwed.org/remix/6280
+[url]https://remix.kwed.org/remix/6499
+[url]https://remix.kwed.org/remix/6479
+
+Spotify:
+[url]https://open.spotify.com/artist/4RUTqRhSBV9gadOLqp7HUX
+
+Bandcamp:
+[url]http://www.mini-melodies.de</Trivia>
+<Handles><Handle><ID>10025</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280575/Auf-Wiedersehen-Linus.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322586</CounterLink>
+<Downloads>23</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280574/Auf-Wiedersehen-Linus.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322585</CounterLink>
+<Downloads>43</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>4098</ID>
+<Login>Archmage</Login>
+<Handle>Archmage</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>14268</ID>
+<Handle>Archmage</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My finger is an electron gun.</HandleStory>
+<Scener><ID>12788</ID>
+<Country>Norway</Country>
+<Handles><Handle><ID>14269</ID>
+<Handle>Mage</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>12788</ID>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>14268</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Lovely chill tune from Linus. Makes me warm and fuzzy inside!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7615</ID>
+<Login>Tommy</Login>
+<Handle>Tommy</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1045</ID>
+<Handle>Tommy</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1029</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>1045</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>One of my favourite entries in the compo. Should've ranked much higher, but I guess it's not suited for the common sceners. =)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7220</ID>
+<Login>Nordischsound</Login>
+<Handle>Nordischsound</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>34546</ID>
+<Handle>Nordischsound</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I'm a Scener since I've began to make SID's tunes in 2020. My first scene contact was LMan. I'm a digital music producer from north germany. 
+
+I've made a lot of covers and more will follow but I also write original tunes.
+
+https://www.youtube.com/c/Nordischsound
+https://linktr.ee/Nordischsound
+https://www.facebook.com/Nordischsound</HandleStory>
+<Scener><ID>31338</ID>
+<Country>Germany</Country>
+<Trivia>[url=https://csdb.dk/search/?seinsel=sids&amp;search=nordischsound&amp;all=1]Link to all his SID-Tunes (HVSC)[/url]</Trivia>
+<Handles><Handle><ID>34546</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Perfekt harmony of dissonance, i like it, very unique sound :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6045</ID>
+<Login>YPS</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>24534</ID>
+<Handle>YPS</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16023</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>24534</ID>
+</Handle>
+<Handle><ID>17990</ID>
+<Handle>Mr. Hide</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>16023</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Love the baseline ❤</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>736</ID>
+<Login>DrVoice</Login>
+<Handle>Dr.Voice</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8374</ID>
+<Handle>Dr. Voice</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I have no idea how I ended up with such a horrible handle. Guess I had a hard time thinking one hehe.</HandleStory>
+<Scener><ID>7594</ID>
+<Country>Finland</Country>
+<Handles><Handle><ID>20051</ID>
+<Handle>Chaos</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7594</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>8374</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Lovely groove. &amp;lt;3</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>

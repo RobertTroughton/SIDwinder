@@ -24,6 +24,7 @@
 </Event>
 </ReleasedAt>
 <Achievement><Compo>C64 Music</Compo>
+<Place>16</Place>
 </Achievement>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262112.png</ScreenShot>
 <ReleasedBy><Handle><ID>1130</ID>
@@ -158,11 +159,98 @@ https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab 
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280495/yavinyouthsugarrush.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322503</CounterLink>
-<Downloads>11</Downloads>
+<Downloads>66</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>1667</ID>
+<Comments><UserComment><CSDbUser><ID>2061</ID>
+<Login>GF</Login>
+<Handle>G-Fellow</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>7995</ID>
+<Handle>G-Fellow</Handle>
+<AKA>GFellow</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>My first nickname was Short-Circuit and I did use this one in the demo group 'Future Technologics 2009'. My second handle was G-Force. 
+But when the graphics card 'Nvidia GeForce' came out, i decided to search a new handle and this was G-Fellow. The G and F represent my first and family name.</HandleStory>
+<Scener><ID>7285</ID>
+<Country>Germany</Country>
+<Trivia>I had contact with the C64 Scene since 1984 and I was in the demo group 'Future Technologics 2009' from 1987-1991 as swapper. In 1988 I did start to compose music, first in the Future Composer. 
+After this I used Voicetracker. I did teach myself composing learning by doing. I play not any music instrument, that I did not learn any music instrument can sometimes be a advantage but sometimes also a pain.
+
+In 1991 I stopped with the C64 and I moved to the PC. I made quite alot tunes on the PC with the Scream Tracker, some Scream Tracker tunes was uploaded on some Mailboxes.
+
+1998 I found my C64 in a hidden place and I made some tunes for my own pleasure in the Soundbooster from Midas. Between 1998 - 2003 I made some PC-Songs with a other music-editor. 
+
+Around 2003 I found in the net some Scene pages and finally in 2004 I rejoined the C64 Scene as Musician. 
+I was very happy that the JCH Editor was now free available and I must say that JCH was with his JCH Editor miles before its time (maybe Time-Machine).</Trivia>
+<Handles><Handle><ID>7995</ID>
+</Handle>
+<Handle><ID>13663</ID>
+<Handle>Lazy Jones</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7285</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>7696</ID>
+<Handle>Short Circuit</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>7285</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>I thought you rank higher, great tune! Keep em coming!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7719</ID>
+<Login>D/V</Login>
+<Handle>D/V </Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>40854</ID>
+<Handle>D/V</Handle>
+<AKA>DslashV</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I got this name/handle when I started to switch from Anormalperson to D/V
+
+At the end of 2023, I started thinking of a cool name to change from Anormalperson 
+Then I thought, "Hey, if I take my full name's initials and add a slash in between (I thought it was cool at the time), then it will become D/V." Long story short, I made a YouTube video telling everyone that I changed from Anormalperson to D/V, and here I am today on CSDb and a member of Hokuto Force (as of September 14th, 2025)</HandleStory>
+<Scener><ID>37455</ID>
+<Country>Israel</Country>
+<Trivia>D/V is actually short for Daniel Veronski (D/V's full name)</Trivia>
+<Handles><Handle><ID>40854</ID>
+</Handle>
+<Handle><ID>41228</ID>
+<Handle>Anormalperson</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I used this name for quite a while before I changed to D/V</HandleStory>
+<Scener><ID>37455</ID>
+</Scener>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Wait, how the hell is it 29x speed on DeepSID
+
+Good coop btw :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1667</ID>
 <Login>youth</Login>
 <Handle>Youth</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>

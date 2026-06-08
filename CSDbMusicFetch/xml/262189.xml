@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>262189</ID>
+<Name>Digital Dreams</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>5</ReleaseDay>
+<ReleaseMonth>6</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<ReleasedAt><Event><ID>3485</ID>
+<Name>X'2026</Name>
+<EventType>C64 Only Party</EventType>
+<AKA>X 2026 X2026 X-2026 X'26 X26 X-26</AKA>
+<StartDay>5</StartDay>
+<StartMonth>6</StartMonth>
+<StartYear>2026</StartYear>
+<EndDay>7</EndDay>
+<EndMonth>6</EndMonth>
+<EndYear>2026</EndYear>
+<Address>De Hoof 18</Address>
+<Zip>5712LM</Zip>
+<City>Someren</City>
+<State>NB</State>
+<Country>Netherlands</Country>
+<Website>https://xparty.net/</Website>
+</Event>
+</ReleasedAt>
+<Achievement><Compo>C64 Music</Compo>
+<Place>17</Place>
+</Achievement>
+<ScreenShot>https://csdb.dk/gfx/releases/262000/262189.png</ScreenShot>
+<ReleasedBy><Group><ID>6614</ID>
+<Name>Desire</Name>
+<Short>DSR</Short>
+<BaseCountry>Netherlands</BaseCountry>
+<Grouptypes><Grouptype>Demo Group</Grouptype>
+</Grouptypes>
+<Slogan>You make us sick</Slogan>
+<Slogan>We make demos</Slogan>
+<Slogan>Tested on Animals</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Music</CreditType>
+<Handle><ID>787</ID>
+<Handle>No-XS</Handle>
+<AKA>No-Excess</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>771</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>787</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280593/Digital_Dreams.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322605</CounterLink>
+<Downloads>22</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280594/Digital Dreams.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322606</CounterLink>
+<Downloads>14</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+</Release>
+</CSDbData>

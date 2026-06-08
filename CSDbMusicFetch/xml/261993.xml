@@ -72,11 +72,42 @@ On the initiative of Lotus (a member of the group since 1992) and Asthor, they m
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280351/Ostatnia_prosta.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322350</CounterLink>
-<Downloads>89</Downloads>
+<Downloads>97</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>7622</ID>
+<Comments><UserComment><CSDbUser><ID>2037</ID>
+<Login>Asthor</Login>
+<Handle>Asthor</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>28067</ID>
+<Handle>Asthor</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>25185</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>28067</ID>
+</Handle>
+<Handle><ID>2582</ID>
+<Handle>Pasthor</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Pasthor -&amp;gt; Asthor</HandleStory>
+<Scener><ID>25185</ID>
+</Scener>
+<FreelanceFunctions><Function>Diskmag Editor</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>06.06.2026</Date>
+<Text>In my opinion, this music is the favorite of this event! Fantastic!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7622</ID>
 <Login>lotus_skylight</Login>
 <Handle>Lotus</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>

@@ -24,6 +24,7 @@
 </Event>
 </ReleasedAt>
 <Achievement><Compo>C64 Music</Compo>
+<Place>12</Place>
 </Achievement>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262101.png</ScreenShot>
 <ReleasedBy><Handle><ID>39452</ID>
@@ -46,12 +47,12 @@
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280474/TwinCross.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322481</CounterLink>
-<Downloads>33</Downloads>
+<Downloads>64</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 <DownloadLink><Link>https://csdb.dk/getinternalfile.php/280488/twincross.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322495</CounterLink>
-<Downloads>15</Downloads>
+<Downloads>35</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
@@ -78,6 +79,40 @@
 </FreelanceFunctions>
 </Handle>
 </CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>my #1 in the compo. I want more... :-)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6229</ID>
+<Login>Photon</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>24988</ID>
+<Handle>Photon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>22371</ID>
+<Country>Germany</Country>
+<Trivia>In https://csdb.dk/release/?id=64493 (last part) reported to have been kicked out of Shining 8 "because he's an [sic!] fauler sack" (Ger for: because he's a lazy bastard)</Trivia>
+<Handles><Handle><ID>24988</ID>
+</Handle>
+<Handle><ID>24999</ID>
+<Handle>Kamikaze</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>22371</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Enjoyed this one!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3443</ID>
 </CSDbUser>
 <Date>06.06.2026</Date>
 <Text>Excellent work!</Text>

@@ -24,6 +24,7 @@
 </Event>
 </ReleasedAt>
 <Achievement><Compo>C64 Music</Compo>
+<Place>15</Place>
 </Achievement>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262091.png</ScreenShot>
 <ReleasedBy><Group><ID>16</ID>
@@ -62,11 +63,40 @@
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280459/wantedorneeded.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322465</CounterLink>
-<Downloads>87</Downloads>
+<Downloads>125</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280595/wanted or needed.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322607</CounterLink>
+<Downloads>7</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>2061</ID>
+<Comments><UserComment><CSDbUser><ID>856</ID>
+<Login>katon</Login>
+<Handle>Katon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1578</ID>
+<Handle>Katon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1566</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>1578</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Fullscreen Graphician</Function>
+<Function>Graphician</Function>
+<Function>Logo Graphician</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>07.06.2026</Date>
+<Text>Great !</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2061</ID>
 <Login>GF</Login>
 <Handle>G-Fellow</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
