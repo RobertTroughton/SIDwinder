@@ -58,6 +58,13 @@ const VISUALIZERS = [
         config: 'prg/raistlintriplemirrorbars.json'
     },
     {
+        id: 'RaistlinTripleHybridBars',
+        name: 'Raistlin Triple Hybrid Bars',
+        description: 'Per-channel spectrometer mixing upward, mirrored and downward bars, one style per SID voice',
+        preview: 'prg/raistlintriplehybridbars.png',
+        config: 'prg/raistlintriplehybridbars.json'
+    },
+    {
         id: 'SimpleBitmap',
         name: 'Simple Bitmap',
         description: 'Full-screen bitmap',
