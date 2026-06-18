@@ -1,0 +1,34 @@
+{
+  "name": "tscrunch-js",
+  "version": "1.3.1",
+  "description": "JavaScript port of TSCrunch - a C64 binary cruncher and self-extracting executable generator. Zero dependencies, runs in the browser and Node.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./global": "./src/global.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "c64",
+    "commodore",
+    "tscrunch",
+    "compression",
+    "cruncher",
+    "lz",
+    "sfx",
+    "prg"
+  ],
+  "license": "MIT",
+  "credits": {
+    "original": "Antonio Savona (TSCrunch)",
+    "port": "JavaScript port by Claude"
+  },
+  "sideEffects": [
+    "./src/global.js"
+  ]
+}

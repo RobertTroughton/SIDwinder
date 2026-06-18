@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tscrunch-js demo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 600; }
+        input[type="text"] { width: 8rem; }
+        button { margin-top: 1rem; padding: 0.5rem 1rem; }
+        pre { background: #f4f4f4; padding: 0.75rem; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>tscrunch-js demo</h1>
+    <p>Load a C64 <code>.prg</code>, crunch it into a self-extracting executable, and download the result.</p>
+
+    <label for="file">PRG file</label>
+    <input type="file" id="file" accept=".prg,.bin">
+
+    <label for="jump">Jump address (hex, e.g. 1000)</label>
+    <input type="text" id="jump" value="1000">
+
+    <button id="go" disabled>Crunch &amp; download</button>
+
+    <pre id="log">Choose a .prg file to begin.</pre>
+
+    <!-- Served as a module so relative imports resolve. Run a static server, e.g.
+         `python -m http.server` from the package root, then open
+         /example/index.html -->
+    <script type="module">
+        import { compress } from '../src/index.js';
+
+        const fileInput = document.getElementById('file');
+        const jumpInput = document.getElementById('jump');
+        const goBtn = document.getElementById('go');
+        const log = document.getElementById('log');
+
+        let prgBytes = null;
+
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            prgBytes = new Uint8Array(await file.arrayBuffer());
+            const load = prgBytes[0] | (prgBytes[1] << 8);
+            log.textContent = `Loaded ${file.name}: ${prgBytes.length} bytes, ` +
+                `load address $${load.toString(16).toUpperCase()}.`;
+            goBtn.disabled = false;
+        });
+
+        goBtn.addEventListener('click', () => {
+            if (!prgBytes) return;
+            const jumpAddress = parseInt(jumpInput.value, 16) || 0x1000;
+
+            const t0 = performance.now();
+            const sfx = compress(prgBytes, { sfx: true, jumpAddress });
+            const ms = (performance.now() - t0).toFixed(0);
+
+            const ratio = ((1 - sfx.length / prgBytes.length) * 100).toFixed(1);
+            log.textContent =
+                `Crunched in ${ms} ms.\n` +
+                `Original:   ${prgBytes.length} bytes\n` +
+                `Compressed: ${sfx.length} bytes (${ratio}% smaller)\n` +
+                `Jump: $${jumpAddress.toString(16).toUpperCase()}`;
+
+            const blob = new Blob([sfx], { type: 'application/octet-stream' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'crunched.prg';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+    </script>
+</body>
+</html>
