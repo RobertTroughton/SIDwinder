@@ -55,7 +55,7 @@ During its activity, Hokuto Force was in coop with: &amp;lt;group id=3416&amp;gt
 <BaseCountry>Italy</BaseCountry>
 <FoundYear>1988</FoundYear>
 <Website>http://www.hokutoforce.c64.org</Website>
-<Rating>9.14</Rating>
+<Rating>9.16</Rating>
 <Grouptypes><Grouptype>Cracker Group</Grouptype>
 <Grouptype>Demo Group</Grouptype>
 <Grouptype>Game Development Group</Grouptype>
@@ -139,12 +139,12 @@ https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab 
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/277551/ManeaterV4pom5.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=319452</CounterLink>
-<Downloads>77</Downloads>
+<Downloads>80</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 <DownloadLink><Link>https://csdb.dk/getinternalfile.php/277498/maneaterv4pom5.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=319398</CounterLink>
-<Downloads>189</Downloads>
+<Downloads>195</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>

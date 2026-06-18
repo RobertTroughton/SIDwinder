@@ -56,14 +56,154 @@
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280593/Digital_Dreams.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322605</CounterLink>
-<Downloads>22</Downloads>
+<Downloads>98</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 <DownloadLink><Link>https://csdb.dk/getinternalfile.php/280594/Digital Dreams.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322606</CounterLink>
-<Downloads>14</Downloads>
+<Downloads>38</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>2234</ID>
+<Login>xiny</Login>
+<Handle>Xiny6581</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12697</ID>
+<Handle>Xiny6581</Handle>
+<AKA>xiny, Gräddglipan</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I made a typo once I coded some junk and I liked the "handle" and 6581 was added later on, since it responds the SID soundchip.
+...known to like sisters :)</HandleStory>
+<Scener><ID>11382</ID>
+<Country>Sweden</Country>
+<Trivia>Most recognized for my HQ SID Recordings. Recorded from real hardware.
+http://www.youtube.com/demoscenes
+
+Involved in "Preservation", to preserve the demoscene and unreleased releases for the future generation of data-sceners, basically to pass that time-capsule and legacy.
+Where other quiet, that is where I begin to tackle the hard-cases of floppies and tapes. To bring out as much data as possible! "The challenge is always accepted"
+
+http://sidpreservation.6581.org
+-Read about all the work and what is going on-
+
+Fulltime musician:
+http://www.soundcloud.com/dees-productions</Trivia>
+<Handles><Handle><ID>12697</ID>
+</Handle>
+<Handle><ID>12694</ID>
+<Handle>xiny</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>For a time I only used xiny, as came up from a typo I made while coding but the "nick" had a nice touch so I dropped my old nick and started to use this one instead and the numbers 6581, well they are from the SID chip, since I am a musican. End of story :D</HandleStory>
+<Scener><ID>11382</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Net Trader</Function>
+<Function>Phreaker</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Hardware-Guru</Function>
+<Function>Musician</Function>
+<Function>Original Supplier</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.06.2026</Date>
+<Text>Such a happy jolly tune! Filled with glitter and joy :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1667</ID>
+<Login>youth</Login>
+<Handle>Youth</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1130</ID>
+<Handle>Youth</Handle>
+<AKA>youtH</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Saw the name on an Orb album</HandleStory>
+<Scener><ID>1114</ID>
+<Country>Netherlands</Country>
+<Handles><Handle><ID>35839</ID>
+<Handle>Animal</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>1130</ID>
+</Handle>
+<Handle><ID>4750</ID>
+<Handle>Mad B</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>They are my initials: M.A.D.B.</HandleStory>
+<Scener><ID>1114</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>One of my favorite in the compo, the bouncy energy and original melodies really make me smile.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>Jolly good and melodic track. To me this would be the example in the chapter of a book at the "chiptune" phrase.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Lovely "Gedudel" at a great pace! Very danceable imho.</Text>
+</UserComment>
+</Comments>
 </Release>
 </CSDbData>

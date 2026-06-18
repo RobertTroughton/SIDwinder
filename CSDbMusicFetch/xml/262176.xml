@@ -27,6 +27,7 @@
 <Achievement><Compo>C64 Music</Compo>
 <Place>11</Place>
 </Achievement>
+<Rating>9.75</Rating>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262176.png</ScreenShot>
 <ReleasedBy><Group><ID>1563</ID>
 <Name>MultiStyle Labs</Name>
@@ -77,18 +78,398 @@ Bandcamp:
 </Handle>
 </Credit>
 </Credits>
-<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280575/Auf-Wiedersehen-Linus.sid</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322586</CounterLink>
-<Downloads>23</Downloads>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280574/Auf-Wiedersehen-Linus.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322585</CounterLink>
+<Downloads>141</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
-<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280574/Auf-Wiedersehen-Linus.prg</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322585</CounterLink>
-<Downloads>43</Downloads>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280575/Auf-Wiedersehen-Linus.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322586</CounterLink>
+<Downloads>70</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>4098</ID>
+<Comments><UserComment><CSDbUser><ID>2234</ID>
+<Login>xiny</Login>
+<Handle>Xiny6581</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12697</ID>
+<Handle>Xiny6581</Handle>
+<AKA>xiny, Gräddglipan</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I made a typo once I coded some junk and I liked the "handle" and 6581 was added later on, since it responds the SID soundchip.
+...known to like sisters :)</HandleStory>
+<Scener><ID>11382</ID>
+<Country>Sweden</Country>
+<Trivia>Most recognized for my HQ SID Recordings. Recorded from real hardware.
+http://www.youtube.com/demoscenes
+
+Involved in "Preservation", to preserve the demoscene and unreleased releases for the future generation of data-sceners, basically to pass that time-capsule and legacy.
+Where other quiet, that is where I begin to tackle the hard-cases of floppies and tapes. To bring out as much data as possible! "The challenge is always accepted"
+
+http://sidpreservation.6581.org
+-Read about all the work and what is going on-
+
+Fulltime musician:
+http://www.soundcloud.com/dees-productions</Trivia>
+<Handles><Handle><ID>12697</ID>
+</Handle>
+<Handle><ID>12694</ID>
+<Handle>xiny</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>For a time I only used xiny, as came up from a typo I made while coding but the "nick" had a nice touch so I dropped my old nick and started to use this one instead and the numbers 6581, well they are from the SID chip, since I am a musican. End of story :D</HandleStory>
+<Scener><ID>11382</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Net Trader</Function>
+<Function>Phreaker</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Hardware-Guru</Function>
+<Function>Musician</Function>
+<Function>Original Supplier</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.06.2026</Date>
+<Text>The man who smoke the SID and all that jazz &amp;lt;3
+Such a brilliant tune! Bold bitch in the compo too!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7579</ID>
+<Login>tubesockor</Login>
+<Handle>tubesockor</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>39452</ID>
+<Handle>tubesockor</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>36102</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>39452</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>12.06.2026</Date>
+<Text>Such great composition, harmony changes, bassline… wow! One of my top favorites at the compo. Also love the reverse-reverb-ish effects from 1:50 etc. Will listen to this one a lot in the future.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5252</ID>
+<Login>NecroPolo</Login>
+<Handle>NecroPolo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20082</ID>
+<Handle>NecroPolo</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>"NP" reflects my original initials.</HandleStory>
+<Scener><ID>17905</ID>
+<Country>Hungary</Country>
+<Trivia>*** All of my tunes are SID8580 only. If they do anything on a SID6581 chip, it's a mere coincidence. ***
+
+As a C64 composer I was born in 1989, died in 1994 and re-born in 2009 because of C64 remix album "rakBIT".
+
+For everything, big thanks to all my friends. You know who you are and I do, too!
+
+
+___Albums and side projects___
+
+- NECROLEPSY (2025): https://necropolo.bandcamp.com/album/necrolepsy-deluxe-edition
+
+- SCOPEKILLERS compilation (2022): https://necropolo.bandcamp.com/album/scopekillers-compilation
+
+- DESTRONNAUTH (2019): https://necropolo.bandcamp.com/album/destronnauth
+
+- HYPERGAME (2017): https://necropolo.bandcamp.com/album/hypergame
+
+- AENTHERA (2016): https://necropolo.bandcamp.com/album/aenthera
+
+- Bleep and Destroy (2014) by StrayWorx: https://strayboom.bandcamp.com/album/bleep-and-destroy
+
+
+___C64 music collections___
+
+- Darth SIDe: https://necropolo.bandcamp.com/album/darth-side
+
+- V8bit: https://necropolo.bandcamp.com/album/v8bit 
+
+- Zeros as Ones: https://necropolo.bandcamp.com/album/zeros-as-ones
+
+- Voyage Eclectique: https://necropolo.bandcamp.com/album/voyage-eclectique
+
+
+___SID remix releases___
+
+- Re:ReLive (2024) by SIDRIP Alliance: https://sidrip.bandcamp.com/album/re-relive
+
+- ReLive (2015) by SIDRIP Alliance: https://sidrip.bandcamp.com/releases
+
+- Johannes Bjerregaard tribute album: https://johannesbjerregaard.bandcamp.com/album/jb
+
+- rakBIT by NP: https://necropolo.bandcamp.com/album/rakbit
+
+- Dark Flow by NP: https://necropolo.bandcamp.com/album/dark-flow-the-expanding-ep
+
+
+***
+
+Youtube channel: https://www.youtube.com/user/NecroPolo8580/videos
+
+Facebook: https://www.facebook.com/NecroPolo-138733566144931/?ref=tn_tnmn
+
+Remix64: http://www.remix64.com/member/necropolo/
+
+BandCamp: https://necropolo.bandcamp.com/music</Trivia>
+<Handles><Handle><ID>20082</ID>
+</Handle>
+<Handle><ID>27574</ID>
+<Handle>Yummes</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>An another old handle that I used when I started to make SIDs for games. None became released and some time after the developer's house burned down during the development of Geister in 1994 with all the sources I stopped making C64 music.</HandleStory>
+<Scener><ID>17905</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>27573</ID>
+<Handle>PsychoPet</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>My very first scene handle that brought me an ample of finished tunes that I made for stuff that folks did not finish at the end in the early '90s.</HandleStory>
+<Scener><ID>17905</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>11.06.2026</Date>
+<Text>Completely owning the scene in the harmony change / jazz department. I love the fact that it is a statement of the genre without wanting to be a compo tune. Surely it will get a regular play for me.
+
+Apart from we said hello and some regular small talk on the party, I missed the opportunity to ask questions and some deeper talk about music unfortunately. There are lots of interesting details going on in your tunes I'd like to ask about - but I'll do it next time. Keep being awesome, mate (of course you will).</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6878</ID>
+<Login>mibri</Login>
+<Handle>Mibri</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>30573</ID>
+<Handle>Mibri</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>27533</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>30573</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>10.06.2026</Date>
+<Text>Absolutely bossed the chords game in the compo with this head-bobber, no doubt about that. Very slick, very Linosh, thank you very much. &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4617</ID>
+<Login>Shogoon</Login>
+<Handle>Shogoon</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8127</ID>
+<Handle>Shogoon</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>7396</ID>
+<Country>Poland</Country>
+<Handles><Handle><ID>8127</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>Love that uplifting harmony change from 1:51 - goosebumps! Classic jazzy Linus &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>To me this is THE perfect tune. Each instrument, each note is perfection.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+<Login>Stinsen</Login>
+<Handle>Stinsen</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23584</ID>
+<Handle>Stinsen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>21086</ID>
+<Handles><Handle><ID>23584</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Sophisticated and exquisite, a bold choice for a compo!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7018</ID>
+<Login>TLF</Login>
+<Handle>TLF</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>3771</ID>
+<Handle>T.L.F.</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>3771</ID>
+</Handle>
+<Handle><ID>17269</ID>
+<Handle>Dr. Bass</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>9736</ID>
+<Handle>Chris</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Nice!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2515</ID>
+<Login>superlinus</Login>
+<Handle>Linus</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>10025</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>The visualizer was chosen with care :D</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4238</ID>
+<Login>Stein_Pedersen</Login>
+<Handle>Stone</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>2272</ID>
+<Handle>Stein Pedersen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>2262</ID>
+<Country>Norway</Country>
+<Handles><Handle><ID>11760</ID>
+<Handle>Stone</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2262</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>11774</ID>
+<Handle>The Idol</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2262</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>14211</ID>
+<Handle>1030</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>2262</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>2272</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Lovely! I dig the ghost notes in the bass line, makes it sound human-played :D</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>I love how almost everything on the melody voice visualizer looks like middle fingers *lol*</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>4098</ID>
 <Login>Archmage</Login>
 <Handle>Archmage</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>

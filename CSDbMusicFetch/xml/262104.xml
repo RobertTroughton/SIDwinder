@@ -27,7 +27,7 @@
 <Achievement><Compo>C64 Music</Compo>
 <Place>7</Place>
 </Achievement>
-<Rating>9.92</Rating>
+<Rating>9.72</Rating>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262104.png</ScreenShot>
 <ReleasedBy><Group><ID>396</ID>
 <Name>Genesis Project</Name>
@@ -206,18 +206,220 @@ Came back to the scene in 2016.</Trivia>
 </Handle>
 </Credit>
 </Credits>
-<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280478/beautifulstruggle.prg</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322485</CounterLink>
-<Downloads>98</Downloads>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280479/beautiful struggle RC4.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322486</CounterLink>
+<Downloads>91</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
-<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280479/beautiful struggle RC4.sid</Link>
-<CounterLink>https://csdb.dk/release/download.php?id=322486</CounterLink>
-<Downloads>51</Downloads>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280478/beautifulstruggle.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322485</CounterLink>
+<Downloads>186</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>2680</ID>
+<Comments><UserComment><CSDbUser><ID>2234</ID>
+<Login>xiny</Login>
+<Handle>Xiny6581</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12697</ID>
+<Handle>Xiny6581</Handle>
+<AKA>xiny, Gräddglipan</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I made a typo once I coded some junk and I liked the "handle" and 6581 was added later on, since it responds the SID soundchip.
+...known to like sisters :)</HandleStory>
+<Scener><ID>11382</ID>
+<Country>Sweden</Country>
+<Trivia>Most recognized for my HQ SID Recordings. Recorded from real hardware.
+http://www.youtube.com/demoscenes
+
+Involved in "Preservation", to preserve the demoscene and unreleased releases for the future generation of data-sceners, basically to pass that time-capsule and legacy.
+Where other quiet, that is where I begin to tackle the hard-cases of floppies and tapes. To bring out as much data as possible! "The challenge is always accepted"
+
+http://sidpreservation.6581.org
+-Read about all the work and what is going on-
+
+Fulltime musician:
+http://www.soundcloud.com/dees-productions</Trivia>
+<Handles><Handle><ID>12697</ID>
+</Handle>
+<Handle><ID>12694</ID>
+<Handle>xiny</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>For a time I only used xiny, as came up from a typo I made while coding but the "nick" had a nice touch so I dropped my old nick and started to use this one instead and the numbers 6581, well they are from the SID chip, since I am a musican. End of story :D</HandleStory>
+<Scener><ID>11382</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Net Trader</Function>
+<Function>Phreaker</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Hardware-Guru</Function>
+<Function>Musician</Function>
+<Function>Original Supplier</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.06.2026</Date>
+<Text>"Stålbladet" What a coop! Two love and one SID!
+Should have climbed up higher, if you ask me! &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7579</ID>
+<Login>tubesockor</Login>
+<Handle>tubesockor</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>39452</ID>
+<Handle>tubesockor</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>36102</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>39452</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>12.06.2026</Date>
+<Text>Great melody and production (oh the snare!), and I just love those sus-to-minor-chords :) Congrats on a really good teamwork! Very high rank at the compo for me. Been listening to it a lot the latest days, really enjoying it!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7018</ID>
+<Login>TLF</Login>
+<Handle>TLF</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>3771</ID>
+<Handle>T.L.F.</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>3771</ID>
+</Handle>
+<Handle><ID>17269</ID>
+<Handle>Dr. Bass</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>9736</ID>
+<Handle>Chris</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>3761</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>11.06.2026</Date>
+<Text>Love it.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>6878</ID>
+<Login>mibri</Login>
+<Handle>Mibri</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>30573</ID>
+<Handle>Mibri</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>27533</ID>
+<Country>United Kingdom</Country>
+<Handles><Handle><ID>30573</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>10.06.2026</Date>
+<Text>Ohhhh yeah! Melodic R&amp;B-esque action! Fear not, I was quite sure that this was a co-op between Steel and Leaf during the compo thanks to what was shown on the screen (SteeLeaf!) I hope you link up again some time because this works for me.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>This doesn't sound like struggle but the opposite. Flawless execution and seemingly struggle-free composition technique, flows like a feather in the wind.
+Looking forward to another coop tune with you Leaf!
+Shall we have it threesome with Steel? :)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+<Login>Stinsen</Login>
+<Handle>Stinsen</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23584</ID>
+<Handle>Stinsen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>21086</ID>
+<Handles><Handle><ID>23584</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Many nice melodies and little details to discover in here, well done boys! &amp;lt;3</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Lovely tune. Sounds are absolutely ace. A little more variation on the rhytm side would have been nice though.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2680</ID>
 <Login>psycho</Login>
 <Handle>psych</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>

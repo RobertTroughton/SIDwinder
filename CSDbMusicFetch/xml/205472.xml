@@ -22,7 +22,7 @@
 <Achievement><Compo>C64 Music</Compo>
 <Place>9</Place>
 </Achievement>
-<Rating>9.5</Rating>
+<Rating>9.55</Rating>
 <ScreenShot>https://csdb.dk/gfx/releases/205000/205472.png</ScreenShot>
 <ReleasedBy><Group><ID>396</ID>
 <Name>Genesis Project</Name>
@@ -176,12 +176,12 @@ Beside that, 8580 was my first and true love. I've been loyal until now, and I'
 </UsedSIDs>
 <DownloadLinks><DownloadLink><Link>http://csdb.dk/getinternalfile.php/214923/Layer by Layer.sid</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=253826</CounterLink>
-<Downloads>173</Downloads>
+<Downloads>176</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 <DownloadLink><Link>http://csdb.dk/getinternalfile.php/214924/psych858o-Layer by Layer.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=253827</CounterLink>
-<Downloads>387</Downloads>
+<Downloads>393</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>

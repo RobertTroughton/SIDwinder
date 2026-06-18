@@ -26,6 +26,7 @@
 <Achievement><Compo>C64 Music</Compo>
 <Place>16</Place>
 </Achievement>
+<Rating>9.33</Rating>
 <ScreenShot>https://csdb.dk/gfx/releases/262000/262112.png</ScreenShot>
 <ReleasedBy><Handle><ID>1130</ID>
 <Handle>Youth</Handle>
@@ -159,11 +160,402 @@ https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab 
 </Credits>
 <DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280495/yavinyouthsugarrush.prg</Link>
 <CounterLink>https://csdb.dk/release/download.php?id=322503</CounterLink>
-<Downloads>66</Downloads>
+<Downloads>155</Downloads>
 <Status>Ok</Status>
 </DownloadLink>
 </DownloadLinks>
-<Comments><UserComment><CSDbUser><ID>2061</ID>
+<Comments><UserComment><CSDbUser><ID>2234</ID>
+<Login>xiny</Login>
+<Handle>Xiny6581</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>12697</ID>
+<Handle>Xiny6581</Handle>
+<AKA>xiny, Gräddglipan</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I made a typo once I coded some junk and I liked the "handle" and 6581 was added later on, since it responds the SID soundchip.
+...known to like sisters :)</HandleStory>
+<Scener><ID>11382</ID>
+<Country>Sweden</Country>
+<Trivia>Most recognized for my HQ SID Recordings. Recorded from real hardware.
+http://www.youtube.com/demoscenes
+
+Involved in "Preservation", to preserve the demoscene and unreleased releases for the future generation of data-sceners, basically to pass that time-capsule and legacy.
+Where other quiet, that is where I begin to tackle the hard-cases of floppies and tapes. To bring out as much data as possible! "The challenge is always accepted"
+
+http://sidpreservation.6581.org
+-Read about all the work and what is going on-
+
+Fulltime musician:
+http://www.soundcloud.com/dees-productions</Trivia>
+<Handles><Handle><ID>12697</ID>
+</Handle>
+<Handle><ID>12694</ID>
+<Handle>xiny</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>For a time I only used xiny, as came up from a typo I made while coding but the "nick" had a nice touch so I dropped my old nick and started to use this one instead and the numbers 6581, well they are from the SID chip, since I am a musican. End of story :D</HandleStory>
+<Scener><ID>11382</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+<Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Net Trader</Function>
+<Function>Phreaker</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Hardware-Guru</Function>
+<Function>Musician</Function>
+<Function>Original Supplier</Function>
+<Function>Tester</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.06.2026</Date>
+<Text>Such a nice tune. When I heard this and yeah I didn't see who made it. I knew at once it HAS to be the Y and Y &amp;lt;3 Really fresh and totally coated in sugar!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>3987</ID>
+<Login>STEEL</Login>
+<Handle>Steel</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1651</ID>
+<Handle>Steel</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>1639</ID>
+<Country>Germany</Country>
+<Trivia>Handle change from Mc Moneysack to Steel mentioned in &amp;lt;release id=212933&amp;gt;.
+
+Co-Founder of Success
+
+Left the scene in 1993 and became a renowned graffiti artist.
+
+Came back to the scene in 2016.</Trivia>
+<Handles><Handle><ID>1651</ID>
+</Handle>
+<Handle><ID>27184</ID>
+<Handle>Mc Moneysack</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>1639</ID>
+</Scener>
+<FreelanceFunctions><Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>14.06.2026</Date>
+<Text>Such a pleasure Meeting you in Person. Awesome Tune i really think this is heavily underrated in the compo results. I am Happy you two Guys Bless us more with That Type of sids i really Love.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5252</ID>
+<Login>NecroPolo</Login>
+<Handle>NecroPolo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>20082</ID>
+<Handle>NecroPolo</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>"NP" reflects my original initials.</HandleStory>
+<Scener><ID>17905</ID>
+<Country>Hungary</Country>
+<Trivia>*** All of my tunes are SID8580 only. If they do anything on a SID6581 chip, it's a mere coincidence. ***
+
+As a C64 composer I was born in 1989, died in 1994 and re-born in 2009 because of C64 remix album "rakBIT".
+
+For everything, big thanks to all my friends. You know who you are and I do, too!
+
+
+___Albums and side projects___
+
+- NECROLEPSY (2025): https://necropolo.bandcamp.com/album/necrolepsy-deluxe-edition
+
+- SCOPEKILLERS compilation (2022): https://necropolo.bandcamp.com/album/scopekillers-compilation
+
+- DESTRONNAUTH (2019): https://necropolo.bandcamp.com/album/destronnauth
+
+- HYPERGAME (2017): https://necropolo.bandcamp.com/album/hypergame
+
+- AENTHERA (2016): https://necropolo.bandcamp.com/album/aenthera
+
+- Bleep and Destroy (2014) by StrayWorx: https://strayboom.bandcamp.com/album/bleep-and-destroy
+
+
+___C64 music collections___
+
+- Darth SIDe: https://necropolo.bandcamp.com/album/darth-side
+
+- V8bit: https://necropolo.bandcamp.com/album/v8bit 
+
+- Zeros as Ones: https://necropolo.bandcamp.com/album/zeros-as-ones
+
+- Voyage Eclectique: https://necropolo.bandcamp.com/album/voyage-eclectique
+
+
+___SID remix releases___
+
+- Re:ReLive (2024) by SIDRIP Alliance: https://sidrip.bandcamp.com/album/re-relive
+
+- ReLive (2015) by SIDRIP Alliance: https://sidrip.bandcamp.com/releases
+
+- Johannes Bjerregaard tribute album: https://johannesbjerregaard.bandcamp.com/album/jb
+
+- rakBIT by NP: https://necropolo.bandcamp.com/album/rakbit
+
+- Dark Flow by NP: https://necropolo.bandcamp.com/album/dark-flow-the-expanding-ep
+
+
+***
+
+Youtube channel: https://www.youtube.com/user/NecroPolo8580/videos
+
+Facebook: https://www.facebook.com/NecroPolo-138733566144931/?ref=tn_tnmn
+
+Remix64: http://www.remix64.com/member/necropolo/
+
+BandCamp: https://necropolo.bandcamp.com/music</Trivia>
+<Handles><Handle><ID>20082</ID>
+</Handle>
+<Handle><ID>27574</ID>
+<Handle>Yummes</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>An another old handle that I used when I started to make SIDs for games. None became released and some time after the developer's house burned down during the development of Geister in 1994 with all the sources I stopped making C64 music.</HandleStory>
+<Scener><ID>17905</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>27573</ID>
+<Handle>PsychoPet</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>My very first scene handle that brought me an ample of finished tunes that I made for stuff that folks did not finish at the end in the early '90s.</HandleStory>
+<Scener><ID>17905</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>12.06.2026</Date>
+<Text>Great pace, chugging forward like a train with melodies to whistle along. The small chaos factor is a plus in my opinion, not a minus.
+
+Youth, mate, it's been great to meet you again. I realise only after the party that at the end I talked with folks I'm really fond of much less than I intended too due to energy mismanagement but I'll try better next time.
+
+And yeah Stinsen, you were missed.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>7579</ID>
+<Login>tubesockor</Login>
+<Handle>tubesockor</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>39452</ID>
+<Handle>tubesockor</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>36102</ID>
+<Country>Sweden</Country>
+<Handles><Handle><ID>39452</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>12.06.2026</Date>
+<Text>Great work, partner-in-last-minute-party-music-composing :) I’ve had that initial melody stuck on my mind since the weekend. As mentioned before, sure, maybe a bit many different parts but still it works really well all in all. And the sound design (specifically the snare) is so good. Oh and those 16th-note-runs at 0:50 etc are lovely!</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+<Login>Stinsen</Login>
+<Handle>Stinsen</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>23584</ID>
+<Handle>Stinsen</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>21086</ID>
+<Handles><Handle><ID>23584</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>@Randall: Sorry, fault on my side! Reading comprehension is obviously not one of my fortes! :D
+@Youth: Yeah, totally missed not being there. I hope to rectify that next time...</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>712</ID>
+<Login>randall</Login>
+<Handle>gegegege gugugugu</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>8501</ID>
+<Handle>Randall</Handle>
+<AKA>srandall</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>generic enough to match Jammer and Sidder, my only groupmates at the time :)</HandleStory>
+<Scener><ID>3723</ID>
+<Country>Poland</Country>
+<Trivia>to further inflate my sack of nicks, i'm also (un)known as glebogryzarka and afrojax elsewhere</Trivia>
+<Handles><Handle><ID>8501</ID>
+</Handle>
+<Handle><ID>3733</ID>
+<Handle>Smalltown Boy</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>I named myself after one of my favourite songs (by Bronski Beat ofc).</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>34031</ID>
+<Handle>Chuinho</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>chuj = obscene description of penis in polish, but with a much broader meaning than just that, frequently used as an insult.
+-inho, because i hail from minas gerais ;)</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>33500</ID>
+<Handle>Vaginae Supremacy</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Valerie Solanas meets C64 coverbands, chaos ensues</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>36518</ID>
+<Handle>Hate Bush</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>a miserable wordplay on my favourite female singer's name. also a bit outdated political statement.</HandleStory>
+<Scener><ID>3723</ID>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>@Stinsen - apparently i couldn't express myself as intended :D this IS my favourite, but contrary to some other entries i loved, it sounds more - how to put it - universal?</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1803</ID>
+<Login>vincenzo</Login>
+<Handle>Vincenzo</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>4559</ID>
+<Handle>Vincenzo</Handle>
+<AKA>Padre Vincenzo</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>4535</ID>
+<Country>Hungary</Country>
+<Handles><Handle><ID>4559</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>Chaotic? A bit. But it's a damn good track.
+It's always a pleasure to meet and talk to you, dear Youth.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>1667</ID>
+<Login>youth</Login>
+<Handle>Youth</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>1130</ID>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>09.06.2026</Date>
+<Text>Thanks guys, it was great getting to talk to my fellow musicians in person. @Stinsen I missed you, maybe next time? You're absolutely right about the chaos, this tune was lying around for ages, not knowing how to get it into shape. Finally I decided to spend the friday at the party to squeeze it into three minutes and just ride the rollercoaster.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5905</ID>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>I see where the title is coming from and why it's maybe not 100% Randall compatible. ;D Love the main bass + percussions here though and the recognizable (?) riffs, as a whole maybe a bit chaotic though. :D</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2785</ID>
+<Login>spider-j</Login>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>18945</ID>
+<Handle>Spider Jerusalem</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<Scener><ID>16889</ID>
+<Country>Germany</Country>
+<Handles><Handle><ID>18945</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>Very nice sounds and pleasing composition.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>538</ID>
+<Login>iAN CooG</Login>
+<Handle>iAN CooG</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>6662</ID>
+<Handle>Ian Coog</Handle>
+<AKA>iAN CooG</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Name of the main character of the anime "SF Saiyuki Starzinger" by Leiji Matsumoto. At least here in italy, since in japanese is written Jan Kugo. I've chosen the handle "IAN" to sign my high scores on arcade games ^_^, then changed to Ian7102 in the late 80's, and finally iAN CooG from 1999 or so.</HandleStory>
+<Scener><ID>6145</ID>
+<Country>Italy</Country>
+<Handles><Handle><ID>7474</ID>
+<Handle>IAN*7102</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>6145</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>6662</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>D/V: because someone should stop uploading made up RSID files on deepsid if he doesn't know how to properly rip and make sid files.</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>712</ID>
+</CSDbUser>
+<Date>08.06.2026</Date>
+<Text>#16? almost all my personal favourites landed in the bottom half, which doesn't surprise me anymore - but this one seems to have so many virtues beyond catering to my taste :(</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>2061</ID>
 <Login>GF</Login>
 <Handle>G-Fellow</Handle>
 <RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
@@ -251,12 +643,6 @@ Then I thought, "Hey, if I take my full name's initials and add a slash in betwe
 Good coop btw :)</Text>
 </UserComment>
 <UserComment><CSDbUser><ID>1667</ID>
-<Login>youth</Login>
-<Handle>Youth</Handle>
-<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
-<CSDbEntry><Handle><ID>1130</ID>
-</Handle>
-</CSDbEntry>
 </CSDbUser>
 <Date>06.06.2026</Date>
 <Text>Woops thanks Raistlin, had a bad connection @ X</Text>

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CSDbData><Release><ID>262431</ID>
+<Name>Separate Ways</Name>
+<Type>C64 Music</Type>
+<ReleaseDay>18</ReleaseDay>
+<ReleaseMonth>6</ReleaseMonth>
+<ReleaseYear>2026</ReleaseYear>
+<Website>https://www.youtube.com/watch?v=PUtM5Jt-LJc</Website>
+<ScreenShot>https://csdb.dk/gfx/releases/262000/262431.png</ScreenShot>
+<ReleasedBy><Group><ID>435</ID>
+<Name>Hokuto Force</Name>
+<AKA>Digital Monastery (DM)</AKA>
+<Short>HF</Short>
+<Trivia>The name of this group is inspired by a postatomic japanese cartoon of martial arts called Hokuto No Ken. Probably you know it as "Fist of the north star".
+29/10/06: For many reasons I (The Overkiller) decided to put HF in inactive status.
+2009 A.D: Hokuto Force is back fully in activity!
+30/11/2012: &amp;lt;group id=10014&amp;gt;, the game developing division of Hokuto Force is born!
+
+
+[IMG]https://i.ibb.co/Lp1MxGv/245.png[/img]
+
+During its activity, Hokuto Force was in coop with: &amp;lt;group id=3416&amp;gt; , &amp;lt;group id=215&amp;gt; , &amp;lt;group id=8337&amp;gt; , &amp;lt;group id=7190&amp;gt; , &amp;lt;group id=4874&amp;gt; , &amp;lt;group id=185&amp;gt; (more than 50 1st releases were done and still counting) , &amp;lt;group id=13371&amp;gt;</Trivia>
+<BaseCountry>Italy</BaseCountry>
+<FoundYear>1988</FoundYear>
+<Website>http://www.hokutoforce.c64.org</Website>
+<Rating>9.16</Rating>
+<Grouptypes><Grouptype>Cracker Group</Grouptype>
+<Grouptype>Demo Group</Grouptype>
+<Grouptype>Game Development Group</Grouptype>
+<Grouptype>Swapping Group</Grouptype>
+</Grouptypes>
+<Slogan>Accuracy makes the difference!</Slogan>
+<Slogan>We give dignity even to the lamest games !!</Slogan>
+<Slogan>The fist of the north star !!</Slogan>
+<Slogan>Save 'em from the dust of time!!</Slogan>
+<Slogan>The power of the seven stars !!</Slogan>
+<Slogan>To serve and preserve !!</Slogan>
+<Slogan>We don't whine... we do facts !!</Slogan>
+</Group>
+</ReleasedBy>
+<Credits><Credit><CreditType>Code</CreditType>
+<Handle><ID>848</ID>
+<Handle>Raistlin</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I was a huge fan of the Dragonlance books.</HandleStory>
+<Scener><ID>832</ID>
+<Country>United Kingdom</Country>
+<Trivia>Pre-scene, Raistlin was a prolific POKEster (ZZAP!, Commodore User, CCI, What Poke and many more).
+
+Joined the demo scene in 1988 with his brother, Kreator (&amp;lt;scener id=7835&amp;gt;), creating SCC (Silsden Cracking Crew) .. soon after joined Pyrotech and, later, co-formed Excess.
+
+Joined Genesis Project (G*P) - which became his proper "home" - after short stints in a few other groups.
+
+Quit the scene in 1991, after Delirious 10, to focus on University studies.
+
+27 years later, in 2018, he rejoined G*P and released Delirious 11 at Gubbdata 2018 - which took 2nd place. Later that year, with just a 3-month development window, released X Marks the Spot at X2018 (which took 4th place).
+
+Raistlin has been in the games industry since 1994 and has worked on many games - Destruction Derby, the Test Drive series,  LA Rush, Wheelman, Infinity Blade, the Gears of War series, Fortnite, Lawbreakers, Conan Exiles, Sea of Thieves and more... as well as working on Unreal Engine.
+
+Moved to Thailand in 2021.
+
+Created several C64 related websites:-
+
+https://c64demo.com : a coding blog
+https://c64gfx.com : a site collecting C64 artworks
+https://sidquake.c64demo.com : a tool for easy packaging of SIDs as executables with visualiser, scroller etc
+https://dirquake.c64demo.com : a tool - mostly for C64GFX.com - to quickly grab screenshots of C64 DIR art</Trivia>
+<Handles><Handle><ID>848</ID>
+</Handle>
+<Handle><ID>4983</ID>
+<Handle>Kipperman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Originally created as an alter-ego when submitting POKEs to Zzap!64.</HandleStory>
+<Scener><ID>832</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Diskmag Editor</Function>
+<Function>Organizer</Function>
+<Function>Webmaster</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+<Credit><CreditType>Music</CreditType>
+<Handle><ID>38402</ID>
+<Handle>DJ Space</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>I am a music composer/producer from Greece. Commodore 64 user/lover since the early-mid 80s. SID music was and still is fascinating/kinda addicting to me and I always wanted to be a part of it and contribute to the scene with my own SID music and also my pixel art and PETSCII creations. I never thought as a child that one day I will be testing/listening to my own SID files on my childhood C64 but here we are!
+
+https://www.youtube.com/@DJSpaceRetrotunes
+https://www.facebook.com/djspace.music
+http://www.retroperks.com</HandleStory>
+<Scener><ID>35085</ID>
+<Country>Greece</Country>
+<Handles><Handle><ID>38402</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Graphician</Function>
+<Function>Musician</Function>
+</FreelanceFunctions>
+</Handle>
+</Credit>
+</Credits>
+<DownloadLinks><DownloadLink><Link>https://csdb.dk/getinternalfile.php/280899/separate ways.prg</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322935</CounterLink>
+<Downloads>27</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+<DownloadLink><Link>https://csdb.dk/getinternalfile.php/280900/separate ways.sid</Link>
+<CounterLink>https://csdb.dk/release/download.php?id=322936</CounterLink>
+<Downloads>18</Downloads>
+<Status>Ok</Status>
+</DownloadLink>
+</DownloadLinks>
+<Comments><UserComment><CSDbUser><ID>5840</ID>
+<Login>didi</Login>
+<Handle>Didi</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>11313</ID>
+<Handle>Didi</Handle>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Inspired by german comedian and actor [url=http://en.wikipedia.org/wiki/Dieter_Hallervorden]Dieter "Didi" Hallervorden[/url] which I considered quite funny in my teenage days.</HandleStory>
+<Scener><ID>10179</ID>
+<Country>Germany</Country>
+<Trivia>Took a long scene break from January 2002 until October 2011.</Trivia>
+<Handles><Handle><ID>11313</ID>
+</Handle>
+<Handle><ID>23255</ID>
+<Handle>Rainbowman</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>10179</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Original Supplier</Function>
+<Function>Swapper</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>23296</ID>
+<Handle>Mister Magic</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>10179</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Original Supplier</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>25275</ID>
+<Handle>Uncle Fritz</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<HandleStory>Uncle Fritz (german: Onkel Fritz) was a strange person mentioned in some very poor german jokes in the past.</HandleStory>
+<Scener><ID>10179</ID>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Diskmag Editor</Function>
+<Function>Logo Graphician</Function>
+<Function>Modem Trader</Function>
+<Function>Net Trader</Function>
+<Function>NTSC-Fixer</Function>
+<Function>Organizer</Function>
+<Function>Original Supplier</Function>
+<Function>PAL-Fixer</Function>
+<Function>Swapper</Function>
+<Function>Translator</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>18.06.2026</Date>
+<Text>Stinsen's is a great cover, too. But I love the dynanic and power of this one. Different approach IMO. Re-listened to the original by Journey for comparison. ;-)</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>538</ID>
+<Login>iAN CooG</Login>
+<Handle>iAN CooG</Handle>
+<RegisteredDate>1970-01-01T01:00:00+01:00</RegisteredDate>
+<CSDbEntry><Handle><ID>6662</ID>
+<Handle>Ian Coog</Handle>
+<AKA>iAN CooG</AKA>
+<CurrentlyUsedHandle>true</CurrentlyUsedHandle>
+<HandleStory>Name of the main character of the anime "SF Saiyuki Starzinger" by Leiji Matsumoto. At least here in italy, since in japanese is written Jan Kugo. I've chosen the handle "IAN" to sign my high scores on arcade games ^_^, then changed to Ian7102 in the late 80's, and finally iAN CooG from 1999 or so.</HandleStory>
+<Scener><ID>6145</ID>
+<Country>Italy</Country>
+<Handles><Handle><ID>7474</ID>
+<Handle>IAN*7102</Handle>
+<CurrentlyUsedHandle>false</CurrentlyUsedHandle>
+<Scener><ID>6145</ID>
+</Scener>
+<FreelanceFunctions><Function>Cracker</Function>
+</FreelanceFunctions>
+</Handle>
+<Handle><ID>6662</ID>
+</Handle>
+</Handles>
+</Scener>
+<FreelanceFunctions><Function>Coder</Function>
+<Function>Cracker</Function>
+<Function>Organizer</Function>
+</FreelanceFunctions>
+</Handle>
+</CSDbEntry>
+</CSDbUser>
+<Date>18.06.2026</Date>
+<Text>let's hear how it compares to https://csdb.dk/release/?id=116481</Text>
+</UserComment>
+<UserComment><CSDbUser><ID>5840</ID>
+</CSDbUser>
+<Date>18.06.2026</Date>
+<Text>Great cover of one of my favourite songs! &amp;lt;3</Text>
+</UserComment>
+</Comments>
+</Release>
+</CSDbData>
