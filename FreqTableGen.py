@@ -1,15 +1,15 @@
 import struct
 import math
 
-NUM_FREQS_ON_SCREEN = 40
-
-def generate_freq_lookups(freq_bin_filename):
+def generate_freq_lookups(freq_bin_filename, num_bars=40):
     """Generate frequency-to-bar-index lookup tables for the bar visualizer.
 
-    Builds 40 logarithmic thresholds spanning $0100..$FFFF, then writes three
-    256-byte tables that map a SID frequency value to a bar index 0..39.
+    Builds `num_bars` logarithmic thresholds spanning $0100..$FFFF, then writes
+    three 256-byte tables that map a SID frequency value to a bar index
+    0..num_bars-1.
     """
 
+    NUM_FREQS_ON_SCREEN = num_bars
     bar_thresholds = [0] * (NUM_FREQS_ON_SCREEN + 1)
     MIN_FREQ = 0x0100
     MAX_FREQ = 0xFFFF
@@ -109,8 +109,12 @@ def write_binary_file(filename, data):
 def main():
     import os
     
-    generate_freq_lookups("SIDPlayers/INC/FreqTable.bin")
+    generate_freq_lookups("SIDPlayers/INC/FreqTable.bin", 40)
     print(f"\nGenerated frequency lookup table: SIDPlayers/INC/FreqTable.bin")
+
+    print()
+    generate_freq_lookups("SIDPlayers/INC/FreqTable80.bin", 80)
+    print(f"\nGenerated frequency lookup table: SIDPlayers/INC/FreqTable80.bin")
 
 if __name__ == "__main__":
     main()

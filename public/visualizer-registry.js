@@ -65,6 +65,13 @@ const VISUALIZERS = [
         config: 'prg/raistlintriplehybridbars.json'
     },
     {
+        id: 'RaistlinVerticalColours',
+        name: 'Raistlin Vertical Colours',
+        description: 'Per-channel spectrum painted as 80 vertical colour strips into a bitmap, below a logo',
+        preview: 'prg/raistlinverticalcolours.png',
+        config: 'prg/raistlinverticalcolours.json'
+    },
+    {
         id: 'SimpleBitmap',
         name: 'Simple Bitmap',
         description: 'Full-screen bitmap',
