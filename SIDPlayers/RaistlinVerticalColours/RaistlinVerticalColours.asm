@@ -112,12 +112,12 @@
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
 .import source "../INC/stablerastersetup.asm"
-.import source "../INC/spectrometer3channelwave.asm"
+.import source "../INC/spectrometer3channel.asm"
 .import source "../INC/freqtable.asm"
 .import source "../INC/linkedwitheffect.asm"
 
 // =============================================================================
-// PER-CHANNEL CHANGE TRACKING + SCRATCH
+// PER-CHANNEL CHANGE TRACKING
 //   One previous screen-byte per bar/column (40), per channel. Initialised to
 //   $ff so the first render writes every column.
 // =============================================================================
@@ -126,36 +126,25 @@ prevCh0:    .fill NUM_FREQUENCY_BARS, $ff
 prevCh1:    .fill NUM_FREQUENCY_BARS, $ff
 prevCh2:    .fill NUM_FREQUENCY_BARS, $ff
 
-prevColour: .byte $00            // colour of the bar to the left (Cn-1)
-curColour:  .byte $00            // colour of the current bar (Cn)
-
 // =============================================================================
-// WAVEFORM -> COLOUR SETS
-//   Colour is chosen by the bar's instrument type (SID waveform):
-//       0 triangle -> blue       1 sawtooth -> red
-//       2 pulse    -> grey       3 noise    -> purple
-//   Height 0 = black (silent bars vanish); height 1 starts at the set's darkest
-//   colour and brightens to white. Packed as one 256-byte table indexed
-//   (set * 64 + height); heights 48..63 are unused padding.
+// COLOUR RAMP (shared by all channels and instruments)
+//   A single 24-step ramp. Each bar's height is scaled into the ramp, and the
+//   bitmap's $66/$99 dither blends two ADJACENT ramp entries together:
+//       upper nibble = ramp[s]   (bitmap %01 pixels)
+//       lower nibble = ramp[s+1] (bitmap %10 pixels)
+//   so the colour climbs smoothly with intensity. heightToByte[height] precombines
+//   that into the ready-to-store screen byte; height 0 -> black.
 // =============================================================================
 
-.var setTri = List().add($06,$0e,$03,$01)        // blue   -> lt blue -> cyan -> white
-.var setSaw = List().add($02,$08,$0a,$07,$01)    // red    -> orange -> lt red -> yellow -> white
-.var setPul = List().add($0b,$0c,$0f,$01)        // dk grey-> grey -> lt grey -> white
-.var setNoi = List().add($04,$0e,$0f,$01)        // purple -> lt blue -> lt grey -> white
-.var colourSets = List().add(setTri).add(setSaw).add(setPul).add(setNoi)
+.var ramp24 = List().add(0,9,2,5,2,5,10,5,10,14,10,14,13,14,13,7,13,7,15,7,15,1,15,1)
 
-set64:      .byte 0, 64, 128, 192               // set index -> base offset into colourTable
-
-colourTable:
-    .for (var set = 0; set < 4; set++) {
-        .var ramp = colourSets.get(set)
-        .for (var h = 0; h < 64; h++) {
-            .if (h == 0 || h > MAX_BAR_HEIGHT) {
-                .byte $00
-            } else {
-                .byte ramp.get(floor((h - 1) * ramp.size() / MAX_BAR_HEIGHT))
-            }
+heightToByte:
+    .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) {
+        .if (h == 0) {
+            .byte $00
+        } else {
+            .var s = floor((h - 1) * 22 / (MAX_BAR_HEIGHT - 1))   // 0..22
+            .byte (ramp24.get(s) << 4) | ramp24.get(s + 1)
         }
     }
 
@@ -427,23 +416,11 @@ NextIRQLdx:
 //   right column compares its own combined byte too).
 // =============================================================================
 
-.macro RenderChannel(smoothedH, waveArr, prevByte, topRow) {
-    lda #$00
-    sta prevColour              //; Cn-1 for column 0 = black
-    ldx #$00
+.macro RenderChannel(smoothedH, prevByte, topRow) {
+    ldx #NUM_FREQUENCY_BARS - 1
 !loop:
-    ldy waveArr, x
-    lda set64, y                //; base offset for this colour set
-    clc
-    adc smoothedH, x            //; + height
-    tay
-    lda colourTable, y          //; Cn (0..15)
-    sta curColour
-    asl
-    asl
-    asl
-    asl                         //; Cn << 4
-    ora prevColour              //; | Cn-1  -> screen byte
+    ldy smoothedH, x
+    lda heightToByte, y         //; (ramp[s] << 4) | ramp[s+1]
     cmp prevByte, x
     beq !skip+
     sta prevByte, x
@@ -452,17 +429,14 @@ NextIRQLdx:
     sta SCREEN_ADDRESS + ((topRow + 2) * 40), x
     sta SCREEN_ADDRESS + ((topRow + 3) * 40), x
 !skip:
-    lda curColour
-    sta prevColour              //; becomes Cn-1 for the next column
-    inx
-    cpx #NUM_FREQUENCY_BARS
-    bne !loop-
+    dex
+    bpl !loop-
 }
 
 RenderBars:
-    RenderChannel(smoothedHeightsCh0, barWaveCh0, prevCh0, BAND0_ROW)
-    RenderChannel(smoothedHeightsCh1, barWaveCh1, prevCh1, BAND1_ROW)
-    RenderChannel(smoothedHeightsCh2, barWaveCh2, prevCh2, BAND2_ROW)
+    RenderChannel(smoothedHeightsCh0, prevCh0, BAND0_ROW)
+    RenderChannel(smoothedHeightsCh1, prevCh1, BAND1_ROW)
+    RenderChannel(smoothedHeightsCh2, prevCh2, BAND2_ROW)
     rts
 
 // =============================================================================
@@ -491,21 +465,7 @@ frameCounter:               .byte $00
 frame256Counter:            .byte $00
 
 // =============================================================================
-// DITHER / BLEND PATTERN (32 lines per band)
-//   Each line is one bitmap byte repeated across the band:
-//     $00 = fully black line (%00 -> background = black) - the blanked scanlines
-//     $95 = %10 01 01 01  left half = [Cn-1, Cn], right half = [Cn, Cn]
-//     $65 = %01 10 01 01  left half = [Cn, Cn-1], right half = [Cn, Cn]
-//   $95/$65 alternate per line so the LEFT half of every cell dithers between
-//   this bar's colour (Cn, upper nibble) and the left neighbour's colour (Cn-1,
-//   lower nibble), while the RIGHT half stays solid Cn. Blank scanlines (per the
-//   relative line list {1,4,9,22,27,30} in every band) are fully black.
-// =============================================================================
-
-.var ditherLine = List().add($95,$00,$95,$65,$00,$65,$95,$65, $95,$00,$95,$65,$95,$65,$95,$65, $95,$65,$95,$65,$95,$65,$00,$65, $95,$65,$95,$00,$95,$65,$00,$65)
-
-// =============================================================================
-// LOGO COLOUR STAGING + SCREEN RAM (reserved; filled at export / runtime)
+// SCREEN RAM + LOGO COLOUR STAGING (reserved; filled at export / runtime)
 // =============================================================================
 
 * = SCREEN_ADDRESS "Screen RAM"
@@ -516,25 +476,17 @@ frame256Counter:            .byte $00
 
 // =============================================================================
 // BITMAP
-//   rows 0..12  : logo placeholder (injected by prg-builder from the PNG)
-//   rows 13..24 : three 32px bands of the $95/$65/$00 blend pattern
+//   The whole bitmap is filled with the 8-byte cell pattern
+//       $00, $00, $66, $99, $66, $99, $66, $99
+//   so every char cell has two black scanlines on top followed by six $66/$99
+//   dither lines (which blend the screen-RAM upper & lower nibbles). The logo
+//   (top 13 char rows) is overwritten at export with the PNG bitmap.
 // =============================================================================
 
+.var barPattern = List().add($00, $00, $66, $99, $66, $99, $66, $99)
+
 * = BITMAP_ADDRESS "Bitmap"
-    //; Logo region (top 13 char rows) - overwritten at export with PNG data.
-    .fill LOGO_BITMAP_BYTES, $00
-
-    //; Three bands (char rows 13..24). Same pattern in each band.
-    .for (var br = 0; br < (NUM_CHANNELS * BAND_CHAR_ROWS); br++) {
-        .for (var c = 0; c < 40; c++) {
-            .for (var p = 0; p < 8; p++) {
-                .byte ditherLine.get(mod(br, BAND_CHAR_ROWS) * 8 + p)
-            }
-        }
-    }
-
-    //; Pad to the end of the 8KB bitmap.
-    .fill (BITMAP_ADDRESS + $2000) - *, $00
+    .fill $2000, barPattern.get(mod(i, 8))
 
 // =============================================================================
 // END OF FILE
