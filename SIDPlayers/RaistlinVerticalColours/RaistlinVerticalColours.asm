@@ -111,14 +111,15 @@
 .import source "../INC/keyboard.asm"
 .import source "../INC/musicplayback.asm"
 .import source "../INC/stablerastersetup.asm"
-.import source "../INC/spectrometer3channel.asm"
+.import source "../INC/spectrometer3channelwave.asm"
 .import source "../INC/freqtable80.asm"
 .import source "../INC/linkedwitheffect.asm"
 
 // =============================================================================
 // PER-CHANNEL CHANGE TRACKING + SCRATCH
 //   One previous combined colour-byte per column (40), per channel. Initialised
-//   to $ff so the first render writes every column.
+//   to $ff so the first render writes every column. barColour is a shared
+//   per-bar colour scratch buffer (one channel resolved at a time).
 // =============================================================================
 
 .const NUM_COLS = NUM_FREQUENCY_BARS / 2     // 40
@@ -127,40 +128,42 @@ prevCh0:    .fill NUM_COLS, $ff
 prevCh1:    .fill NUM_COLS, $ff
 prevCh2:    .fill NUM_COLS, $ff
 
+barColour:  .fill NUM_FREQUENCY_BARS, $00
 colorTemp:  .byte $00
 
 // =============================================================================
-// COLOUR SETS - SIX RAMPS IN THREE PAIRS (one pair per channel)
-//   Each cell dithers TWO colour tables together, so adjacent strips never read
-//   as one flat block. Within a band the left strip (even bar) uses ramp A and
-//   the right strip (odd bar) uses ramp B; the $66/$99 bitmap dither interleaves
-//   the two across the cell.
-//       channel 0 -> Red  pair : red          + brown/orange/yellow/white
-//       channel 1 -> Green pair: green        + grey/light-grey/white
-//       channel 2 -> Blue  pair: blue/cyan    + purple/light-blue/white
-//   Height 0 = black (silent strips vanish); height 1 starts at the ramp's
-//   darkest colour and brightens to white. Each table is 48 bytes (0..47).
+// WAVEFORM -> COLOUR SETS
+//   Colour is chosen by the bar's instrument type (SID waveform), NOT by the
+//   channel, so all three bands share the same palette:
+//       0 triangle -> blue       1 sawtooth -> red
+//       2 pulse    -> grey       3 noise    -> purple (the 4th type)
+//   Height 0 = black (silent strips vanish); the faintest sound (height 1)
+//   lights the strip at the set's darkest colour, brightening to white.
+//
+//   Packed as one 256-byte table, indexed (set * 64 + height), so the renderer
+//   can look up a colour with a single indexed load. Heights 48..63 are unused
+//   padding.
 // =============================================================================
 
-.var rRedA = List().add($02,$08,$0a,$07,$01)     // red -> orange -> lt red -> yellow -> white
-.var rRedB = List().add($09,$08,$07,$0f,$01)     // brown -> orange -> yellow -> lt grey -> white
-.var rGrnA = List().add($05,$0d,$0d,$0f,$01)     // green -> lt green -> lt grey -> white
-.var rGrnB = List().add($0b,$0c,$0c,$0f,$01)     // dk grey -> grey -> lt grey -> white
-.var rBluA = List().add($06,$0e,$03,$0f,$01)     // blue -> lt blue -> cyan -> lt grey -> white
-.var rBluB = List().add($04,$04,$0e,$0f,$01)     // purple -> lt blue -> lt grey -> white
+.var setTri = List().add($06,$0e,$03,$01)        // blue   -> lt blue -> cyan -> white
+.var setSaw = List().add($02,$08,$0a,$07,$01)    // red    -> orange -> lt red -> yellow -> white
+.var setPul = List().add($0b,$0c,$0f,$01)        // dk grey-> grey -> lt grey -> white
+.var setNoi = List().add($04,$0e,$0f,$01)        // purple -> lt blue -> lt grey -> white
+.var colourSets = List().add(setTri).add(setSaw).add(setPul).add(setNoi)
 
-tblRedA: .byte $00
-         .fill MAX_BAR_HEIGHT, rRedA.get(floor(i * rRedA.size() / MAX_BAR_HEIGHT))
-tblRedB: .byte $00
-         .fill MAX_BAR_HEIGHT, rRedB.get(floor(i * rRedB.size() / MAX_BAR_HEIGHT))
-tblGrnA: .byte $00
-         .fill MAX_BAR_HEIGHT, rGrnA.get(floor(i * rGrnA.size() / MAX_BAR_HEIGHT))
-tblGrnB: .byte $00
-         .fill MAX_BAR_HEIGHT, rGrnB.get(floor(i * rGrnB.size() / MAX_BAR_HEIGHT))
-tblBluA: .byte $00
-         .fill MAX_BAR_HEIGHT, rBluA.get(floor(i * rBluA.size() / MAX_BAR_HEIGHT))
-tblBluB: .byte $00
-         .fill MAX_BAR_HEIGHT, rBluB.get(floor(i * rBluB.size() / MAX_BAR_HEIGHT))
+set64:      .byte 0, 64, 128, 192               // set index -> base offset into colourTable
+
+colourTable:
+    .for (var set = 0; set < 4; set++) {
+        .var ramp = colourSets.get(set)
+        .for (var h = 0; h < 64; h++) {
+            .if (h == 0 || h > MAX_BAR_HEIGHT) {
+                .byte $00
+            } else {
+                .byte ramp.get(floor((h - 1) * ramp.size() / MAX_BAR_HEIGHT))
+            }
+        }
+    }
 
 // =============================================================================
 // INITIALIZATION
@@ -444,30 +447,36 @@ NextIRQLdx:
 //   We write the combined byte to all four char rows of the band.
 // =============================================================================
 
-//; Left strip (even bar) -> upper nibble via tableA; right strip (odd bar) ->
-//; lower nibble via tableB. The $66/$99 bitmap dither interleaves the two
-//; colours across the cell, so each band is a two-tone field.
-.macro RenderChannel(smoothedH, tableA, tableB, prevByte, topRow) {
+.macro RenderChannel(smoothedH, waveArr, prevByte, topRow) {
+    //; Pass 1: resolve each bar's colour = colourTable[wave*64 + height].
+    ldx #NUM_FREQUENCY_BARS - 1
+!p1:
+    lda waveArr, x
+    tay
+    lda set64, y                //; base offset for this colour set
+    clc
+    adc smoothedH, x            //; + height
+    tay
+    lda colourTable, y
+    sta barColour, x
+    dex
+    bpl !p1-
+
+    //; Pass 2: combine strip pairs (left=upper nibble, right=lower nibble),
+    //; change-detect per column, write the colour byte to all four band rows.
     ldx #NUM_COLS - 1
-!loop:
+!p2:
     txa
     asl
-    tay                         //; Y = col*2   (left / even bar)
-    lda smoothedH, y
-    tay
-    lda tableA, y               //; colour from ramp A -> upper nibble
+    tay                         //; Y = col*2   (left strip)
+    lda barColour, y
     asl
     asl
     asl
     asl
     sta colorTemp
-    txa
-    asl
-    tay
-    iny                         //; Y = col*2+1 (right / odd bar)
-    lda smoothedH, y
-    tay
-    lda tableB, y               //; colour from ramp B -> lower nibble
+    iny                         //; Y = col*2+1 (right strip)
+    lda barColour, y
     ora colorTemp               //; combined colour byte
     cmp prevByte, x
     beq !skip+
@@ -478,13 +487,13 @@ NextIRQLdx:
     sta SCREEN_ADDRESS + ((topRow + 3) * 40), x
 !skip:
     dex
-    bpl !loop-
+    bpl !p2-
 }
 
 RenderBars:
-    RenderChannel(smoothedHeightsCh0, tblRedA, tblRedB, prevCh0, BAND0_ROW)
-    RenderChannel(smoothedHeightsCh1, tblGrnA, tblGrnB, prevCh1, BAND1_ROW)
-    RenderChannel(smoothedHeightsCh2, tblBluA, tblBluB, prevCh2, BAND2_ROW)
+    RenderChannel(smoothedHeightsCh0, barWaveCh0, prevCh0, BAND0_ROW)
+    RenderChannel(smoothedHeightsCh1, barWaveCh1, prevCh1, BAND1_ROW)
+    RenderChannel(smoothedHeightsCh2, barWaveCh2, prevCh2, BAND2_ROW)
     rts
 
 // =============================================================================
@@ -515,17 +524,16 @@ frame256Counter:            .byte $00
 // =============================================================================
 // DITHER PATTERN (32 lines per band)
 //   Each line is one bitmap byte repeated across the band:
-//     $00 = fully black line  (%00 everywhere -> background) - the cuts & fade
-//     $66 = %01 10 01 10      upper/lower nibble interleaved
-//     $99 = %10 01 10 01      opposite phase
-//   $66/$99 on successive colour lines make a fine checkerboard that mixes the
-//   two paired colour tables (upper nibble = ramp A, lower nibble = ramp B) with
-//   NO black pixels - so the colour body stays solid and the $00 lines read as
-//   crisp, fully-black horizontal cuts. Top/bottom 4 lines are black (the gap),
-//   with three internal black cuts.
+//     $00 = blank line (shows background) - carves the top/bottom fade/gap
+//     $48 = %01 00 10 00  colour on the left half of each strip pair
+//     $12 = %00 01 00 10  colour on the right half of each strip pair
+//   Alternating $48/$12 on successive solid lines stipples the colour field
+//   (a 50% checkerboard) instead of a flat block, while still routing the left
+//   strip to the screen-RAM upper nibble and the right strip to the lower
+//   nibble. The blank-line positions are the same fade as before.
 // =============================================================================
 
-.var ditherLine = List().add($00,$00,$00,$00, $66,$99,$66,$99,$66,$99, $00, $99,$66,$99,$66,$99, $00, $99,$66,$99,$66,$99, $00, $99,$66,$99,$66,$99, $00,$00,$00,$00)
+.var ditherLine = List().add($00,$00,$00,$00,$48,$12,$00,$12, $48,$00,$48,$12,$48,$12,$48,$12, $48,$12,$48,$12,$48,$12,$00,$12, $48,$00,$48,$12,$00,$00,$00,$00)
 
 // =============================================================================
 // LOGO COLOUR STAGING + SCREEN RAM (reserved; filled at export / runtime)
