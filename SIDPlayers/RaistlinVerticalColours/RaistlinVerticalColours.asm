@@ -1,25 +1,27 @@
 // =============================================================================
 //                          RAISTLIN VERTICAL COLOURS
-//          Per-channel SID spectrum painted as colour into a bitmap
+//          Per-channel SID spectrum painted as a blended colour field
 //
-//   A full-screen multicolour bitmap. The top 96px (12 char rows) hold a
-//   user-supplied logo. The bottom of the screen is split into three 32px
-//   bands - one per SID channel (voice idx % 3) - each filled with the fixed
-//   bit pattern $5a (%01 01 10 10). In multicolour bitmap mode that pattern
-//   makes the left 4px of every 8px cell take the screen-RAM upper nibble and
-//   the right 4px take the lower nibble, so each char column shows TWO
-//   independent 4px-wide vertical strips of colour: 40 columns x 2 = 80 strips.
+//   A full-screen multicolour bitmap. The top 104px (13 char rows) hold a
+//   user-supplied logo. The bottom 96px are three contiguous 32px bands
+//   (Y104..199), one per SID channel (voice idx % 3).
 //
-//   We never grow bars. Instead, each strip's spectrometer height selects a
-//   COLOUR (per-channel gradient, dark->bright) that is written into screen
-//   RAM. The bitmap itself is static; only the screen-RAM nibbles change each
-//   frame. A fixed "dither" (whole blanked bitmap rows = $00 instead of $5a)
-//   carves a 4px gap at the top/bottom of every band, separating the three
-//   bands and giving the colour field a textured, rounded look.
+//   40 bars per channel - one bar per 8px char column. Each bar's spectrometer
+//   height selects a COLOUR (by instrument/waveform type); the bitmap itself is
+//   static and only the screen-RAM nibbles change each frame.
 //
-//   Colours are completely self-contained in this file (three baked
-//   height->colour tables); the build pipeline only injects the logo bitmap +
-//   a border colour.
+//   Each column is BLENDED with the bar to its left: the right 4px of the cell
+//   are this bar's solid colour (Cn) and the left 4px dither between Cn and the
+//   left neighbour's colour (Cn-1; black for the far-left column). This is done
+//   with the screen-RAM nibbles:
+//       upper nibble = Cn      (the bitmap's %01 pixels)
+//       lower nibble = Cn-1    (the bitmap's %10 pixels)
+//   so screen byte = (Cn << 4) | Cn-1, and the static bitmap pattern routes the
+//   right half solid to %01 and dithers the left half between %01 and %10.
+//
+//   Whole scanlines are blanked to black (%00 -> $d021 = black) to texture the
+//   field. Colours are self-contained here (four waveform colour sets); the
+//   build pipeline only injects the logo bitmap + a border colour.
 // =============================================================================
 
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
@@ -30,12 +32,11 @@
 // CONFIGURATION CONSTANTS (needed before the includes)
 // =============================================================================
 
-.const NUM_FREQUENCY_BARS               = 80
+.const NUM_FREQUENCY_BARS               = 40
 .const NUM_CHANNELS                     = 3
 
-//; Per-channel "height" range. Heights are only ever used to index the colour
-//; ramps, never drawn, so 0..MAX_BAR_HEIGHT just sets the colour resolution and
-//; the dynamics tuning (shared with the freq/release tables).
+//; Per-channel "height" range. Heights only ever index the colour ramps, never
+//; drawn, so 0..MAX_BAR_HEIGHT just sets colour resolution + dynamics tuning.
 .const TOP_SPECTRUM_HEIGHT              = 6
 .const MAX_BAR_HEIGHT                   = TOP_SPECTRUM_HEIGHT * 8 - 1     // 47
 
@@ -44,27 +45,27 @@
 
 // =============================================================================
 // SCREEN LAYOUT (char rows; 25 rows total, 8px each)
-//   rows  0..11 : logo (96px)
-//   rows 12..15 : band 0  (channel 0)   32px
-//   rows 16..19 : band 1  (channel 1)   32px
-//   rows 20..23 : band 2  (channel 2)   32px
-//   row     24  : blank
+//   rows  0..12 : logo (104px, Y0..103)
+//   rows 13..16 : band 0  (channel 0)   32px  Y104..135
+//   rows 17..20 : band 1  (channel 1)   32px  Y136..167
+//   rows 21..24 : band 2  (channel 2)   32px  Y168..199
+//   No gaps between bands; the bands fill exactly to Y199.
 // =============================================================================
 
-.const LOGO_CHAR_ROWS                   = 12
+.const LOGO_CHAR_ROWS                   = 13
 .const BAND_CHAR_ROWS                   = 4
-.const BAND0_ROW                        = LOGO_CHAR_ROWS                       // 12
-.const BAND1_ROW                        = BAND0_ROW + BAND_CHAR_ROWS           // 16
-.const BAND2_ROW                        = BAND1_ROW + BAND_CHAR_ROWS           // 20
+.const BAND0_ROW                        = LOGO_CHAR_ROWS                       // 13
+.const BAND1_ROW                        = BAND0_ROW + BAND_CHAR_ROWS           // 17
+.const BAND2_ROW                        = BAND1_ROW + BAND_CHAR_ROWS           // 21
 
-.const LOGO_SCREEN_BYTES                = LOGO_CHAR_ROWS * 40                  // 480
-.const LOGO_BITMAP_BYTES                = LOGO_CHAR_ROWS * 40 * 8             // 3840
+.const LOGO_SCREEN_BYTES                = LOGO_CHAR_ROWS * 40                  // 520
+.const LOGO_BITMAP_BYTES                = LOGO_CHAR_ROWS * 40 * 8             // 4160
 
 // =============================================================================
 // DATA BLOCK
 //   The first $100 bytes of DATA_ADDRESS are the contract with prg-builder.js
-//   (SID JMPs, song info, NumSIDChips, BorderColour @ $0d, screen/background
-//   colour @ $0e, ...). prg-builder fills them in at export time.
+//   (SID JMPs, song info, NumSIDChips, BorderColour @ $0d, ...). prg-builder
+//   fills them in at export time.
 // =============================================================================
 
 * = DATA_ADDRESS "Data Block"
@@ -79,17 +80,17 @@
 
 // =============================================================================
 // VIC MEMORY MAP (within the 16KB VIC bank)
-//   $0000..$19FF : code + data + tables   (this file)
-//   $1A00..$1BFF : logo colour staging    (injected, copied to $d800)
-//   $1C00..$1FFF : screen RAM (video matrix)
+//   $0000..$17FF : code + data + tables   (this file)
+//   $1800..$1BFF : screen RAM (video matrix)
+//   $1C00..$1E07 : logo colour staging    (injected, copied to $d800)
 //   $2000..$3FFF : bitmap (8KB)
 // =============================================================================
 
-.const SCREEN_BANK                      = 7                                   // $1C00
+.const SCREEN_BANK                      = 6                                   // $1800
 .const BITMAP_BANK                      = 1                                   // $2000
 
-.const LOGO_COLOR_STAGING               = VIC_BANK_ADDRESS + $1A00
 .const SCREEN_ADDRESS                   = VIC_BANK_ADDRESS + (SCREEN_BANK * $400)
+.const LOGO_COLOR_STAGING               = VIC_BANK_ADDRESS + $1C00
 .const BITMAP_ADDRESS                   = VIC_BANK_ADDRESS + (BITMAP_BANK * $2000)
 
 .const D018_VALUE                       = (SCREEN_BANK * 16) + (BITMAP_BANK * 8)
@@ -112,37 +113,30 @@
 .import source "../INC/musicplayback.asm"
 .import source "../INC/stablerastersetup.asm"
 .import source "../INC/spectrometer3channelwave.asm"
-.import source "../INC/freqtable80.asm"
+.import source "../INC/freqtable.asm"
 .import source "../INC/linkedwitheffect.asm"
 
 // =============================================================================
 // PER-CHANNEL CHANGE TRACKING + SCRATCH
-//   One previous combined colour-byte per column (40), per channel. Initialised
-//   to $ff so the first render writes every column. barColour is a shared
-//   per-bar colour scratch buffer (one channel resolved at a time).
+//   One previous screen-byte per bar/column (40), per channel. Initialised to
+//   $ff so the first render writes every column.
 // =============================================================================
 
-.const NUM_COLS = NUM_FREQUENCY_BARS / 2     // 40
+prevCh0:    .fill NUM_FREQUENCY_BARS, $ff
+prevCh1:    .fill NUM_FREQUENCY_BARS, $ff
+prevCh2:    .fill NUM_FREQUENCY_BARS, $ff
 
-prevCh0:    .fill NUM_COLS, $ff
-prevCh1:    .fill NUM_COLS, $ff
-prevCh2:    .fill NUM_COLS, $ff
-
-barColour:  .fill NUM_FREQUENCY_BARS, $00
-colorTemp:  .byte $00
+prevColour: .byte $00            // colour of the bar to the left (Cn-1)
+curColour:  .byte $00            // colour of the current bar (Cn)
 
 // =============================================================================
 // WAVEFORM -> COLOUR SETS
-//   Colour is chosen by the bar's instrument type (SID waveform), NOT by the
-//   channel, so all three bands share the same palette:
+//   Colour is chosen by the bar's instrument type (SID waveform):
 //       0 triangle -> blue       1 sawtooth -> red
-//       2 pulse    -> grey       3 noise    -> purple (the 4th type)
-//   Height 0 = black (silent strips vanish); the faintest sound (height 1)
-//   lights the strip at the set's darkest colour, brightening to white.
-//
-//   Packed as one 256-byte table, indexed (set * 64 + height), so the renderer
-//   can look up a colour with a single indexed load. Heights 48..63 are unused
-//   padding.
+//       2 pulse    -> grey       3 noise    -> purple
+//   Height 0 = black (silent bars vanish); height 1 starts at the set's darkest
+//   colour and brightens to white. Packed as one 256-byte table indexed
+//   (set * 64 + height); heights 48..63 are unused padding.
 // =============================================================================
 
 .var setTri = List().add($06,$0e,$03,$01)        // blue   -> lt blue -> cyan -> white
@@ -245,33 +239,14 @@ ClearBarState:
 
 // =============================================================================
 // BITMAP DISPLAY SETUP
-//   - clear the spectrum region of the screen (logo nibbles already injected)
-//   - copy the injected logo colour staging into $d800 (colour RAM)
+//   - copy the injected logo colour staging into $d800 (colour RAM rows 0..12)
 //   - configure VIC for multicolour bitmap mode
+//   The spectrum region of screen RAM is left as the assembled $00 (black) and
+//   filled by the first render; the logo screen nibbles are already injected.
 // =============================================================================
 
 SetupBitmapDisplay:
-    //; Clear the spectrum region (offset 480..1023) of the screen.
-    //; Tail of page 1 (480..511 = 32 bytes):
-    ldx #$00
-!clrTail:
-    lda #$00
-    sta SCREEN_ADDRESS + LOGO_SCREEN_BYTES, x
-    inx
-    cpx #(512 - LOGO_SCREEN_BYTES)        //; 32
-    bne !clrTail-
-    //; Pages 2 and 3 (512..1023 = 512 bytes):
-    ldx #$00
-!clrPages:
-    lda #$00
-    sta SCREEN_ADDRESS + 512, x
-    sta SCREEN_ADDRESS + 768, x
-    inx
-    bne !clrPages-
-
-    //; Colour RAM: clear everything, then copy the logo colour staging (480
-    //; bytes) into $d800. The spectrum bands never use the %11 colour, so the
-    //; bar region of $d800 is irrelevant.
+    //; Colour RAM: clear all, then copy the 520-byte logo colour staging.
     ldx #$00
 !clrColor:
     lda #$00
@@ -284,16 +259,18 @@ SetupBitmapDisplay:
 
     ldx #$00
 !colA:
-    lda LOGO_COLOR_STAGING, x
-    sta $d800, x
+    lda LOGO_COLOR_STAGING + $000, x
+    sta $d800 + $000, x
+    lda LOGO_COLOR_STAGING + $100, x
+    sta $d800 + $100, x
     inx
     bne !colA-
     ldx #$00
 !colB:
-    lda LOGO_COLOR_STAGING + 256, x
-    sta $d800 + 256, x
+    lda LOGO_COLOR_STAGING + $200, x
+    sta $d800 + $200, x
     inx
-    cpx #(LOGO_SCREEN_BYTES - 256)        //; 224
+    cpx #(LOGO_SCREEN_BYTES - 512)        //; 8 remaining bytes (520 - 512)
     bne !colB-
 
     //; VIC registers for multicolour bitmap mode.
@@ -442,42 +419,31 @@ NextIRQLdx:
 
 // =============================================================================
 // RENDERING
-//   Paint each channel's 80 colours into screen RAM. Each column holds two
-//   strips: left strip = screen-RAM upper nibble, right strip = lower nibble.
-//   We write the combined byte to all four char rows of the band.
+//   One bar per char column (40 cols). screen byte = (Cn << 4) | Cn-1:
+//     upper nibble Cn   -> bitmap %01 pixels (right half solid + half the left)
+//     lower nibble Cn-1 -> bitmap %10 pixels (the other half of the left dither)
+//   Cn-1 starts at black for the far-left column. Per-column change detection;
+//   a changed colour also dirties the column to its right (handled because the
+//   right column compares its own combined byte too).
 // =============================================================================
 
 .macro RenderChannel(smoothedH, waveArr, prevByte, topRow) {
-    //; Pass 1: resolve each bar's colour = colourTable[wave*64 + height].
-    ldx #NUM_FREQUENCY_BARS - 1
-!p1:
-    lda waveArr, x
-    tay
+    lda #$00
+    sta prevColour              //; Cn-1 for column 0 = black
+    ldx #$00
+!loop:
+    ldy waveArr, x
     lda set64, y                //; base offset for this colour set
     clc
     adc smoothedH, x            //; + height
     tay
-    lda colourTable, y
-    sta barColour, x
-    dex
-    bpl !p1-
-
-    //; Pass 2: combine strip pairs (left=upper nibble, right=lower nibble),
-    //; change-detect per column, write the colour byte to all four band rows.
-    ldx #NUM_COLS - 1
-!p2:
-    txa
-    asl
-    tay                         //; Y = col*2   (left strip)
-    lda barColour, y
+    lda colourTable, y          //; Cn (0..15)
+    sta curColour
     asl
     asl
     asl
-    asl
-    sta colorTemp
-    iny                         //; Y = col*2+1 (right strip)
-    lda barColour, y
-    ora colorTemp               //; combined colour byte
+    asl                         //; Cn << 4
+    ora prevColour              //; | Cn-1  -> screen byte
     cmp prevByte, x
     beq !skip+
     sta prevByte, x
@@ -486,8 +452,11 @@ NextIRQLdx:
     sta SCREEN_ADDRESS + ((topRow + 2) * 40), x
     sta SCREEN_ADDRESS + ((topRow + 3) * 40), x
 !skip:
-    dex
-    bpl !p2-
+    lda curColour
+    sta prevColour              //; becomes Cn-1 for the next column
+    inx
+    cpx #NUM_FREQUENCY_BARS
+    bne !loop-
 }
 
 RenderBars:
@@ -522,41 +491,40 @@ frameCounter:               .byte $00
 frame256Counter:            .byte $00
 
 // =============================================================================
-// DITHER PATTERN (32 lines per band)
+// DITHER / BLEND PATTERN (32 lines per band)
 //   Each line is one bitmap byte repeated across the band:
-//     $00 = blank line (shows background) - carves the top/bottom fade/gap
-//     $48 = %01 00 10 00  colour on the left half of each strip pair
-//     $12 = %00 01 00 10  colour on the right half of each strip pair
-//   Alternating $48/$12 on successive solid lines stipples the colour field
-//   (a 50% checkerboard) instead of a flat block, while still routing the left
-//   strip to the screen-RAM upper nibble and the right strip to the lower
-//   nibble. The blank-line positions are the same fade as before.
+//     $00 = fully black line (%00 -> background = black) - the blanked scanlines
+//     $95 = %10 01 01 01  left half = [Cn-1, Cn], right half = [Cn, Cn]
+//     $65 = %01 10 01 01  left half = [Cn, Cn-1], right half = [Cn, Cn]
+//   $95/$65 alternate per line so the LEFT half of every cell dithers between
+//   this bar's colour (Cn, upper nibble) and the left neighbour's colour (Cn-1,
+//   lower nibble), while the RIGHT half stays solid Cn. Blank scanlines (per the
+//   relative line list {1,4,9,22,27,30} in every band) are fully black.
 // =============================================================================
 
-.var ditherLine = List().add($00,$00,$00,$00,$48,$12,$00,$12, $48,$00,$48,$12,$48,$12,$48,$12, $48,$12,$48,$12,$48,$12,$00,$12, $48,$00,$48,$12,$00,$00,$00,$00)
+.var ditherLine = List().add($95,$00,$95,$65,$00,$65,$95,$65, $95,$00,$95,$65,$95,$65,$95,$65, $95,$65,$95,$65,$95,$65,$00,$65, $95,$65,$95,$00,$95,$65,$00,$65)
 
 // =============================================================================
 // LOGO COLOUR STAGING + SCREEN RAM (reserved; filled at export / runtime)
 // =============================================================================
 
-* = LOGO_COLOR_STAGING "Logo Colour Staging"
-    .fill $200, $00
-
 * = SCREEN_ADDRESS "Screen RAM"
     .fill $400, $00
 
+* = LOGO_COLOR_STAGING "Logo Colour Staging"
+    .fill $220, $00
+
 // =============================================================================
 // BITMAP
-//   rows 0..11  : logo placeholder (injected by prg-builder from the PNG)
-//   rows 12..23 : three 32px bands of the $5a/$00 dither pattern
-//   row    24   : blank
+//   rows 0..12  : logo placeholder (injected by prg-builder from the PNG)
+//   rows 13..24 : three 32px bands of the $95/$65/$00 blend pattern
 // =============================================================================
 
 * = BITMAP_ADDRESS "Bitmap"
-    //; Logo region (top 12 char rows) - overwritten at export with PNG data.
+    //; Logo region (top 13 char rows) - overwritten at export with PNG data.
     .fill LOGO_BITMAP_BYTES, $00
 
-    //; Three bands (char rows 12..23). Same dither pattern in each band.
+    //; Three bands (char rows 13..24). Same pattern in each band.
     .for (var br = 0; br < (NUM_CHANNELS * BAND_CHAR_ROWS); br++) {
         .for (var c = 0; c < 40; c++) {
             .for (var p = 0; p < 8; p++) {
@@ -565,7 +533,7 @@ frame256Counter:            .byte $00
         }
     }
 
-    //; Row 24 (blank) + pad to the end of the 8KB bitmap.
+    //; Pad to the end of the 8KB bitmap.
     .fill (BITMAP_ADDRESS + $2000) - *, $00
 
 // =============================================================================

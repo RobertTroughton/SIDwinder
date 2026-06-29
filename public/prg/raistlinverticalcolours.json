@@ -43,7 +43,7 @@
       "accept": ".png",
       "required": false,
       "default": "PNG/Logos/0-default.png",
-      "description": "C64 multicolour PNG logo (top 96px / 12 rows are used)",
+      "description": "C64 multicolour PNG logo (top 104px / 13 rows are used)",
       "galleryFiles": [ "prg/galleries/logos.json" ],
       "gallery": [
         {
@@ -57,25 +57,19 @@
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0x6000",
-            "size": "0x0F00"
+            "size": "0x1040"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0x5C00",
-            "size": "0x01E0"
+            "targetAddress": "0x5800",
+            "size": "0x0208"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0x5A00",
-            "size": "0x01E0"
-          },
-          {
-            "name": "background",
-            "sourceOffset": "0x2712",
-            "targetAddress": "0x400E",
-            "size": "0x0001"
+            "targetAddress": "0x5C00",
+            "size": "0x0208"
           }
         ],
         "bank8000": [
@@ -83,25 +77,19 @@
             "name": "bitmap",
             "sourceOffset": "0x0002",
             "targetAddress": "0xA000",
-            "size": "0x0F00"
+            "size": "0x1040"
           },
           {
             "name": "screen",
             "sourceOffset": "0x1F42",
-            "targetAddress": "0x9C00",
-            "size": "0x01E0"
+            "targetAddress": "0x9800",
+            "size": "0x0208"
           },
           {
             "name": "color",
             "sourceOffset": "0x232A",
-            "targetAddress": "0x9A00",
-            "size": "0x01E0"
-          },
-          {
-            "name": "background",
-            "sourceOffset": "0x2712",
-            "targetAddress": "0x800E",
-            "size": "0x0001"
+            "targetAddress": "0x9C00",
+            "size": "0x0208"
           }
         ]
       }
