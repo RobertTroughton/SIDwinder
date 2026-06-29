@@ -131,17 +131,26 @@ colorTemp:  .byte $00
 
 // =============================================================================
 // HEIGHT -> COLOUR RAMPS (one per channel, dark->bright)
-//   Stepped gradients across the height range. Channels: cool blue / green /
-//   fire, so the three bands read as distinct voices.
+//   Height 0 = black (silent strips vanish), so even the faintest hint of
+//   sound (height 1) lights the strip at the darkest ramp colour. Heights
+//   1..MAX_BAR_HEIGHT spread across the full ramp, which now starts from the
+//   darkest available tones (dark grey / brown) for a wide intensity range.
+//   Channels read as cool blue / green / fire.
 // =============================================================================
 
-.var ch0ramp = List().add($06,$06,$0e,$0e,$03,$03,$01,$01)   // blue  -> white
-.var ch1ramp = List().add($05,$05,$0d,$0d,$0d,$07,$01,$01)   // green -> yellow/white
-.var ch2ramp = List().add($02,$02,$08,$08,$0a,$0a,$07,$01)   // red   -> yellow/white
+.var ch0ramp = List().add($0b,$06,$0e,$03,$0f,$01)   // dk grey -> blue -> lt blue -> cyan -> lt grey -> white
+.var ch1ramp = List().add($09,$05,$0d,$07,$01)        // brown -> green -> lt green -> yellow -> white
+.var ch2ramp = List().add($09,$02,$08,$0a,$07,$01)    // brown -> red -> orange -> lt red -> yellow -> white
 
-heightToColorCh0: .fill MAX_BAR_HEIGHT + 1, ch0ramp.get(floor(i * ch0ramp.size() / (MAX_BAR_HEIGHT + 1)))
-heightToColorCh1: .fill MAX_BAR_HEIGHT + 1, ch1ramp.get(floor(i * ch1ramp.size() / (MAX_BAR_HEIGHT + 1)))
-heightToColorCh2: .fill MAX_BAR_HEIGHT + 1, ch2ramp.get(floor(i * ch2ramp.size() / (MAX_BAR_HEIGHT + 1)))
+heightToColorCh0:
+    .byte $00                                          // height 0 = black
+    .fill MAX_BAR_HEIGHT, ch0ramp.get(floor(i * ch0ramp.size() / MAX_BAR_HEIGHT))
+heightToColorCh1:
+    .byte $00                                          // height 0 = black
+    .fill MAX_BAR_HEIGHT, ch1ramp.get(floor(i * ch1ramp.size() / MAX_BAR_HEIGHT))
+heightToColorCh2:
+    .byte $00                                          // height 0 = black
+    .fill MAX_BAR_HEIGHT, ch2ramp.get(floor(i * ch2ramp.size() / MAX_BAR_HEIGHT))
 
 // =============================================================================
 // INITIALIZATION
