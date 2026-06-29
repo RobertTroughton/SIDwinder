@@ -15,18 +15,21 @@
 .label D012_Values_Lookup_Hi=$4196
 .label neighbourSmoothVals2=$4980
 .label RunLinkedWithEffect=$5125
-.label frame256Counter=$5441
-.label MusicOnlyIRQ=$5385
+.label frame256Counter=$54a1
+.label MusicOnlyIRQ=$53e5
 .label D012_Values_1Call=$4134
 .label FastForwardActive=$41d4
 .label voiceToChannel=$485c
-.label RenderBars=$53cf {
+.label RenderBars=$542f {
 }
 .label FreqToBarHi=$4f00
-.label SetupMusic=$542d
+.label heightToByteCh0=$522f
+.label heightToByteCh1=$525f
+.label heightToByteCh2=$528f
+.label SetupMusic=$548d
 .label UpdateBars=$4b06 {
 }
-.label frameCounter=$5440
+.label frameCounter=$54a0
 .label CurrentKeyMatrix=$41cd
 .label neighbourSmoothVals=$4900
 .label PlusKeyReleased=$41d9
@@ -53,14 +56,14 @@
 .label D012_Values_6Calls=$4157
 .label PlayMusicWithAnalysis=$4564
 .label JustPlayMusic=$4491
-.label NextIRQ=$53a0
-.label Initialize=$525f
+.label NextIRQ=$5400
+.label Initialize=$52bf
 .label sustainToHeight=$5000
 .label barVoiceMapCh2=$46a0
-.label MainIRQ=$5328
+.label MainIRQ=$5388
 .label barVoiceMapCh1=$4678
 .label barHeightsCh2=$4832
-.label NextIRQLdx=$53a0
+.label NextIRQLdx=$5400
 .label barVoiceMapCh0=$4650
 .label RowSelectTable=$43b5
 .label D011_Values_2Calls=$4135
@@ -77,9 +80,8 @@
 .label F1KeyReleased=$41d7
 .label IsKeyPressed=$4402
 .label F1KeyPressed=$41d6
-.label heightToByte=$522f
 .label D011_Values_4Calls=$413f
-.label MainLoop=$52aa
+.label MainLoop=$530a
 .label voiceReleaseHi=$4870
 .label MinusKeyPressed=$41da
 .label D012_Values_4Calls=$4143
@@ -98,12 +100,12 @@
 .label ScanKeyboard=$4331
 .label CheckPlusKey=$42e8
 .label ConvertMatrixToASCII=$43fd
-.label visualizationUpdateFlag=$543f
+.label visualizationUpdateFlag=$549f
 .label CheckF1Key=$42d8
 .label releaseRateHi=$5020
 .label LastKey=$41cf
 .label D011_Values_6Calls=$4151
-.label SetupBitmapDisplay=$52dc
+.label SetupBitmapDisplay=$533c
 .label PlusKeyPressed=$41d8
 .label ApplySmoothing=$4bdf {
 }
@@ -113,7 +115,7 @@
 .label AnalyzeSIDChip=$4a20
 .label KeyReleased=$41d0
 .label TempKey=$4490
-.label ClearBarState=$52c0
+.label ClearBarState=$5320
 .label D012_Values_Lookup_Lo=$418d
 .label InitKeyboard=$429c
 .label D011_Values_5Calls=$4147

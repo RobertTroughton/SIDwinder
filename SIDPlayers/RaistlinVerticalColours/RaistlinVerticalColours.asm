@@ -127,26 +127,32 @@ prevCh1:    .fill NUM_FREQUENCY_BARS, $ff
 prevCh2:    .fill NUM_FREQUENCY_BARS, $ff
 
 // =============================================================================
-// COLOUR RAMP (shared by all channels and instruments)
-//   A single 24-step ramp. Each bar's height is scaled into the ramp, and the
-//   bitmap's $66/$99 dither blends two ADJACENT ramp entries together:
+// COLOUR RAMPS - ONE PER CHANNEL
+//   Three 12-step ramps (channel 0 greyscale, 1 green, 2 blue/yellow). Each
+//   bar's height is scaled into its channel's ramp, and the bitmap's $66/$99
+//   dither blends two ADJACENT ramp entries together:
 //       upper nibble = ramp[s]   (bitmap %01 pixels)
 //       lower nibble = ramp[s+1] (bitmap %10 pixels)
-//   so the colour climbs smoothly with intensity. heightToByte[height] precombines
-//   that into the ready-to-store screen byte; height 0 -> black.
+//   so the colour climbs smoothly with intensity. heightToByteChN[height]
+//   precombines that into the ready-to-store screen byte; height 0 -> black.
 // =============================================================================
 
-.var ramp24 = List().add(0,9,2,5,2,5,10,5,10,14,10,14,13,14,13,7,13,7,15,7,15,1,15,1)
+.var rampCh0 = List().add(0, 11, 12, 11, 12, 15, 12, 15, 1, 15, 1, 1)   // greyscale
+.var rampCh1 = List().add(0,  9,  5,  9,  5, 13,  5, 13, 1, 13, 1, 1)   // green
+.var rampCh2 = List().add(0,  6, 14,  6, 14,  7, 14,  7, 1,  7, 1, 1)   // blue -> yellow
 
-heightToByte:
-    .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) {
-        .if (h == 0) {
-            .byte $00
-        } else {
-            .var s = floor((h - 1) * 22 / (MAX_BAR_HEIGHT - 1))   // 0..22
-            .byte (ramp24.get(s) << 4) | ramp24.get(s + 1)
-        }
-    }
+.function rampByte(ramp, h) {
+    .if (h == 0) .return $00
+    .var s = floor((h - 1) * 10 / (MAX_BAR_HEIGHT - 1))                 // 0..10
+    .return (ramp.get(s) << 4) | ramp.get(s + 1)
+}
+
+heightToByteCh0:
+    .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) .byte rampByte(rampCh0, h)
+heightToByteCh1:
+    .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) .byte rampByte(rampCh1, h)
+heightToByteCh2:
+    .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) .byte rampByte(rampCh2, h)
 
 // =============================================================================
 // INITIALIZATION
@@ -416,11 +422,11 @@ NextIRQLdx:
 //   right column compares its own combined byte too).
 // =============================================================================
 
-.macro RenderChannel(smoothedH, prevByte, topRow) {
+.macro RenderChannel(smoothedH, byteTable, prevByte, topRow) {
     ldx #NUM_FREQUENCY_BARS - 1
 !loop:
     ldy smoothedH, x
-    lda heightToByte, y         //; (ramp[s] << 4) | ramp[s+1]
+    lda byteTable, y            //; (ramp[s] << 4) | ramp[s+1]
     cmp prevByte, x
     beq !skip+
     sta prevByte, x
@@ -434,9 +440,9 @@ NextIRQLdx:
 }
 
 RenderBars:
-    RenderChannel(smoothedHeightsCh0, prevCh0, BAND0_ROW)
-    RenderChannel(smoothedHeightsCh1, prevCh1, BAND1_ROW)
-    RenderChannel(smoothedHeightsCh2, prevCh2, BAND2_ROW)
+    RenderChannel(smoothedHeightsCh0, heightToByteCh0, prevCh0, BAND0_ROW)
+    RenderChannel(smoothedHeightsCh1, heightToByteCh1, prevCh1, BAND1_ROW)
+    RenderChannel(smoothedHeightsCh2, heightToByteCh2, prevCh2, BAND2_ROW)
     rts
 
 // =============================================================================
@@ -476,17 +482,34 @@ frame256Counter:            .byte $00
 
 // =============================================================================
 // BITMAP
-//   The whole bitmap is filled with the 8-byte cell pattern
-//       $00, $00, $66, $99, $66, $99, $66, $99
-//   so every char cell has two black scanlines on top followed by six $66/$99
-//   dither lines (which blend the screen-RAM upper & lower nibbles). The logo
+//   Each band is 4 char rows tall. The top and bottom char rows are FADED
+//   (50% coverage, $44/$11 - upper nibble only) and the middle two are FULL
+//   ($66/$99), so each bar fades in at the top and out at the bottom:
+//       row 0 (top)    : $00,$00,$44,$11,$44,$11,$44,$11
+//       row 1 (full)   : $00,$00,$66,$99,$66,$99,$66,$99
+//       row 2 (full)   : $00,$00,$66,$99,$66,$99,$66,$99
+//       row 3 (bottom) : $00,$00,$44,$11,$44,$11,$44,$11
+//   (Every char cell also keeps two black scanlines on top.) The logo region
 //   (top 13 char rows) is overwritten at export with the PNG bitmap.
 // =============================================================================
 
-.var barPattern = List().add($00, $00, $66, $99, $66, $99, $66, $99)
+.var patFull    = List().add($00, $00, $66, $99, $66, $99, $66, $99)
+.var patFade    = List().add($00, $00, $44, $11, $44, $11, $44, $11)
+.var bandRowPat = List().add(patFade).add(patFull).add(patFull).add(patFade)
 
 * = BITMAP_ADDRESS "Bitmap"
-    .fill $2000, barPattern.get(mod(i, 8))
+    .for (var R = 0; R < 25; R++) {
+        .for (var c = 0; c < 40; c++) {
+            .for (var p = 0; p < 8; p++) {
+                .if (R < LOGO_CHAR_ROWS) {
+                    .byte $00
+                } else {
+                    .byte bandRowPat.get(mod(R - LOGO_CHAR_ROWS, BAND_CHAR_ROWS)).get(p)
+                }
+            }
+        }
+    }
+    .fill (BITMAP_ADDRESS + $2000) - *, $00
 
 // =============================================================================
 // END OF FILE
