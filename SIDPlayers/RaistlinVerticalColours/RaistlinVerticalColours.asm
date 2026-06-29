@@ -128,24 +128,28 @@ prevCh2:    .fill NUM_FREQUENCY_BARS, $ff
 
 // =============================================================================
 // COLOUR RAMPS - ONE PER CHANNEL
-//   Three 12-step ramps (channel 0 greyscale, 1 green, 2 blue/yellow). Each
-//   bar's height is scaled into its channel's ramp, and the bitmap's $66/$99
-//   dither blends two ADJACENT ramp entries together:
+//   Three ramps (channel 0 red/fire, 1 green, 2 blue->cyan). Each bar's height
+//   is scaled into its channel's ramp, and the bitmap's $66/$99 dither blends
+//   two ADJACENT ramp entries together:
 //       upper nibble = ramp[s]   (bitmap %01 pixels)
 //       lower nibble = ramp[s+1] (bitmap %10 pixels)
-//   so the colour climbs smoothly with intensity. heightToByteChN[height]
-//   precombines that into the ready-to-store screen byte; height 0 -> black.
+//   so the colour climbs smoothly with intensity. The ramps are interleaved
+//   (repeating each colour while cross-fading to the next) for soft transitions.
+//   heightToByteChN[height] precombines into the ready-to-store screen byte;
+//   height 0 -> black. All three ramps must be the same length.
 // =============================================================================
 
-.var rampCh0 = List().add(0, 11, 12, 11, 12, 15, 12, 15, 1, 15, 1, 1)   // greyscale
-.var rampCh1 = List().add(0,  9,  5,  9,  5, 13,  5, 13, 1, 13, 1, 1)   // green
-.var rampCh2 = List().add(0,  6, 14,  6, 14,  7, 14,  7, 1,  7, 1, 1)   // blue -> yellow
+.var rampCh0 = List().add(0, 11, 2, 11, 2, 11, 2, 10, 2, 10, 2, 10,  7, 10,  7, 10,  7, 1,  7, 1,  7, 1, 1)   // red / fire
+.var rampCh1 = List().add(0,  9, 5,  9, 5,  9, 5, 13, 5, 13, 5, 13, 15, 13, 15, 13, 15, 1, 15, 1, 15, 1, 1)   // green
+.var rampCh2 = List().add(0,  6, 4,  6, 4,  6, 4,  3, 4,  3, 4,  3,  7,  3,  7,  3,  7, 1,  7, 1,  7, 1, 1)   // blue -> cyan
 
 .function rampByte(ramp, h) {
     .if (h == 0) .return $00
-    .var s = floor((h - 1) * 10 / (MAX_BAR_HEIGHT - 1))                 // 0..10
+    .var s = floor((h - 1) * (ramp.size() - 2) / (MAX_BAR_HEIGHT - 1))  // 0 .. size-2
     .return (ramp.get(s) << 4) | ramp.get(s + 1)
 }
+
+.errorif (rampCh0.size() != rampCh1.size() || rampCh1.size() != rampCh2.size()), "Channel colour ramps must all be the same length"
 
 heightToByteCh0:
     .for (var h = 0; h <= MAX_BAR_HEIGHT; h++) .byte rampByte(rampCh0, h)
