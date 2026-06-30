@@ -2,26 +2,19 @@
 //                          RAISTLIN VERTICAL COLOURS
 //          Per-channel SID spectrum painted as a blended colour field
 //
-//   A full-screen multicolour bitmap. The top 104px (13 char rows) hold a
-//   user-supplied logo. The bottom 96px are three contiguous 32px bands
-//   (Y104..199), one per SID channel (voice idx % 3).
+//   A full-screen multicolour bitmap. The top 96px (12 char rows) hold a
+//   user-supplied logo. One black separator char row follows, then three
+//   contiguous 32px bands (Y104..199), one per SID channel (voice idx % 3).
 //
-//   40 bars per channel - one bar per 8px char column. Each bar's spectrometer
-//   height selects a COLOUR (by instrument/waveform type); the bitmap itself is
-//   static and only the screen-RAM nibbles change each frame.
+//   40 bars per channel - one bar per 8px char column. Each bar's height scales
+//   into its channel's colour ramp; the static bitmap's $66/$99 dither blends
+//   two adjacent ramp entries (upper nibble = ramp[s], lower = ramp[s+1]). Only
+//   the screen-RAM nibbles change each frame.
 //
-//   Each column is BLENDED with the bar to its left: the right 4px of the cell
-//   are this bar's solid colour (Cn) and the left 4px dither between Cn and the
-//   left neighbour's colour (Cn-1; black for the far-left column). This is done
-//   with the screen-RAM nibbles:
-//       upper nibble = Cn      (the bitmap's %01 pixels)
-//       lower nibble = Cn-1    (the bitmap's %10 pixels)
-//   so screen byte = (Cn << 4) | Cn-1, and the static bitmap pattern routes the
-//   right half solid to %01 and dithers the left half between %01 and %10.
-//
-//   Whole scanlines are blanked to black (%00 -> $d021 = black) to texture the
-//   field. Colours are self-contained here (four waveform colour sets); the
-//   build pipeline only injects the logo bitmap + a border colour.
+//   The bar area + separator never use %00 (which would show $d021). Their
+//   "black" comes from %11 -> colour RAM ($d800), which is kept $00 there. That
+//   frees $d021 to be the LOGO's background colour, so logos that need a
+//   non-black background render correctly while the bars stay truly black.
 // =============================================================================
 
 .var LOAD_ADDRESS                   = cmdLineVars.get("loadAddress").asNumber()
@@ -45,21 +38,23 @@
 
 // =============================================================================
 // SCREEN LAYOUT (char rows; 25 rows total, 8px each)
-//   rows  0..12 : logo (104px, Y0..103)
+//   rows  0..11 : logo (96px, Y0..95)
+//   row     12  : black separator (Y96..103) - the char line above the bars
 //   rows 13..16 : band 0  (channel 0)   32px  Y104..135
 //   rows 17..20 : band 1  (channel 1)   32px  Y136..167
 //   rows 21..24 : band 2  (channel 2)   32px  Y168..199
 //   No gaps between bands; the bands fill exactly to Y199.
 // =============================================================================
 
-.const LOGO_CHAR_ROWS                   = 13
+.const LOGO_CHAR_ROWS                   = 12                                   // rows 0..11
+.const SEPARATOR_ROW                    = LOGO_CHAR_ROWS                       // row 12 (black)
 .const BAND_CHAR_ROWS                   = 4
-.const BAND0_ROW                        = LOGO_CHAR_ROWS                       // 13
+.const BAND0_ROW                        = SEPARATOR_ROW + 1                    // 13
 .const BAND1_ROW                        = BAND0_ROW + BAND_CHAR_ROWS           // 17
 .const BAND2_ROW                        = BAND1_ROW + BAND_CHAR_ROWS           // 21
 
-.const LOGO_SCREEN_BYTES                = LOGO_CHAR_ROWS * 40                  // 520
-.const LOGO_BITMAP_BYTES                = LOGO_CHAR_ROWS * 40 * 8             // 4160
+.const LOGO_SCREEN_BYTES                = LOGO_CHAR_ROWS * 40                  // 480
+.const LOGO_BITMAP_BYTES                = LOGO_CHAR_ROWS * 40 * 8             // 3840
 
 // =============================================================================
 // DATA BLOCK
@@ -245,7 +240,9 @@ ClearBarState:
 // =============================================================================
 
 SetupBitmapDisplay:
-    //; Colour RAM: clear all, then copy the 520-byte logo colour staging.
+    //; Colour RAM: clear all to black, then copy the logo colour staging into
+    //; the logo rows. The separator + bar rows stay $00, so their %11 pixels are
+    //; black regardless of $d021.
     ldx #$00
 !clrColor:
     lda #$00
@@ -257,20 +254,13 @@ SetupBitmapDisplay:
     bne !clrColor-
 
     ldx #$00
-!colA:
+!colLoop:
     lda LOGO_COLOR_STAGING + $000, x
     sta $d800 + $000, x
     lda LOGO_COLOR_STAGING + $100, x
     sta $d800 + $100, x
     inx
-    bne !colA-
-    ldx #$00
-!colB:
-    lda LOGO_COLOR_STAGING + $200, x
-    sta $d800 + $200, x
-    inx
-    cpx #(LOGO_SCREEN_BYTES - 512)        //; 8 remaining bytes (520 - 512)
-    bne !colB-
+    bne !colLoop-                          //; 512 bytes (logo rows 0..11 + pad)
 
     //; VIC registers for multicolour bitmap mode.
     lda #$00
@@ -284,9 +274,8 @@ SetupBitmapDisplay:
 
     lda BorderColour
     sta $d020
-    lda #$00                                //; force black so the dither cuts &
-    sta $d021                               //; band gaps are always fully black
-
+    lda BitmapScreenColour                 //; logo background colour; the bars
+    sta $d021                               //; stay black via %11 -> $d800
     rts
 
 // =============================================================================
@@ -486,19 +475,19 @@ frame256Counter:            .byte $00
 
 // =============================================================================
 // BITMAP
-//   Each band is 4 char rows tall. The top and bottom char rows are FADED
-//   (50% coverage, $44/$11 - upper nibble only) and the middle two are FULL
-//   ($66/$99), so each bar fades in at the top and out at the bottom:
-//       row 0 (top)    : $00,$00,$44,$11,$44,$11,$44,$11
-//       row 1 (full)   : $00,$00,$66,$99,$66,$99,$66,$99
-//       row 2 (full)   : $00,$00,$66,$99,$66,$99,$66,$99
-//       row 3 (bottom) : $00,$00,$44,$11,$44,$11,$44,$11
-//   (Every char cell also keeps two black scanlines on top.) The logo region
-//   (top 13 char rows) is overwritten at export with the PNG bitmap.
+//   "Black" pixels in the bar area use %11 (-> colour RAM $d800 = $00) rather
+//   than %00 (-> $d021), so they stay black even when $d021 is the logo's
+//   background colour. Per-cell pattern bytes:
+//       $ff = %11 11 11 11  all black (the 2 scanlines per cell, & separator)
+//       $66 = %01 10 01 10 / $99 = %10 01 10 01  full colour (both nibbles)
+//       $77 = %01 11 01 11 / $dd = %11 01 11 01  faded (upper nibble + black)
+//   Each band is 4 char rows: top & bottom faded ($77/$dd), middle two full
+//   ($66/$99). Row 12 is a solid-black separator. The logo region (rows 0..11)
+//   is overwritten at export with the PNG bitmap.
 // =============================================================================
 
-.var patFull    = List().add($00, $00, $66, $99, $66, $99, $66, $99)
-.var patFade    = List().add($00, $00, $44, $11, $44, $11, $44, $11)
+.var patFull    = List().add($ff, $ff, $66, $99, $66, $99, $66, $99)
+.var patFade    = List().add($ff, $ff, $77, $dd, $77, $dd, $77, $dd)
 .var bandRowPat = List().add(patFade).add(patFull).add(patFull).add(patFade)
 
 * = BITMAP_ADDRESS "Bitmap"
@@ -506,9 +495,13 @@ frame256Counter:            .byte $00
         .for (var c = 0; c < 40; c++) {
             .for (var p = 0; p < 8; p++) {
                 .if (R < LOGO_CHAR_ROWS) {
-                    .byte $00
+                    .byte $00                                   // logo (injected)
                 } else {
-                    .byte bandRowPat.get(mod(R - LOGO_CHAR_ROWS, BAND_CHAR_ROWS)).get(p)
+                    .if (R == SEPARATOR_ROW) {
+                        .byte $ff                               // black separator (all %11)
+                    } else {
+                        .byte bandRowPat.get(mod(R - BAND0_ROW, BAND_CHAR_ROWS)).get(p)
+                    }
                 }
             }
         }
