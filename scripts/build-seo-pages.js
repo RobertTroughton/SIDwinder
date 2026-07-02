@@ -66,11 +66,164 @@ function yearLabel(r) {
     return /\d/.test(tok) ? tok : '';
 }
 
-function isRealComposer(a) {
-    if (!a) return false;
-    const t = a.trim();
-    if (!t || t === '<?>' || /^\?+$/.test(t)) return false;
-    return true;
+function isUnknown(s) {
+    const t = (s || '').trim();
+    return !t || t === '<?>' || /^\?+$/.test(t);
+}
+
+/** Normalized identity token: lowercase, de-accented, alnum-collapsed. */
+function norm(s) {
+    return s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** Split an AUTHOR field into individual contributors (outside parentheses). */
+function splitCollaborators(a) {
+    const parts = [];
+    let depth = 0, cur = '';
+    for (const ch of a) {
+        if (ch === '(') depth++;
+        else if (ch === ')') depth = Math.max(0, depth - 1);
+        if (depth === 0 && (ch === '&' || ch === ',' || ch === ';' || ch === '+')) {
+            parts.push(cur); cur = '';
+        } else { cur += ch; }
+    }
+    parts.push(cur);
+    return parts.map((s) => s.trim()).filter(Boolean);
+}
+
+/** Parse one contributor into {real, alias}. HVSC form: "Real Name (Handle)". */
+function parsePart(p) {
+    p = p.replace(/<\?>/g, ' ').replace(/\s+/g, ' ').trim(); // drop uncertainty marks
+    const m = p.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    let real = '', alias = '';
+    if (m) {
+        real = m[1].trim();
+        alias = (m[2].split('/')[0] || '').trim(); // handle before any /group
+    } else if (/\s/.test(p)) {
+        real = p.trim();            // multi-word, no parens -> treat as a real name
+    } else {
+        alias = p.trim();           // single token -> treat as a handle/alias
+    }
+    if (isUnknown(real)) real = '';
+    if (isUnknown(alias)) alias = '';
+    return { real, alias };
+}
+
+function parseCredits(a) {
+    if (isUnknown(a)) return [];
+    return splitCollaborators(a).map(parsePart).filter((x) => x.real || x.alias);
+}
+
+function bump(map, key) { map.set(key, (map.get(key) || 0) + 1); }
+function bump2(map, k1, k2) {
+    if (!map.has(k1)) map.set(k1, new Map());
+    bump(map.get(k1), k2);
+}
+function topKey(map) {
+    let best = null, bestN = -1;
+    if (!map) return null;
+    for (const [k, n] of map) if (n > bestN) { bestN = n; best = k; }
+    return best;
+}
+
+/**
+ * Canonicalize composers so every credit for an artist — solo, in a
+ * collaboration, by real name, or by handle — collapses to one entity.
+ *
+ * Strategy: prefer the REAL NAME as the identity. This naturally unifies people
+ * who use several handles (e.g. JCH / Chordian both -> Jens-Christian Huus).
+ * Credits that are handle-only fold into that handle's dominant real name; a
+ * handle never seen with a real name keys by itself. The handle is added to the
+ * display title only when it's actually dominant, so a one-off stray credit
+ * (e.g. "Rob Hubbard (Ample Hamble)") never mislabels a page.
+ */
+function buildComposers(entries) {
+    const realDisp = new Map();       // realNorm  -> Map(realOrig  -> count)
+    const aliasDisp = new Map();      // aliasNorm -> Map(aliasOrig -> count)
+    const realAliasCount = new Map(); // realNorm  -> Map(aliasNorm -> count)  (both present)
+    const aliasRealCount = new Map(); // aliasNorm -> Map(realNorm  -> count)  (both present)
+
+    for (const e of entries) {
+        for (const { real, alias } of parseCredits(e.a)) {
+            if (real) bump2(realDisp, norm(real), real);
+            if (alias) bump2(aliasDisp, norm(alias), alias);
+            if (real && alias) {
+                bump2(realAliasCount, norm(real), norm(alias));
+                bump2(aliasRealCount, norm(alias), norm(real));
+            }
+        }
+    }
+
+    // A handle's dominant real name, so handle-only credits fold into the real
+    // person (e.g. a bare "DRAX" -> Thomas Mogensen).
+    const aliasToReal = new Map();
+    for (const [an, reals] of aliasRealCount) aliasToReal.set(an, topKey(reals));
+
+    const keyFor = (real, alias) => {
+        if (real) return 'r:' + norm(real);
+        if (alias) {
+            const an = norm(alias);
+            return aliasToReal.has(an) ? 'r:' + aliasToReal.get(an) : 'a:' + an;
+        }
+        return null;
+    };
+
+    const entities = new Map(); // key -> Map(path -> entry)
+    for (const e of entries) {
+        const keys = new Set();
+        for (const { real, alias } of parseCredits(e.a)) {
+            const k = keyFor(real, alias);
+            if (k) keys.add(k);
+        }
+        for (const k of keys) {
+            if (!entities.has(k)) entities.set(k, new Map());
+            entities.get(k).set(e.p, e);
+        }
+    }
+
+    const handleOf = (an) => topKey(aliasDisp.get(an)) || an;
+
+    const usedSlugs = new Set();
+    const composers = [];
+    for (const [key, tuneMap] of entities) {
+        let name, aka = [];
+        if (key.startsWith('r:')) {
+            const rn = key.slice(2);
+            const realName = topKey(realDisp.get(rn)) || rn;
+            const aliasCounts = realAliasCount.get(rn);
+            name = realName;
+            if (aliasCounts) {
+                const bestAn = topKey(aliasCounts);
+                const bestCount = aliasCounts.get(bestAn);
+                // Only title a handle that's genuinely representative.
+                if (bestCount >= 8 && bestCount >= 0.15 * tuneMap.size) {
+                    name = `${realName} (${handleOf(bestAn)})`;
+                }
+                aka = [...aliasCounts.keys()]
+                    .sort((a, b) => aliasCounts.get(b) - aliasCounts.get(a))
+                    .map(handleOf)
+                    .filter((h) => !name.includes(`(${h})`));
+            }
+        } else {
+            name = handleOf(key.slice(2)); // handle never seen with a real name
+        }
+
+        let slug = slugify(name);
+        if (usedSlugs.has(slug)) {
+            let n = 2;
+            while (usedSlugs.has(`${slug}-${n}`)) n++;
+            slug = `${slug}-${n}`;
+        }
+        usedSlugs.add(slug);
+
+        const tunes = [...tuneMap.values()]
+            .sort((a, b) => (a.t || a.p).localeCompare(b.t || b.p));
+        composers.push({ name, slug, tunes, aka });
+    }
+
+    composers.sort((a, b) => a.name.localeCompare(b.name));
+    return composers;
 }
 
 /** Folder of a SID path, e.g. C64Music/MUSICIANS/H/Hubbard_Rob. */
@@ -91,7 +244,10 @@ function mostCommon(arr) {
 }
 
 function pageHtml(composer) {
-    const { name, slug, tunes } = composer;
+    const { name, slug, tunes, aka = [] } = composer;
+    const akaLine = aka.length
+        ? `<p class="seo-aka">Also credited as: ${escapeHtml(aka.slice(0, 8).join(', '))}</p>`
+        : '';
     const canonical = `${BASE_URL}/music/${slug}.html`;
     const count = tunes.length;
     const primaryFolder = mostCommon(tunes.map((t) => folderOf(t.p)));
@@ -160,6 +316,7 @@ function pageHtml(composer) {
   <p><a href="/music/">&larr; All composers</a> &middot; <a href="/">SIDquake</a></p>
   <h1>C64 SID music by ${escapeHtml(name)}</h1>
   <p class="seo-sub">${count} tune${count === 1 ? '' : 's'} in the High Voltage SID Collection, playable on SIDquake.</p>
+  ${akaLine}
   <p><a class="seo-cta btn" href="/?hvsc=${encodeURIComponent(primaryFolder)}">Open ${escapeHtml(name)} in the SIDquake player &rarr;</a></p>
   <div class="seo-grid">
     <ul class="tune-list" id="tuneList">
@@ -243,30 +400,7 @@ function main() {
     const index = JSON.parse(fs.readFileSync(INDEX, 'utf8'));
     const entries = index.entries || [];
 
-    // Group tunes by composer.
-    const byAuthor = new Map();
-    for (const e of entries) {
-        if (!isRealComposer(e.a)) continue;
-        const name = e.a.trim();
-        if (!byAuthor.has(name)) byAuthor.set(name, []);
-        byAuthor.get(name).push(e);
-    }
-
-    // Build composer records with unique slugs.
-    const usedSlugs = new Set();
-    const composers = [];
-    for (const [name, tunes] of byAuthor) {
-        let slug = slugify(name);
-        if (usedSlugs.has(slug)) {
-            let n = 2;
-            while (usedSlugs.has(`${slug}-${n}`)) n++;
-            slug = `${slug}-${n}`;
-        }
-        usedSlugs.add(slug);
-        tunes.sort((a, b) => (a.t || a.p).localeCompare(b.t || b.p));
-        composers.push({ name, slug, tunes });
-    }
-    composers.sort((a, b) => a.name.localeCompare(b.name));
+    const composers = buildComposers(entries);
 
     // Write pages.
     fs.mkdirSync(MUSIC_DIR, { recursive: true });
