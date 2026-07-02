@@ -241,17 +241,18 @@ window.hvscBrowser = (function () {
     async function setupVisualizer() {
         if (vizReady) return;
         const canvasEl = document.getElementById('hvscVisualizer');
-        if (!canvasEl) return;
+        if (!canvasEl) { console.warn('[HVSC] visualizer: #hvscVisualizer canvas not found'); return; }
         if (window.loadScript && typeof hvscVisualizer === 'undefined') {
             await window.loadScript('hvsc-visualizer.js');
         }
+        if (typeof hvscVisualizer === 'undefined') { console.warn('[HVSC] visualizer: module failed to load'); return; }
         const pb = getSharedSIDPlayback();
         await pb.init();
         const analyser = pb.getAnalyser ? pb.getAnalyser() : null;
-        if (analyser && typeof hvscVisualizer !== 'undefined') {
-            hvscVisualizer.init(canvasEl, analyser);
-            vizReady = true;
-        }
+        if (!analyser) { console.warn('[HVSC] visualizer: no analyser (playback not initialized?)'); return; }
+        hvscVisualizer.init(canvasEl, analyser);
+        vizReady = true;
+        console.info('[HVSC] visualizer ready');
     }
 
     async function startVisualizer() {

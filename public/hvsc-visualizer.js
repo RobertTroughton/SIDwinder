@@ -66,6 +66,7 @@ window.hvscVisualizer = (function () {
 
     function start() {
         if (running || !analyser) return;
+        resize();          // re-measure in case the canvas was 0-sized at init
         running = true;
         loop();
     }
@@ -84,6 +85,7 @@ window.hvscVisualizer = (function () {
 
     function step() {
         if (!ctx) return;
+        if (W === 0 || H === 0) resize(); // canvas became visible/sized after init
         analyser.getByteFrequencyData(freq);
 
         let bass = 0;
