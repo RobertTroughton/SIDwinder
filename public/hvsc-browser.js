@@ -1,10 +1,5 @@
 window.hvscBrowser = (function () {
 
-    // Unconditional load marker: if you DON'T see this in the console right
-    // after opening the HVSC browser, the tab is running a cached old copy of
-    // this file (hard-reload / disable cache), not a visualizer problem.
-    console.info('[HVSC] hvsc-browser.js loaded — visualizer + diagnostics build');
-
     // HVSC is now self-hosted: raw .sid files are served statically from
     // /HVSC/... and the whole collection tree + metadata comes from the
     // single search index (hvsc-index.json). Browsing is therefore entirely
@@ -240,9 +235,8 @@ window.hvscBrowser = (function () {
             }
             await setupVisualizer();
             startVisualizer();
-        } catch (e) {
+        } catch (_) {
             warmupStarted = false; // allow a later retry on real playback
-            console.warn('[HVSC] warm-up failed (visualizer will retry on play):', e && e.message);
         }
     }
 
@@ -253,7 +247,7 @@ window.hvscBrowser = (function () {
     async function setupVisualizer() {
         if (vizReady) return;
         const canvasEl = document.getElementById('hvscVizCanvas');
-        if (!canvasEl) { console.warn('[HVSC] visualizer: #hvscVizCanvas canvas not found'); return; }
+        if (!canvasEl) return;
         // Load the module unless it's genuinely present (an .init method). NB:
         // don't just check `typeof hvscVisualizer === 'undefined'` — an element
         // with a matching id would shadow the global as a named-access property.
@@ -261,18 +255,17 @@ window.hvscBrowser = (function () {
         if (window.loadScript && moduleMissing()) {
             await window.loadScript('hvsc-visualizer.js');
         }
-        if (moduleMissing()) { console.warn('[HVSC] visualizer: module failed to load'); return; }
+        if (moduleMissing()) return;
         const pb = getSharedSIDPlayback();
         await pb.init();
         const analyser = pb.getAnalyser ? pb.getAnalyser() : null;
-        if (!analyser) { console.warn('[HVSC] visualizer: no analyser (playback not initialized?)'); return; }
+        if (!analyser) return;
         // Predicate so the visualizer only reads the analyser while audio plays
         // (otherwise bars sit at zero instead of showing a stale spectrum).
         hvscVisualizer.init(canvasEl, analyser, () => {
             try { return !!getSharedSIDPlayback().playing; } catch (_) { return false; }
         });
         vizReady = true;
-        console.info('[HVSC] visualizer ready');
     }
 
     async function startVisualizer() {
