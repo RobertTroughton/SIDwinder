@@ -217,7 +217,10 @@ class SIDPlayback {
         this.gainNode.gain.setValueAtTime(0, now);
         this.gainNode.gain.linearRampToValueAtTime(this.volume, now + 0.085);
 
-        this.gainNode.connect(this.audioCtx.destination);
+        // Route through the analyser so it's on the path to the destination and
+        // therefore actually fed samples (a dead-end analyser reads silence in
+        // some browsers). worklet -> gain -> analyser -> destination.
+        (this.analyser || this.gainNode).connect(this.audioCtx.destination);
     }
 
     pause() {
@@ -226,7 +229,7 @@ class SIDPlayback {
             this.workletNode.port.postMessage({ type: 'stop' });
         }
         try {
-            this.gainNode.disconnect(this.audioCtx.destination);
+            (this.analyser || this.gainNode).disconnect(this.audioCtx.destination);
         } catch (e) {
             // Already disconnected
         }
