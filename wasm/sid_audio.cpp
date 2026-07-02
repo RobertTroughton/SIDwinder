@@ -762,19 +762,20 @@ int audio_load_sid(const uint8_t* data, int length) {
     memset(S.memory, 0, 65536);
     S.memory[0x01] = 0x37;  // processor port: default RAM/ROM banking
 
-    if (musicLen > 0 && S.loadAddress + musicLen <= 65536) {
-        memcpy(&S.memory[S.loadAddress], musicData, musicLen);
-    }
-
     S.memory[0xDC04] = 0x24;  // CIA1 Timer A latch defaults to ~PAL frame rate
     S.memory[0xDC05] = 0x40;
 
     // ---- Minimal C64 Kernal environment for SID compatibility ----
     // Many SID tunes JSR to Kernal ROM routines or JMP to IRQ exit points.
     // Without stubs, those addresses contain 0x00 (BRK) which causes infinite
-    // BRK loops that eat all CPU cycles and prevent the init/play routines
-    // from completing.  Only place stubs where memory is still zero (i.e. not
-    // overwritten by the SID's own code/data).
+    // BRK loops that eat all CPU cycles and prevent init/play from completing.
+    //
+    // These stubs are written into empty RAM FIRST; the tune's own data is
+    // loaded on top afterwards (see below), so a tune that occupies these
+    // addresses — e.g. one loaded over the $E000-$FFFF Kernal region — always
+    // wins and is never corrupted by a stub. (Previously the music was loaded
+    // first and stubs were written after with an "== 0" guard, which clobbered
+    // legitimate zero bytes inside such tunes and corrupted their data tables.)
 
     // Kernal IRQ exit at $EA31: PLA / TAY / PLA / TAX / PLA / RTI.
     if (S.memory[0xEA31] == 0) {
@@ -821,6 +822,12 @@ int audio_load_sid(const uint8_t* data, int length) {
     if (S.memory[0x0318] == 0 && S.memory[0x0319] == 0) {
         S.memory[0x0318] = 0x81;
         S.memory[0x0319] = 0xEA;
+    }
+
+    // Load the tune's data LAST, so it overrides any overlapping stub/vector
+    // bytes above (a tune loaded over the Kernal region keeps its own data).
+    if (musicLen > 0 && S.loadAddress + musicLen <= 65536) {
+        memcpy(&S.memory[S.loadAddress], musicData, musicLen);
     }
 
     reSID::chip_model model = (S.chipModel == 8580) ? reSID::MOS8580 : reSID::MOS6581;
