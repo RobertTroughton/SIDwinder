@@ -7,12 +7,17 @@
  *
  * SIDwinder now self-hosts HVSC as static files under public/HVSC/, so this
  * script reads the collection straight off disk — no network crawl. A full
- * run takes seconds, not the 30-60 minutes the old hvsc.etv.cx crawler needed.
+ * run takes seconds, not the 30-60 minutes the old proxy-based crawler needed.
  *
  * Usage:
  *   node tools/build-hvsc-index.js                 # index public/HVSC
  *   node tools/build-hvsc-index.js --root <dir>    # index a different tree
  *   node tools/build-hvsc-index.js --out <file>    # write somewhere else
+ *   node tools/build-hvsc-index.js --version 85    # record the HVSC update #
+ *
+ * The HVSC update number is stored in the index as "hvsc" and shown in the
+ * browser UI. If --version is omitted, the builder tries to detect it from
+ * DOCUMENTS/HVSC.txt; pass --version to be certain.
  *
  * The --root directory is the HVSC content root: the folder that CONTAINS
  * C64Music (so index paths look like "C64Music/MUSICIANS/...", matching the
@@ -47,7 +52,7 @@ function parseArgs(argv) {
         if (a.startsWith('--')) {
             const key = a.slice(2);
             const next = argv[i + 1];
-            if ((key === 'root' || key === 'out') && next && !next.startsWith('--')) {
+            if ((key === 'root' || key === 'out' || key === 'version') && next && !next.startsWith('--')) {
                 flags[key] = next; i++;
             } else {
                 flags[key] = true;
@@ -193,6 +198,22 @@ function stilFor(relPath, fileText, dirText) {
     return text;
 }
 
+/**
+ * Best-effort HVSC update number, from DOCUMENTS/HVSC.txt. The file header
+ * names the release (e.g. "Update #85" / "Release 85"); pass --version to
+ * override if the format ever changes.
+ */
+function detectVersion(root) {
+    try {
+        const txt = fs.readFileSync(
+            path.join(root, 'C64Music', 'DOCUMENTS', 'HVSC.txt'), 'latin1'
+        ).slice(0, 4000);
+        const m = txt.match(/(?:Update|Release|Version)\s*#?\s*(\d{2,3})\b/i);
+        if (m) return m[1];
+    } catch (_) { /* no HVSC.txt */ }
+    return null;
+}
+
 function main() {
     if (!fs.existsSync(ROOT)) {
         console.error(`HVSC root not found: ${ROOT}`);
@@ -233,10 +254,17 @@ function main() {
 
     if (headerFails) console.error(`  (${headerFails} files had unreadable headers)`);
 
+    const version = (typeof flags.version === 'string' ? flags.version : null)
+        || detectVersion(ROOT);
+    console.error(version
+        ? `HVSC version: #${version}`
+        : `HVSC version: unknown (pass --version <N> to record it)`);
+
     const out = {
         v: 2,
         generated: new Date().toISOString(),
         root: 'C64Music',
+        hvsc: version || null,
         count: entries.length,
         entries,
     };

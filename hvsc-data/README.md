@@ -14,9 +14,14 @@ version is shipped).
 # 2. Unpack it locally:
 npm run extract-hvsc -- --force        # -> public/HVSC/C64Music/... (gitignored)
 # 3. Rebuild the search index (reads public/HVSC + DOCUMENTS/STIL.txt):
-npm run build-hvsc-index               # -> public/hvsc-index.json
+npm run build-hvsc-index -- --version 85   # -> public/hvsc-index.json
 # 4. Commit the new archive + public/hvsc-index.json.
 ```
+
+The `--version` number is recorded in the index and shown as an "HVSC #NN"
+badge in the browser (so both you and visitors can see the mirror is current).
+If you omit `--version`, the builder tries to read it from
+`DOCUMENTS/HVSC.txt`, but passing it explicitly is the reliable option.
 
 On Netlify, `scripts/extract-hvsc.js` runs during the build (see `netlify.toml`)
 to unpack this archive into the publish directory, so the raw SIDs are served

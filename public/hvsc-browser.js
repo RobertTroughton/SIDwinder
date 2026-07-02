@@ -79,6 +79,7 @@ window.hvscBrowser = (function () {
             .then((data) => {
                 searchIndex = data;
                 buildTree(data.entries || []);
+                updateVersionBadge(data.hvsc);
                 return data;
             })
             .catch((err) => {
@@ -86,6 +87,19 @@ window.hvscBrowser = (function () {
                 throw err;
             });
         return searchIndexPromise;
+    }
+
+    /** Show "HVSC #NN" in the modal header when the index records a version. */
+    function updateVersionBadge(version) {
+        const badge = document.getElementById('hvscVersionBadge');
+        if (!badge) return;
+        if (version) {
+            badge.textContent = `HVSC #${version}`;
+            badge.title = `This mirror is current with HVSC Update #${version}`;
+            badge.hidden = false;
+        } else {
+            badge.hidden = true;
+        }
     }
 
     /** Build the directory tree + path->metadata map from the flat index. */

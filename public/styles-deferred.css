@@ -1170,6 +1170,24 @@
     content: none;
 }
 
+/* "HVSC #NN" pill — signals the mirror is current with a given HVSC release */
+.hvsc-version-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: var(--bg-primary);
+    background: var(--accent);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.hvsc-version-badge[hidden] {
+    display: none;
+}
+
 .browser-controls {
     display: flex;
     gap: 8px;
