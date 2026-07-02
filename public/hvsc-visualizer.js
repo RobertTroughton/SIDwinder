@@ -13,6 +13,8 @@ window.hvscVisualizer = (function () {
     const BARS = 64;
     const F_MIN = 40;       // Hz, low edge of the lowest bar
     const F_MAX = 11000;    // Hz, high edge of the top bar
+    const FLOOR = 0.05;     // 0..1 noise-floor gate; higher = more gaps between bars
+    const SLOPE = 1.8;      // treble tilt compensation; higher = more high-freq boost
 
     let canvas = null, ctx = null, analyser = null, freq = null;
     let levels = null, peaks = null, bandLo = null, bandHi = null;
@@ -23,6 +25,12 @@ window.hvscVisualizer = (function () {
     function init(canvasEl, analyserNode) {
         canvas = canvasEl;
         analyser = analyserNode;
+        // Finer FFT sharpens the low end (each low bar was ~1 coarse bin, so a
+        // bass note's leakage smeared across neighbours). Own these here.
+        try {
+            analyser.fftSize = 4096;
+            analyser.smoothingTimeConstant = 0.55;
+        } catch (_) { /* keep defaults if the node rejects it */ }
         ctx = canvas.getContext('2d');
         freq = new Uint8Array(analyser.frequencyBinCount);
         levels = new Float32Array(BARS);
@@ -94,7 +102,15 @@ window.hvscVisualizer = (function () {
             let m = 0;
             for (let i = bandLo[b]; i < bandHi[b]; i++) if (freq[i] > m) m = freq[i];
             let t = m / 255;
-            t = Math.pow(t, 0.85); // gentle perceptual lift
+            // Noise-floor gate: drop low-level "fill" to zero so valleys open up
+            // between real peaks.
+            t = (t - FLOOR) / (1 - FLOOR);
+            if (t < 0) t = 0;
+            // Tilt compensation: music rolls off toward high frequencies, which
+            // makes the bass bars always taller. Boost bars with frequency (bar
+            // index) so the display reads balanced left-to-right.
+            t *= 1 + SLOPE * (b / (BARS - 1));
+            if (t > 1) t = 1;
 
             // Fast attack, slow release for smooth, musical motion.
             const k = t > levels[b] ? 0.55 : 0.14;
