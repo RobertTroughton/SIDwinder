@@ -237,6 +237,7 @@ class SIDPlayer {
         if (this.currentSubtune > 0) {
             this.currentSubtune--;
             this.updateSubtuneDisplay();
+            if (window.hvscVisualizer && window.hvscVisualizer.reset) window.hvscVisualizer.reset();
             if (this.isPlaying) this.play();
         }
     }
@@ -245,6 +246,7 @@ class SIDPlayer {
         if (this.currentSubtune < this.totalSubtunes - 1) {
             this.currentSubtune++;
             this.updateSubtuneDisplay();
+            if (window.hvscVisualizer && window.hvscVisualizer.reset) window.hvscVisualizer.reset();
             if (this.isPlaying) this.play();
         }
     }

@@ -268,10 +268,16 @@ window.hvscBrowser = (function () {
 
     async function startVisualizer() {
         try { await setupVisualizer(); } catch (_) { /* non-fatal */ }
-        if (vizReady && typeof hvscVisualizer !== 'undefined') hvscVisualizer.start();
+        if (vizReady && typeof hvscVisualizer !== 'undefined') {
+            hvscVisualizer.reset();   // clean slate for a new tune / reopen
+            hvscVisualizer.start();
+        }
     }
     function stopVisualizer() {
-        if (vizReady && typeof hvscVisualizer !== 'undefined') hvscVisualizer.stop();
+        if (vizReady && typeof hvscVisualizer !== 'undefined') {
+            hvscVisualizer.stop();
+            hvscVisualizer.reset();   // wipe frozen bars on close
+        }
     }
 
     function loadSearchIndex() {

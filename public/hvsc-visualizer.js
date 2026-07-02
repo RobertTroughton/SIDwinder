@@ -93,6 +93,16 @@ window.hvscVisualizer = (function () {
         rafId = null;
     }
 
+    // Zero all bar state and wipe the canvas, so nothing is left "frozen" from a
+    // previous tune (used on tune/song switch and when the browser closes/opens).
+    function reset() {
+        if (levels) levels.fill(0);
+        if (peaks) peaks.fill(0);
+        flash = 0;
+        bassAvg = 0;
+        if (ctx) ctx.clearRect(0, 0, W, H);
+    }
+
     function loop() {
         if (!running) return;
         rafId = requestAnimationFrame(loop);
@@ -199,5 +209,5 @@ window.hvscVisualizer = (function () {
         ctx.closePath();
     }
 
-    return { init, start, stop };
+    return { init, start, stop, reset };
 })();
