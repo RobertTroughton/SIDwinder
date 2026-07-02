@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>HVSC Browser — powered by SIDquake</title>
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <script>requestAnimationFrame(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';document.head.appendChild(l)});</script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-deferred.css">
+    <link rel="stylesheet" href="hvsc-browser.css">
+    <style>
+        html, body { height: 100%; margin: 0; }
+        body { display: flex; flex-direction: column; background: var(--bg-primary); }
+        .embed-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .embed-root .browser-container { height: 100%; }
+        /* Footer: subtle attribution + backlink to SIDquake */
+        .hvsc-embed-footer {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 6px 12px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-muted);
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border);
+        }
+        .hvsc-embed-footer a { color: var(--text-secondary); text-decoration: none; }
+        .hvsc-embed-footer a:hover { text-decoration: underline; }
+        .hvsc-embed-terms { flex: 1 1 auto; min-width: 200px; }
+        .hvsc-embed-brand { font-weight: 700; white-space: nowrap; }
+        .hvsc-embed-brand a { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="embed-root">
+        <div class="browser-container">
+            <div class="browser-header">
+                <div class="browser-title">HVSC Browser<span class="hvsc-version-badge" id="hvscVersionBadge" hidden></span></div>
+                <div class="browser-controls">
+                    <button class="btn" id="homeBtn" onclick="hvscBrowser.navigateHome()" title="Go to home">
+                        <i class="fas fa-home"></i>
+                    </button>
+                    <button class="btn" id="upBtn" onclick="hvscBrowser.navigateUp()" title="Go up one directory">
+                        <i class="fas fa-level-up-alt"></i>
+                    </button>
+                    <input type="text" class="path-bar" id="pathBar" readonly>
+                </div>
+                <div class="browser-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-bar" id="hvscSearchBar" placeholder="Search HVSC by title, author, or comment..." autocomplete="off" spellcheck="false">
+                    <button class="search-clear" id="hvscSearchClear" title="Clear search" style="display: none;">✕</button>
+                </div>
+            </div>
+
+            <div class="browser-content">
+                <div class="file-panel">
+                    <div class="panel-header" id="filePanelHeader">Files & Directories</div>
+                    <div class="file-list" id="fileList">
+                        <div class="file-list-loading"><div class="file-list-spinner"></div></div>
+                    </div>
+                </div>
+                <div class="sid-info-panel" id="sidInfoPanel">
+                    <div class="panel-header">SID Info</div>
+                    <div class="sid-info-content" id="sidInfoContent">
+                        <div class="sid-info-placeholder">Select a SID file to view details</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span id="itemCount">0 items</span>
+                <span style="margin-left: auto; font-size: 11px;">Double-click a tune to choose it</span>
+            </div>
+
+            <div class="hvsc-player-container" id="hvscPlayerContainer">
+                <div class="sid-player">
+                    <button class="sid-player-btn sid-player-play" title="Play" disabled><i class="fas fa-play"></i></button>
+                    <button class="sid-player-btn sid-player-stop" title="Stop" disabled><i class="fas fa-stop"></i></button>
+                    <button class="sid-player-btn sid-player-restart" title="Restart" disabled><i class="fas fa-undo"></i></button>
+                    <div class="sid-player-subtune">
+                        <button class="sid-player-btn sid-player-prev" title="Previous subtune" disabled><i class="fas fa-step-backward"></i></button>
+                        <span class="sid-player-subtune-display">1/1</span>
+                        <button class="sid-player-btn sid-player-next" title="Next subtune" disabled><i class="fas fa-step-forward"></i></button>
+                    </div>
+                    <div class="sid-player-time">0:00</div>
+                </div>
+                <div class="sid-player-credit">Playback by <a href="https://github.com/libsidplayfp/resid" target="_blank" rel="noopener">reSID</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hvsc-embed-footer">
+        <span class="hvsc-embed-terms">
+            Tunes &copy; their composers, for private listening &mdash; via the
+            <a href="https://hvsc.c64.org/" target="_blank" rel="noopener">High Voltage SID Collection</a>.
+            <a href="https://sidquake.c64demo.com/embed-terms.html" target="_blank" rel="noopener">Embed terms</a>.
+        </span>
+        <span class="hvsc-embed-brand">
+            Powered by <a href="https://sidquake.c64demo.com/" target="_blank" rel="noopener">SIDquake</a>
+        </span>
+    </div>
+
+    <script>
+        // Configure the embed BEFORE hvsc-browser.js loads.
+        (function () {
+            var params = new URLSearchParams(location.search);
+            var mode = params.get('mode');
+            if (['link', 'file', 'play'].indexOf(mode) === -1) mode = 'link';
+            // Embedders should pass ?origin=<their site> so results are posted
+            // only to them; default to referrer origin, else '*'.
+            var targetOrigin = params.get('origin');
+            if (!targetOrigin && document.referrer) {
+                try { targetOrigin = new URL(document.referrer).origin; } catch (e) {}
+            }
+            window.HVSC_EMBED = { mode: mode, targetOrigin: targetOrigin || '*' };
+            window.HVSC_EMBED_START = params.get('start') || null;
+        })();
+
+        // Minimal lazy script loader (hvsc-browser.js expects window.loadScript).
+        window.lazyScripts = {};
+        window.loadScript = function (src) {
+            if (!window.lazyScripts[src]) {
+                window.lazyScripts[src] = new Promise(function (resolve, reject) {
+                    var s = document.createElement('script');
+                    s.src = src; s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+            return window.lazyScripts[src];
+        };
+    </script>
+    <script src="hvsc-browser.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            hvscBrowser.initializeHVSC();
+            // Tell the host we're ready (handy for auto-sizing / wiring up).
+            try {
+                window.parent.postMessage({ type: 'hvsc:ready' },
+                    (window.HVSC_EMBED && window.HVSC_EMBED.targetOrigin) || '*');
+            } catch (e) {}
+            // Deep-link (?start=...) is honoured inside initializeHVSC via
+            // window.HVSC_EMBED_START, so there's a single, race-free navigation.
+        });
+    </script>
+</body>
+</html>

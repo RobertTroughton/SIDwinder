@@ -1447,6 +1447,61 @@
     text-overflow: ellipsis;
 }
 
+/* Release year shown at the right of each tune row */
+.file-year {
+    flex: 0 0 auto;
+    margin-left: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Sort controls above the file list */
+.hvsc-sortbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+}
+
+.hvsc-sort-label {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 2px;
+}
+
+.hvsc-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.hvsc-sort-btn:hover { background: var(--bg-secondary); }
+
+.hvsc-sort-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.hvsc-sort-btn i { font-size: 9px; }
+.hvsc-sort-btn:not(.active) i { opacity: 0.35; }
+
 .status-bar {
     background: var(--bg-elevated);
     color: var(--text-muted);

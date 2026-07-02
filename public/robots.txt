@@ -1,0 +1,55 @@
+# SIDquake robots policy
+#
+# The site itself is fine to index. But the raw HVSC mirror is NOT for
+# crawling: search results should lead people to SIDquake pages, not to raw
+# .sid download links. The whole collection is a free download at
+# https://hvsc.c64.org/, so there's no need for crawlers to pull it from us.
+
+Sitemap: https://sidquake.c64demo.com/sitemap.xml
+
+User-agent: *
+Disallow: /HVSC/
+Disallow: /hvsc-index.json
+Disallow: /hvsc-token
+Disallow: /hvsc-embed.html
+
+# AI-training / bulk crawlers: please stay off entirely. (HVSC is freely
+# available at its source; we'd rather not be hammered.)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+user-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
