@@ -7,7 +7,7 @@
  *
  * SIDwinder now self-hosts HVSC as static files under public/HVSC/, so this
  * script reads the collection straight off disk — no network crawl. A full
- * run takes seconds, not the 30-60 minutes the old hvsc.etv.cx crawler needed.
+ * run takes seconds, not the 30-60 minutes the old proxy-based crawler needed.
  *
  * Usage:
  *   node tools/build-hvsc-index.js                 # index public/HVSC
