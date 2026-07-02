@@ -1458,49 +1458,65 @@
     text-align: right;
 }
 
-/* Sort controls above the file list */
+/* Sort controls above the file list — a small segmented pill group */
 .hvsc-sortbar {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--bg-elevated);
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
-    font-size: 11px;
 }
 
 .hvsc-sort-label {
     color: var(--text-muted);
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-right: 2px;
+    letter-spacing: 0.08em;
 }
 
-.hvsc-sort-btn {
+/* The two buttons sit inside a single rounded, bordered track. */
+.hvsc-sortbar .hvsc-sort-btn {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
+    gap: 6px;
+    padding: 5px 14px;
     border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
+    background: var(--bg-elevated);
     color: var(--text-secondary);
     font: inherit;
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1;
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast);
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.hvsc-sort-btn:hover { background: var(--bg-secondary); }
+/* Join the buttons: first rounds the left, last rounds the right. */
+.hvsc-sortbar .hvsc-sort-btn:first-of-type {
+    border-radius: 999px 0 0 999px;
+}
+.hvsc-sortbar .hvsc-sort-btn:last-of-type {
+    border-radius: 0 999px 999px 0;
+    border-left: none;
+}
 
-.hvsc-sort-btn.active {
-    background: var(--accent-dim);
-    border-color: var(--accent);
+.hvsc-sortbar .hvsc-sort-btn:hover {
     color: var(--text-primary);
+    background: var(--bg-tertiary, var(--bg-elevated));
 }
 
-.hvsc-sort-btn i { font-size: 9px; }
-.hvsc-sort-btn:not(.active) i { opacity: 0.35; }
+.hvsc-sortbar .hvsc-sort-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg-primary);
+    font-weight: 600;
+}
+
+/* Direction arrow only on the active sort; hidden otherwise for a clean look. */
+.hvsc-sortbar .hvsc-sort-btn i { font-size: 10px; }
+.hvsc-sortbar .hvsc-sort-btn:not(.active) i { display: none; }
 
 .status-bar {
     background: var(--bg-elevated);
