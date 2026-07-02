@@ -23,7 +23,110 @@ window.hvscBrowser = (function () {
     // Search state
     let searchMode = false;
     let searchDebounce = null;
+    let lastSearchMatches = null;    // for re-sorting search results in place
     const SEARCH_RESULT_LIMIT = 500;
+
+    // Sort state (applies to files in a folder and to search results;
+    // directories always list first, alphabetically).
+    let sortKey = 'name';   // 'name' | 'year'
+    let sortDir = 'asc';    // 'asc' | 'desc'  (for year: asc = oldest first)
+
+    /** Numeric release year for sorting; NaN when unknown (sorts last). */
+    function yearNum(metaOrEntry) {
+        const r = (metaOrEntry && metaOrEntry.r) || '';
+        const tok = r.trim().split(/\s+/)[0] || '';
+        const m = tok.replace(/\?/g, '0').match(/\d{4}/);
+        return m ? parseInt(m[0], 10) : NaN;
+    }
+
+    /** Human release-year label (e.g. "1988", "198?"); '' when unknown. */
+    function yearLabel(metaOrEntry) {
+        const r = (metaOrEntry && metaOrEntry.r) || '';
+        const tok = r.trim().split(/\s+/)[0] || '';
+        return /\d/.test(tok) ? tok : '';
+    }
+
+    /** Sort comparator for browse entries: directories first, then by sortKey. */
+    function compareEntries(a, b) {
+        if (a.isDirectory !== b.isDirectory) return b.isDirectory - a.isDirectory;
+        if (a.isDirectory) return a.name.localeCompare(b.name); // dirs: always name-asc
+        return compareFiles(a.meta, a.name, b.meta, b.name);
+    }
+
+    /** Order two files by the current sortKey/sortDir (unknown years last). */
+    function compareFiles(metaA, nameA, metaB, nameB) {
+        if (sortKey === 'year') {
+            const ya = yearNum(metaA), yb = yearNum(metaB);
+            const na = isNaN(ya), nb = isNaN(yb);
+            if (na && nb) return nameA.localeCompare(nameB);
+            if (na) return 1;
+            if (nb) return -1;
+            if (ya !== yb) return sortDir === 'asc' ? ya - yb : yb - ya;
+            return nameA.localeCompare(nameB);
+        }
+        return sortDir === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    }
+
+    /** Sorted copy of search matches (index entries) by the current sort. */
+    function sortMatches(list) {
+        const nameOf = (e) => e.t || e.p.split('/').pop();
+        return list.slice().sort((a, b) => compareFiles(a, nameOf(a), b, nameOf(b)));
+    }
+
+    // Sort-bar UI, injected above the file list so it works in both the modal
+    // and the standalone embed without duplicating markup.
+    function buildSortBar() {
+        if (document.getElementById('hvscSortBar')) return;
+        const header = document.getElementById('filePanelHeader');
+        if (!header || !header.parentNode) return;
+        const bar = document.createElement('div');
+        bar.id = 'hvscSortBar';
+        bar.className = 'hvsc-sortbar';
+        bar.innerHTML =
+            '<span class="hvsc-sort-label">Sort</span>'
+            + '<button type="button" class="hvsc-sort-btn" data-key="name">Name <i class="fas fa-arrow-up"></i></button>'
+            + '<button type="button" class="hvsc-sort-btn" data-key="year">Year <i class="fas fa-arrow-down"></i></button>';
+        header.parentNode.insertBefore(bar, header.nextSibling);
+        bar.querySelectorAll('.hvsc-sort-btn').forEach((btn) => {
+            btn.addEventListener('click', () => onSortClick(btn.dataset.key));
+        });
+        updateSortBar();
+    }
+
+    function onSortClick(key) {
+        if (key === sortKey) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortKey = key;
+            sortDir = key === 'year' ? 'desc' : 'asc'; // year defaults to newest first
+        }
+        updateSortBar();
+        reRenderCurrentView();
+    }
+
+    function updateSortBar() {
+        const bar = document.getElementById('hvscSortBar');
+        if (!bar) return;
+        bar.querySelectorAll('.hvsc-sort-btn').forEach((btn) => {
+            const active = btn.dataset.key === sortKey;
+            btn.classList.toggle('active', active);
+            const icon = btn.querySelector('i');
+            if (icon) {
+                const dir = active ? sortDir : (btn.dataset.key === 'year' ? 'desc' : 'asc');
+                icon.className = 'fas ' + (dir === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
+            }
+        });
+    }
+
+    function reRenderCurrentView() {
+        if (searchMode && lastSearchMatches) {
+            renderSearchResults(sortMatches(lastSearchMatches), SEARCH_RESULT_LIMIT);
+        } else {
+            entries = listDirectory(currentPath);
+            renderEntries();
+            updateItemCount();
+        }
+    }
 
     // Short-lived access token (from /hvsc-token) appended to SID requests so
     // the edge guard can distinguish real playback from bulk scraping. When
@@ -60,6 +163,7 @@ window.hvscBrowser = (function () {
         if (hvscInitialized) return;
         hvscInitialized = true;
         wireSearch();
+        buildSortBar();
         // Warm up the playback engine in the background while the user browses,
         // so the Play button is responsive on the very first tune instead of
         // stalling on a cold WASM/audio-worklet load.
@@ -202,10 +306,7 @@ window.hvscBrowser = (function () {
         node.files.forEach((f) => {
             out.push({ name: f.name, path: f.path, isDirectory: false, meta: f.meta });
         });
-        out.sort((a, b) => {
-            if (a.isDirectory !== b.isDirectory) return b.isDirectory - a.isDirectory;
-            return a.name.localeCompare(b.name);
-        });
+        out.sort(compareEntries);
         return out;
     }
 
@@ -500,9 +601,11 @@ window.hvscBrowser = (function () {
             const icon = entry.isDirectory
                 ? '<i class="fas fa-folder"></i>'
                 : '<i class="fas fa-music"></i>';
+            const year = entry.isDirectory ? '' : yearLabel(entry.meta);
             item.innerHTML = `
             <span class="file-icon">${icon}</span>
             <span class="file-name">${escapeHtml(entry.name)}</span>
+            ${entry.isDirectory ? '' : `<span class="file-year">${escapeHtml(year)}</span>`}
         `;
             item.onclick = () => handleItemClick(entry);
             item.ondblclick = () => handleItemDoubleClick(entry);
@@ -571,7 +674,8 @@ window.hvscBrowser = (function () {
             }
         }
 
-        renderSearchResults(matches, limit);
+        lastSearchMatches = matches;
+        renderSearchResults(sortMatches(matches), limit);
         const shownPlural = matches.length === 1 ? 'match' : 'matches';
         let countText = `${matches.length} ${shownPlural}`;
         if (matches.length >= limit) countText += ` (first ${limit} shown)`;
@@ -593,6 +697,7 @@ window.hvscBrowser = (function () {
             const folder = r.p.substring(0, r.p.length - fileName.length - 1);
             const titleLine = r.t || fileName;
             const authorLine = r.a || '';
+            const year = yearLabel(r);
 
             const item = document.createElement('div');
             item.className = 'file-item search-result';
@@ -603,6 +708,7 @@ window.hvscBrowser = (function () {
                 ${authorLine ? `<span class="search-result-author">${escapeHtml(authorLine)}</span>` : ''}
                 <span class="search-result-path">${escapeHtml(folder)}</span>
             </span>
+            ${year ? `<span class="file-year">${escapeHtml(year)}</span>` : ''}
         `;
 
             const entry = { name: fileName, path: r.p, isDirectory: false, meta: r };
