@@ -855,9 +855,13 @@ void audio_set_subtune(int subtune) {
 
     S.memory[0x01] = 0x37;
 
-    // PSID convention: subtune number is passed in A.
+    // PSID convention: the subtune index (0-based) is passed in A — and also in
+    // X and Y. Some tunes read the song number from X or Y (e.g. an init doing
+    // "LDA songtable,X") rather than A; passing all three matches how a real
+    // driver and SIDquake's own export engine call init, so playback and export
+    // stay consistent (fixes multi-song tunes that sounded corrupt on preview).
     cpu_init(S.initAddress);
-    S.a = subtune;
+    S.a = S.x = S.y = subtune;
     S.totalCycles = 0;
 
     cpu_jsr(S.initAddress, 1000000);
