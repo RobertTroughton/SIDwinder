@@ -15,6 +15,7 @@ window.hvscBrowser = (function () {
     let currentPath = ROOT;
     let currentSelection = null;
     let entries = [];
+    const scrollByPath = new Map();  // remembers file-list scroll per directory
 
     let hvscPlayer = null;
     let hvscInitialized = false;
@@ -359,6 +360,12 @@ window.hvscBrowser = (function () {
     }
 
     async function fetchDirectory(path) {
+        // Remember the scroll position of the directory we're leaving (only when
+        // browsing, not searching), so going back up returns you to where you
+        // were; going into a new directory starts at the top.
+        const leavingList = document.getElementById('fileList');
+        if (leavingList && !searchMode) scrollByPath.set(currentPath, leavingList.scrollTop);
+
         // Navigating into a directory clears any active search
         if (searchMode) {
             const input = document.getElementById('hvscSearchBar');
@@ -386,6 +393,11 @@ window.hvscBrowser = (function () {
         updateItemCount();
         updatePathBar();
         clearInfoPanel();
+
+        // Restore the scroll position for a directory we've visited before
+        // (e.g. after going back up); otherwise start at the top.
+        const newList = document.getElementById('fileList');
+        if (newList) newList.scrollTop = scrollByPath.has(path) ? scrollByPath.get(path) : 0;
     }
 
     function handleItemClick(entry) {
