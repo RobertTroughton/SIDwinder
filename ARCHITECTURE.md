@@ -12,13 +12,14 @@
 │                  │    └── compressor-manager.js (TSCrunch) │
 │                  ├── png-converter.js ──► sidwinder.wasm  │
 │                  ├── petscii-converter.js                 │
-│                  ├── hvsc-browser.js ──► Netlify function │
+│                  ├── hvsc-browser.js ──► hvsc-index.json  │
 │                  ├── visualizer-registry.js               │
 │                  └── image-preview-manager.js             │
 │                                                           │
 ├───────────────────────────────────────────────────────────┤
-│  Netlify Function (netlify/functions/hvsc.js)            │
-│  └── Proxies requests to hvsc.etv.cx                     │
+│  Self-hosted HVSC (public/HVSC/, static files)           │
+│  ├── C64Music/... raw .sid files served directly         │
+│  └── hvsc-index.json: tree + title/author/STIL for search │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -107,19 +108,31 @@ Three C++ files compiled together into `sidwinder.wasm`:
 - Merges external gallery definitions
 - Provides option schemas for the UI
 
-### HVSC Integration
+### HVSC Integration (self-hosted)
 
-**`hvsc-browser.js`** (299 lines) - Collection browser
+HVSC is hosted directly by the site. The raw `.sid` files live under
+`public/HVSC/C64Music/...` and are served as static assets; the whole
+collection tree and per-tune metadata come from a single committed index,
+`public/hvsc-index.json`. There is no serverless proxy and no dependency on an
+external mirror — so browsing is instant (no per-folder network calls) and the
+version is whatever we ship.
+
+**`hvsc-browser.js`** - Collection browser
 - `window.hvscBrowser`: Navigate HVSC directory structure
-- Fetches listings via Netlify function, parses HTML tables
-- File/folder navigation with breadcrumbs
+- Builds the directory tree in-memory from `hvsc-index.json`; no network per folder
+- Plays/downloads SIDs directly from `/HVSC/<path>`
+- Search matches title, author, path AND folded STIL comment text
 
-**`hvsc-random.js`** (250 lines) - Random SID picker
-- `window.hvscRandom`: Picks random SID from curated path list
-- Loads `hvsc-random.json` (pre-built path index)
+**`hvsc-random.js`** - Random SID picker
+- `window.hvscRandom`: Picks a random tune from the index
+- Optional `hvsc-random.json` (path prefixes) biases the pick to curated areas
 
-**`netlify/functions/hvsc.js`** - Serverless proxy
-- Fetches directory listings and SID files from hvsc.etv.cx
+**Data & tooling (not served / built ahead of time):**
+- `hvsc-data/*.7z` - committed HVSC archive (the raw files aren't committed)
+- `scripts/extract-hvsc.js` - extracts the archive into `public/HVSC/`
+  (run locally once, and by the Netlify build via `netlify.toml`)
+- `tools/build-hvsc-index.js` - reads `public/HVSC/` + `DOCUMENTS/STIL.txt`
+  and writes `public/hvsc-index.json` (seconds; run after each HVSC update)
 - Returns HTML for directories, base64 for binary SID files
 - CORS headers for browser access
 
@@ -183,10 +196,10 @@ User selects visualizer + options
 ### HVSC browsing
 ```
 User clicks Browse HVSC
-  → hvsc-browser.js fetches /.netlify/functions/hvsc?path=...
-  → Netlify function proxies to hvsc.etv.cx
-  → HTML directory listing parsed into file/folder entries
-  → User clicks .sid file → fetched as base64 → decoded → loaded as SID
+  → hvsc-browser.js loads hvsc-index.json once (cached, gzipped)
+  → Builds the directory tree in-memory → folder navigation is instant
+  → User clicks .sid file → fetched directly from /HVSC/<path> → loaded as SID
+  → Search filters the index over title/author/path/STIL client-side
 ```
 
 ## C64 Memory Map Context

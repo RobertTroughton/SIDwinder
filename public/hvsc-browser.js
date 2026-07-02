@@ -1,28 +1,53 @@
 window.hvscBrowser = (function () {
 
-    const HVSC_BASE = '/.netlify/functions/hvsc';
+    // HVSC is now self-hosted: raw .sid files are served statically from
+    // /HVSC/... and the whole collection tree + metadata comes from the
+    // single search index (hvsc-index.json). Browsing is therefore entirely
+    // client-side — no per-folder network round-trips.
 
-    let currentPath = 'C64Music';
+    const ROOT = 'C64Music';
+
+    let currentPath = ROOT;
     let currentSelection = null;
     let entries = [];
 
     let hvscPlayer = null;
-
     let hvscInitialized = false;
 
-    // Search state
-    let searchIndex = null;          // { entries: [{p,t,a,r}], ... } once loaded
+    // Index / tree state
+    let searchIndex = null;          // { entries: [{p,t,a,r,s}], ... } once loaded
     let searchIndexPromise = null;   // in-flight load promise
-    let searchMode = false;          // true while showing search results
+    let dirMap = null;               // Map<dirPath, {dirs:Set, files:[{name,path,meta}]}>
+    let metaByPath = null;           // Map<path, {t,a,r,s}>
+
+    // Search state
+    let searchMode = false;
     let searchDebounce = null;
     const SEARCH_RESULT_LIMIT = 500;
 
+    /** Static URL for a SID file path (each segment URL-encoded). */
+    function sidUrl(p) {
+        return '/HVSC/' + p.split('/').map(encodeURIComponent).join('/');
+    }
+
     function initializeHVSC() {
-        if (!hvscInitialized) {
-            fetchDirectory('C64Music');
-            wireSearch();
-            hvscInitialized = true;
-        }
+        if (hvscInitialized) return;
+        hvscInitialized = true;
+        wireSearch();
+        loadSearchIndex()
+            .then(() => fetchDirectory(ROOT))
+            .catch((err) => {
+                console.error('Failed to load HVSC index:', err);
+                document.getElementById('fileList').innerHTML =
+                    '<div class="error-message">Could not load the HVSC index. '
+                    + 'Run <code>npm run build-hvsc-index</code> to generate '
+                    + '<code>public/hvsc-index.json</code>.</div>';
+                if (window.showError) {
+                    window.showError('Failed to load HVSC index', {
+                        details: err.message, duration: 0
+                    });
+                }
+            });
     }
 
     async function ensurePlayerReady() {
@@ -43,6 +68,80 @@ window.hvscBrowser = (function () {
         }
     }
 
+    function loadSearchIndex() {
+        if (searchIndex) return Promise.resolve(searchIndex);
+        if (searchIndexPromise) return searchIndexPromise;
+        searchIndexPromise = fetch('hvsc-index.json')
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((data) => {
+                searchIndex = data;
+                buildTree(data.entries || []);
+                return data;
+            })
+            .catch((err) => {
+                searchIndexPromise = null;
+                throw err;
+            });
+        return searchIndexPromise;
+    }
+
+    /** Build the directory tree + path->metadata map from the flat index. */
+    function buildTree(all) {
+        dirMap = new Map();
+        metaByPath = new Map();
+
+        const getDir = (d) => {
+            let node = dirMap.get(d);
+            if (!node) { node = { dirs: new Set(), files: [] }; dirMap.set(d, node); }
+            return node;
+        };
+
+        for (let i = 0; i < all.length; i++) {
+            const e = all[i];
+            const p = e.p;
+            metaByPath.set(p, e);
+
+            const slash = p.lastIndexOf('/');
+            const dir = slash === -1 ? '' : p.substring(0, slash);
+            const name = slash === -1 ? p : p.substring(slash + 1);
+            getDir(dir).files.push({ name, path: p, meta: e });
+
+            // Register each directory segment under its parent.
+            const segs = dir.split('/');
+            for (let s = 0; s < segs.length; s++) {
+                const full = segs.slice(0, s + 1).join('/');
+                const parent = s === 0 ? '' : segs.slice(0, s).join('/');
+                getDir(parent).dirs.add(segs[s]);
+                getDir(full); // ensure node exists
+            }
+        }
+    }
+
+    /** List a directory from the tree as {name, path, isDirectory} entries. */
+    function listDirectory(dirPath) {
+        const node = dirMap && dirMap.get(dirPath);
+        const out = [];
+        if (!node) return out;
+        node.dirs.forEach((childName) => {
+            out.push({
+                name: childName,
+                path: dirPath ? `${dirPath}/${childName}` : childName,
+                isDirectory: true,
+            });
+        });
+        node.files.forEach((f) => {
+            out.push({ name: f.name, path: f.path, isDirectory: false, meta: f.meta });
+        });
+        out.sort((a, b) => {
+            if (a.isDirectory !== b.isDirectory) return b.isDirectory - a.isDirectory;
+            return a.name.localeCompare(b.name);
+        });
+        return out;
+    }
+
     async function fetchDirectory(path) {
         // Navigating into a directory clears any active search
         if (searchMode) {
@@ -55,188 +154,22 @@ window.hvscBrowser = (function () {
             if (header) header.textContent = 'Files & Directories';
         }
 
-        if (path.endsWith('/')) {
-            path = path.slice(0, -1);
-        }
-
-        const encodedPath = encodeURIComponent(path);
-        const url = `${HVSC_BASE}?path=${encodedPath}`;
-
-        document.getElementById('fileList').innerHTML = '<div class="file-list-loading"><div class="file-list-spinner"></div></div>';
+        if (path.endsWith('/')) path = path.slice(0, -1);
 
         try {
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch directory');
-            }
-
-            const html = await response.text();
-
-            parseDirectory(html, path);
-            currentPath = path;
-            updatePathBar();
-            clearInfoPanel();
-        } catch (error) {
-            console.error('Fetch error:', error);
+            await loadSearchIndex();
+        } catch (err) {
             document.getElementById('fileList').innerHTML =
-                '<div class="error-message">Failed to load directory. Check your connection and try again.</div>';
-            if (window.showError) {
-                window.showError('Failed to load HVSC directory', {
-                    details: error.message,
-                    duration: 0
-                });
-            }
-        }
-    }
-
-    function parseDirectory(html, path) {
-        entries = [];
-        const fileList = document.getElementById('fileList');
-        fileList.innerHTML = '';
-
-        const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/i;
-        const tableMatch = html.match(tableRegex);
-
-        if (tableMatch) {
-            const tableContent = tableMatch[1];
-
-            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-            let rowMatch;
-
-            while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
-                const row = rowMatch[1];
-                const linkMatch = row.match(/<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/i);
-
-                if (linkMatch) {
-                    const href = linkMatch[1];
-                    let name = linkMatch[2].trim();
-
-                    if (href.startsWith('?path=') && !href.includes('info=')) {
-                        let pathValue = decodeURIComponent(href.substring(6));
-                        if (pathValue.endsWith('/')) {
-                            pathValue = pathValue.slice(0, -1);
-                        }
-                        name = name.replace(/\/$/, '');
-
-                        entries.push({
-                            name: name,
-                            path: pathValue,
-                            isDirectory: true
-                        });
-                    }
-                    else if (href.includes('.sid') && !href.includes('info=')) {
-                        let fileName = href.split('/').pop();
-                        entries.push({
-                            name: fileName,
-                            path: href,
-                            isDirectory: false
-                        });
-                    }
-                    else if (href.includes('info=please') && href.includes('.sid')) {
-                        const pathMatch = href.match(/path=([^&]+)/);
-                        if (pathMatch) {
-                            const filePath = decodeURIComponent(pathMatch[1]);
-                            const fileName = filePath.split('/').pop();
-
-                            if (!entries.find(e => e.name === fileName)) {
-                                entries.push({
-                                    name: fileName,
-                                    path: filePath,
-                                    isDirectory: false
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Fallback: scan every <a href="..."> when no <table> wrapper is present.
-            const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
-            let match;
-
-            while ((match = linkRegex.exec(html)) !== null) {
-                const href = match[1];
-                const linkText = match[2].trim();
-
-                if (linkText === 'Home' || linkText === 'About' || linkText === 'HVSC' ||
-                    linkText === 'SidSearch' || linkText === '..' || linkText === '.' ||
-                    linkText === 'Parent Directory' || href.startsWith('http://') ||
-                    href.startsWith('https://') || href === '#') {
-                    continue;
-                }
-
-                if (href.includes('?path=') && !href.includes('info=')) {
-                    const pathMatch = href.match(/\?path=([^&]*)/);
-                    if (pathMatch) {
-                        let pathValue = decodeURIComponent(pathMatch[1]);
-                        if (pathValue.endsWith('/')) {
-                            pathValue = pathValue.slice(0, -1);
-                        }
-                        entries.push({
-                            name: linkText.replace(/\/$/, ''),
-                            path: pathValue,
-                            isDirectory: true
-                        });
-                    }
-                }
-                else if (href.includes('info=please') || linkText.endsWith('.sid')) {
-                    if (href.includes('path=')) {
-                        const pathMatch = href.match(/path=([^&]+)/);
-                        if (pathMatch) {
-                            const filePath = decodeURIComponent(pathMatch[1]);
-                            const fileName = filePath.split('/').pop();
-                            entries.push({
-                                name: fileName,
-                                path: filePath,
-                                isDirectory: false
-                            });
-                        }
-                    }
-                }
-            }
+                '<div class="error-message">Failed to load HVSC index.</div>';
+            return;
         }
 
-        // Directories first, then alphabetical within each group
-        entries.sort((a, b) => {
-            if (a.isDirectory !== b.isDirectory) {
-                return b.isDirectory - a.isDirectory;
-            }
-            return a.name.localeCompare(b.name);
-        });
-
-        entries.forEach(entry => {
-            const item = document.createElement('div');
-            item.className = 'file-item' + (entry.isDirectory ? ' directory' : '');
-
-            const icon = entry.isDirectory ? '<i class="fas fa-folder"></i>' : '<i class="fas fa-music"></i>';
-
-            item.innerHTML = `
-            <span class="file-icon">${icon}</span>
-            <span class="file-name">${entry.name}</span>
-        `;
-
-            item.onclick = () => handleItemClick(entry);
-            item.ondblclick = () => handleItemDoubleClick(entry);
-
-            fileList.appendChild(item);
-        });
-
-        const sidCount = entries.filter(e => !e.isDirectory).length;
-        const dirCount = entries.filter(e => e.isDirectory).length;
-
-        let countText = '';
-        if (sidCount > 0 && dirCount > 0) {
-            countText = `${sidCount} SID files, ${dirCount} folders`;
-        } else if (sidCount > 0) {
-            countText = `${sidCount} SID file${sidCount !== 1 ? 's' : ''}`;
-        } else if (dirCount > 0) {
-            countText = `${dirCount} folder${dirCount !== 1 ? 's' : ''}`;
-        } else {
-            countText = 'Empty folder';
-        }
-
-        document.getElementById('itemCount').textContent = countText;
+        entries = listDirectory(path);
+        currentPath = path;
+        renderEntries();
+        updateItemCount();
+        updatePathBar();
+        clearInfoPanel();
     }
 
     function handleItemClick(entry) {
@@ -276,6 +209,10 @@ window.hvscBrowser = (function () {
         const hex = (v) => '$' + v.toString(16).toUpperCase().padStart(4, '0');
         const endAddr = loadAddr + dataSize;
 
+        // STIL comment (from the index) if we have one for this path.
+        const meta = entry.meta || (metaByPath && metaByPath.get(entry.path));
+        const stil = meta && meta.s ? meta.s : '';
+
         let html = '';
         if (title) html += `<div class="sid-info-row"><span class="sid-info-label">Title</span><span class="sid-info-value">${escapeHtml(title)}</span></div>`;
         if (author) html += `<div class="sid-info-row"><span class="sid-info-label">Author</span><span class="sid-info-value">${escapeHtml(author)}</span></div>`;
@@ -289,6 +226,7 @@ window.hvscBrowser = (function () {
         html += `<div class="sid-info-row"><span class="sid-info-label">Play Address</span><span class="sid-info-value">${playAddr ? hex(playAddr) : 'IRQ'}</span></div>`;
         html += `<div class="sid-info-row"><span class="sid-info-label">Memory Used</span><span class="sid-info-value">${hex(loadAddr)} - ${hex(endAddr)} (${dataSize} bytes)</span></div>`;
         html += `<div class="sid-info-row"><span class="sid-info-label">File</span><span class="sid-info-value">${escapeHtml(entry.name)}</span></div>`;
+        if (stil) html += `<div class="sid-info-stil"><span class="sid-info-label">STIL</span><span class="sid-info-value">${escapeHtml(stil)}</span></div>`;
         html += `<div class="sid-info-download"><button class="btn" onclick="hvscBrowser.downloadSID()"><i class="fas fa-download"></i> Download SID</button></div>`;
 
         content.innerHTML = html;
@@ -309,9 +247,8 @@ window.hvscBrowser = (function () {
 
     function downloadSID() {
         if (!currentSelection || currentSelection.isDirectory) return;
-        const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
         const a = document.createElement('a');
-        a.href = sidUrl;
+        a.href = sidUrl(currentSelection.path);
         a.download = currentSelection.name;
         document.body.appendChild(a);
         a.click();
@@ -322,7 +259,6 @@ window.hvscBrowser = (function () {
         await ensurePlayerReady();
         if (hvscPlayer) {
             const wasPlaying = hvscPlayer.isPlaying;
-            const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(entry.path)}`;
             const player = getSharedSIDPlayback();
             player.setLoadCallback(() => {
                 hvscPlayer.onLoaded(entry.name);
@@ -333,7 +269,7 @@ window.hvscBrowser = (function () {
             });
             hvscPlayer.stop();
             hvscPlayer.takeOwnership();
-            player.loadFromUrl(sidUrl);
+            player.loadFromUrl(sidUrl(entry.path));
         }
     }
 
@@ -359,7 +295,7 @@ window.hvscBrowser = (function () {
     }
 
     function navigateUp() {
-        if (!currentPath || currentPath === '' || currentPath === 'C64Music') {
+        if (!currentPath || currentPath === '' || currentPath === ROOT) {
             return;
         }
 
@@ -372,30 +308,30 @@ window.hvscBrowser = (function () {
         parts.pop();
 
         const parentPath = parts.join('/');
-        fetchDirectory(parentPath || 'C64Music');
+        fetchDirectory(parentPath || ROOT);
     }
 
     function navigateHome() {
-        fetchDirectory('C64Music');
+        fetchDirectory(ROOT);
     }
 
     function updatePathBar() {
         const pathDisplay = currentPath ? '/' + currentPath : '/';
         document.getElementById('pathBar').value = pathDisplay;
-        document.getElementById('upBtn').disabled = !currentPath || currentPath === '';
+        document.getElementById('upBtn').disabled = !currentPath || currentPath === '' || currentPath === ROOT;
     }
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
             stopPreview();
 
-            const sidUrl = `/.netlify/functions/hvsc?path=${encodeURIComponent(currentSelection.path)}`;
+            const url = sidUrl(currentSelection.path);
 
             window.postMessage({
                 type: 'sid-selected',
                 name: currentSelection.name,
                 path: currentSelection.path,
-                url: sidUrl
+                url: url
             }, '*');
 
             const modal = document.getElementById('hvscModal');
@@ -436,31 +372,13 @@ window.hvscBrowser = (function () {
         });
     }
 
-    function loadSearchIndex() {
-        if (searchIndex) return Promise.resolve(searchIndex);
-        if (searchIndexPromise) return searchIndexPromise;
-        searchIndexPromise = fetch('hvsc-index.json')
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
-                searchIndex = data;
-                return data;
-            })
-            .catch((err) => {
-                searchIndexPromise = null;
-                throw err;
-            });
-        return searchIndexPromise;
-    }
-
     function exitSearchMode() {
         if (!searchMode) return;
         searchMode = false;
         const header = document.getElementById('filePanelHeader');
         if (header) header.textContent = 'Files & Directories';
         // Repaint the current directory so selection/state is consistent
+        entries = listDirectory(currentPath);
         renderEntries();
         updateItemCount();
     }
@@ -516,7 +434,7 @@ window.hvscBrowser = (function () {
             fileList.innerHTML =
                 '<div class="error-message">Search index not available yet. '
                 + 'Browse by folder, or ask the site maintainer to run '
-                + '<code>node tools/build-hvsc-index.js</code>.</div>';
+                + '<code>npm run build-hvsc-index</code>.</div>';
             document.getElementById('itemCount').textContent = 'Search unavailable';
             return;
         }
@@ -532,7 +450,9 @@ window.hvscBrowser = (function () {
 
         for (let i = 0; i < all.length; i++) {
             const e = all[i];
-            const hay = ((e.t || '') + '\x00' + (e.a || '') + '\x00' + (e.p || '')).toLowerCase();
+            // Search across title, author, path AND folded STIL text.
+            const hay = ((e.t || '') + '\x00' + (e.a || '') + '\x00'
+                + (e.p || '') + '\x00' + (e.s || '')).toLowerCase();
             let ok = true;
             for (let j = 0; j < terms.length; j++) {
                 if (hay.indexOf(terms[j]) === -1) { ok = false; break; }
@@ -577,7 +497,7 @@ window.hvscBrowser = (function () {
             </span>
         `;
 
-            const entry = { name: fileName, path: r.p, isDirectory: false, _searchMeta: r };
+            const entry = { name: fileName, path: r.p, isDirectory: false, meta: r };
             item.onclick = () => handleItemClick(entry);
             item.ondblclick = () => handleItemDoubleClick(entry);
             frag.appendChild(item);

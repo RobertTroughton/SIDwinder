@@ -19,3 +19,8 @@ FileLayout.txt
 SIDwinder
 node_modules/
 /CSDbMusicFetch/out
+
+# Extracted HVSC mirror. The raw ~61k .sid files are NOT committed; instead the
+# HVSC archive under hvsc-data/ is committed and extracted here at build time
+# (npm run extract-hvsc). Keep this folder locally for offline dev + index builds.
+/public/HVSC/

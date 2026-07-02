@@ -5,9 +5,13 @@ echo ========================================
 echo SIDwinder HVSC Search Index Builder
 echo ========================================
 echo.
-echo Crawls hvsc.etv.cx and writes public\hvsc-index.json
-echo (title/author/released for every SID). This takes
-echo roughly 30-60 minutes on a full run.
+echo Reads the local HVSC mirror in public\HVSC and writes
+echo public\hvsc-index.json (title/author/released + STIL text
+echo for every SID). Takes only a few seconds.
+echo.
+echo Requires public\HVSC\C64Music to exist. If it doesn't, run
+echo   npm run extract-hvsc
+echo first to unpack the archive from hvsc-data\.
 echo.
 
 where node >nul 2>&1

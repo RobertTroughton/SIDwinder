@@ -49,8 +49,10 @@ SID file → WASM analysis → memory layout planning → player .bin overlay �
 ### SIDPlayers Assembly
 KickAss assembly files in `SIDPlayers/`. Pre-compiled to `.bin` at three load addresses ($4000, $8000, $C000) and stored in `public/prg/`. Each player has a JSON config defining its options, galleries, and capabilities.
 
-### HVSC Integration
-`netlify/functions/hvsc.js` proxies requests to hvsc.etv.cx. The browser-side `hvsc-browser.js` parses directory HTML responses to navigate the collection.
+### HVSC Integration (self-hosted)
+HVSC is hosted by the site itself, not proxied from an external mirror. Raw `.sid` files are served statically from `public/HVSC/C64Music/...`, and `public/hvsc-index.json` holds the full tree + per-tune metadata (title/author/released + folded STIL comment text for search). `hvsc-browser.js` builds the directory tree in-memory from that index (instant browsing, no per-folder network calls) and loads SIDs directly from `/HVSC/<path>`.
+
+The raw files are **not** committed. A committed archive at `hvsc-data/*.7z` is extracted into `public/HVSC/` by `scripts/extract-hvsc.js` — run locally once (`npm run extract-hvsc`) and by the Netlify build (see `netlify.toml`). `public/HVSC/` is gitignored. After an HVSC update: drop in the new archive, `npm run extract-hvsc -- --force`, then `npm run build-hvsc-index`, and commit the archive + `hvsc-index.json`.
 
 ## Code Conventions
 

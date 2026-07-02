@@ -1,5 +1,13 @@
 {
+  "scripts": {
+    "extract-hvsc": "node scripts/extract-hvsc.js",
+    "build-hvsc-index": "node tools/build-hvsc-index.js",
+    "netlify-build": "node scripts/extract-hvsc.js"
+  },
   "devDependencies": {
     "pngjs": "^7.0.0"
+  },
+  "dependencies": {
+    "7zip-bin": "^5.2.0"
   }
 }

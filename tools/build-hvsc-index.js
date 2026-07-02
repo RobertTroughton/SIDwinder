@@ -1,156 +1,61 @@
 #!/usr/bin/env node
 /*
- * Builds public/hvsc-index.json — a flat index of every SID in HVSC with
- * title, author, and released fields parsed from the PSID/RSID header.
+ * Builds public/hvsc-index.json — a flat index of every SID in the locally
+ * hosted HVSC mirror (public/HVSC/) with title, author and released parsed
+ * from the PSID/RSID header, plus a folded-in STIL text field for full-text
+ * search.
+ *
+ * SIDwinder now self-hosts HVSC as static files under public/HVSC/, so this
+ * script reads the collection straight off disk — no network crawl. A full
+ * run takes seconds, not the 30-60 minutes the old hvsc.etv.cx crawler needed.
  *
  * Usage:
- *   node tools/build-hvsc-index.js                  # full crawl
- *   node tools/build-hvsc-index.js --root <path>    # crawl a subtree
- *   node tools/build-hvsc-index.js --concurrency N  # header-fetch parallelism
- *   node tools/build-hvsc-index.js --patch          # backfill paths listed in
- *                                                     hvsc-index.failed.json
- *   node tools/build-hvsc-index.js --patch PATH...  # backfill the given paths
+ *   node tools/build-hvsc-index.js                 # index public/HVSC
+ *   node tools/build-hvsc-index.js --root <dir>    # index a different tree
+ *   node tools/build-hvsc-index.js --out <file>    # write somewhere else
  *
- * In --patch mode, the existing hvsc-index.json is loaded and any newly
- * crawled entries are merged in (replacing duplicates by path). Useful after
- * a full run where a few directories timed out.
- *
- * The crawler walks directory listings on hvsc.etv.cx and fetches the first
- * 128 bytes of each .sid via an HTTP Range request so it only pulls the
- * metadata, not the full file. Expect ~30-60 minutes for a full run.
+ * The --root directory is the HVSC content root: the folder that CONTAINS
+ * C64Music (so index paths look like "C64Music/MUSICIANS/...", matching the
+ * URLs the site serves from /HVSC/...). STIL is read from
+ * <root>/C64Music/DOCUMENTS/STIL.txt when present.
  *
  * Output format (compact keys to keep the file small):
- *   { v: 1, generated: "2026-...", count: N, entries: [ {p, t, a, r}, ... ] }
- *     p = path (relative to hvsc root, e.g. "C64Music/MUSICIANS/H/Hubbard_Rob/Commando.sid")
- *     t = title
- *     a = author
- *     r = released
+ *   { v: 2, generated, root, count, entries: [ {p, t, a, r, s?}, ... ] }
+ *     p = path relative to the HVSC content root
+ *         (e.g. "C64Music/MUSICIANS/H/Hubbard_Rob/Commando.sid")
+ *     t = title       (from SID header)
+ *     a = author      (from SID header)
+ *     r = released    (from SID header)
+ *     s = STIL text   (comments/trivia, folded for search; omitted if none)
  */
 
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 
-const HVSC_ORIGIN = 'https://hvsc.etv.cx';
-const OUTPUT = path.join(__dirname, '..', 'public', 'hvsc-index.json');
-const FAILED_OUTPUT = path.join(__dirname, '..', 'public', 'hvsc-index.failed.json');
+const { flags } = parseArgs(process.argv.slice(2));
+const ROOT = path.resolve(flags.root || path.join(__dirname, '..', 'public', 'HVSC'));
+const OUTPUT = path.resolve(flags.out || path.join(__dirname, '..', 'public', 'hvsc-index.json'));
 
-const { flags, positional } = parseArgs(process.argv.slice(2));
-const ROOT = flags.root || 'C64Music';
-const CONCURRENCY = parseInt(flags.concurrency || '8', 10);
-const RETRY_ATTEMPTS = 4;
-const RETRY_DELAY_BASE_MS = 1000;
-const PATCH_MODE = !!flags.patch;
+// Cap folded STIL text per entry so a handful of essay-length comments can't
+// balloon the index. Search still matches within this window.
+const MAX_STIL_CHARS = 2000;
 
 function parseArgs(argv) {
     const flags = {};
-    const positional = [];
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a.startsWith('--')) {
             const key = a.slice(2);
             const next = argv[i + 1];
-            // Only --root and --concurrency consume the following token as a
-            // value; everything else is a boolean flag (so --patch path1 path2
-            // leaves the paths as positional args).
-            if ((key === 'root' || key === 'concurrency') && next && !next.startsWith('--')) {
+            if ((key === 'root' || key === 'out') && next && !next.startsWith('--')) {
                 flags[key] = next; i++;
             } else {
                 flags[key] = true;
             }
-        } else {
-            positional.push(a);
         }
     }
-    return { flags, positional };
+    return { flags };
 }
-
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-function isRetryable(err) {
-    const msg = err && err.message ? err.message : '';
-    if (err && (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' ||
-                err.code === 'ECONNREFUSED' || err.code === 'EAI_AGAIN')) return true;
-    if (/socket hang up|Timeout|ECONN|network|EAI_AGAIN|503|502|504|429/i.test(msg)) return true;
-    return false;
-}
-
-function fetchBufferOnce(url, { headers = {} } = {}) {
-    return new Promise((resolve, reject) => {
-        const req = https.get(url, { headers }, (res) => {
-            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                res.resume();
-                resolve(fetchBufferOnce(new URL(res.headers.location, url).toString(), { headers }));
-                return;
-            }
-            if (res.statusCode !== 200 && res.statusCode !== 206) {
-                res.resume();
-                const err = new Error(`HTTP ${res.statusCode} for ${url}`);
-                err.statusCode = res.statusCode;
-                reject(err);
-                return;
-            }
-            const chunks = [];
-            res.on('data', (c) => chunks.push(c));
-            res.on('end', () => resolve(Buffer.concat(chunks)));
-            res.on('error', reject);
-        });
-        req.on('error', reject);
-        req.setTimeout(30000, () => { req.destroy(new Error('Timeout')); });
-    });
-}
-
-async function fetchBuffer(url, opts) {
-    let lastErr;
-    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
-        try {
-            return await fetchBufferOnce(url, opts);
-        } catch (err) {
-            lastErr = err;
-            if (!isRetryable(err) || attempt === RETRY_ATTEMPTS - 1) break;
-            const delay = RETRY_DELAY_BASE_MS * Math.pow(3, attempt);
-            await sleep(delay);
-        }
-    }
-    throw lastErr;
-}
-
-async function fetchText(url) {
-    const buf = await fetchBuffer(url);
-    return buf.toString('utf8');
-}
-
-function parseListing(html) {
-    const dirs = [];
-    const files = [];
-    const tableMatch = html.match(/<table[^>]*>([\s\S]*?)<\/table>/i);
-    const scope = tableMatch ? tableMatch[1] : html;
-    const rowRegex = /<a\s+href="([^"]+)"[^>]*>(?:<img[^>]*>)?([^<]+)<\/a>/gi;
-    let m;
-    while ((m = rowRegex.exec(scope)) !== null) {
-        const href = m[1];
-        const text = m[2].trim();
-        if (!text || text === '..' || text === '.' || text === 'Home' ||
-            text === 'About' || text === 'HVSC' || text === 'SidSearch' ||
-            text === 'Parent Directory') continue;
-        if (href.startsWith('http://') || href.startsWith('https://') || href === '#') continue;
-
-        if (href.startsWith('?path=') && !href.includes('info=')) {
-            let p = decodeURIComponent(href.substring(6));
-            if (p.endsWith('/')) p = p.slice(0, -1);
-            dirs.push(p);
-        } else if (href.includes('info=please') && href.includes('.sid')) {
-            const pm = href.match(/path=([^&]+)/);
-            if (pm) files.push(decodeURIComponent(pm[1]));
-        } else if (href.endsWith('.sid')) {
-            // Direct relative .sid link (rare on this mirror, but handle it).
-            files.push(href.replace(/^\//, ''));
-        }
-    }
-    return { dirs: unique(dirs), files: unique(files) };
-}
-
-function unique(arr) { return Array.from(new Set(arr)); }
 
 function readNullString(buf, offset, length) {
     const end = Math.min(offset + length, buf.length);
@@ -174,222 +79,172 @@ function parseSidHeader(buf) {
     };
 }
 
-async function fetchSidHeader(sidPath) {
-    const url = `${HVSC_ORIGIN}/${sidPath}`;
-    const buf = await fetchBuffer(url, { headers: { Range: 'bytes=0-127' } });
-    return parseSidHeader(buf);
+/** Read just the 0x76-byte header of a SID file. */
+function readSidHeader(absPath) {
+    const fd = fs.openSync(absPath, 'r');
+    try {
+        const buf = Buffer.alloc(0x80);
+        const n = fs.readSync(fd, buf, 0, 0x80, 0);
+        return parseSidHeader(buf.subarray(0, n));
+    } finally {
+        fs.closeSync(fd);
+    }
+}
+
+/** Recursively collect every .sid path (relative to ROOT, forward slashes). */
+function walkSids(dir, relBase, out) {
+    let dirents;
+    try {
+        dirents = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+        process.stderr.write(`  ! cannot read ${dir}: ${err.message}\n`);
+        return;
+    }
+    for (const de of dirents) {
+        const abs = path.join(dir, de.name);
+        const rel = relBase ? `${relBase}/${de.name}` : de.name;
+        if (de.isDirectory()) {
+            walkSids(abs, rel, out);
+        } else if (de.isFile() && de.name.toLowerCase().endsWith('.sid')) {
+            out.push(rel);
+        }
+    }
 }
 
 /**
- * Crawl one or more HVSC directory roots, collecting .sid paths.
- * @param {string[]} roots Directory paths to start from.
- * @returns {Promise<{sidPaths: string[], failedDirs: string[]}>}
+ * Parse DOCUMENTS/STIL.txt into two maps of folded, search-friendly text:
+ *   fileText: "C64Music/<path>.sid" -> text
+ *   dirText:  "C64Music/<dir>/"      -> text (applies to every SID in that dir)
+ *
+ * STIL entries are keyed by a path line starting with "/" (relative to the
+ * C64Music root). File entries end in ".sid"; directory-wide entries end in
+ * "/". Everything between one path line and the next is that entry's block;
+ * we strip "FIELD:" labels and "(#n)" subtune markers and keep the prose.
  */
-async function crawl(roots) {
-    const queue = roots.slice();
-    const visited = new Set();
-    const sidPaths = [];
-    const failedDirs = [];
-    let dirCount = 0;
-
-    while (queue.length) {
-        const dir = queue.shift();
-        if (visited.has(dir)) continue;
-        visited.add(dir);
-        dirCount++;
-        try {
-            const html = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(dir)}`);
-            const { dirs, files } = parseListing(html);
-            for (const d of dirs) {
-                if (!visited.has(d) && (d === dir || d.startsWith(dir + '/') || roots.some((r) => d.startsWith(r)))) {
-                    queue.push(d);
-                }
-            }
-            for (const f of files) sidPaths.push(f);
-            if (dirCount % 50 === 0) {
-                process.stderr.write(`  crawled ${dirCount} dirs, ${sidPaths.length} SIDs, ${queue.length} pending\n`);
-            }
-        } catch (err) {
-            process.stderr.write(`  ! dir failed: ${dir} (${err.message})\n`);
-            failedDirs.push(dir);
-        }
-    }
-
-    // Second pass for directories that failed despite in-request retries.
-    if (failedDirs.length) {
-        process.stderr.write(`Retrying ${failedDirs.length} failed directories...\n`);
-        const stillFailed = [];
-        for (const dir of failedDirs) {
-            try {
-                const html = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(dir)}`);
-                const { dirs, files } = parseListing(html);
-                for (const d of dirs) {
-                    if (!visited.has(d)) queue.push(d);
-                }
-                for (const f of files) sidPaths.push(f);
-                // Drain any subdirs newly queued by this recovered root.
-                while (queue.length) {
-                    const sub = queue.shift();
-                    if (visited.has(sub)) continue;
-                    visited.add(sub);
-                    try {
-                        const subHtml = await fetchText(`${HVSC_ORIGIN}/?path=${encodeURIComponent(sub)}`);
-                        const subParsed = parseListing(subHtml);
-                        for (const d of subParsed.dirs) if (!visited.has(d)) queue.push(d);
-                        for (const f of subParsed.files) sidPaths.push(f);
-                    } catch (subErr) {
-                        process.stderr.write(`  ! still failing: ${sub} (${subErr.message})\n`);
-                        stillFailed.push(sub);
-                    }
-                }
-            } catch (err) {
-                process.stderr.write(`  ! still failing: ${dir} (${err.message})\n`);
-                stillFailed.push(dir);
-            }
-        }
-        return { sidPaths: unique(sidPaths), failedDirs: stillFailed };
-    }
-
-    return { sidPaths: unique(sidPaths), failedDirs: [] };
-}
-
-async function buildIndex(sidPaths) {
-    const entries = [];
-    const failedPaths = [];
-    let done = 0;
-    const total = sidPaths.length;
-
-    async function worker(slice) {
-        for (const p of slice) {
-            try {
-                const meta = await fetchSidHeader(p);
-                if (meta) entries.push({ p, ...meta });
-                else failedPaths.push(p);
-            } catch (err) {
-                failedPaths.push(p);
-            }
-            done++;
-            if (done % 500 === 0) {
-                process.stderr.write(`  headers: ${done}/${total} (failed so far: ${failedPaths.length})\n`);
-            }
-        }
-    }
-
-    const slices = Array.from({ length: CONCURRENCY }, () => []);
-    sidPaths.forEach((p, i) => slices[i % CONCURRENCY].push(p));
-    await Promise.all(slices.map(worker));
-
-    entries.sort((a, b) => a.p.localeCompare(b.p));
-    return { entries, failedPaths };
-}
-
-function loadExistingIndex() {
-    if (!fs.existsSync(OUTPUT)) return null;
+function parseStil(stilPath) {
+    const fileText = new Map();
+    const dirText = new Map();
+    let raw;
     try {
-        return JSON.parse(fs.readFileSync(OUTPUT, 'utf8'));
+        raw = fs.readFileSync(stilPath, 'latin1');
     } catch (err) {
-        console.error(`Could not parse existing ${OUTPUT}: ${err.message}`);
-        return null;
-    }
-}
-
-function writeOutputs(entries, stillFailed, { mergeWith } = {}) {
-    let finalEntries = entries;
-    if (mergeWith && Array.isArray(mergeWith.entries)) {
-        const byPath = new Map();
-        for (const e of mergeWith.entries) byPath.set(e.p, e);
-        for (const e of entries) byPath.set(e.p, e);
-        finalEntries = Array.from(byPath.values()).sort((a, b) => a.p.localeCompare(b.p));
+        return { fileText, dirText };
     }
 
-    const out = {
-        v: 1,
-        generated: new Date().toISOString(),
-        root: ROOT,
-        count: finalEntries.length,
-        entries: finalEntries,
+    const lines = raw.split(/\r?\n/);
+    let curKey = null;
+    let buf = [];
+
+    const flush = () => {
+        if (!curKey) return;
+        const text = cleanStilBlock(buf);
+        if (text) {
+            const full = 'C64Music' + curKey;
+            if (curKey.endsWith('/')) dirText.set(full, text);
+            else fileText.set(full, text);
+        }
+        buf = [];
     };
-    fs.writeFileSync(OUTPUT, JSON.stringify(out));
-    const mb = (fs.statSync(OUTPUT).size / 1024 / 1024).toFixed(2);
-    console.error(`Wrote ${OUTPUT} (${mb} MB, ${finalEntries.length} entries)`);
 
-    if (stillFailed && stillFailed.length) {
-        fs.writeFileSync(FAILED_OUTPUT, JSON.stringify({
-            generated: new Date().toISOString(),
-            paths: stillFailed,
-        }, null, 2));
-        console.error(`Wrote ${FAILED_OUTPUT} (${stillFailed.length} paths). `
-            + `Re-run with --patch to retry them.`);
-    } else if (fs.existsSync(FAILED_OUTPUT)) {
-        fs.unlinkSync(FAILED_OUTPUT);
-        console.error(`Removed stale ${FAILED_OUTPUT} (nothing left to patch).`);
+    for (const line of lines) {
+        // A path line is an unindented "/..." that names a .sid or a directory.
+        if (/^\/.*\.sid$/i.test(line) || /^\/.*\/$/.test(line)) {
+            flush();
+            curKey = line.trim();
+        } else if (curKey) {
+            buf.push(line);
+        }
     }
+    flush();
+
+    return { fileText, dirText };
 }
 
-async function runFullCrawl() {
-    console.error(`Crawling ${HVSC_ORIGIN} starting at ${ROOT} (concurrency=${CONCURRENCY})`);
-    const t0 = Date.now();
-    const { sidPaths, failedDirs } = await crawl([ROOT]);
-    console.error(`Found ${sidPaths.length} SID files in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-
-    console.error('Fetching SID headers...');
-    const { entries, failedPaths } = await buildIndex(sidPaths);
-    console.error(`Parsed ${entries.length} headers (${failedPaths.length} failed)`);
-
-    const stillFailed = unique([...failedDirs, ...failedPaths]);
-    writeOutputs(entries, stillFailed);
+function cleanStilBlock(lines) {
+    const parts = [];
+    for (let line of lines) {
+        line = line.replace(/^\s+/, '');
+        if (!line) continue;
+        line = line.replace(/^\(#\d+\)\s*/, '');          // subtune marker
+        line = line.replace(/^[A-Z][A-Z ]{1,20}:\s*/, ''); // FIELD: label
+        line = line.trim();
+        if (line) parts.push(line);
+    }
+    let text = parts.join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length > MAX_STIL_CHARS) text = text.slice(0, MAX_STIL_CHARS);
+    return text;
 }
 
-async function runPatch() {
-    const existing = loadExistingIndex();
-    if (!existing) {
-        console.error(`No existing ${OUTPUT} found. Run a full crawl first.`);
+/** STIL text for a SID path = its own entry plus any parent-dir entries. */
+function stilFor(relPath, fileText, dirText) {
+    const pieces = [];
+    if (fileText.has(relPath)) pieces.push(fileText.get(relPath));
+    // Walk up the directory chain accumulating dir-wide comments.
+    let dir = relPath.slice(0, relPath.lastIndexOf('/') + 1);
+    while (dir.length > 'C64Music/'.length) {
+        if (dirText.has(dir)) pieces.push(dirText.get(dir));
+        const parent = dir.slice(0, dir.lastIndexOf('/', dir.length - 2) + 1);
+        if (parent === dir) break;
+        dir = parent;
+    }
+    if (!pieces.length) return '';
+    let text = pieces.join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length > MAX_STIL_CHARS) text = text.slice(0, MAX_STIL_CHARS);
+    return text;
+}
+
+function main() {
+    if (!fs.existsSync(ROOT)) {
+        console.error(`HVSC root not found: ${ROOT}`);
+        console.error(`Extract HVSC into public/HVSC/ (so public/HVSC/C64Music exists) `
+            + `or pass --root <dir>.`);
         process.exit(1);
     }
 
-    let patchPaths = positional.slice();
-    if (patchPaths.length === 0) {
-        if (!fs.existsSync(FAILED_OUTPUT)) {
-            console.error(`No paths given and no ${FAILED_OUTPUT} found. Nothing to patch.`);
-            process.exit(1);
+    const t0 = Date.now();
+    console.error(`Indexing ${ROOT}`);
+
+    const sidRel = [];
+    walkSids(ROOT, '', sidRel);
+    sidRel.sort((a, b) => a.localeCompare(b));
+    console.error(`Found ${sidRel.length} SID files`);
+
+    const stilPath = path.join(ROOT, 'C64Music', 'DOCUMENTS', 'STIL.txt');
+    const { fileText, dirText } = parseStil(stilPath);
+    console.error(fs.existsSync(stilPath)
+        ? `Parsed STIL: ${fileText.size} file entries, ${dirText.size} dir entries`
+        : `No STIL.txt at ${stilPath} (continuing without comments)`);
+
+    const entries = [];
+    let headerFails = 0;
+    for (const rel of sidRel) {
+        let meta;
+        try {
+            meta = readSidHeader(path.join(ROOT, rel));
+        } catch (err) {
+            meta = null;
         }
-        const failed = JSON.parse(fs.readFileSync(FAILED_OUTPUT, 'utf8'));
-        patchPaths = failed.paths || [];
+        if (!meta) { headerFails++; continue; }
+        const entry = { p: rel, t: meta.t, a: meta.a, r: meta.r };
+        const s = stilFor(rel, fileText, dirText);
+        if (s) entry.s = s;
+        entries.push(entry);
     }
 
-    if (patchPaths.length === 0) {
-        console.error('No paths to patch.');
-        return;
-    }
+    if (headerFails) console.error(`  (${headerFails} files had unreadable headers)`);
 
-    // Normalize: strip leading and trailing slashes.
-    patchPaths = patchPaths.map((p) => p.replace(/^\/+|\/+$/g, ''));
-
-    const dirPaths = patchPaths.filter((p) => !p.endsWith('.sid'));
-    const filePaths = patchPaths.filter((p) => p.endsWith('.sid'));
-
-    console.error(`Patch mode: ${dirPaths.length} dirs + ${filePaths.length} files to backfill`);
-
-    let sidPaths = filePaths.slice();
-    let failedDirs = [];
-    if (dirPaths.length) {
-        const res = await crawl(dirPaths);
-        sidPaths = unique([...sidPaths, ...res.sidPaths]);
-        failedDirs = res.failedDirs;
-    }
-
-    console.error(`Fetching ${sidPaths.length} SID headers...`);
-    const { entries, failedPaths } = await buildIndex(sidPaths);
-    console.error(`Parsed ${entries.length} headers (${failedPaths.length} failed)`);
-
-    const stillFailed = unique([...failedDirs, ...failedPaths]);
-    writeOutputs(entries, stillFailed, { mergeWith: existing });
+    const out = {
+        v: 2,
+        generated: new Date().toISOString(),
+        root: 'C64Music',
+        count: entries.length,
+        entries,
+    };
+    fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
+    fs.writeFileSync(OUTPUT, JSON.stringify(out));
+    const mb = (fs.statSync(OUTPUT).size / 1024 / 1024).toFixed(2);
+    console.error(`Wrote ${OUTPUT} (${mb} MB, ${entries.length} entries) `
+        + `in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }
 
-(async function main() {
-    if (PATCH_MODE) await runPatch();
-    else await runFullCrawl();
-})().catch((err) => {
-    console.error('Fatal:', err);
-    process.exit(1);
-});
+main();
