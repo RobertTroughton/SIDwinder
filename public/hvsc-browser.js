@@ -254,7 +254,8 @@ window.hvscBrowser = (function () {
         }
     }
 
-    function startVisualizer() {
+    async function startVisualizer() {
+        try { await setupVisualizer(); } catch (_) { /* non-fatal */ }
         if (vizReady && typeof hvscVisualizer !== 'undefined') hvscVisualizer.start();
     }
     function stopVisualizer() {
