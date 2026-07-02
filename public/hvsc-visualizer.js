@@ -20,16 +20,19 @@ window.hvscVisualizer = (function () {
     // If bars still peg, raise MAX_DB toward 0; if they're too short, lower it.
     const MIN_DB = -90;
     const MAX_DB = -10;
+    const MIN_BAR = 3;      // px: minimum bar height, so idle bars show a baseline
 
     let canvas = null, ctx = null, analyser = null, freq = null;
     let levels = null, peaks = null, bandLo = null, bandHi = null;
     let W = 0, H = 0, dpr = 1;
     let rafId = null, running = false;
     let bassAvg = 0, flash = 0;
+    let isActive = null;    // () => bool: is audio currently playing?
 
-    function init(canvasEl, analyserNode) {
+    function init(canvasEl, analyserNode, isActiveFn) {
         canvas = canvasEl;
         analyser = analyserNode;
+        isActive = typeof isActiveFn === 'function' ? isActiveFn : null;
         // Finer FFT sharpens the low end (each low bar was ~1 coarse bin, so a
         // bass note's leakage smeared across neighbours). Own these here.
         try {
@@ -112,23 +115,30 @@ window.hvscVisualizer = (function () {
     function step() {
         if (!ctx) return;
         if (W === 0 || H === 0) resize(); // canvas became visible/sized after init
-        analyser.getByteFrequencyData(freq);
+
+        // Only read the analyser while audio is actually playing. When idle,
+        // targets are 0 so bars fall to (and stay at) zero — this avoids
+        // painting the AnalyserNode's stale last-frame from a previous tune
+        // (there's no API to clear it) and gives a clean zero baseline on open.
+        const active = isActive ? !!isActive() : true;
+        if (active) analyser.getByteFrequencyData(freq);
 
         let bass = 0;
         for (let b = 0; b < BARS; b++) {
-            // Bar target = loudest bin in its band (feels punchier than average).
-            let m = 0;
-            for (let i = bandLo[b]; i < bandHi[b]; i++) if (freq[i] > m) m = freq[i];
-            let t = m / 255;
-            // Noise-floor gate: drop low-level "fill" to zero so valleys open up
-            // between real peaks.
-            t = (t - FLOOR) / (1 - FLOOR);
-            if (t < 0) t = 0;
-            // Tilt compensation: music rolls off toward high frequencies, which
-            // makes the bass bars always taller. Boost bars with frequency (bar
-            // index) so the display reads balanced left-to-right.
-            t *= 1 + SLOPE * (b / (BARS - 1));
-            if (t > 1) t = 1;
+            let t = 0;
+            if (active) {
+                // Bar target = loudest bin in its band (punchier than average).
+                let m = 0;
+                for (let i = bandLo[b]; i < bandHi[b]; i++) if (freq[i] > m) m = freq[i];
+                t = m / 255;
+                // Noise-floor gate: drop low-level "fill" to zero so valleys open.
+                t = (t - FLOOR) / (1 - FLOOR);
+                if (t < 0) t = 0;
+                // Tilt compensation for music's natural bass-heavy roll-off, so
+                // the display reads balanced left-to-right.
+                t *= 1 + SLOPE * (b / (BARS - 1));
+                if (t > 1) t = 1;
+            }
 
             // Fast attack, slow release for smooth, musical motion.
             const k = t > levels[b] ? 0.55 : 0.14;
@@ -143,8 +153,10 @@ window.hvscVisualizer = (function () {
         bass /= 6;
 
         // Beat detection: flash when bass jumps above its running average.
-        bassAvg = bassAvg * 0.92 + bass * 0.08;
-        if (bass > bassAvg * 1.35 && bass > 0.45) flash = Math.min(1, flash + 0.9);
+        if (active) {
+            bassAvg = bassAvg * 0.92 + bass * 0.08;
+            if (bass > bassAvg * 1.35 && bass > 0.45) flash = Math.min(1, flash + 0.9);
+        }
         flash *= 0.86;
 
         render();
@@ -161,7 +173,7 @@ window.hvscVisualizer = (function () {
         for (let b = 0; b < BARS; b++) {
             const x = gap + b * (bw + gap);
             const lvl = levels[b];
-            const bh = Math.max(1, lvl * usableH);
+            const bh = Math.max(MIN_BAR, lvl * usableH);
             const top = baseY - bh;
 
             // Amber (low freq, on-brand) -> cyan (high freq); brighten with level + beat.

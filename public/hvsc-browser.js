@@ -173,7 +173,12 @@ window.hvscBrowser = (function () {
     function isUnsupported(meta) { return !isEmbed() && !!meta && meta.f === 'R'; }
 
     function initializeHVSC() {
-        if (hvscInitialized) return;
+        if (hvscInitialized) {
+            // Reopening the browser: restart the visualizer so it renders a
+            // fresh zero baseline (the loop was stopped when it last closed).
+            startVisualizer();
+            return;
+        }
         hvscInitialized = true;
         wireSearch();
         buildSortBar();
@@ -261,7 +266,11 @@ window.hvscBrowser = (function () {
         await pb.init();
         const analyser = pb.getAnalyser ? pb.getAnalyser() : null;
         if (!analyser) { console.warn('[HVSC] visualizer: no analyser (playback not initialized?)'); return; }
-        hvscVisualizer.init(canvasEl, analyser);
+        // Predicate so the visualizer only reads the analyser while audio plays
+        // (otherwise bars sit at zero instead of showing a stale spectrum).
+        hvscVisualizer.init(canvasEl, analyser, () => {
+            try { return !!getSharedSIDPlayback().playing; } catch (_) { return false; }
+        });
         vizReady = true;
         console.info('[HVSC] visualizer ready');
     }
