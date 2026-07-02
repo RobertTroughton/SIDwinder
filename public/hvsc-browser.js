@@ -1,5 +1,10 @@
 window.hvscBrowser = (function () {
 
+    // Unconditional load marker: if you DON'T see this in the console right
+    // after opening the HVSC browser, the tab is running a cached old copy of
+    // this file (hard-reload / disable cache), not a visualizer problem.
+    console.info('[HVSC] hvsc-browser.js loaded — visualizer + diagnostics build');
+
     // HVSC is now self-hosted: raw .sid files are served statically from
     // /HVSC/... and the whole collection tree + metadata comes from the
     // single search index (hvsc-index.json). Browsing is therefore entirely
@@ -229,8 +234,9 @@ window.hvscBrowser = (function () {
             }
             await setupVisualizer();
             startVisualizer();
-        } catch (_) {
+        } catch (e) {
             warmupStarted = false; // allow a later retry on real playback
+            console.warn('[HVSC] warm-up failed (visualizer will retry on play):', e && e.message);
         }
     }
 
