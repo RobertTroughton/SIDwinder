@@ -74,7 +74,18 @@ class SIDPlayback {
         this.gainNode = this.audioCtx.createGain();
         this.gainNode.gain.value = this.volume;
         this.workletNode.connect(this.gainNode);
+
+        // Analyser tap for visualizers (reads the live signal; not forwarded to
+        // output, so it doesn't affect playback). Updates only while audio is
+        // actually flowing (i.e. during play).
+        this.analyser = this.audioCtx.createAnalyser();
+        this.analyser.fftSize = 2048;
+        this.analyser.smoothingTimeConstant = 0.6;
+        this.gainNode.connect(this.analyser);
     }
+
+    /** AnalyserNode tapping the playback signal (or null before init). */
+    getAnalyser() { return this.analyser || null; }
 
     _bindAPI() {
         const cwrap = this.module.cwrap;
