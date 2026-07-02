@@ -75,11 +75,11 @@ window.hvscVisualizer = (function () {
     function resize() {
         if (!canvas || !ctx) return;
         dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        W = Math.max(1, Math.floor(rect.width));
-        H = Math.max(1, Math.floor(rect.height));
-        canvas.width = Math.floor(W * dpr);
-        canvas.height = Math.floor(H * dpr);
+        // Use the live client size so it can be compared cheaply each frame.
+        W = Math.max(1, canvas.clientWidth);
+        H = Math.max(1, canvas.clientHeight);
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
@@ -114,7 +114,10 @@ window.hvscVisualizer = (function () {
 
     function step() {
         if (!ctx) return;
-        if (W === 0 || H === 0) resize(); // canvas became visible/sized after init
+        // Keep the canvas buffer in sync with its displayed size. Guards against
+        // a resize() that ran before the modal was laid out (which would leave a
+        // tiny buffer stretched to fill the area — a pulsing blob on reopen).
+        if (canvas.clientWidth !== W || canvas.clientHeight !== H) resize();
 
         // Only read the analyser while audio is actually playing. When idle,
         // targets are 0 so bars fall to (and stay at) zero — this avoids
