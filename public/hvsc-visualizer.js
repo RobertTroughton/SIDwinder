@@ -14,7 +14,12 @@ window.hvscVisualizer = (function () {
     const F_MIN = 40;       // Hz, low edge of the lowest bar
     const F_MAX = 11000;    // Hz, high edge of the top bar
     const FLOOR = 0.05;     // 0..1 noise-floor gate; higher = more gaps between bars
-    const SLOPE = 1.8;      // treble tilt compensation; higher = more high-freq boost
+    const SLOPE = 1.0;      // treble tilt compensation; higher = more high-freq boost
+    // Loudness window mapped to bar height. SID is loud, so the default
+    // (-100..-30 dB) pegs everything at max — give headroom by raising MAX_DB.
+    // If bars still peg, raise MAX_DB toward 0; if they're too short, lower it.
+    const MIN_DB = -90;
+    const MAX_DB = -10;
 
     let canvas = null, ctx = null, analyser = null, freq = null;
     let levels = null, peaks = null, bandLo = null, bandHi = null;
@@ -30,6 +35,9 @@ window.hvscVisualizer = (function () {
         try {
             analyser.fftSize = 4096;
             analyser.smoothingTimeConstant = 0.55;
+            // Headroom so loud SID doesn't clamp every bin to 255.
+            analyser.minDecibels = MIN_DB;
+            analyser.maxDecibels = MAX_DB;
         } catch (_) { /* keep defaults if the node rejects it */ }
         ctx = canvas.getContext('2d');
         freq = new Uint8Array(analyser.frequencyBinCount);
