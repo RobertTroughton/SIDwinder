@@ -246,12 +246,16 @@ window.hvscBrowser = (function () {
     let vizReady = false;
     async function setupVisualizer() {
         if (vizReady) return;
-        const canvasEl = document.getElementById('hvscVisualizer');
-        if (!canvasEl) { console.warn('[HVSC] visualizer: #hvscVisualizer canvas not found'); return; }
-        if (window.loadScript && typeof hvscVisualizer === 'undefined') {
+        const canvasEl = document.getElementById('hvscVizCanvas');
+        if (!canvasEl) { console.warn('[HVSC] visualizer: #hvscVizCanvas canvas not found'); return; }
+        // Load the module unless it's genuinely present (an .init method). NB:
+        // don't just check `typeof hvscVisualizer === 'undefined'` — an element
+        // with a matching id would shadow the global as a named-access property.
+        const moduleMissing = () => typeof hvscVisualizer === 'undefined' || typeof hvscVisualizer.init !== 'function';
+        if (window.loadScript && moduleMissing()) {
             await window.loadScript('hvsc-visualizer.js');
         }
-        if (typeof hvscVisualizer === 'undefined') { console.warn('[HVSC] visualizer: module failed to load'); return; }
+        if (moduleMissing()) { console.warn('[HVSC] visualizer: module failed to load'); return; }
         const pb = getSharedSIDPlayback();
         await pb.init();
         const analyser = pb.getAnalyser ? pb.getAnalyser() : null;
