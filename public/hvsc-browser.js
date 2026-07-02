@@ -34,6 +34,10 @@ window.hvscBrowser = (function () {
         if (hvscInitialized) return;
         hvscInitialized = true;
         wireSearch();
+        // Warm up the playback engine in the background while the user browses,
+        // so the Play button is responsive on the very first tune instead of
+        // stalling on a cold WASM/audio-worklet load.
+        warmUpPlayback();
         loadSearchIndex()
             .then(() => fetchDirectory(ROOT))
             .catch((err) => {
@@ -65,6 +69,24 @@ window.hvscBrowser = (function () {
         const container = document.getElementById('hvscPlayerContainer');
         if (container && typeof SIDPlayer !== 'undefined') {
             hvscPlayer = new SIDPlayer(container);
+        }
+    }
+
+    // Preload the playback engine (scripts + WASM compile + audio worklet) in
+    // the background so the first tune's Play button is responsive instead of
+    // waiting on a cold init. Fire-and-forget; failures are harmless because
+    // the first real playback will just initialize on demand as before.
+    let warmupStarted = false;
+    async function warmUpPlayback() {
+        if (warmupStarted) return;
+        warmupStarted = true;
+        try {
+            await ensurePlayerReady();
+            if (typeof getSharedSIDPlayback === 'function') {
+                await getSharedSIDPlayback().init();
+            }
+        } catch (_) {
+            warmupStarted = false; // allow a later retry on real playback
         }
     }
 
