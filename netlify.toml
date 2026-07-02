@@ -28,3 +28,21 @@
   for = "/prg/*.json"
   [headers.values]
     Cache-Control = "public, max-age=300, must-revalidate"
+
+# Keep the raw HVSC mirror and its index out of search indexes: results should
+# point at SIDquake pages, not raw .sid download links.
+[[headers]]
+  for = "/HVSC/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/hvsc-index.json"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+# The embed is meant to be iframed from SIDquake pages, not indexed on its own.
+[[headers]]
+  for = "/hvsc-embed.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"

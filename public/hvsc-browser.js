@@ -25,9 +25,35 @@ window.hvscBrowser = (function () {
     let searchDebounce = null;
     const SEARCH_RESULT_LIMIT = 500;
 
-    /** Static URL for a SID file path (each segment URL-encoded). */
+    // Short-lived access token (from /hvsc-token) appended to SID requests so
+    // the edge guard can distinguish real playback from bulk scraping. When
+    // token gating is disabled server-side, /hvsc-token returns an empty token
+    // and URLs are just plain static paths.
+    let accessToken = null;
+    let accessTokenExp = 0;   // unix seconds
+    let tokenPromise = null;
+
+    function ensureToken() {
+        const nowSec = Date.now() / 1000;
+        if (accessToken && nowSec < accessTokenExp - 30) return Promise.resolve(accessToken);
+        if (tokenPromise) return tokenPromise;
+        tokenPromise = fetch('/hvsc-token')
+            .then((r) => (r.ok ? r.json() : {}))
+            .then((d) => {
+                accessToken = d.token || null;
+                accessTokenExp = d.exp || 0;
+                tokenPromise = null;
+                return accessToken;
+            })
+            .catch(() => { tokenPromise = null; return null; });
+        return tokenPromise;
+    }
+
+    /** URL for a SID path (each segment encoded), carrying the access token. */
     function sidUrl(p) {
-        return '/HVSC/' + p.split('/').map(encodeURIComponent).join('/');
+        let u = '/HVSC/' + p.split('/').map(encodeURIComponent).join('/');
+        if (accessToken) u += '?t=' + encodeURIComponent(accessToken);
+        return u;
     }
 
     function initializeHVSC() {
@@ -38,8 +64,13 @@ window.hvscBrowser = (function () {
         // so the Play button is responsive on the very first tune instead of
         // stalling on a cold WASM/audio-worklet load.
         warmUpPlayback();
+        // Fetch an access token early so the first play/download isn't delayed
+        // by the token round-trip.
+        ensureToken();
+        // Embedders can deep-link into a folder via ?start=... (window.HVSC_EMBED_START).
+        const startPath = (typeof window !== 'undefined' && window.HVSC_EMBED_START) || ROOT;
         loadSearchIndex()
-            .then(() => fetchDirectory(ROOT))
+            .then(() => fetchDirectory(startPath))
             .catch((err) => {
                 console.error('Failed to load HVSC index:', err);
                 document.getElementById('fileList').innerHTML =
@@ -281,8 +312,9 @@ window.hvscBrowser = (function () {
         return div.innerHTML;
     }
 
-    function downloadSID() {
+    async function downloadSID() {
         if (!currentSelection || currentSelection.isDirectory) return;
+        await ensureToken();
         const a = document.createElement('a');
         a.href = sidUrl(currentSelection.path);
         a.download = currentSelection.name;
@@ -292,6 +324,7 @@ window.hvscBrowser = (function () {
     }
 
     async function previewSID(entry) {
+        await ensureToken();
         await ensurePlayerReady();
         if (hvscPlayer) {
             const wasPlaying = hvscPlayer.isPlaying;
@@ -360,21 +393,60 @@ window.hvscBrowser = (function () {
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
             stopPreview();
-
-            const url = sidUrl(currentSelection.path);
-
-            window.postMessage({
-                type: 'sid-selected',
-                name: currentSelection.name,
-                path: currentSelection.path,
-                url: url
-            }, '*');
-
+            emitSelection(currentSelection);
             const modal = document.getElementById('hvscModal');
             if (modal) {
                 modal.classList.remove('visible');
             }
         }
+    }
+
+    // Hand a chosen SID back to whoever is hosting the browser.
+    //  - Standalone (the SIDquake modal): posts {type:'sid-selected'} to this
+    //    same window, which ui.js already listens for.
+    //  - Embedded (window.HVSC_EMBED set by hvsc-embed.html): posts to the
+    //    parent frame using the documented embed contract, honouring the
+    //    requested mode:
+    //       'link' (default) -> metadata + a short-lived SID URL
+    //       'file'           -> also transfers the SID bytes (ArrayBuffer)
+    //       'play'           -> preview only; announces the playing tune
+    function emitSelection(entry) {
+        ensureToken().then(() => {
+            const meta = entry.meta || (metaByPath && metaByPath.get(entry.path)) || {};
+            const absUrl = new URL(sidUrl(entry.path), location.href).href;
+            const base = {
+                name: entry.name,
+                path: entry.path,
+                url: absUrl,
+                title: meta.t || '',
+                author: meta.a || '',
+                released: meta.r || '',
+                stil: meta.s || '',
+            };
+
+            const cfg = window.HVSC_EMBED;
+            if (!cfg) {
+                window.postMessage({
+                    type: 'sid-selected', name: base.name, path: base.path, url: base.url,
+                }, '*');
+                return;
+            }
+
+            const target = cfg.targetOrigin || '*';
+            const mode = cfg.mode || 'link';
+            if (mode === 'file') {
+                fetch(absUrl)
+                    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+                    .then((buf) => window.parent.postMessage(
+                        { type: 'hvsc:selected', mode, ...base, bytes: buf }, target, [buf]))
+                    .catch(() => window.parent.postMessage(
+                        { type: 'hvsc:error', message: 'Could not fetch SID', ...base }, target));
+            } else if (mode === 'play') {
+                window.parent.postMessage({ type: 'hvsc:playing', ...base }, target);
+            } else {
+                window.parent.postMessage({ type: 'hvsc:selected', mode: 'link', ...base }, target);
+            }
+        });
     }
 
     document.addEventListener('keydown', (e) => {
