@@ -227,9 +227,38 @@ window.hvscBrowser = (function () {
             if (typeof getSharedSIDPlayback === 'function') {
                 await getSharedSIDPlayback().init();
             }
+            await setupVisualizer();
+            startVisualizer();
         } catch (_) {
             warmupStarted = false; // allow a later retry on real playback
         }
+    }
+
+    // Spectrum visualizer at the bottom of the browser. Set up once the
+    // playback engine + its analyser exist; it animates while the modal is open
+    // (idle bars when nothing plays) and is stopped when the browser closes.
+    let vizReady = false;
+    async function setupVisualizer() {
+        if (vizReady) return;
+        const canvasEl = document.getElementById('hvscVisualizer');
+        if (!canvasEl) return;
+        if (window.loadScript && typeof hvscVisualizer === 'undefined') {
+            await window.loadScript('hvsc-visualizer.js');
+        }
+        const pb = getSharedSIDPlayback();
+        await pb.init();
+        const analyser = pb.getAnalyser ? pb.getAnalyser() : null;
+        if (analyser && typeof hvscVisualizer !== 'undefined') {
+            hvscVisualizer.init(canvasEl, analyser);
+            vizReady = true;
+        }
+    }
+
+    function startVisualizer() {
+        if (vizReady && typeof hvscVisualizer !== 'undefined') hvscVisualizer.start();
+    }
+    function stopVisualizer() {
+        if (vizReady && typeof hvscVisualizer !== 'undefined') hvscVisualizer.stop();
     }
 
     function loadSearchIndex() {
@@ -435,6 +464,7 @@ window.hvscBrowser = (function () {
     async function previewSID(entry) {
         await ensureToken();
         await ensurePlayerReady();
+        startVisualizer();
         if (hvscPlayer) {
             const wasPlaying = hvscPlayer.isPlaying;
             const player = getSharedSIDPlayback();
@@ -452,6 +482,7 @@ window.hvscBrowser = (function () {
     }
 
     function stopPreview() {
+        stopVisualizer();
         if (hvscPlayer) {
             // Clear any pending load callback to prevent late autoplay
             const player = getSharedSIDPlayback();
