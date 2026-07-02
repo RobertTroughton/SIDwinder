@@ -5,6 +5,8 @@
 # .sid download links. The whole collection is a free download at
 # https://hvsc.c64.org/, so there's no need for crawlers to pull it from us.
 
+Sitemap: https://sidquake.c64demo.com/sitemap.xml
+
 User-agent: *
 Disallow: /HVSC/
 Disallow: /hvsc-index.json

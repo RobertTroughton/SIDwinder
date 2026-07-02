@@ -2,9 +2,10 @@
   publish = "public"
   functions = "netlify/functions"
   # Extract the committed HVSC archive (hvsc-data/*.7z) into public/HVSC/ so the
-  # raw .sid files are served statically. The search index (public/hvsc-index.json)
-  # is committed and does not need rebuilding here.
-  command = "npm install && node scripts/extract-hvsc.js"
+  # raw .sid files are served statically, then generate the per-composer SEO
+  # pages + sitemap from the committed index. (The index itself is committed and
+  # does not need rebuilding here.)
+  command = "npm install && npm run build"
 
 # Short cache for font and bar-style assets so new additions appear quickly
 [[headers]]

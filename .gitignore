@@ -24,3 +24,8 @@ node_modules/
 # HVSC archive under hvsc-data/ is committed and extracted here at build time
 # (npm run extract-hvsc). Keep this folder locally for offline dev + index builds.
 /public/HVSC/
+
+# Per-composer SEO pages + sitemap: generated from hvsc-index.json at build
+# (npm run build-seo-pages). Derived output, not committed.
+/public/music/
+/public/sitemap.xml

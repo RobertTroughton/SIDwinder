@@ -2,7 +2,9 @@
   "scripts": {
     "extract-hvsc": "node scripts/extract-hvsc.js",
     "build-hvsc-index": "node tools/build-hvsc-index.js",
-    "netlify-build": "node scripts/extract-hvsc.js"
+    "build-seo-pages": "node scripts/build-seo-pages.js",
+    "build": "node scripts/extract-hvsc.js && node scripts/build-seo-pages.js",
+    "netlify-build": "npm run build"
   },
   "devDependencies": {
     "pngjs": "^7.0.0"
