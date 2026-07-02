@@ -1447,6 +1447,35 @@
     text-overflow: ellipsis;
 }
 
+/* RSID tunes: unsupported by the SIDquake export tool (still previewable) */
+.file-item.unsupported .file-name { color: var(--text-muted); }
+.file-item.unsupported .search-result-title { color: var(--text-muted); }
+
+.file-tag {
+    flex: 0 0 auto;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.sid-info-note {
+    margin: 4px 0 12px;
+    padding: 8px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 4px;
+}
+
 /* Release year shown at the right of each tune row */
 .file-year {
     flex: 0 0 auto;

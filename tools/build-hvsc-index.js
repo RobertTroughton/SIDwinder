@@ -81,6 +81,7 @@ function parseSidHeader(buf) {
         t: readNullString(buf, 0x16, 32),
         a: readNullString(buf, 0x36, 32),
         r: readNullString(buf, 0x56, 32),
+        rsid: magic === 'RSID',
     };
 }
 
@@ -247,6 +248,7 @@ function main() {
         }
         if (!meta) { headerFails++; continue; }
         const entry = { p: rel, t: meta.t, a: meta.a, r: meta.r };
+        if (meta.rsid) entry.f = 'R'; // RSID (needs a real C64 env; not exportable by the tool)
         const s = stilFor(rel, fileText, dirText);
         if (s) entry.s = s;
         entries.push(entry);

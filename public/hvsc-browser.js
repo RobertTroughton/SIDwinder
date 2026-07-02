@@ -159,6 +159,13 @@ window.hvscBrowser = (function () {
         return u;
     }
 
+    // The SIDquake tool can't export RSID tunes (they need a real C64 env), so
+    // in the tool we grey them out and block selection — but they still play in
+    // the preview. When the browser is embedded elsewhere it's a general SID
+    // player, so RSID is treated normally (no marking, fully selectable).
+    function isEmbed() { return !!window.HVSC_EMBED; }
+    function isUnsupported(meta) { return !isEmbed() && !!meta && meta.f === 'R'; }
+
     function initializeHVSC() {
         if (hvscInitialized) return;
         hvscInitialized = true;
@@ -382,6 +389,7 @@ window.hvscBrowser = (function () {
         const stil = meta && meta.s ? meta.s : '';
 
         let html = '';
+        if (isUnsupported(entry.meta)) html += `<div class="sid-info-note">RSID — preview only; not usable in the SIDquake tool.</div>`;
         if (title) html += `<div class="sid-info-row"><span class="sid-info-label">Title</span><span class="sid-info-value">${escapeHtml(title)}</span></div>`;
         if (author) html += `<div class="sid-info-row"><span class="sid-info-label">Author</span><span class="sid-info-value">${escapeHtml(author)}</span></div>`;
         if (copyright) html += `<div class="sid-info-row"><span class="sid-info-label">Copyright</span><span class="sid-info-value">${escapeHtml(copyright)}</span></div>`;
@@ -493,12 +501,28 @@ window.hvscBrowser = (function () {
 
     function selectSID() {
         if (currentSelection && !currentSelection.isDirectory) {
+            // In the SIDquake tool, RSID tunes can't be exported — don't let
+            // them be chosen (they remain previewable). No pop-up: the row is
+            // greyed/tagged and we show an inline note instead.
+            if (isUnsupported(currentSelection.meta)) {
+                notifyUnsupported();
+                return;
+            }
             stopPreview();
             emitSelection(currentSelection);
             const modal = document.getElementById('hvscModal');
             if (modal) {
                 modal.classList.remove('visible');
             }
+        }
+    }
+
+    function notifyUnsupported() {
+        const content = document.getElementById('sidInfoContent');
+        if (content) {
+            content.innerHTML = '<div class="sid-info-note">This is an <strong>RSID</strong> tune. '
+                + 'It plays here for preview, but can’t be loaded into the SIDquake tool '
+                + '(RSID needs a real C64 environment). Choose a PSID tune to use it in SIDquake.</div>';
         }
     }
 
@@ -602,9 +626,16 @@ window.hvscBrowser = (function () {
                 ? '<i class="fas fa-folder"></i>'
                 : '<i class="fas fa-music"></i>';
             const year = entry.isDirectory ? '' : yearLabel(entry.meta);
+            const unsupported = !entry.isDirectory && isUnsupported(entry.meta);
+            if (unsupported) {
+                item.classList.add('unsupported');
+                item.title = 'RSID — plays here for preview, but can’t be used in the SIDquake tool';
+            }
+            const tag = unsupported ? '<span class="file-tag">RSID</span>' : '';
             item.innerHTML = `
             <span class="file-icon">${icon}</span>
             <span class="file-name">${escapeHtml(entry.name)}</span>
+            ${tag}
             ${entry.isDirectory ? '' : `<span class="file-year">${escapeHtml(year)}</span>`}
         `;
             item.onclick = () => handleItemClick(entry);
@@ -699,12 +730,14 @@ window.hvscBrowser = (function () {
             const authorLine = r.a || '';
             const year = yearLabel(r);
 
+            const unsupported = isUnsupported(r);
             const item = document.createElement('div');
-            item.className = 'file-item search-result';
+            item.className = 'file-item search-result' + (unsupported ? ' unsupported' : '');
+            if (unsupported) item.title = 'RSID — plays here for preview, but can’t be used in the SIDquake tool';
             item.innerHTML = `
             <span class="file-icon"><i class="fas fa-music"></i></span>
             <span class="search-result-text">
-                <span class="search-result-title">${escapeHtml(titleLine)}</span>
+                <span class="search-result-title">${escapeHtml(titleLine)}${unsupported ? ' <span class="file-tag">RSID</span>' : ''}</span>
                 ${authorLine ? `<span class="search-result-author">${escapeHtml(authorLine)}</span>` : ''}
                 <span class="search-result-path">${escapeHtml(folder)}</span>
             </span>
